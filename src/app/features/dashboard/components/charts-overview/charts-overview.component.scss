@@ -1,0 +1,81 @@
+.charts-card {
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.header-icon {
+  background-color: var(--accent-color) !important;
+  color: white !important;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--text-muted);
+}
+
+.loading-container p {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.charts-tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.charts-tabs ::ng-deep .mat-mdc-tab-body-wrapper {
+  flex: 1;
+  display: flex;
+}
+
+.charts-tabs ::ng-deep .mat-mdc-tab-body {
+  flex: 1;
+  display: flex;
+}
+
+.charts-tabs ::ng-deep .mat-mdc-tab-body-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0;
+  min-height: 350px;
+}
+
+.chart-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+  text-align: center;
+}
+
+.chart-container>* {
+  flex: 1 !important;
+}
+
+/* Chart Responsive */
+@media (max-width: 768px) {
+  .charts-card {
+    height: 450px;
+  }
+
+  .chart-container {
+    min-height: 300px;
+  }
+
+  .chart-title {
+    font-size: 0.9rem;
+  }
+}

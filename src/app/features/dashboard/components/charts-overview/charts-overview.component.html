@@ -1,0 +1,71 @@
+<mat-card class="charts-card">
+  <mat-card-header>
+    <mat-icon mat-card-avatar class="header-icon">bar_chart</mat-icon>
+    <mat-card-title>نظرة عامة إحصائية</mat-card-title>
+    <mat-card-subtitle>الرسوم البيانية للأداء</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>جاري تحميل البيانات...</p>
+    </div>
+
+    <!-- Charts Tabs -->
+    <mat-tab-group *ngIf="!loading" class="charts-tabs">
+      <!-- Revenue Chart -->
+      <mat-tab label="الإيرادات">
+        <div class="chart-container">
+          <h3 class="chart-title">الإيرادات الشهرية (بالريال السعودي)</h3>
+          <ngx-charts-line-chart
+            [results]="revenueData()"
+            [xAxis]="true"
+            [yAxis]="true"
+            [showXAxisLabel]="true"
+            [showYAxisLabel]="true"
+            [xAxisLabel]="'الشهر'"
+            [yAxisLabel]="'الإيرادات'"
+            [timeline]="false"
+            [customColors]="colorScheme"
+            [gradient]="true"
+            [curve]="curve"
+          >
+          </ngx-charts-line-chart>
+        </div>
+      </mat-tab>
+
+      <!-- Appointments Chart -->
+      <mat-tab label="المواعيد">
+        <div class="chart-container">
+          <h3 class="chart-title">المواعيد الأسبوعية</h3>
+          <ngx-charts-bar-vertical
+            [results]="appointmentsData()"
+            [xAxis]="true"
+            [yAxis]="true"
+            [showXAxisLabel]="true"
+            [showYAxisLabel]="true"
+            [xAxisLabel]="'اليوم'"
+            [yAxisLabel]="'عدد المواعيد'"
+            [customColors]="colorScheme"
+          >
+          </ngx-charts-bar-vertical>
+        </div>
+      </mat-tab>
+
+      <!-- Patients Demographics -->
+      <mat-tab label="المرضى">
+        <div class="chart-container">
+          <h3 class="chart-title">توزيع المرضى حسب الجنس</h3>
+          <ngx-charts-pie-chart
+            [results]="patientsData()"
+            [labels]="true"
+            [doughnut]="true"
+            [customColors]="colorScheme"
+          >
+          </ngx-charts-pie-chart>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card-content>
+</mat-card>

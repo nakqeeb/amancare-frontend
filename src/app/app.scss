@@ -1,0 +1,42 @@
+.app-container {
+  min-height: 100vh;
+  position: relative;
+  font-family: 'Noto Sans Arabic', 'Cairo', sans-serif;
+}
+
+.app-container.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.pwa-update {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #4c51bf;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(76, 81, 191, 0.3);
+  z-index: 1000;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.pwa-update:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 81, 191, 0.4);
+}
+
+.pwa-update i {
+  font-size: 18px;
+}
+
+[dir="rtl"] .pwa-update {
+  right: auto;
+  left: 20px;
+}

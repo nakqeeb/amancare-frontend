@@ -1,0 +1,30 @@
+<mat-card class="quick-actions-card">
+  <mat-card-header>
+    <mat-icon mat-card-avatar class="header-icon">flash_on</mat-icon>
+    <mat-card-title>الإجراءات السريعة</mat-card-title>
+    <mat-card-subtitle>أكثر العمليات استخداماً</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="actions-grid">
+      <ng-container *ngFor="let action of quickActions">
+        <button
+          mat-stroked-button
+          class="action-button"
+          [class]="'action-' + action.color"
+          *ngIf="hasPermission(action.roles)"
+          [routerLink]="action.route"
+          (click)="action.action ? action.action() : null"
+        >
+          <div class="action-content">
+            <mat-icon class="action-icon">{{ action.icon }}</mat-icon>
+            <div class="action-text">
+              <h4>{{ action.title }}</h4>
+              <p>{{ action.description }}</p>
+            </div>
+          </div>
+        </button>
+      </ng-container>
+    </div>
+  </mat-card-content>
+</mat-card>

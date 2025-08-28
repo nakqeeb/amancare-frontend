@@ -1,0 +1,147 @@
+<div class="auth-container">
+  <div class="auth-background">
+    <div class="background-shapes">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+    </div>
+  </div>
+
+  <div class="auth-content">
+    <!-- Logo & Title -->
+    <div class="auth-header">
+      <mat-icon class="app-logo">local_hospital</mat-icon>
+      <h1>نظام أمان كير</h1>
+      <p>إدارة العيادات الطبية</p>
+    </div>
+
+    <!-- Login Form -->
+    <mat-card class="auth-card">
+      <mat-card-content>
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+          <h2 class="form-title">تسجيل الدخول</h2>
+
+          <!-- Username/Email -->
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>اسم المستخدم أو البريد الإلكتروني</mat-label>
+            <input
+              matInput
+              formControlName="usernameOrEmail"
+              placeholder="أدخل اسم المستخدم أو البريد الإلكتروني"
+              autocomplete="username"
+            />
+            <mat-icon matSuffix>person</mat-icon>
+            <mat-error
+              *ngIf="loginForm.get('usernameOrEmail')?.hasError('required')"
+            >
+              اسم المستخدم مطلوب
+            </mat-error>
+            <mat-error
+              *ngIf="loginForm.get('usernameOrEmail')?.hasError('email')"
+            >
+              البريد الإلكتروني غير صحيح
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Password -->
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>كلمة المرور</mat-label>
+            <input
+              matInput
+              [type]="hidePassword() ? 'password' : 'text'"
+              formControlName="password"
+              placeholder="أدخل كلمة المرور"
+              autocomplete="current-password"
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="togglePasswordVisibility()"
+            >
+              <mat-icon>{{
+                hidePassword() ? "visibility_off" : "visibility"
+              }}</mat-icon>
+            </button>
+            <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
+              كلمة المرور مطلوبة
+            </mat-error>
+            <mat-error *ngIf="loginForm.get('password')?.hasError('minlength')">
+              كلمة المرور يجب أن تكون 6 أحرف على الأقل
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Role Selection (for demo) -->
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>نوع الحساب</mat-label>
+            <mat-select formControlName="role" placeholder="اختر نوع الحساب">
+              <mat-option value="SYSTEM_ADMIN">مدير النظام</mat-option>
+              <mat-option value="ADMIN">مدير العيادة</mat-option>
+              <mat-option value="DOCTOR">طبيب</mat-option>
+              <mat-option value="NURSE">ممرض/ممرضة</mat-option>
+              <mat-option value="RECEPTIONIST">موظف استقبال</mat-option>
+            </mat-select>
+            <mat-icon matSuffix>work</mat-icon>
+          </mat-form-field>
+
+          <!-- Remember Me -->
+          <div class="form-options">
+            <mat-checkbox formControlName="rememberMe">تذكرني</mat-checkbox>
+            <a routerLink="/auth/forgot-password" class="forgot-link"
+              >نسيت كلمة المرور؟</a
+            >
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            class="submit-button"
+            [disabled]="loginForm.invalid || isLoading()"
+          >
+            <mat-spinner diameter="20" *ngIf="isLoading()"></mat-spinner>
+            <span *ngIf="!isLoading()">
+              <mat-icon>login</mat-icon>
+              تسجيل الدخول
+            </span>
+            <span *ngIf="isLoading()">جاري تسجيل الدخول...</span>
+          </button>
+
+          <!-- Demo Credentials -->
+          <div class="demo-section">
+            <h4>حسابات تجريبية:</h4>
+            <div class="demo-buttons">
+              <button
+                mat-button
+                type="button"
+                (click)="fillDemoCredentials('admin')"
+              >
+                مدير عيادة
+              </button>
+              <button
+                mat-button
+                type="button"
+                (click)="fillDemoCredentials('doctor')"
+              >
+                طبيب
+              </button>
+              <button
+                mat-button
+                type="button"
+                (click)="fillDemoCredentials('nurse')"
+              >
+                ممرض/ممرضة
+              </button>
+            </div>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Footer -->
+    <div class="auth-footer">
+      <p>&copy; 2024 نظام أمان كير. جميع الحقوق محفوظة.</p>
+    </div>
+  </div>
+</div>

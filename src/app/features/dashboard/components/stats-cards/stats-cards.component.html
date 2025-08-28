@@ -1,0 +1,35 @@
+<div class="stats-container">
+  <div class="stats-grid">
+    <mat-card
+      *ngFor="let card of statsCards()"
+      class="stat-card"
+      [class]="'card-' + card.color"
+      [routerLink]="card.route"
+    >
+      <mat-card-content>
+        <!-- Loading State -->
+        <div class="card-loading" *ngIf="loading">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <!-- Content -->
+        <div class="card-content" *ngIf="!loading">
+          <div class="card-header">
+            <div class="card-icon" [class]="'icon-' + card.color">
+              <mat-icon>{{ card.icon }}</mat-icon>
+            </div>
+            <div class="card-trend" [class]="getTrendClass(card.trend)">
+              <mat-icon>{{ getTrendIcon(card.trend) }}</mat-icon>
+              <span>{{ formatTrend(card.trend) }}</span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <h2 class="card-value">{{ formatNumber(card.value) }}</h2>
+            <p class="card-title">{{ card.title }}</p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

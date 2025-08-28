@@ -1,0 +1,419 @@
+<app-header></app-header>
+
+<app-sidebar>
+  <div class="patient-form-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <button mat-icon-button routerLink="/patients" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div class="header-text">
+          <h1 class="page-title">
+            <mat-icon class="page-icon">{{
+              isEditMode() ? "edit" : "person_add"
+            }}</mat-icon>
+            {{ isEditMode() ? "تعديل بيانات المريض" : "إضافة مريض جديد" }}
+          </h1>
+          <p class="page-subtitle">
+            {{
+              isEditMode()
+                ? "تحديث معلومات المريض"
+                : "إدخال بيانات المريض الجديد"
+            }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Card -->
+    <mat-card class="form-card">
+      <mat-card-content>
+        <form [formGroup]="patientForm" (ngSubmit)="onSubmit()">
+          <mat-stepper #stepper [linear]="false" class="patient-stepper">
+            <!-- Step 1: Basic Information -->
+            <mat-step [stepControl]="basicInfoGroup" label="المعلومات الأساسية">
+              <div class="step-content">
+                <h3 class="step-title">
+                  <mat-icon>person</mat-icon>
+                  المعلومات الأساسية
+                </h3>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>الاسم الأول *</mat-label>
+                    <input
+                      matInput
+                      formControlName="firstName"
+                      placeholder="أدخل الاسم الأول"
+                    />
+                    <mat-icon matSuffix>person</mat-icon>
+                    <mat-error
+                      *ngIf="patientForm.get('firstName')?.hasError('required')"
+                    >
+                      الاسم الأول مطلوب
+                    </mat-error>
+                    <mat-error
+                      *ngIf="
+                        patientForm.get('firstName')?.hasError('minlength')
+                      "
+                    >
+                      يجب أن يكون الاسم 2 أحرف على الأقل
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>الاسم الأخير *</mat-label>
+                    <input
+                      matInput
+                      formControlName="lastName"
+                      placeholder="أدخل الاسم الأخير"
+                    />
+                    <mat-icon matSuffix>person</mat-icon>
+                    <mat-error
+                      *ngIf="patientForm.get('lastName')?.hasError('required')"
+                    >
+                      الاسم الأخير مطلوب
+                    </mat-error>
+                    <mat-error
+                      *ngIf="patientForm.get('lastName')?.hasError('minlength')"
+                    >
+                      يجب أن يكون الاسم 2 أحرف على الأقل
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>تاريخ الميلاد</mat-label>
+                    <input
+                      matInput
+                      [matDatepicker]="dobPicker"
+                      formControlName="dateOfBirth"
+                      placeholder="اختر تاريخ الميلاد"
+                    />
+                    <mat-datepicker-toggle
+                      matSuffix
+                      [for]="dobPicker"
+                    ></mat-datepicker-toggle>
+                    <mat-datepicker #dobPicker></mat-datepicker>
+                    <mat-hint *ngIf="calculateAge()"
+                      >العمر: {{ calculateAge() }} سنة</mat-hint
+                    >
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>الجنس *</mat-label>
+                    <mat-select
+                      formControlName="gender"
+                      placeholder="اختر الجنس"
+                    >
+                      <mat-option
+                        *ngFor="let gender of genders"
+                        [value]="gender.value"
+                      >
+                        {{ gender.label }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>person</mat-icon>
+                    <mat-error
+                      *ngIf="patientForm.get('gender')?.hasError('required')"
+                    >
+                      الجنس مطلوب
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="step-actions">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    type="button"
+                    (click)="stepper.next()"
+                    [disabled]="basicInfoGroup.invalid"
+                  >
+                    <mat-icon>navigate_next</mat-icon>
+                    التالي
+                  </button>
+                </div>
+              </div>
+            </mat-step>
+
+            <!-- Step 2: Contact Information -->
+            <mat-step [stepControl]="contactInfoGroup" label="معلومات الاتصال">
+              <div class="step-content">
+                <h3 class="step-title">
+                  <mat-icon>contact_phone</mat-icon>
+                  معلومات الاتصال
+                </h3>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>رقم الهاتف *</mat-label>
+                    <input
+                      matInput
+                      formControlName="phone"
+                      placeholder="05xxxxxxxx"
+                      dir="ltr"
+                    />
+                    <mat-icon matSuffix>phone</mat-icon>
+                    <mat-error
+                      *ngIf="patientForm.get('phone')?.hasError('required')"
+                    >
+                      رقم الهاتف مطلوب
+                    </mat-error>
+                    <mat-error
+                      *ngIf="patientForm.get('phone')?.hasError('pattern')"
+                    >
+                      رقم الهاتف غير صحيح (مثال: 0501234567)
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>البريد الإلكتروني</mat-label>
+                    <input
+                      matInput
+                      type="email"
+                      formControlName="email"
+                      placeholder="example@email.com"
+                      dir="ltr"
+                    />
+                    <mat-icon matSuffix>email</mat-icon>
+                    <mat-error
+                      *ngIf="patientForm.get('email')?.hasError('email')"
+                    >
+                      البريد الإلكتروني غير صحيح
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field
+                    appearance="outline"
+                    class="form-field full-width"
+                  >
+                    <mat-label>العنوان</mat-label>
+                    <textarea
+                      matInput
+                      formControlName="address"
+                      placeholder="المدينة - الحي - الشارع"
+                      rows="3"
+                    >
+                    </textarea>
+                    <mat-icon matSuffix>location_on</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <mat-divider></mat-divider>
+
+                <h4 class="section-title">
+                  <mat-icon>emergency</mat-icon>
+                  جهة اتصال الطوارئ
+                </h4>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>اسم جهة اتصال الطوارئ</mat-label>
+                    <input
+                      matInput
+                      formControlName="emergencyContactName"
+                      placeholder="اسم الشخص المراد الاتصال به"
+                    />
+                    <mat-icon matSuffix>person</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>هاتف جهة اتصال الطوارئ</mat-label>
+                    <input
+                      matInput
+                      formControlName="emergencyContactPhone"
+                      placeholder="05xxxxxxxx"
+                      dir="ltr"
+                    />
+                    <mat-icon matSuffix>phone</mat-icon>
+                    <mat-error
+                      *ngIf="
+                        patientForm
+                          .get('emergencyContactPhone')
+                          ?.hasError('pattern')
+                      "
+                    >
+                      رقم الهاتف غير صحيح
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="step-actions">
+                  <button mat-button type="button" (click)="stepper.previous()">
+                    <mat-icon>navigate_before</mat-icon>
+                    السابق
+                  </button>
+
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    type="button"
+                    (click)="stepper.next()"
+                    [disabled]="contactInfoGroup.invalid"
+                  >
+                    <mat-icon>navigate_next</mat-icon>
+                    التالي
+                  </button>
+                </div>
+              </div>
+            </mat-step>
+
+            <!-- Step 3: Medical Information -->
+            <mat-step [stepControl]="medicalInfoGroup" label="المعلومات الطبية">
+              <div class="step-content">
+                <h3 class="step-title">
+                  <mat-icon>local_hospital</mat-icon>
+                  المعلومات الطبية
+                </h3>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>فصيلة الدم</mat-label>
+                    <mat-select
+                      formControlName="bloodType"
+                      placeholder="اختر فصيلة الدم"
+                    >
+                      <mat-option
+                        *ngFor="let bloodType of bloodTypes"
+                        [value]="bloodType.value"
+                      >
+                        {{ bloodType.label }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>colorize</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field
+                    appearance="outline"
+                    class="form-field full-width"
+                  >
+                    <mat-label>الحساسيات</mat-label>
+                    <textarea
+                      matInput
+                      formControlName="allergies"
+                      placeholder="أدخل أي حساسيات معروفة للمريض (مثل: البنسلين، المكسرات، إلخ)"
+                      rows="3"
+                    >
+                    </textarea>
+                    <mat-icon matSuffix>warning</mat-icon>
+                    <mat-hint
+                      >أدخل كل حساسية في سطر منفصل أو افصل بينها
+                      بفاصلة</mat-hint
+                    >
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field
+                    appearance="outline"
+                    class="form-field full-width"
+                  >
+                    <mat-label>الأمراض المزمنة</mat-label>
+                    <textarea
+                      matInput
+                      formControlName="chronicDiseases"
+                      placeholder="أدخل الأمراض المزمنة (مثل: السكري، ضغط الدم، إلخ)"
+                      rows="3"
+                    >
+                    </textarea>
+                    <mat-icon matSuffix>medical_services</mat-icon>
+                    <mat-hint
+                      >أدخل كل مرض في سطر منفصل أو افصل بينها بفاصلة</mat-hint
+                    >
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field
+                    appearance="outline"
+                    class="form-field full-width"
+                  >
+                    <mat-label>ملاحظات إضافية</mat-label>
+                    <textarea
+                      matInput
+                      formControlName="notes"
+                      placeholder="أي ملاحظات أو معلومات إضافية عن المريض"
+                      rows="4"
+                    >
+                    </textarea>
+                    <mat-icon matSuffix>note</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <div class="active-status" *ngIf="isEditMode()">
+                  <mat-checkbox formControlName="isActive">
+                    المريض نشط في النظام
+                  </mat-checkbox>
+                  <mat-hint class="status-hint">
+                    إلغاء التفعيل سيخفي المريض من القوائم الرئيسية
+                  </mat-hint>
+                </div>
+
+                <div class="step-actions">
+                  <button mat-button type="button" (click)="stepper.previous()">
+                    <mat-icon>navigate_before</mat-icon>
+                    السابق
+                  </button>
+
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    type="submit"
+                    [disabled]="patientForm.invalid || loading()"
+                  >
+                    <mat-spinner diameter="20" *ngIf="loading()"></mat-spinner>
+                    <mat-icon *ngIf="!loading()">{{
+                      isEditMode() ? "save" : "person_add"
+                    }}</mat-icon>
+                    <span *ngIf="!loading()">{{
+                      isEditMode() ? "حفظ التغييرات" : "إضافة المريض"
+                    }}</span>
+                    <span *ngIf="loading()">{{
+                      isEditMode() ? "جاري الحفظ..." : "جاري الإضافة..."
+                    }}</span>
+                  </button>
+                </div>
+              </div>
+            </mat-step>
+          </mat-stepper>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Form Summary (Sticky) -->
+    <div class="form-summary" *ngIf="patientForm.dirty">
+      <mat-card class="summary-card">
+        <mat-card-content>
+          <div class="summary-content">
+            <div class="summary-text">
+              <mat-icon class="summary-icon">info</mat-icon>
+              <span>لديك تغييرات غير محفوظة</span>
+            </div>
+            <div class="summary-actions">
+              <button mat-button (click)="onReset()" class="reset-button">
+                <mat-icon>refresh</mat-icon>
+                إعادة تعيين
+              </button>
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="onSubmit()"
+                [disabled]="patientForm.invalid || loading()"
+              >
+                <mat-icon>save</mat-icon>
+                {{ isEditMode() ? "حفظ" : "إضافة" }}
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</app-sidebar>

@@ -1,0 +1,144 @@
+<div class="table-container">
+      <!-- Table Header -->
+      <div class="table-header" *ngIf="title || showActions()">
+        <h2 class="table-title" *ngIf="title">{{ title }}</h2>
+        <div class="table-actions" *ngIf="showActions()">
+          <button
+            mat-raised-button
+            color="primary"
+            *ngIf="canAdd"
+            (click)="onAdd()">
+            <mat-icon>add</mat-icon>
+            إضافة جديد
+          </button>
+          <button
+            mat-stroked-button
+            *ngIf="selection.hasValue()"
+            (click)="onBulkDelete()">
+            <mat-icon>delete</mat-icon>
+            حذف المحدد ({{ selection.selected.length }})
+          </button>
+          <button mat-icon-button [matMenuTriggerFor]="actionsMenu">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <mat-table
+        [dataSource]="data()"
+        matSort
+        (matSortChange)="onSortChange($event)"
+        class="data-table">
+
+        <!-- Selection Column -->
+        <ng-container matColumnDef="select" *ngIf="selectable">
+          <mat-header-cell *matHeaderCellDef>
+            <mat-checkbox
+              (change)="$event ? toggleAllRows() : null"
+              [checked]="selection.hasValue() && isAllSelected()"
+              [indeterminate]="selection.hasValue() && !isAllSelected()">
+            </mat-checkbox>
+          </mat-header-cell>
+          <mat-cell *matCellDef="let row">
+            <mat-checkbox
+              (click)="$event.stopPropagation()"
+              (change)="$event ? selection.toggle(row) : null"
+              [checked]="selection.isSelected(row)">
+            </mat-checkbox>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Data Columns -->
+        <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
+          <mat-header-cell
+            *matHeaderCellDef
+            [mat-sort-header]="column.sortable ? column.key : ''"
+            [style.width]="column.width">
+            {{ column.label }}
+          </mat-header-cell>
+          <mat-cell *matCellDef="let row" [style.width]="column.width">
+            <ng-container [ngSwitch]="column.type">
+              <!-- Text -->
+              <span *ngSwitchDefault>{{ formatValue(row[column.key], column) }}</span>
+
+              <!-- Boolean -->
+              <mat-icon
+                *ngSwitchCase="'boolean'"
+                [class]="row[column.key] ? 'text-success' : 'text-muted'">
+                {{ row[column.key] ? 'check_circle' : 'cancel' }}
+              </mat-icon>
+
+              <!-- Actions -->
+              <div *ngSwitchCase="'actions'" class="actions-cell">
+                <ng-container *ngFor="let action of actions">
+                  <button
+                    mat-icon-button
+                    [color]="action.color"
+                    *ngIf="!action.visible || action.visible(row)"
+                    (click)="action.action(row); $event.stopPropagation()"
+                    [title]="action.label">
+                    <mat-icon>{{ action.icon }}</mat-icon>
+                  </button>
+                </ng-container>
+              </div>
+            </ng-container>
+          </mat-cell>
+        </ng-container>
+
+        <mat-header-row *matHeaderRowDef="displayedColumns()"></mat-header-row>
+        <mat-row
+          *matRowDef="let row; columns: displayedColumns();"
+          (click)="onRowClick(row)"
+          [class.selectable]="!!onRowClick">
+        </mat-row>
+      </mat-table>
+
+      <!-- Paginator -->
+      <mat-paginator
+        *ngIf="showPaginator"
+        [length]="totalItems()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="data().length === 0 && !loading()">
+        <mat-icon class="empty-icon">inbox</mat-icon>
+        <h3>لا توجد بيانات</h3>
+        <p>{{ emptyMessage || 'لم يتم العثور على أي بيانات لعرضها' }}</p>
+        <button
+          mat-raised-button
+          color="primary"
+          *ngIf="canAdd"
+          (click)="onAdd()">
+          <mat-icon>add</mat-icon>
+          إضافة العنصر الأول
+        </button>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-state" *ngIf="loading()">
+        <mat-icon class="loading-spinner">refresh</mat-icon>
+        <p>جاري التحميل...</p>
+      </div>
+    </div>
+
+    <!-- Actions Menu -->
+    <mat-menu #actionsMenu="matMenu">
+      <button mat-menu-item (click)="onExport('excel')">
+        <mat-icon>file_download</mat-icon>
+        تصدير إلى Excel
+      </button>
+      <button mat-menu-item (click)="onExport('pdf')">
+        <mat-icon>picture_as_pdf</mat-icon>
+        تصدير إلى PDF
+      </button>
+      <mat-divider></mat-divider>
+      <button mat-menu-item (click)="onRefresh()">
+        <mat-icon>refresh</mat-icon>
+        تحديث البيانات
+      </button>
+    </mat-menu>

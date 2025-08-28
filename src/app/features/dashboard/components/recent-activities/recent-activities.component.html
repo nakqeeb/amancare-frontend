@@ -1,0 +1,42 @@
+<mat-card class="activities-card">
+  <mat-card-header>
+    <mat-icon mat-card-avatar class="header-icon">history</mat-icon>
+    <mat-card-title>الأنشطة الأخيرة</mat-card-title>
+    <mat-card-subtitle>آخر العمليات في النظام</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>جاري تحميل الأنشطة...</p>
+    </div>
+
+    <!-- Activities List -->
+    <div class="activities-list" *ngIf="!loading">
+      <div
+        class="activity-item"
+        *ngFor="let activity of activities(); trackBy: trackByActivity"
+      >
+        <div class="activity-icon" [class]="'icon-' + activity.color">
+          <mat-icon>{{ activity.icon }}</mat-icon>
+        </div>
+        <div class="activity-content">
+          <h4 class="activity-title">{{ activity.title }}</h4>
+          <p class="activity-description">{{ activity.description }}</p>
+          <span class="activity-time">{{ activity.time }}</span>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-activities" *ngIf="activities().length === 0">
+        <mat-icon class="empty-icon">inbox</mat-icon>
+        <p>لا توجد أنشطة حديثة</p>
+      </div>
+    </div>
+  </mat-card-content>
+
+  <mat-card-actions *ngIf="!loading && activities().length > 0">
+    <button mat-button routerLink="/activities">عرض جميع الأنشطة</button>
+  </mat-card-actions>
+</mat-card>

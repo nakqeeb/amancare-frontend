@@ -1,0 +1,207 @@
+<app-header></app-header>
+
+<app-sidebar>
+  <div class="dashboard-container">
+    <!-- Welcome Header -->
+    <div class="dashboard-header">
+      <div class="welcome-section">
+        <h1 class="welcome-title">
+          مرحباً، {{ currentUser()?.fullName }}
+          <span class="wave-emoji">👋</span>
+        </h1>
+        <p class="welcome-subtitle">
+          {{ getRoleDisplayName(currentUser()?.role) }} -
+          {{ currentUser()?.clinicName }}
+        </p>
+      </div>
+
+      <div class="date-section">
+        <div class="current-date">
+          <mat-icon>event</mat-icon>
+          <span>{{ getCurrentDate() }}</span>
+        </div>
+        <div class="current-time">
+          <mat-icon>access_time</mat-icon>
+          <span>{{ currentTime() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="dashboard-section">
+      <app-stats-cards [loading]="loading()"></app-stats-cards>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="dashboard-grid">
+      <!-- Left Column -->
+      <div class="left-column">
+        <!-- Quick Actions -->
+        <div class="dashboard-section">
+          <app-quick-actions></app-quick-actions>
+        </div>
+
+        <!-- Charts Overview -->
+        <div class="dashboard-section">
+          <app-charts-overview [loading]="loading()"></app-charts-overview>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="right-column">
+        <!-- Recent Activities -->
+        <div class="dashboard-section">
+          <app-recent-activities [loading]="loading()"></app-recent-activities>
+        </div>
+
+        <!-- Today's Appointments -->
+        <div class="dashboard-section">
+          <mat-card class="appointments-card">
+            <mat-card-header>
+              <mat-icon mat-card-avatar class="appointments-icon"
+                >event</mat-icon
+              >
+              <mat-card-title>مواعيد اليوم</mat-card-title>
+              <mat-card-subtitle
+                >{{ todaysAppointments().length }} مواعيد</mat-card-subtitle
+              >
+              <div class="card-actions">
+                <button mat-icon-button [matMenuTriggerFor]="appointmentsMenu">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+              </div>
+            </mat-card-header>
+
+            <mat-card-content>
+              <div
+                class="appointments-list"
+                *ngIf="todaysAppointments().length > 0; else noAppointments"
+              >
+                <div
+                  class="appointment-item"
+                  *ngFor="let appointment of todaysAppointments().slice(0, 5)"
+                  [class]="'status-' + appointment.status.toLowerCase()"
+                >
+                  <div class="appointment-time">
+                    <mat-icon>schedule</mat-icon>
+                    <span>{{ appointment.time }}</span>
+                  </div>
+                  <div class="appointment-details">
+                    <p class="patient-name">{{ appointment.patientName }}</p>
+                    <p class="appointment-type">{{ appointment.type }}</p>
+                  </div>
+                  <div class="appointment-status">
+                    <span class="status-badge">{{
+                      getAppointmentStatusText(appointment.status)
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <ng-template #noAppointments>
+                <div class="empty-appointments">
+                  <mat-icon class="empty-icon">event_busy</mat-icon>
+                  <p>لا توجد مواعيد لهذا اليوم</p>
+                </div>
+              </ng-template>
+            </mat-card-content>
+
+            <mat-card-actions *ngIf="todaysAppointments().length > 0">
+              <button mat-button routerLink="/appointments">
+                عرض جميع المواعيد
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="dashboard-section">
+          <mat-card class="performance-card">
+            <mat-card-header>
+              <mat-icon mat-card-avatar class="performance-icon"
+                >trending_up</mat-icon
+              >
+              <mat-card-title>أداء هذا الشهر</mat-card-title>
+              <mat-card-subtitle>مقارنة بالشهر الماضي</mat-card-subtitle>
+            </mat-card-header>
+
+            <mat-card-content>
+              <div class="metrics-list">
+                <div class="metric-item">
+                  <div class="metric-label">
+                    <mat-icon>people</mat-icon>
+                    <span>المرضى الجدد</span>
+                  </div>
+                  <div class="metric-value positive">
+                    <span>+24</span>
+                    <mat-icon>trending_up</mat-icon>
+                  </div>
+                </div>
+
+                <div class="metric-item">
+                  <div class="metric-label">
+                    <mat-icon>event</mat-icon>
+                    <span>المواعيد المكتملة</span>
+                  </div>
+                  <div class="metric-value positive">
+                    <span>+156</span>
+                    <mat-icon>trending_up</mat-icon>
+                  </div>
+                </div>
+
+                <div class="metric-item">
+                  <div class="metric-label">
+                    <mat-icon>attach_money</mat-icon>
+                    <span>الإيرادات</span>
+                  </div>
+                  <div class="metric-value positive">
+                    <span>+18%</span>
+                    <mat-icon>trending_up</mat-icon>
+                  </div>
+                </div>
+
+                <div class="metric-item">
+                  <div class="metric-label">
+                    <mat-icon>star</mat-icon>
+                    <span>رضا المرضى</span>
+                  </div>
+                  <div class="metric-value">
+                    <span>4.8/5</span>
+                    <mat-icon>star</mat-icon>
+                  </div>
+                </div>
+              </div>
+
+              <div class="performance-progress">
+                <h4>تحقيق الهدف الشهري</h4>
+                <mat-progress-bar
+                  mode="determinate"
+                  [value]="85"
+                  color="primary"
+                ></mat-progress-bar>
+                <span class="progress-text">85% (850 من 1000 موعد)</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menus -->
+    <mat-menu #appointmentsMenu="matMenu">
+      <button mat-menu-item routerLink="/appointments">
+        <mat-icon>event</mat-icon>
+        <span>عرض جميع المواعيد</span>
+      </button>
+      <button mat-menu-item routerLink="/appointments/new">
+        <mat-icon>add</mat-icon>
+        <span>حجز موعد جديد</span>
+      </button>
+      <mat-divider></mat-divider>
+      <button mat-menu-item>
+        <mat-icon>print</mat-icon>
+        <span>طباعة قائمة المواعيد</span>
+      </button>
+    </mat-menu>
+  </div>
+</app-sidebar>

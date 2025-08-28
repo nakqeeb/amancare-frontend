@@ -1,0 +1,19 @@
+<div class="not-found-container">
+  <div class="not-found-content">
+    <mat-icon class="not-found-icon">error_outline</mat-icon>
+    <h1>404</h1>
+    <h2>الصفحة غير موجودة</h2>
+    <p>عذراً، الصفحة التي تبحث عنها غير موجودة أو تم نقلها.</p>
+
+    <div class="actions">
+      <button mat-raised-button color="primary" routerLink="/dashboard">
+        <mat-icon>home</mat-icon>
+        العودة للرئيسية
+      </button>
+      <button mat-button (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        رجوع
+      </button>
+    </div>
+  </div>
+</div>

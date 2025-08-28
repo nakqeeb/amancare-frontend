@@ -1,0 +1,26 @@
+ <div class="dialog-container">
+      <div class="dialog-header">
+        <mat-icon [class]="'dialog-icon ' + data.type">{{ getIcon() }}</mat-icon>
+        <h2 mat-dialog-title>{{ data.title }}</h2>
+      </div>
+
+      <mat-dialog-content class="dialog-content">
+        <p>{{ data.message }}</p>
+      </mat-dialog-content>
+
+      <mat-dialog-actions class="dialog-actions">
+        <button
+          mat-button
+          (click)="onCancel()"
+          class="cancel-button">
+          {{ data.cancelText || 'إلغاء' }}
+        </button>
+        <button
+          mat-raised-button
+          [color]="getButtonColor()"
+          (click)="onConfirm()"
+          class="confirm-button">
+          {{ data.confirmText || 'موافق' }}
+        </button>
+      </mat-dialog-actions>
+    </div>

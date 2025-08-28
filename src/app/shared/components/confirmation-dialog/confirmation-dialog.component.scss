@@ -1,0 +1,62 @@
+.dialog-container {
+  padding: 1rem;
+  min-width: 300px;
+  max-width: 500px;
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.dialog-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.dialog-icon {
+  font-size: 2rem;
+  width: 2rem;
+  height: 2rem;
+}
+
+.dialog-icon.warning {
+  color: var(--warning-color);
+}
+
+.dialog-icon.danger {
+  color: var(--error-color);
+}
+
+.dialog-icon.info {
+  color: var(--info-color);
+}
+
+.dialog-content {
+  margin: 1rem 0;
+}
+
+.dialog-content p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.cancel-button {
+  color: var(--text-muted);
+}
+
+/* RTL Adjustments */
+[dir="rtl"] .dialog-actions {
+  justify-content: flex-start;
+}

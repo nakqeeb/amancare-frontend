@@ -1,0 +1,301 @@
+.patient-form-container {
+  padding: 2rem;
+  background: var(--bg-secondary);
+  min-height: calc(100vh - 64px);
+  position: relative;
+}
+
+/* Page Header */
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.back-button {
+  background: var(--bg-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.header-text {
+  flex: 1;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.page-icon {
+  font-size: 2rem;
+  width: 2rem;
+  height: 2rem;
+  color: var(--primary-color);
+}
+
+.page-subtitle {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Form Card */
+.form-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 6rem;
+  /* Space for sticky summary */
+}
+
+/* Stepper */
+.patient-stepper {
+  background: transparent;
+}
+
+.patient-stepper ::ng-deep .mat-stepper-header {
+  padding: 1.5rem 1rem;
+}
+
+.patient-stepper ::ng-deep .mat-step-header {
+  pointer-events: all !important;
+}
+
+.patient-stepper ::ng-deep .mat-step-header:hover {
+  background-color: var(--bg-light);
+}
+
+/* Step Content */
+.step-content {
+  padding: 2rem 1rem;
+}
+
+.step-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 2rem 0;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.step-title mat-icon {
+  color: var(--primary-color);
+  font-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 2rem 0 1rem 0;
+}
+
+.section-title mat-icon {
+  color: var(--warning-color);
+  font-size: 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+/* Form Layout */
+.form-row {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-start;
+}
+
+.form-field {
+  flex: 1;
+  min-width: 200px;
+}
+
+.form-field.full-width {
+  width: 100%;
+}
+
+/* Active Status */
+.active-status {
+  margin: 2rem 0;
+  padding: 1rem;
+  background: var(--bg-light);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--primary-color);
+}
+
+.status-hint {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Step Actions */
+.step-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.step-actions button {
+  min-width: 120px;
+  height: 44px;
+  font-weight: 500;
+}
+
+/* Form Summary (Sticky) */
+.form-summary {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  max-width: 600px;
+  width: calc(100% - 4rem);
+}
+
+.summary-card {
+  background: var(--bg-primary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 2px solid var(--primary-color);
+}
+
+.summary-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+.summary-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.summary-icon {
+  color: var(--warning-color);
+  font-size: 1.2rem;
+}
+
+.summary-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.reset-button {
+  color: var(--text-muted);
+}
+
+/* RTL Adjustments */
+[dir="rtl"] .active-status {
+  border-left: none;
+  border-right: 4px solid var(--primary-color);
+}
+
+[dir="rtl"] .step-actions {
+  justify-content: flex-start;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .patient-form-container {
+    padding: 1rem;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .form-field {
+    min-width: unset;
+  }
+
+  .step-content {
+    padding: 1.5rem 0.5rem;
+  }
+
+  .step-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .step-actions button {
+    min-width: unset;
+  }
+
+  .summary-content {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .summary-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .summary-actions button {
+    flex: 1;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .patient-stepper ::ng-deep .mat-stepper-header {
+    padding: 1rem 0.5rem;
+  }
+}
+
+/* Form Validation States */
+.mat-mdc-form-field.ng-invalid.ng-touched {
+  --mdc-outlined-text-field-outline-color: var(--error-color);
+}
+
+.mat-mdc-form-field.ng-valid.ng-touched {
+  --mdc-outlined-text-field-outline-color: var(--success-color);
+}
+
+/* Custom Input Styles */
+input[dir="ltr"] {
+  text-align: left;
+}
+
+/* Date Picker RTL Fix */
+.mat-datepicker-toggle {
+  direction: ltr;
+}
+
+/* Loading States */
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mat-mdc-raised-button:disabled {
+  background-color: var(--bg-light) !important;
+  color: var(--text-muted) !important;
+}

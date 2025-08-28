@@ -1,0 +1,129 @@
+ .quick-actions-card {
+   height: 100%;
+ }
+
+ .header-icon {
+   background-color: var(--warning-color) !important;
+   color: white !important;
+ }
+
+ .actions-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+   gap: 1rem;
+   margin-top: 1rem;
+ }
+
+ .action-button {
+   height: auto;
+   padding: 1.5rem;
+   border-radius: var(--radius-lg);
+   transition: all 0.3s ease;
+   text-align: left;
+   border: 2px solid transparent;
+ }
+
+ .action-button:hover {
+   transform: translateY(-2px);
+   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+ }
+
+ .action-button.action-primary:hover {
+   border-color: var(--primary-color);
+   background: rgba(79, 81, 191, 0.05);
+ }
+
+ .action-button.action-success:hover {
+   border-color: var(--success-color);
+   background: rgba(72, 187, 120, 0.05);
+ }
+
+ .action-button.action-info:hover {
+   border-color: var(--info-color);
+   background: rgba(66, 153, 225, 0.05);
+ }
+
+ .action-button.action-warning:hover {
+   border-color: var(--warning-color);
+   background: rgba(237, 137, 54, 0.05);
+ }
+
+ .action-content {
+   display: flex;
+   align-items: flex-start;
+   gap: 1rem;
+   width: 100%;
+ }
+
+ .action-icon {
+   font-size: 2rem;
+   width: 2rem;
+   height: 2rem;
+   flex-shrink: 0;
+ }
+
+ .action-primary .action-icon {
+   color: var(--primary-color);
+ }
+
+ .action-success .action-icon {
+   color: var(--success-color);
+ }
+
+ .action-info .action-icon {
+   color: var(--info-color);
+ }
+
+ .action-warning .action-icon {
+   color: var(--warning-color);
+ }
+
+ .action-text {
+   flex: 1;
+   min-width: 0;
+ }
+
+ .action-text h4 {
+   font-size: 1rem;
+   font-weight: 600;
+   margin: 0 0 0.25rem 0;
+   color: var(--text-primary);
+ }
+
+ .action-text p {
+   font-size: 0.85rem;
+   color: var(--text-muted);
+   margin: 0;
+   line-height: 1.4;
+ }
+
+ /* RTL Adjustments */
+ [dir="rtl"] .action-button {
+   text-align: right;
+ }
+
+ /* Mobile Responsive */
+ @media (max-width: 768px) {
+   .actions-grid {
+     grid-template-columns: 1fr;
+     gap: 0.75rem;
+   }
+
+   .action-button {
+     padding: 1rem;
+   }
+
+   .action-icon {
+     font-size: 1.5rem;
+     width: 1.5rem;
+     height: 1.5rem;
+   }
+
+   .action-text h4 {
+     font-size: 0.9rem;
+   }
+
+   .action-text p {
+     font-size: 0.8rem;
+   }
+ }

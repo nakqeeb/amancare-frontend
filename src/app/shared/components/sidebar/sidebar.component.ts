@@ -1,0 +1,199 @@
+// ===================================================================
+// src/app/shared/components/sidebar/sidebar.component.ts
+// ===================================================================
+import { Component, inject, signal, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule, Router } from '@angular/router';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatListModule } from '@angular/material/list';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
+
+import { AuthService } from '../../../core/services/auth.service';
+
+interface MenuItem {
+  title: string;
+  icon: string;
+  route: string;
+  roles?: string[];
+  children?: MenuItem[];
+  badge?: number;
+  expanded?: boolean;
+}
+
+
+@Component({
+  selector: 'app-sidebar',
+  imports: [
+    CommonModule,
+    RouterModule,
+    MatSidenavModule,
+    MatListModule,
+    MatIconModule,
+    MatButtonModule,
+    MatDividerModule
+  ],
+  templateUrl: './sidebar.component.html',
+  styleUrl: './sidebar.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+
+export class SidebarComponent implements OnInit, OnDestroy {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  // Signals
+  currentUser = this.authService.currentUser;
+  isOpen = signal(true);
+  sidenavMode = signal<'side' | 'over'>('side');
+  menuItems = signal<MenuItem[]>([]);
+
+  private eventListener?: () => void;
+
+  ngOnInit(): void {
+    this.setupMenuItems();
+    this.handleResize();
+    this.setupEventListeners();
+
+    // مراقبة تغيير حجم النافذة
+    window.addEventListener('resize', () => this.handleResize());
+  }
+
+  ngOnDestroy(): void {
+    if (this.eventListener) {
+      document.removeEventListener('toggleSidebar', this.eventListener);
+    }
+    window.removeEventListener('resize', () => this.handleResize());
+  }
+
+  private setupMenuItems(): void {
+    const items: MenuItem[] = [
+      {
+        title: 'لوحة التحكم',
+        icon: 'dashboard',
+        route: '/dashboard'
+      },
+      {
+        title: 'إدارة المرضى',
+        icon: 'people',
+        route: '/patients',
+        badge: 5
+      },
+      {
+        title: 'المواعيد',
+        icon: 'event',
+        route: '/appointments',
+        badge: 12
+      },
+      {
+        title: 'السجلات الطبية',
+        icon: 'folder_shared',
+        route: '/medical-records',
+        roles: ['DOCTOR', 'NURSE', 'ADMIN', 'SYSTEM_ADMIN']
+      },
+      {
+        title: 'الفواتير',
+        icon: 'receipt_long',
+        route: '/invoices',
+        badge: 3
+      },
+      {
+        title: 'التقارير',
+        icon: 'assessment',
+        route: '/reports',
+        roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR'],
+        children: [
+          {
+            title: 'التقارير المالية',
+            icon: 'attach_money',
+            route: '/reports/financial'
+          },
+          {
+            title: 'تقارير المرضى',
+            icon: 'person_search',
+            route: '/reports/patients'
+          },
+          {
+            title: 'تقارير المواعيد',
+            icon: 'event_note',
+            route: '/reports/appointments'
+          }
+        ]
+      },
+      {
+        title: 'الإدارة',
+        icon: 'admin_panel_settings',
+        route: '/management',
+        roles: ['ADMIN', 'SYSTEM_ADMIN'],
+        children: [
+          {
+            title: 'إدارة المستخدمين',
+            icon: 'group',
+            route: '/users',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
+          },
+          {
+            title: 'إدارة العيادات',
+            icon: 'business',
+            route: '/clinics',
+            roles: ['SYSTEM_ADMIN']
+          },
+          {
+            title: 'الإعدادات',
+            icon: 'settings',
+            route: '/settings'
+          }
+        ]
+      }
+    ];
+
+    this.menuItems.set(items);
+  }
+
+  private setupEventListeners(): void {
+    this.eventListener = () => {
+      this.isOpen.update(open => !open);
+    };
+
+    document.addEventListener('toggleSidebar', this.eventListener);
+  }
+
+  private handleResize(): void {
+    const isMobile = window.innerWidth < 768;
+
+    if (isMobile) {
+      this.sidenavMode.set('over');
+      this.isOpen.set(false);
+    } else {
+      this.sidenavMode.set('side');
+      this.isOpen.set(true);
+    }
+  }
+
+  toggleMenuItem(item: MenuItem): void {
+    if (item.children) {
+      item.expanded = !item.expanded;
+    }
+  }
+
+  hasPermission(roles?: string[]): boolean {
+    if (!roles || roles.length === 0) {
+      return true;
+    }
+
+    return this.authService.hasRole(roles);
+  }
+
+  getRoleDisplayName(role?: string): string {
+    const roleNames: { [key: string]: string } = {
+      'SYSTEM_ADMIN': 'مدير النظام',
+      'ADMIN': 'مدير العيادة',
+      'DOCTOR': 'طبيب',
+      'NURSE': 'ممرض/ممرضة',
+      'RECEPTIONIST': 'موظف استقبال'
+    };
+
+    return roleNames[role || ''] || 'مستخدم';
+  }
+}

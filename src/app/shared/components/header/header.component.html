@@ -1,0 +1,115 @@
+<mat-toolbar class="app-header">
+  <div class="header-content">
+    <!-- Menu Toggle Button -->
+    <button mat-icon-button (click)="toggleSidebar()" class="menu-toggle">
+      <mat-icon>menu</mat-icon>
+    </button>
+
+    <!-- Logo & Title -->
+    <div class="logo-section" routerLink="/dashboard">
+      <mat-icon class="logo-icon">local_hospital</mat-icon>
+      <span class="app-title">نظام أمان كير</span>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-container">
+      <mat-icon>search</mat-icon>
+      <input
+        type="text"
+        placeholder="البحث السريع..."
+        class="search-input"
+        [ngModel]="searchQuery()"
+        (keyup.enter)="onSearch()"
+      />
+    </div>
+
+    <!-- Header Actions -->
+    <div class="header-actions">
+      <!-- Notifications -->
+      <button
+        mat-icon-button
+        [matMenuTriggerFor]="notificationMenu"
+        class="action-button"
+      >
+        <mat-icon matBadge="3" matBadgeColor="warn">notifications</mat-icon>
+      </button>
+
+      <!-- Theme Toggle -->
+      <button
+        mat-icon-button
+        (click)="toggleTheme()"
+        class="action-button"
+        [title]="isDarkTheme() ? 'الوضع الفاتح' : 'الوضع الداكن'"
+      >
+        <mat-icon>{{ isDarkTheme() ? "light_mode" : "dark_mode" }}</mat-icon>
+      </button>
+
+      <!-- User Menu -->
+      <button
+        mat-button
+        [matMenuTriggerFor]="userMenu"
+        class="user-menu-trigger"
+      >
+        <div class="user-info">
+          <div class="user-avatar">
+            <mat-icon>account_circle</mat-icon>
+          </div>
+          <div class="user-details" *ngIf="currentUser()">
+            <span class="user-name">{{ currentUser()?.fullName }}</span>
+            <span class="user-role">{{
+              getRoleDisplayName(currentUser()?.role)
+            }}</span>
+          </div>
+        </div>
+        <mat-icon>arrow_drop_down</mat-icon>
+      </button>
+    </div>
+  </div>
+</mat-toolbar>
+
+<!-- Notifications Menu -->
+<mat-menu #notificationMenu="matMenu" class="notification-menu">
+  <div class="menu-header">
+    <h3>الإشعارات</h3>
+    <button mat-button color="primary">مشاهدة الكل</button>
+  </div>
+  <mat-divider></mat-divider>
+  <button mat-menu-item class="notification-item">
+    <mat-icon color="primary">schedule</mat-icon>
+    <div class="notification-content">
+      <p>موعد جديد مع المريض أحمد محمد</p>
+      <span class="notification-time">منذ 5 دقائق</span>
+    </div>
+  </button>
+  <button mat-menu-item class="notification-item">
+    <mat-icon color="warn">payment</mat-icon>
+    <div class="notification-content">
+      <p>دفعة جديدة: 500 ريال</p>
+      <span class="notification-time">منذ 10 دقائق</span>
+    </div>
+  </button>
+  <button mat-menu-item class="notification-item">
+    <mat-icon color="accent">person_add</mat-icon>
+    <div class="notification-content">
+      <p>مريض جديد: سارة أحمد</p>
+      <span class="notification-time">منذ 20 دقيقة</span>
+    </div>
+  </button>
+</mat-menu>
+
+<!-- User Menu -->
+<mat-menu #userMenu="matMenu" class="user-menu">
+  <button mat-menu-item routerLink="/profile">
+    <mat-icon>person</mat-icon>
+    <span>الملف الشخصي</span>
+  </button>
+  <button mat-menu-item routerLink="/settings">
+    <mat-icon>settings</mat-icon>
+    <span>الإعدادات</span>
+  </button>
+  <mat-divider></mat-divider>
+  <button mat-menu-item (click)="logout()">
+    <mat-icon color="warn">exit_to_app</mat-icon>
+    <span>تسجيل الخروج</span>
+  </button>
+</mat-menu>
