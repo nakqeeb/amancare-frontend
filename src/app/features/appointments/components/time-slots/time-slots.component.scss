@@ -1,0 +1,155 @@
+.time-slots-container {
+  padding: 1rem;
+}
+
+.no-slots {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+    font-size: 1rem;
+  }
+}
+
+.slots-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.time-period {
+  .period-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.75rem 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+
+    mat-icon {
+      font-size: 1.2rem;
+      width: 1.2rem;
+      height: 1.2rem;
+    }
+  }
+
+  .slots-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+mat-chip-option {
+  min-width: 80px;
+  height: 40px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+
+  &.available {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-color: #4caf50;
+
+    &:hover {
+      background-color: #c8e6c9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  &.booked {
+    background-color: #ffebee;
+    color: #c62828;
+    border-color: #ef5350;
+    cursor: not-allowed;
+    opacity: 0.7;
+
+    .booked-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      margin-right: 4px;
+    }
+  }
+
+  &.selected {
+    background-color: #3f51b5;
+    color: white;
+    border-color: #3f51b5;
+    font-weight: 600;
+
+    &::after {
+      content: '✓';
+      margin-right: 4px;
+    }
+  }
+
+  .slot-time {
+    font-family: 'Roboto Mono', monospace;
+  }
+}
+
+.slots-legend {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      border: 2px solid;
+
+      &.available {
+        background-color: #e8f5e9;
+        border-color: #4caf50;
+      }
+
+      &.booked {
+        background-color: #ffebee;
+        border-color: #ef5350;
+      }
+
+      &.selected {
+        background-color: #3f51b5;
+        border-color: #3f51b5;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .slots-row {
+    justify-content: center;
+  }
+
+  mat-chip-option {
+    min-width: 70px;
+    font-size: 0.85rem;
+  }
+}

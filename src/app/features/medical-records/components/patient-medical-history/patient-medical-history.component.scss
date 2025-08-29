@@ -1,0 +1,435 @@
+// ===================================================================
+// 4. PATIENT MEDICAL HISTORY COMPONENT STYLES
+// src/app/features/medical-records/components/patient-medical-history/patient-medical-history.component.scss
+// ===================================================================
+.patient-history-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--background-color);
+}
+
+.main-content {
+  flex: 1;
+  // margin-right: 260px;
+  margin-top: 64px;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+// Loading State
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  color: var(--text-muted);
+
+  p {
+    margin-top: 1rem;
+    font-size: 1rem;
+  }
+}
+
+// Page Header
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .back-btn {
+      margin-top: 0.25rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .subtitle {
+      margin: 0.25rem 0 0;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 1rem;
+
+    button {
+      gap: 0.5rem;
+    }
+  }
+}
+
+// Patient Info Card
+.patient-info-card {
+  margin-bottom: 2rem;
+
+  mat-card-content {
+    padding: 1.5rem !important;
+
+    .patient-info {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+
+      .patient-avatar {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        mat-icon {
+          color: white;
+          font-size: 40px;
+          width: 40px;
+          height: 40px;
+        }
+      }
+
+      .patient-details {
+        flex: 1;
+
+        h3 {
+          margin: 0 0 0.75rem 0;
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+
+        .info-row {
+          display: flex;
+          gap: 1.5rem;
+          flex-wrap: wrap;
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+
+          span {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+
+            mat-icon {
+              font-size: 18px;
+              width: 18px;
+              height: 18px;
+              opacity: 0.7;
+            }
+          }
+        }
+      }
+
+      .patient-stats {
+        display: flex;
+        gap: 2rem;
+
+        .stat {
+          text-align: center;
+
+          .stat-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.25rem;
+          }
+
+          .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Quick Info Row
+.quick-info-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  .info-card {
+    &.allergies-card {
+      border-right: 3px solid var(--warning-color);
+    }
+
+    &.conditions-card {
+      border-right: 3px solid var(--info-color);
+    }
+
+    mat-card-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+
+      mat-card-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+
+    mat-card-content {
+      padding: 1rem !important;
+
+      .chips-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+
+        mat-chip {
+          font-size: 0.9rem;
+        }
+      }
+    }
+  }
+}
+
+// Tab Content
+.tab-content {
+  padding: 2rem 0;
+
+  // Empty State
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+
+    mat-icon {
+      font-size: 5rem;
+      width: 5rem;
+      height: 5rem;
+      opacity: 0.3;
+      margin-bottom: 1.5rem;
+    }
+
+    h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0 0 2rem 0;
+      font-size: 0.95rem;
+    }
+
+    button {
+      gap: 0.5rem;
+    }
+  }
+
+  // Year Content
+  .year-content {
+    padding: 1rem;
+
+    .month-section {
+      margin-bottom: 2rem;
+
+      .month-header {
+        margin: 0 0 1rem 0;
+        padding: 0.5rem 1rem;
+        background-color: var(--background-light);
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .records-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+  }
+
+  // Record Card
+  .record-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    mat-card-content {
+      padding: 1.25rem !important;
+
+      .record-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+
+        .record-date {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+            opacity: 0.7;
+          }
+        }
+
+        .record-badges {
+          display: flex;
+          gap: 0.5rem;
+
+          mat-chip {
+            font-size: 0.8rem;
+            height: 24px;
+            padding: 0 8px;
+
+            &.status-draft {
+              background-color: rgba(246, 173, 85, 0.1);
+              color: #f6ad55;
+            }
+
+            &.status-completed {
+              background-color: rgba(72, 187, 120, 0.1);
+              color: #48bb78;
+            }
+
+            &.status-locked {
+              background-color: rgba(252, 92, 125, 0.1);
+              color: #fc5c7d;
+            }
+          }
+        }
+      }
+
+      .record-content {
+        margin-bottom: 1rem;
+
+        h4 {
+          margin: 0 0 0.5rem 0;
+          font-size: 1rem;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+
+        .diagnosis,
+        .doctor {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin: 0.25rem 0;
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+
+          mat-icon {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+            opacity: 0.7;
+          }
+        }
+      }
+
+      .record-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.25rem;
+        border-top: 1px solid var(--border-color);
+        padding-top: 0.75rem;
+      }
+    }
+  }
+
+  // All Records List
+  .all-records-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .main-content {
+    margin-right: 0;
+    margin-top: 56px;
+    padding: 1rem;
+  }
+
+  .patient-info-card {
+    .patient-info {
+      flex-direction: column;
+      text-align: center;
+
+      .patient-details {
+        .info-row {
+          justify-content: center;
+        }
+      }
+
+      .patient-stats {
+        width: 100%;
+        justify-content: space-around;
+      }
+    }
+  }
+
+  .quick-info-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.status-draft {
+  background-color: #e0e0e0;
+  color: #424242;
+}
+
+.status-completed {
+  background-color: #4caf50;
+  color: white;
+}
+
+.status-reviewed {
+  background-color: #2196f3;
+  color: white;
+}
+
+.status-amended {
+  background-color: #ff9800;
+  color: white;
+}
+
+.status-locked {
+  background-color: #f44336;
+  color: white;
+}

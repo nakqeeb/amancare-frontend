@@ -19,15 +19,19 @@ export interface TableColumn {
   type?: 'text' | 'number' | 'date' | 'boolean' | 'actions';
   sortable?: boolean;
   width?: string;
+  searchable?: boolean; // Add this
   format?: (value: any) => string;
+  cellTemplate?: (row: any) => string; // Add this
 }
 
 export interface TableAction {
   label: string;
   icon: string;
-  color?: 'primary' | 'accent' | 'warn';
+  // color?: 'primary' | 'accent' | 'warn';
+  color?: 'primary' | 'accent' | 'warn' | 'success' | 'info'; // Expand color options
   action: (row: any) => void;
   visible?: (row: any) => boolean;
+  show?: (row: any) => boolean; // Add this for backward compatibility
 }
 
 @Component({

@@ -1,0 +1,223 @@
+<!-- ===================================================================
+1. MEDICAL RECORD LIST COMPONENT TEMPLATE
+src/app/features/medical-records/components/medical-record-list/medical-record-list.component.html
+=================================================================== -->
+<div class="medical-records-container">
+  <app-header></app-header>
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <h1>السجلات الطبية</h1>
+        <p class="subtitle">عرض وإدارة جميع السجلات الطبية</p>
+      </div>
+      <div class="header-actions">
+        @if (isDoctor()) {
+        <button
+          mat-raised-button
+          color="primary"
+          routerLink="/medical-records/new"
+          class="add-btn"
+        >
+          <mat-icon>add</mat-icon>
+          إضافة سجل طبي
+        </button>
+        }
+      </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-row">
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-icon records">
+            <mat-icon>description</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ totalRecords() }}</span>
+            <span class="stat-label">إجمالي السجلات</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-icon completed">
+            <mat-icon>task_alt</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ completedCount() }}</span>
+            <span class="stat-label">سجلات مكتملة</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-icon draft">
+            <mat-icon>edit_note</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ draftCount() }}</span>
+            <span class="stat-label">مسودات</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-icon locked">
+            <mat-icon>lock</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ lockedCount() }}</span>
+            <span class="stat-label">سجلات مقفلة</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Filters Card -->
+    <mat-card class="filters-card">
+      <mat-card-header>
+        <mat-card-title>تصفية السجلات</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="filterForm" class="filter-form">
+          <div class="filter-row">
+            <!-- Search -->
+            <mat-form-field appearance="outline" class="search-field">
+              <mat-label>البحث</mat-label>
+              <input
+                matInput
+                formControlName="searchQuery"
+                placeholder="اسم المريض، التشخيص..."
+              />
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+
+            <!-- Visit Type -->
+            <mat-form-field appearance="outline">
+              <mat-label>نوع الزيارة</mat-label>
+              <mat-select formControlName="visitType">
+                @for (type of visitTypes; track type.value) {
+                <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <!-- Status -->
+            <mat-form-field appearance="outline">
+              <mat-label>الحالة</mat-label>
+              <mat-select formControlName="status">
+                @for (status of statusOptions; track status.value) {
+                <mat-option [value]="status.value">{{
+                  status.label
+                }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <!-- Date Range -->
+            <mat-form-field appearance="outline">
+              <mat-label>من تاريخ</mat-label>
+              <input
+                matInput
+                [matDatepicker]="fromPicker"
+                formControlName="fromDate"
+              />
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="fromPicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #fromPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>إلى تاريخ</mat-label>
+              <input
+                matInput
+                [matDatepicker]="toPicker"
+                formControlName="toDate"
+              />
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="toPicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #toPicker></mat-datepicker>
+            </mat-form-field>
+
+            <!-- Reset Button -->
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="onResetFilters()"
+              class="reset-btn"
+            >
+              <mat-icon>clear</mat-icon>
+              مسح الفلاتر
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Medical Records Table -->
+    <mat-card class="table-card">
+      <mat-card-header>
+        <mat-card-title>
+          قائمة السجلات الطبية
+          <span class="count-badge">{{ totalRecords() }}</span>
+        </mat-card-title>
+        <div class="table-actions">
+          <button mat-icon-button (click)="onRefresh()">
+            <mat-icon>refresh</mat-icon>
+          </button>
+          <button mat-icon-button [matMenuTriggerFor]="exportMenu">
+            <mat-icon>download</mat-icon>
+          </button>
+          <mat-menu #exportMenu="matMenu">
+            <button mat-menu-item (click)="onExport({ format: 'excel' })">
+              <mat-icon>table_chart</mat-icon>
+              تصدير Excel
+            </button>
+            <button mat-menu-item (click)="onExport({ format: 'pdf' })">
+              <mat-icon>picture_as_pdf</mat-icon>
+              تصدير PDF
+            </button>
+          </mat-menu>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        <!-- <app-data-table
+          #dataTable
+          [data]="medicalRecords()"
+          [columns]="columns"
+          [actions]="actions"
+          [loading]="loading()"
+          [pageSize]="10"
+          [pageSizeOptions]="[5, 10, 25, 50]"
+          [showCheckbox]="false"
+          [showPagination]="true"
+          [showFilter]="false"
+          [emptyMessage]="'لا توجد سجلات طبية'"
+          (refresh)="onRefresh()"
+        ></app-data-table> -->
+
+        <app-data-table
+          #dataTable
+          [columns]="columns"
+          [actions]="actions"
+          [selectable]="false"
+          [showPaginator]="true"
+          [pageSizeOptions]="[5, 10, 25, 50]"
+          [emptyMessage]="'لا توجد سجلات طبية'"
+          (refresh)="onRefresh()"
+        ></app-data-table>
+      </mat-card-content>
+    </mat-card>
+  </main>
+</div>

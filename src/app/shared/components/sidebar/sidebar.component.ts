@@ -81,6 +81,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
         badge: 5
       },
       {
+        title: 'السجلات الطبية',
+        icon: 'report',
+        route: '/medical-records',
+        badge: 25
+      },
+      {
         title: 'المواعيد',
         icon: 'event',
         route: '/appointments',

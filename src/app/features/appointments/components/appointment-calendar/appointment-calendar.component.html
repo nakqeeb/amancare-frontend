@@ -1,0 +1,220 @@
+<div class="calendar-container">
+  <app-header></app-header>
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <h1>تقويم المواعيد</h1>
+        <p class="subtitle">عرض جميع المواعيد في التقويم</p>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="primary" (click)="onNewAppointment()">
+          <mat-icon>add</mat-icon>
+          حجز موعد جديد
+        </button>
+      </div>
+    </div>
+
+    <!-- Calendar Controls -->
+    <mat-card class="calendar-controls">
+      <div class="controls-row">
+        <div class="navigation">
+          <button mat-icon-button (click)="previousMonth()">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+          <h2 class="month-year">{{ getMonthYear() }}</h2>
+          <button mat-icon-button (click)="nextMonth()">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <button mat-stroked-button (click)="selectToday()" class="today-btn">
+            اليوم
+          </button>
+        </div>
+
+        <div class="filters">
+          <mat-form-field appearance="outline">
+            <mat-label>الطبيب</mat-label>
+            <mat-select
+              [(ngModel)]="selectedDoctor"
+              (selectionChange)="onDoctorChange()"
+            >
+              @for (doctor of doctors; track doctor.id) {
+              <mat-option [value]="doctor.id">{{ doctor.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <div class="view-modes">
+            <button
+              mat-stroked-button
+              [class.active]="viewMode() === 'month'"
+              (click)="viewMode.set('month'); onViewModeChange()"
+            >
+              <mat-icon>calendar_view_month</mat-icon>
+              شهر
+            </button>
+            <button
+              mat-stroked-button
+              [class.active]="viewMode() === 'week'"
+              (click)="viewMode.set('week'); onViewModeChange()"
+            >
+              <mat-icon>view_week</mat-icon>
+              أسبوع
+            </button>
+            <button
+              mat-stroked-button
+              [class.active]="viewMode() === 'day'"
+              (click)="viewMode.set('day'); onViewModeChange()"
+            >
+              <mat-icon>today</mat-icon>
+              يوم
+            </button>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+
+    <!-- Calendar Grid -->
+    <div class="calendar-wrapper">
+      <mat-card class="calendar-card">
+        <!-- Week Days Header -->
+        <div class="weekdays-header">
+          @for (day of weekDays; track day) {
+          <div class="weekday">{{ day }}</div>
+          }
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="calendar-grid">
+          @for (week of calendarWeeks(); track $index) {
+          <div class="calendar-week">
+            @for (day of week.days; track day.date) {
+            <div [class]="getDayClasses(day)" (click)="selectDate(day)">
+              <div class="day-header">
+                <span class="day-number">{{ day.day }}</span>
+                @if (day.appointments.length > 0) {
+                <!-- <mat-badge
+                  [content]="day.appointments.length.toString()"
+                  matBadgeColor="primary"
+                  matBadgeSize="small"
+                ></mat-badge> -->
+                <span
+                  [matBadge]="day.appointments.length"
+                  matBadgeColor="primary"
+                  matBadgeSize="small"
+                >
+                </span>
+                }
+              </div>
+
+              @if (day.isCurrentMonth && day.appointments.length > 0) {
+              <div class="day-appointments">
+                @for (apt of day.appointments.slice(0, 3); track apt.id) {
+                <div
+                  class="appointment-chip"
+                  [style.background-color]="getStatusColor(apt.status)"
+                  [matTooltip]="
+                    apt.patientName + ' - ' + formatTime(apt.appointmentTime)
+                  "
+                  (click)="onViewAppointment(apt); $event.stopPropagation()"
+                >
+                  <span class="apt-time">{{
+                    formatTime(apt.appointmentTime)
+                  }}</span>
+                  <span class="apt-patient">{{ apt.patientName }}</span>
+                </div>
+                } @if (day.appointments.length > 3) {
+                <div class="more-appointments">
+                  +{{ day.appointments.length - 3 }} أخرى
+                </div>
+                }
+              </div>
+              }
+            </div>
+            }
+          </div>
+          }
+        </div>
+      </mat-card>
+
+      <!-- Selected Date Appointments -->
+      @if (selectedDate()) {
+      <mat-card class="selected-date-card">
+        <mat-card-header>
+          <mat-card-title>
+            مواعيد {{ selectedDate() | date : "fullDate" : "ar" }}
+            <mat-chip class="count-chip">{{
+              selectedDateAppointments().length
+            }}</mat-chip>
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if (selectedDateAppointments().length === 0) {
+          <div class="no-appointments">
+            <mat-icon>event_available</mat-icon>
+            <p>لا توجد مواعيد في هذا اليوم</p>
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="onNewAppointment()"
+            >
+              حجز موعد جديد
+            </button>
+          </div>
+          } @else {
+          <div class="appointments-list">
+            @for (appointment of selectedDateAppointments(); track
+            appointment.id) {
+            <div class="appointment-item">
+              <div class="appointment-time">
+                <mat-icon>schedule</mat-icon>
+                {{ formatTime(appointment.appointmentTime) }}
+              </div>
+              <div class="appointment-details">
+                <h4>{{ appointment.patientName }}</h4>
+                <p>{{ appointment.chiefComplaint }}</p>
+                <div class="appointment-meta">
+                  <mat-chip
+                    [style.background-color]="
+                      getStatusColor(appointment.status) + '20'
+                    "
+                    [style.color]="getStatusColor(appointment.status)"
+                  >
+                    {{ appointment.status }}
+                  </mat-chip>
+                  <span class="doctor">{{ appointment.doctorName }}</span>
+                </div>
+              </div>
+              <div class="appointment-actions">
+                <button mat-icon-button [matMenuTriggerFor]="menu">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menu="matMenu">
+                  <button
+                    mat-menu-item
+                    (click)="onViewAppointment(appointment)"
+                  >
+                    <mat-icon>visibility</mat-icon>
+                    عرض التفاصيل
+                  </button>
+                  <button
+                    mat-menu-item
+                    (click)="onEditAppointment(appointment)"
+                  >
+                    <mat-icon>edit</mat-icon>
+                    تعديل
+                  </button>
+                </mat-menu>
+              </div>
+            </div>
+            }
+          </div>
+          }
+        </mat-card-content>
+      </mat-card>
+      }
+    </div>
+  </main>
+</div>

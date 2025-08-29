@@ -1,0 +1,482 @@
+<!-- ===================================================================
+3. MEDICAL RECORD DETAILS COMPONENT TEMPLATE
+src/app/features/medical-records/components/medical-record-details/medical-record-details.component.html
+=================================================================== -->
+<div class="medical-record-details-container">
+  <app-header></app-header>
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    @if (loading()) {
+    <div class="loading-container">
+      <mat-spinner></mat-spinner>
+      <p>جاري تحميل السجل الطبي...</p>
+    </div>
+    } @else if (medicalRecord()) {
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <button mat-icon-button routerLink="/medical-records" class="back-btn">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div>
+          <h1>السجل الطبي #{{ medicalRecord()!.id }}</h1>
+          <p class="subtitle">{{ formatDate(medicalRecord()!.visitDate) }}</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        @if (canEdit()) {
+        <button mat-stroked-button (click)="onEdit()">
+          <mat-icon>edit</mat-icon>
+          تعديل
+        </button>
+        }
+        <button mat-stroked-button (click)="onPrint()">
+          <mat-icon>print</mat-icon>
+          طباعة
+        </button>
+        @if (canLock()) {
+        <button mat-stroked-button color="warn" (click)="onLockRecord()">
+          <mat-icon>lock</mat-icon>
+          قفل السجل
+        </button>
+        }
+        <button mat-stroked-button [matMenuTriggerFor]="actionsMenu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #actionsMenu="matMenu">
+          <button mat-menu-item (click)="onViewPatient()">
+            <mat-icon>person</mat-icon>
+            عرض ملف المريض
+          </button>
+          <button mat-menu-item (click)="onViewHistory()">
+            <mat-icon>history</mat-icon>
+            التاريخ المرضي
+          </button>
+        </mat-menu>
+      </div>
+    </div>
+
+    <!-- Status Card -->
+    <mat-card class="status-card">
+      <mat-card-content>
+        <div class="status-content">
+          <div class="status-info">
+            <h3>معلومات الزيارة</h3>
+            <div class="visit-info">
+              <mat-chip [class]="getStatusClass(medicalRecord()!.status)">
+                {{ getStatusLabel(medicalRecord()!.status) }}
+              </mat-chip>
+              <span class="visit-type">
+                <mat-icon>event</mat-icon>
+                {{ getVisitTypeLabel(medicalRecord()!.visitType) }}
+              </span>
+              <span class="visit-date">
+                <mat-icon>calendar_today</mat-icon>
+                {{ formatDate(medicalRecord()!.visitDate) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Main Content Tabs -->
+    <mat-tab-group>
+      <!-- Overview Tab -->
+      <mat-tab label="نظرة عامة">
+        <div class="tab-content">
+          <!-- Patient & Doctor Info -->
+          <div class="info-grid">
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>person</mat-icon>
+                  معلومات المريض
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="info-list">
+                  <div class="info-item">
+                    <span class="label">الاسم:</span>
+                    <span class="value">{{
+                      medicalRecord()!.patientName
+                    }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">رقم الملف:</span>
+                    <span class="value">#{{ medicalRecord()!.patientId }}</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>medical_services</mat-icon>
+                  الطبيب المعالج
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="info-list">
+                  <div class="info-item">
+                    <span class="label">الطبيب:</span>
+                    <span class="value">{{ medicalRecord()!.doctorName }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">التاريخ:</span>
+                    <span class="value">{{
+                      formatDate(medicalRecord()!.createdAt!)
+                    }}</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <!-- Chief Complaint & Present Illness -->
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>report_problem</mat-icon>
+                الشكوى والفحص
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="medical-section">
+                <h4>الشكوى الرئيسية</h4>
+                <p>{{ medicalRecord()!.chiefComplaint }}</p>
+              </div>
+              <mat-divider></mat-divider>
+              <div class="medical-section">
+                <h4>تاريخ المرض الحالي</h4>
+                <p>{{ medicalRecord()!.presentIllness }}</p>
+              </div>
+              <mat-divider></mat-divider>
+              <div class="medical-section">
+                <h4>الفحص الجسدي</h4>
+                <p>{{ medicalRecord()!.physicalExamination }}</p>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Diagnosis -->
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>medical_information</mat-icon>
+                التشخيص
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="diagnosis-list">
+                @for (diagnosis of medicalRecord()!.diagnosis; track diagnosis)
+                {
+                <div class="diagnosis-item">
+                  <div class="diagnosis-header">
+                    @if (diagnosis.isPrimary) {
+                    <mat-chip color="primary" selected>رئيسي</mat-chip>
+                    }
+                    <mat-chip
+                      [color]="
+                        diagnosis.type === 'CONFIRMED' ? 'accent' : 'default'
+                      "
+                    >
+                      {{ getDiagnosisTypeLabel(diagnosis.type) }}
+                    </mat-chip>
+                  </div>
+                  <h4>{{ diagnosis.description }}</h4>
+                  @if (diagnosis.code) {
+                  <span class="icd-code">ICD-10: {{ diagnosis.code }}</span>
+                  } @if (diagnosis.notes) {
+                  <p class="diagnosis-notes">{{ diagnosis.notes }}</p>
+                  }
+                </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Treatment Plan -->
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>healing</mat-icon>
+                خطة العلاج
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <p class="treatment-plan">{{ medicalRecord()!.treatmentPlan }}</p>
+              @if (medicalRecord()!.followUpDate) {
+              <div class="follow-up-info">
+                <mat-icon>event</mat-icon>
+                <span
+                  >موعد المتابعة:
+                  {{ formatDate(medicalRecord()!.followUpDate!) }}</span
+                >
+              </div>
+              } @if (medicalRecord()!.followUpInstructions) {
+              <div class="follow-up-instructions">
+                <h4>تعليمات المتابعة</h4>
+                <p>{{ medicalRecord()!.followUpInstructions }}</p>
+              </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <!-- Vital Signs Tab -->
+      <mat-tab label="العلامات الحيوية">
+        <div class="tab-content">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>favorite</mat-icon>
+                العلامات الحيوية
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="vital-signs-grid">
+                @if (medicalRecord()!.vitalSigns.temperature) {
+                <div class="vital-item">
+                  <mat-icon>thermostat</mat-icon>
+                  <div class="vital-content">
+                    <span class="vital-label">درجة الحرارة</span>
+                    <span class="vital-value"
+                      >{{ medicalRecord()!.vitalSigns.temperature }}°C</span
+                    >
+                  </div>
+                </div>
+                } @if (medicalRecord()!.vitalSigns.bloodPressureSystolic) {
+                <div class="vital-item">
+                  <mat-icon>bloodtype</mat-icon>
+                  <div class="vital-content">
+                    <span class="vital-label">ضغط الدم</span>
+                    <span class="vital-value">
+                      {{ medicalRecord()!.vitalSigns.bloodPressureSystolic }}/{{
+                        medicalRecord()!.vitalSigns.bloodPressureDiastolic
+                      }}
+                      mmHg
+                    </span>
+                  </div>
+                </div>
+                } @if (medicalRecord()!.vitalSigns.heartRate) {
+                <div class="vital-item">
+                  <mat-icon>favorite_border</mat-icon>
+                  <div class="vital-content">
+                    <span class="vital-label">معدل النبض</span>
+                    <span class="vital-value"
+                      >{{
+                        medicalRecord()!.vitalSigns.heartRate
+                      }}
+                      نبضة/دقيقة</span
+                    >
+                  </div>
+                </div>
+                } @if (medicalRecord()!.vitalSigns.respiratoryRate) {
+                <div class="vital-item">
+                  <mat-icon>air</mat-icon>
+                  <div class="vital-content">
+                    <span class="vital-label">معدل التنفس</span>
+                    <span class="vital-value"
+                      >{{
+                        medicalRecord()!.vitalSigns.respiratoryRate
+                      }}
+                      نفس/دقيقة</span
+                    >
+                  </div>
+                </div>
+                } @if (medicalRecord()!.vitalSigns.oxygenSaturation) {
+                <div class="vital-item">
+                  <mat-icon>bubble_chart</mat-icon>
+                  <div class="vital-content">
+                    <span class="vital-label">تشبع الأكسجين</span>
+                    <span class="vital-value"
+                      >{{ medicalRecord()!.vitalSigns.oxygenSaturation }}%</span
+                    >
+                  </div>
+                </div>
+                } @if (medicalRecord()!.vitalSigns.weight) {
+                <div class="vital-item">
+                  <mat-icon>fitness_center</mat-icon>
+                  <div class="vital-content">
+                    <span class="vital-label">الوزن</span>
+                    <span class="vital-value"
+                      >{{ medicalRecord()!.vitalSigns.weight }} كجم</span
+                    >
+                  </div>
+                </div>
+                } @if (medicalRecord()!.vitalSigns.height) {
+                <div class="vital-item">
+                  <mat-icon>straighten</mat-icon>
+                  <div class="vital-content">
+                    <span class="vital-label">الطول</span>
+                    <span class="vital-value"
+                      >{{ medicalRecord()!.vitalSigns.height }} سم</span
+                    >
+                  </div>
+                </div>
+                } @if (medicalRecord()!.vitalSigns.bmi) {
+                <div class="vital-item">
+                  <mat-icon>assessment</mat-icon>
+                  <div class="vital-content">
+                    <span class="vital-label">مؤشر كتلة الجسم</span>
+                    <span class="vital-value">{{
+                      medicalRecord()!.vitalSigns.bmi
+                    }}</span>
+                  </div>
+                </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <!-- Prescriptions Tab -->
+      @if (medicalRecord()!.prescriptions &&
+      medicalRecord()!.prescriptions!.length > 0) {
+      <mat-tab label="الوصفات الطبية">
+        <div class="tab-content">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>medication</mat-icon>
+                الأدوية الموصوفة
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="prescriptions-list">
+                @for (prescription of medicalRecord()!.prescriptions; track
+                prescription.id; let i = $index) {
+                <div class="prescription-item">
+                  <div class="prescription-header">
+                    <h4>{{ i + 1 }}. {{ prescription.medicationName }}</h4>
+                    @if (prescription.isPRN) {
+                    <mat-chip color="warn">عند الحاجة</mat-chip>
+                    }
+                    <button
+                      mat-icon-button
+                      (click)="onPrintPrescription(prescription.id!)"
+                    >
+                      <mat-icon>print</mat-icon>
+                    </button>
+                  </div>
+                  <div class="prescription-details">
+                    <span
+                      ><mat-icon>medical_services</mat-icon> الجرعة:
+                      {{ prescription.dosage }}</span
+                    >
+                    <span
+                      ><mat-icon>schedule</mat-icon> التكرار:
+                      {{ prescription.frequency }}</span
+                    >
+                    <span
+                      ><mat-icon>calendar_month</mat-icon> المدة:
+                      {{ prescription.duration }}</span
+                    >
+                    <span
+                      ><mat-icon>route</mat-icon> الطريق:
+                      {{ getMedicationRouteLabel(prescription.route) }}</span
+                    >
+                  </div>
+                  @if (prescription.instructions) {
+                  <p class="prescription-instructions">
+                    <mat-icon>info</mat-icon>
+                    {{ prescription.instructions }}
+                  </p>
+                  }
+                </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+      }
+
+      <!-- Lab Tests Tab -->
+      @if (medicalRecord()!.labTests && medicalRecord()!.labTests!.length > 0) {
+      <mat-tab label="الفحوصات المخبرية">
+        <div class="tab-content">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>biotech</mat-icon>
+                الفحوصات المطلوبة
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="lab-tests-list">
+                @for (test of medicalRecord()!.labTests; track test.id) {
+                <div class="lab-test-item">
+                  <div class="test-header">
+                    <h4>{{ test.testName }}</h4>
+                    <mat-chip
+                      [color]="
+                        test.status === 'COMPLETED' ? 'accent' : 'default'
+                      "
+                    >
+                      {{ getTestStatusLabel(test.status) }}
+                    </mat-chip>
+                  </div>
+                  <div class="test-details">
+                    <span
+                      ><mat-icon>category</mat-icon> {{ test.category }}</span
+                    >
+                    <span
+                      ><mat-icon>priority_high</mat-icon>
+                      {{ test.urgency }}</span
+                    >
+                    @if (test.specimenType) {
+                    <span
+                      ><mat-icon>science</mat-icon>
+                      {{ test.specimenType }}</span
+                    >
+                    }
+                  </div>
+                  @if (test.results) {
+                  <div class="test-results">
+                    <h5>النتائج</h5>
+                    <p>{{ test.results }}</p>
+                    @if (test.interpretation) {
+                    <p class="interpretation">
+                      <mat-icon>analytics</mat-icon>
+                      {{ test.interpretation }}
+                    </p>
+                    }
+                  </div>
+                  }
+                </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+      }
+
+      <!-- Notes Tab -->
+      @if (medicalRecord()!.notes) {
+      <mat-tab label="ملاحظات">
+        <div class="tab-content">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>notes</mat-icon>
+                ملاحظات إضافية
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <p class="notes-content">{{ medicalRecord()!.notes }}</p>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+      }
+    </mat-tab-group>
+    }
+  </main>
+</div>
