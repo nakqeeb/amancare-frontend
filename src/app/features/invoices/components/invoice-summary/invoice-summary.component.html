@@ -1,0 +1,647 @@
+<!-- ===================================================================
+     src/app/features/invoices/components/invoice-summary/invoice-summary.component.html
+     =================================================================== -->
+<div class="invoice-summary-container">
+  <!-- Header -->
+  <app-header></app-header>
+
+  <!-- Sidebar -->
+  <app-sidebar>
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="header-content">
+          <div class="title-section">
+            <h1 class="page-title">
+              <mat-icon>assessment</mat-icon>
+              ملخص الفواتير
+            </h1>
+            <p class="page-subtitle">تحليل شامل للأداء المالي والفواتير</p>
+          </div>
+
+          <div class="header-actions">
+            <button mat-stroked-button (click)="exportSummary()">
+              <mat-icon>download</mat-icon>
+              تصدير التقرير
+            </button>
+
+            <button mat-stroked-button (click)="printSummary()">
+              <mat-icon>print</mat-icon>
+              طباعة
+            </button>
+
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="navigateToInvoices()"
+            >
+              <mat-icon>receipt_long</mat-icon>
+              عرض الفواتير
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-section">
+          <mat-card class="filters-card">
+            <mat-card-content>
+              <form [formGroup]="filterForm" class="filters-form">
+                <div class="filter-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>من تاريخ</mat-label>
+                    <input
+                      matInput
+                      [matDatepicker]="fromPicker"
+                      formControlName="fromDate"
+                    />
+                    <mat-datepicker-toggle
+                      matSuffix
+                      [for]="fromPicker"
+                    ></mat-datepicker-toggle>
+                    <mat-datepicker #fromPicker></mat-datepicker>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>إلى تاريخ</mat-label>
+                    <input
+                      matInput
+                      [matDatepicker]="toPicker"
+                      formControlName="toDate"
+                    />
+                    <mat-datepicker-toggle
+                      matSuffix
+                      [for]="toPicker"
+                    ></mat-datepicker-toggle>
+                    <mat-datepicker #toPicker></mat-datepicker>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>حالة الفاتورة</mat-label>
+                    <mat-select formControlName="status">
+                      <mat-option value="">جميع الحالات</mat-option>
+                      <mat-option value="DRAFT">مسودة</mat-option>
+                      <mat-option value="PENDING">معلقة</mat-option>
+                      <mat-option value="SENT">مرسلة</mat-option>
+                      <mat-option value="PAID">مدفوعة</mat-option>
+                      <mat-option value="OVERDUE">متأخرة</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>حالة الدفع</mat-label>
+                    <mat-select formControlName="paymentStatus">
+                      <mat-option value="">جميع حالات الدفع</mat-option>
+                      <mat-option value="PENDING">معلق</mat-option>
+                      <mat-option value="COMPLETED">مكتمل</mat-option>
+                      <mat-option value="FAILED">فشل</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+              </form>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>جاري تحميل الملخص...</p>
+      </div>
+      }
+
+      <!-- Summary Content -->
+      @if (!loading() && invoiceSummary()) {
+      <div class="summary-content">
+        <!-- KPI Cards -->
+        <div class="kpi-section">
+          <div class="kpi-grid">
+            <mat-card class="kpi-card primary">
+              <mat-card-content>
+                <div class="kpi-content">
+                  <div class="kpi-icon">
+                    <mat-icon>receipt_long</mat-icon>
+                  </div>
+                  <div class="kpi-info">
+                    <div class="kpi-value">
+                      {{ invoiceSummary()?.totalInvoices || 0 }}
+                    </div>
+                    <div class="kpi-label">إجمالي الفواتير</div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="kpi-card success">
+              <mat-card-content>
+                <div class="kpi-content">
+                  <div class="kpi-icon">
+                    <mat-icon>attach_money</mat-icon>
+                  </div>
+                  <div class="kpi-info">
+                    <div class="kpi-value">
+                      {{ formatCurrency(invoiceSummary()?.totalAmount || 0) }}
+                    </div>
+                    <div class="kpi-label">إجمالي المبلغ</div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="kpi-card accent">
+              <mat-card-content>
+                <div class="kpi-content">
+                  <div class="kpi-icon">
+                    <mat-icon>paid</mat-icon>
+                  </div>
+                  <div class="kpi-info">
+                    <div class="kpi-value">
+                      {{ formatCurrency(invoiceSummary()?.paidAmount || 0) }}
+                    </div>
+                    <div class="kpi-label">المبلغ المحصل</div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="kpi-card warning">
+              <mat-card-content>
+                <div class="kpi-content">
+                  <div class="kpi-icon">
+                    <mat-icon>schedule</mat-icon>
+                  </div>
+                  <div class="kpi-info">
+                    <div class="kpi-value">
+                      {{ formatCurrency(invoiceSummary()?.pendingAmount || 0) }}
+                    </div>
+                    <div class="kpi-label">المبلغ المستحق</div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="kpi-card info">
+              <mat-card-content>
+                <div class="kpi-content">
+                  <div class="kpi-icon">
+                    <mat-icon>trending_up</mat-icon>
+                  </div>
+                  <div class="kpi-info">
+                    <div class="kpi-value">
+                      {{ formatPercentage(calculateCollectionRate()) }}
+                    </div>
+                    <div class="kpi-label">معدل التحصيل</div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="kpi-card secondary">
+              <mat-card-content>
+                <div class="kpi-content">
+                  <div class="kpi-icon">
+                    <mat-icon>calculate</mat-icon>
+                  </div>
+                  <div class="kpi-info">
+                    <div class="kpi-value">
+                      {{
+                        formatCurrency(
+                          invoiceSummary()?.averageInvoiceValue || 0
+                        )
+                      }}
+                    </div>
+                    <div class="kpi-label">متوسط قيمة الفاتورة</div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+
+        <!-- Detailed Analysis -->
+        <div class="analysis-section">
+          <mat-tab-group
+            [selectedIndex]="selectedTab()"
+            (selectedIndexChange)="onTabChange($event)"
+          >
+            <!-- Monthly Trends Tab -->
+            <mat-tab label="التحليل الشهري">
+              <div class="tab-content">
+                <div class="analysis-grid">
+                  <!-- Monthly Chart -->
+                  <mat-card class="chart-card">
+                    <mat-card-header>
+                      <mat-card-title>الاتجاهات الشهرية</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="chart-placeholder">
+                        <mat-icon>show_chart</mat-icon>
+                        <p>مخطط الاتجاهات الشهرية سيظهر هنا</p>
+                      </div>
+
+                      <!-- Monthly Data Table -->
+                      <div class="monthly-data-table">
+                        <table class="data-table">
+                          <thead>
+                            <tr>
+                              <th>الشهر</th>
+                              <th>عدد الفواتير</th>
+                              <th>إجمالي المبلغ</th>
+                              <th>المبلغ المحصل</th>
+                              <th>المبلغ المعلق</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (data of monthlyData(); track data.month) {
+                            <tr>
+                              <td>{{ data.month }}</td>
+                              <td>{{ data.invoiceCount }}</td>
+                              <td>{{ formatCurrency(data.totalAmount) }}</td>
+                              <td>{{ formatCurrency(data.paidAmount) }}</td>
+                              <td>{{ formatCurrency(data.pendingAmount) }}</td>
+                            </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- Collection Progress -->
+                  <mat-card class="progress-card">
+                    <mat-card-header>
+                      <mat-card-title>تقدم التحصيل</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="progress-item">
+                        <div class="progress-header">
+                          <span class="progress-label"
+                            >معدل التحصيل الإجمالي</span
+                          >
+                          <span class="progress-value">{{
+                            formatPercentage(calculateCollectionRate())
+                          }}</span>
+                        </div>
+                        <mat-progress-bar
+                          [value]="calculateCollectionRate()"
+                          color="primary"
+                          mode="determinate"
+                        >
+                        </mat-progress-bar>
+                      </div>
+
+                      <div class="collection-metrics">
+                        <div class="metric-item">
+                          <mat-icon class="metric-icon success"
+                            >check_circle</mat-icon
+                          >
+                          <div class="metric-info">
+                            <span class="metric-value">{{
+                              formatCurrency(invoiceSummary()?.paidAmount || 0)
+                            }}</span>
+                            <span class="metric-label">تم تحصيله</span>
+                          </div>
+                        </div>
+
+                        <div class="metric-item">
+                          <mat-icon class="metric-icon warning"
+                            >schedule</mat-icon
+                          >
+                          <div class="metric-info">
+                            <span class="metric-value">{{
+                              formatCurrency(
+                                invoiceSummary()?.pendingAmount || 0
+                              )
+                            }}</span>
+                            <span class="metric-label">في الانتظار</span>
+                          </div>
+                        </div>
+
+                        <div class="metric-item">
+                          <mat-icon class="metric-icon danger">error</mat-icon>
+                          <div class="metric-info">
+                            <span class="metric-value">{{
+                              formatCurrency(
+                                invoiceSummary()?.overdueAmount || 0
+                              )
+                            }}</span>
+                            <span class="metric-label">متأخر</span>
+                          </div>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+              </div>
+            </mat-tab>
+
+            <!-- Status Analysis Tab -->
+            <mat-tab label="تحليل الحالات">
+              <div class="tab-content">
+                <div class="analysis-grid">
+                  <!-- Invoice Status Distribution -->
+                  <mat-card class="status-card">
+                    <mat-card-header>
+                      <mat-card-title>توزيع حالات الفواتير</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="status-list">
+                        @for (status of statusData(); track status.status) {
+                        <div class="status-item">
+                          <div class="status-info">
+                            <!-- <mat-chip
+                            [color]="getStatusColor(status.status as InvoiceStatus)"
+                            selected
+                          >
+                            {{ getStatusText(status.status as InvoiceStatus) }}
+                          </mat-chip> -->
+                            <mat-chip
+                              [color]="getStatusColor(status.status)"
+                              selected
+                            >
+                              {{ getStatusText(status.status) }}
+                            </mat-chip>
+                            <div class="status-details">
+                              <span class="status-count"
+                                >{{ status.count }} فاتورة</span
+                              >
+                              <span class="status-percentage">{{
+                                formatPercentage(status.percentage)
+                              }}</span>
+                            </div>
+                          </div>
+                          <div class="status-progress">
+                            <mat-progress-bar
+                              [value]="status.percentage"
+                              [color]="getStatusColor(status.status)"
+                              mode="determinate"
+                            >
+                            </mat-progress-bar>
+                          </div>
+                          <div class="status-amount">
+                            {{ formatCurrency(status.amount) }}
+                          </div>
+                        </div>
+                        }
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- Payment Status Distribution -->
+                  <mat-card class="status-card">
+                    <mat-card-header>
+                      <mat-card-title>توزيع حالات الدفع</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="status-list">
+                        @for (status of paymentStatusData(); track
+                        status.status) {
+                        <div class="status-item">
+                          <div class="status-info">
+                            <!-- <mat-chip selected>
+                            {{ getPaymentStatusText(status.status as PaymentStatus) }}
+                          </mat-chip> -->
+                            <mat-chip selected>
+                              {{ getPaymentStatusText(status.status) }}
+                            </mat-chip>
+                            <div class="status-details">
+                              <span class="status-count"
+                                >{{ status.count }} فاتورة</span
+                              >
+                              <span class="status-percentage">{{
+                                formatPercentage(status.percentage)
+                              }}</span>
+                            </div>
+                          </div>
+                          <div class="status-progress">
+                            <mat-progress-bar
+                              [value]="status.percentage"
+                              color="accent"
+                              mode="determinate"
+                            >
+                            </mat-progress-bar>
+                          </div>
+                          <div class="status-amount">
+                            {{ formatCurrency(status.amount) }}
+                          </div>
+                        </div>
+                        }
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+              </div>
+            </mat-tab>
+
+            <!-- Top Patients Tab -->
+            <mat-tab label="أفضل العملاء">
+              <div class="tab-content">
+                <mat-card class="patients-card">
+                  <mat-card-header>
+                    <mat-card-title>العملاء الأكثر قيمة</mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    @if (topPatients().length > 0) {
+                    <div class="table-container">
+                      <table
+                        mat-table
+                        [dataSource]="topPatients()"
+                        class="patients-table"
+                      >
+                        <!-- Patient Name Column -->
+                        <ng-container matColumnDef="patientName">
+                          <th mat-header-cell *matHeaderCellDef>اسم المريض</th>
+                          <td mat-cell *matCellDef="let patient">
+                            <div
+                              class="patient-name"
+                              (click)="
+                                navigateToPatientInvoices(patient.patientId)
+                              "
+                            >
+                              {{ patient.name }}
+                            </div>
+                          </td>
+                        </ng-container>
+
+                        <!-- Invoice Count Column -->
+                        <ng-container matColumnDef="invoiceCount">
+                          <th mat-header-cell *matHeaderCellDef>
+                            عدد الفواتير
+                          </th>
+                          <td
+                            mat-cell
+                            *matCellDef="let patient"
+                            class="count-cell"
+                          >
+                            {{ patient.invoiceCount }}
+                          </td>
+                        </ng-container>
+
+                        <!-- Total Amount Column -->
+                        <ng-container matColumnDef="totalAmount">
+                          <th mat-header-cell *matHeaderCellDef>
+                            إجمالي المبلغ
+                          </th>
+                          <td
+                            mat-cell
+                            *matCellDef="let patient"
+                            class="amount-cell"
+                          >
+                            {{ formatCurrency(patient.totalAmount) }}
+                          </td>
+                        </ng-container>
+
+                        <!-- Last Invoice Column -->
+                        <ng-container matColumnDef="lastInvoice">
+                          <th mat-header-cell *matHeaderCellDef>آخر فاتورة</th>
+                          <td
+                            mat-cell
+                            *matCellDef="let patient"
+                            class="date-cell"
+                          >
+                            {{ formatDate(patient.lastInvoiceDate) }}
+                          </td>
+                        </ng-container>
+
+                        <tr
+                          mat-header-row
+                          *matHeaderRowDef="topPatientsColumns"
+                        ></tr>
+                        <tr
+                          mat-row
+                          *matRowDef="let row; columns: topPatientsColumns"
+                          (click)="navigateToPatientInvoices(row.patientId)"
+                          class="clickable-row"
+                        ></tr>
+                      </table>
+                    </div>
+                    } @else {
+                    <div class="empty-state">
+                      <mat-icon class="empty-icon">people</mat-icon>
+                      <h4>لا توجد بيانات</h4>
+                      <p>لا توجد فواتير في الفترة المحددة</p>
+                    </div>
+                    }
+                  </mat-card-content>
+                </mat-card>
+              </div>
+            </mat-tab>
+
+            <!-- Recent Invoices Tab -->
+            <mat-tab label="الفواتير الأخيرة">
+              <div class="tab-content">
+                <mat-card class="recent-invoices-card">
+                  <mat-card-header>
+                    <mat-card-title>آخر الفواتير</mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    @if (recentInvoices().length > 0) {
+                    <div class="table-container">
+                      <table
+                        mat-table
+                        [dataSource]="recentInvoices()"
+                        class="recent-table"
+                      >
+                        <!-- Invoice Number Column -->
+                        <ng-container matColumnDef="invoiceNumber">
+                          <th mat-header-cell *matHeaderCellDef>
+                            رقم الفاتورة
+                          </th>
+                          <td mat-cell *matCellDef="let invoice">
+                            <div
+                              class="invoice-number"
+                              (click)="navigateToInvoice(invoice)"
+                            >
+                              {{ invoice.invoiceNumber }}
+                            </div>
+                          </td>
+                        </ng-container>
+
+                        <!-- Patient Name Column -->
+                        <ng-container matColumnDef="patientName">
+                          <th mat-header-cell *matHeaderCellDef>المريض</th>
+                          <td mat-cell *matCellDef="let invoice">
+                            {{ invoice.patientName }}
+                          </td>
+                        </ng-container>
+
+                        <!-- Issue Date Column -->
+                        <ng-container matColumnDef="issueDate">
+                          <th mat-header-cell *matHeaderCellDef>
+                            تاريخ الإصدار
+                          </th>
+                          <td mat-cell *matCellDef="let invoice">
+                            {{ formatDate(invoice.issueDate) }}
+                          </td>
+                        </ng-container>
+
+                        <!-- Total Amount Column -->
+                        <ng-container matColumnDef="totalAmount">
+                          <th mat-header-cell *matHeaderCellDef>المبلغ</th>
+                          <td
+                            mat-cell
+                            *matCellDef="let invoice"
+                            class="amount-cell"
+                          >
+                            {{ formatCurrency(invoice.totalAmount) }}
+                          </td>
+                        </ng-container>
+
+                        <!-- Status Column -->
+                        <ng-container matColumnDef="status">
+                          <th mat-header-cell *matHeaderCellDef>الحالة</th>
+                          <td mat-cell *matCellDef="let invoice">
+                            <mat-chip
+                              [color]="getStatusColor(invoice.status)"
+                              selected
+                            >
+                              {{ getStatusText(invoice.status) }}
+                            </mat-chip>
+                          </td>
+                        </ng-container>
+
+                        <tr
+                          mat-header-row
+                          *matHeaderRowDef="recentInvoicesColumns"
+                        ></tr>
+                        <tr
+                          mat-row
+                          *matRowDef="let row; columns: recentInvoicesColumns"
+                          (click)="navigateToInvoice(row)"
+                          class="clickable-row"
+                        ></tr>
+                      </table>
+                    </div>
+                    } @else {
+                    <div class="empty-state">
+                      <mat-icon class="empty-icon">receipt_long</mat-icon>
+                      <h4>لا توجد فواتير</h4>
+                      <p>لا توجد فواتير في الفترة المحددة</p>
+                    </div>
+                    }
+                  </mat-card-content>
+                </mat-card>
+              </div>
+            </mat-tab>
+          </mat-tab-group>
+        </div>
+      </div>
+      }
+
+      <!-- Error State -->
+      @if (!loading() && !invoiceSummary()) {
+      <div class="error-state">
+        <mat-icon class="error-icon">error</mat-icon>
+        <h3>خطأ في تحميل البيانات</h3>
+        <p>حدث خطأ أثناء تحميل ملخص الفواتير. يرجى المحاولة مرة أخرى.</p>
+        <button mat-raised-button color="primary" (click)="loadData()">
+          <mat-icon>refresh</mat-icon>
+          إعادة المحاولة
+        </button>
+      </div>
+      }
+    </div>
+  </app-sidebar>
+</div>

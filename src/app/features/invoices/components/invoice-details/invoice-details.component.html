@@ -1,0 +1,674 @@
+<!-- ===================================================================
+     src/app/features/invoices/components/invoice-details/invoice-details.component.html
+     =================================================================== -->
+<div class="invoice-details-container">
+  <!-- Header -->
+  <app-header></app-header>
+
+  <!-- Sidebar -->
+  <app-sidebar>
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Loading Spinner -->
+      @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>جاري تحميل تفاصيل الفاتورة...</p>
+      </div>
+      }
+
+      <!-- Invoice Details -->
+      @if (!loading() && invoice()) {
+      <div class="invoice-content">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="header-content">
+            <div class="title-section">
+              <button
+                mat-icon-button
+                (click)="navigateBack()"
+                class="back-button"
+              >
+                <mat-icon>arrow_back</mat-icon>
+              </button>
+              <div class="title-info">
+                <h1 class="page-title">
+                  الفاتورة {{ invoice()?.invoiceNumber }}
+                </h1>
+                <p class="page-subtitle">تفاصيل الفاتورة الكاملة</p>
+              </div>
+            </div>
+
+            <div class="header-actions">
+              <button mat-stroked-button (click)="navigateToPreview()">
+                <mat-icon>preview</mat-icon>
+                معاينة
+              </button>
+
+              @if (canEdit()) {
+              <button
+                mat-stroked-button
+                color="primary"
+                (click)="navigateToEdit()"
+              >
+                <mat-icon>edit</mat-icon>
+                تعديل
+              </button>
+              }
+
+              <button mat-icon-button [matMenuTriggerFor]="actionMenu">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #actionMenu="matMenu">
+                <button mat-menu-item (click)="generatePDF()">
+                  <mat-icon>picture_as_pdf</mat-icon>
+                  <span>تحميل PDF</span>
+                </button>
+                <button mat-menu-item (click)="sendEmail()">
+                  <mat-icon>email</mat-icon>
+                  <span>إرسال بالبريد</span>
+                </button>
+                <button mat-menu-item (click)="printInvoice()">
+                  <mat-icon>print</mat-icon>
+                  <span>طباعة</span>
+                </button>
+                <button mat-menu-item (click)="duplicateInvoice()">
+                  <mat-icon>content_copy</mat-icon>
+                  <span>إنشاء نسخة</span>
+                </button>
+                <mat-divider></mat-divider>
+                @if (canDelete()) {
+                <button
+                  mat-menu-item
+                  (click)="deleteInvoice()"
+                  class="delete-action"
+                >
+                  <mat-icon>delete</mat-icon>
+                  <span>حذف</span>
+                </button>
+                }
+              </mat-menu>
+            </div>
+          </div>
+
+          <!-- Status Banner -->
+          @if (isOverdue(invoice()!)) {
+          <div class="status-banner overdue">
+            <mat-icon>error</mat-icon>
+            <span>هذه الفاتورة متأخرة بـ {{ getDaysDue(invoice()!) }} يوم</span>
+          </div>
+          }
+        </div>
+
+        <!-- Invoice Summary Cards -->
+        <div class="summary-section">
+          <div class="summary-cards">
+            <mat-card class="summary-card status-card">
+              <mat-card-content>
+                <div class="card-content">
+                  <div
+                    class="card-icon"
+                    [ngClass]="getStatusConfig(invoice()?.status!).color"
+                  >
+                    <mat-icon>{{
+                      getStatusConfig(invoice()?.status!).icon
+                    }}</mat-icon>
+                  </div>
+                  <div class="card-info">
+                    <div class="card-value">
+                      {{ getStatusConfig(invoice()?.status!).text }}
+                    </div>
+                    <div class="card-label">حالة الفاتورة</div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="summary-card amount-card">
+              <mat-card-content>
+                <div class="card-content">
+                  <div class="card-icon primary">
+                    <mat-icon>attach_money</mat-icon>
+                  </div>
+                  <div class="card-info">
+                    <div class="card-value">
+                      {{ formatCurrency(invoice()?.totalAmount!) }}
+                    </div>
+                    <div class="card-label">إجمالي المبلغ</div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="summary-card payment-card">
+              <mat-card-content>
+                <div class="card-content">
+                  <div
+                    class="card-icon"
+                    [ngClass]="
+                      getPaymentStatusConfig(invoice()?.paymentStatus!).color
+                    "
+                  >
+                    <mat-icon>{{
+                      getPaymentStatusConfig(invoice()?.paymentStatus!).icon
+                    }}</mat-icon>
+                  </div>
+                  <div class="card-info">
+                    <div class="card-value">
+                      {{ formatCurrency(invoice()?.remainingAmount!) }}
+                    </div>
+                    <div class="card-label">المبلغ المتبقي</div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="summary-card date-card">
+              <mat-card-content>
+                <div class="card-content">
+                  <div class="card-icon accent">
+                    <mat-icon>schedule</mat-icon>
+                  </div>
+                  <div class="card-info">
+                    <div class="card-value">
+                      {{ formatDate(invoice()?.dueDate!) }}
+                    </div>
+                    <div class="card-label">تاريخ الاستحقاق</div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+
+        <!-- Main Details -->
+        <div class="details-section">
+          <mat-tab-group
+            [selectedIndex]="selectedTab()"
+            (selectedIndexChange)="onTabChange($event)"
+          >
+            <!-- Overview Tab -->
+            <mat-tab label="نظرة عامة">
+              <div class="tab-content">
+                <div class="details-grid">
+                  <!-- Invoice Information -->
+                  <mat-card class="info-card">
+                    <mat-card-header>
+                      <mat-card-title>معلومات الفاتورة</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="info-grid">
+                        <div class="info-item">
+                          <span class="label">رقم الفاتورة:</span>
+                          <span class="value">{{
+                            invoice()?.invoiceNumber
+                          }}</span>
+                        </div>
+                        <div class="info-item">
+                          <span class="label">تاريخ الإصدار:</span>
+                          <span class="value">{{
+                            formatDate(invoice()?.issueDate!)
+                          }}</span>
+                        </div>
+                        <div class="info-item">
+                          <span class="label">تاريخ الاستحقاق:</span>
+                          <span class="value">{{
+                            formatDate(invoice()?.dueDate!)
+                          }}</span>
+                        </div>
+                        <div class="info-item">
+                          <span class="label">الأولوية:</span>
+                          <span class="value">
+                            @switch (invoice()?.priority) { @case ('LOW') {
+                            منخفضة } @case ('NORMAL') { عادية } @case ('HIGH') {
+                            عالية } @case ('URGENT') { عاجل } }
+                          </span>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- Patient Information -->
+                  <mat-card class="info-card">
+                    <mat-card-header>
+                      <mat-card-title>معلومات المريض</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="patient-info" (click)="navigateToPatient()">
+                        <div class="patient-avatar">
+                          <mat-icon>person</mat-icon>
+                        </div>
+                        <div class="patient-details">
+                          <h4>{{ invoice()?.patientName }}</h4>
+                          @if (invoice()?.patientPhone) {
+                          <div class="detail-row">
+                            <mat-icon>phone</mat-icon>
+                            <span>{{ invoice()?.patientPhone }}</span>
+                          </div>
+                          }
+                          <div class="patient-id">
+                            رقم المريض: {{ invoice()?.patientId }}
+                          </div>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- Doctor & Clinic Information -->
+                  <mat-card class="info-card">
+                    <mat-card-header>
+                      <mat-card-title>معلومات الطبيب والعيادة</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="info-grid">
+                        <div class="info-item">
+                          <span class="label">الطبيب:</span>
+                          <span class="value">{{ invoice()?.doctorName }}</span>
+                        </div>
+                        <div class="info-item">
+                          <span class="label">العيادة:</span>
+                          <span class="value">{{ invoice()?.clinicName }}</span>
+                        </div>
+                        @if (invoice()?.appointmentId) {
+                        <div class="info-item">
+                          <span class="label">رقم الموعد:</span>
+                          <span class="value">{{
+                            invoice()?.appointmentId
+                          }}</span>
+                        </div>
+                        }
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- Financial Summary -->
+                  <mat-card class="info-card financial-card">
+                    <mat-card-header>
+                      <mat-card-title>الملخص المالي</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="financial-summary">
+                        <div class="summary-row">
+                          <span>المجموع الفرعي:</span>
+                          <span class="amount">{{
+                            formatCurrency(invoice()?.subtotal!)
+                          }}</span>
+                        </div>
+                        @if (invoice()?.discountAmount &&
+                        invoice()?.discountAmount! > 0) {
+                        <div class="summary-row discount">
+                          <span>الخصم:</span>
+                          <span class="amount"
+                            >-{{
+                              formatCurrency(invoice()?.discountAmount!)
+                            }}</span
+                          >
+                        </div>
+                        }
+                        <div class="summary-row">
+                          <span
+                            >الضريبة ({{
+                              invoice()?.taxPercentage || 15
+                            }}%):</span
+                          >
+                          <span class="amount">{{
+                            formatCurrency(invoice()?.taxAmount!)
+                          }}</span>
+                        </div>
+                        <mat-divider></mat-divider>
+                        <div class="summary-row total">
+                          <span>الإجمالي النهائي:</span>
+                          <span class="amount">{{
+                            formatCurrency(invoice()?.totalAmount!)
+                          }}</span>
+                        </div>
+                        <div class="summary-row">
+                          <span>المبلغ المدفوع:</span>
+                          <span class="amount paid">{{
+                            formatCurrency(invoice()?.paidAmount || 0)
+                          }}</span>
+                        </div>
+                        <div class="summary-row remaining">
+                          <span>المبلغ المتبقي:</span>
+                          <span class="amount">{{
+                            formatCurrency(invoice()?.remainingAmount!)
+                          }}</span>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+
+                <!-- Notes Section -->
+                @if (invoice()?.notes || invoice()?.terms) {
+                <mat-card class="notes-card">
+                  <mat-card-header>
+                    <mat-card-title>ملاحظات إضافية</mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    @if (invoice()?.notes) {
+                    <div class="note-section">
+                      <h4>ملاحظات للعميل:</h4>
+                      <p>{{ invoice()?.notes }}</p>
+                    </div>
+                    } @if (invoice()?.terms) {
+                    <div class="note-section">
+                      <h4>شروط الدفع:</h4>
+                      <p>{{ invoice()?.terms }}</p>
+                    </div>
+                    }
+                  </mat-card-content>
+                </mat-card>
+                }
+              </div>
+            </mat-tab>
+
+            <!-- Items Tab -->
+            <mat-tab
+              label="بنود الفاتورة"
+              [matBadge]="invoice()?.items?.length || 0"
+            >
+              <div class="tab-content">
+                <mat-card class="items-card">
+                  <mat-card-header>
+                    <mat-card-title>تفاصيل الخدمات والإجراءات</mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="table-container">
+                      <table
+                        mat-table
+                        [dataSource]="invoice()?.items || []"
+                        class="items-table"
+                      >
+                        <!-- Service Name Column -->
+                        <ng-container matColumnDef="serviceName">
+                          <th mat-header-cell *matHeaderCellDef>الخدمة</th>
+                          <td mat-cell *matCellDef="let item">
+                            <div class="service-info">
+                              <div class="service-name">
+                                {{ item.serviceName }}
+                              </div>
+                              @if (item.description) {
+                              <div class="service-description">
+                                {{ item.description }}
+                              </div>
+                              }
+                            </div>
+                          </td>
+                        </ng-container>
+
+                        <!-- Category Column -->
+                        <ng-container matColumnDef="category">
+                          <th mat-header-cell *matHeaderCellDef>التصنيف</th>
+                          <td mat-cell *matCellDef="let item">
+                            <mat-chip-set>
+                              <mat-chip selected>
+                                <mat-icon>{{
+                                  getServiceCategoryConfig(item.category).icon
+                                }}</mat-icon>
+                                {{
+                                  getServiceCategoryConfig(item.category).text
+                                }}
+                              </mat-chip>
+                            </mat-chip-set>
+                          </td>
+                        </ng-container>
+
+                        <!-- Quantity Column -->
+                        <ng-container matColumnDef="quantity">
+                          <th mat-header-cell *matHeaderCellDef>الكمية</th>
+                          <td
+                            mat-cell
+                            *matCellDef="let item"
+                            class="quantity-cell"
+                          >
+                            {{ item.quantity }}
+                          </td>
+                        </ng-container>
+
+                        <!-- Unit Price Column -->
+                        <ng-container matColumnDef="unitPrice">
+                          <th mat-header-cell *matHeaderCellDef>سعر الوحدة</th>
+                          <td
+                            mat-cell
+                            *matCellDef="let item"
+                            class="price-cell"
+                          >
+                            {{ formatCurrency(item.unitPrice) }}
+                          </td>
+                        </ng-container>
+
+                        <!-- Total Price Column -->
+                        <ng-container matColumnDef="totalPrice">
+                          <th mat-header-cell *matHeaderCellDef>الإجمالي</th>
+                          <td
+                            mat-cell
+                            *matCellDef="let item"
+                            class="total-cell"
+                          >
+                            {{ formatCurrency(item.totalPrice) }}
+                          </td>
+                        </ng-container>
+
+                        <tr mat-header-row *matHeaderRowDef="itemsColumns"></tr>
+                        <tr
+                          mat-row
+                          *matRowDef="let row; columns: itemsColumns"
+                        ></tr>
+                      </table>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+            </mat-tab>
+
+            <!-- Payments Tab -->
+            <mat-tab
+              label="المدفوعات"
+              [matBadge]="invoice()?.payments?.length || 0"
+            >
+              <div class="tab-content">
+                <mat-card class="payments-card">
+                  <mat-card-header>
+                    <div class="card-header-content">
+                      <mat-card-title>سجل المدفوعات</mat-card-title>
+                      <button
+                        mat-raised-button
+                        color="primary"
+                        (click)="navigateToPayments()"
+                      >
+                        <mat-icon>add</mat-icon>
+                        إضافة دفعة
+                      </button>
+                    </div>
+                  </mat-card-header>
+                  <mat-card-content>
+                    @if (invoice()?.payments && invoice()?.payments!.length > 0)
+                    {
+                    <div class="table-container">
+                      <table
+                        mat-table
+                        [dataSource]="invoice()?.payments || []"
+                        class="payments-table"
+                      >
+                        <!-- Payment Date Column -->
+                        <ng-container matColumnDef="paymentDate">
+                          <th mat-header-cell *matHeaderCellDef>تاريخ الدفع</th>
+                          <td mat-cell *matCellDef="let payment">
+                            {{ formatDate(payment.paymentDate) }}
+                          </td>
+                        </ng-container>
+
+                        <!-- Amount Column -->
+                        <ng-container matColumnDef="amount">
+                          <th mat-header-cell *matHeaderCellDef>المبلغ</th>
+                          <td
+                            mat-cell
+                            *matCellDef="let payment"
+                            class="amount-cell"
+                          >
+                            {{ formatCurrency(payment.amount) }}
+                          </td>
+                        </ng-container>
+
+                        <!-- Payment Method Column -->
+                        <ng-container matColumnDef="paymentMethod">
+                          <th mat-header-cell *matHeaderCellDef>طريقة الدفع</th>
+                          <td mat-cell *matCellDef="let payment">
+                            <div class="payment-method">
+                              <mat-icon>{{
+                                getPaymentMethodConfig(payment.paymentMethod)
+                                  .icon
+                              }}</mat-icon>
+                              <span>{{
+                                getPaymentMethodConfig(payment.paymentMethod)
+                                  .text
+                              }}</span>
+                            </div>
+                          </td>
+                        </ng-container>
+
+                        <!-- Reference Number Column -->
+                        <ng-container matColumnDef="referenceNumber">
+                          <th mat-header-cell *matHeaderCellDef>رقم المرجع</th>
+                          <td mat-cell *matCellDef="let payment">
+                            {{ payment.referenceNumber || "-" }}
+                          </td>
+                        </ng-container>
+
+                        <!-- Status Column -->
+                        <ng-container matColumnDef="status">
+                          <th mat-header-cell *matHeaderCellDef>الحالة</th>
+                          <td mat-cell *matCellDef="let payment">
+                            <mat-chip-set>
+                              <mat-chip
+                                [color]="
+                                  getPaymentStatusConfig(payment.status).color
+                                "
+                                selected
+                              >
+                                <mat-icon>{{
+                                  getPaymentStatusConfig(payment.status).icon
+                                }}</mat-icon>
+                                {{
+                                  getPaymentStatusConfig(payment.status).text
+                                }}
+                              </mat-chip>
+                            </mat-chip-set>
+                          </td>
+                        </ng-container>
+
+                        <tr
+                          mat-header-row
+                          *matHeaderRowDef="paymentsColumns"
+                        ></tr>
+                        <tr
+                          mat-row
+                          *matRowDef="let row; columns: paymentsColumns"
+                        ></tr>
+                      </table>
+                    </div>
+                    } @else {
+                    <div class="empty-payments-state">
+                      <mat-icon class="empty-icon">payment</mat-icon>
+                      <h4>لا توجد مدفوعات</h4>
+                      <p>لم يتم تسجيل أي مدفوعات لهذه الفاتورة بعد</p>
+                      <button
+                        mat-raised-button
+                        color="primary"
+                        (click)="navigateToPayments()"
+                      >
+                        <mat-icon>add</mat-icon>
+                        إضافة دفعة جديدة
+                      </button>
+                    </div>
+                    }
+                  </mat-card-content>
+                </mat-card>
+              </div>
+            </mat-tab>
+
+            <!-- History Tab -->
+            <mat-tab label="سجل التغييرات">
+              <div class="tab-content">
+                <mat-card class="history-card">
+                  <mat-card-header>
+                    <mat-card-title>سجل التغييرات والأنشطة</mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="timeline">
+                      <div class="timeline-item">
+                        <div class="timeline-icon created">
+                          <mat-icon>add_circle</mat-icon>
+                        </div>
+                        <div class="timeline-content">
+                          <div class="timeline-title">تم إنشاء الفاتورة</div>
+                          <div class="timeline-details">
+                            <span>بواسطة: {{ invoice()?.createdBy }}</span>
+                            <span>{{
+                              formatDateTime(invoice()?.createdAt!)
+                            }}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      @if (invoice()?.updatedAt) {
+                      <div class="timeline-item">
+                        <div class="timeline-icon updated">
+                          <mat-icon>edit</mat-icon>
+                        </div>
+                        <div class="timeline-content">
+                          <div class="timeline-title">تم تحديث الفاتورة</div>
+                          <div class="timeline-details">
+                            <span>بواسطة: {{ invoice()?.updatedBy }}</span>
+                            <span>{{
+                              formatDateTime(invoice()?.updatedAt!)
+                            }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      } @for (payment of invoice()?.payments || []; track
+                      payment.id) {
+                      <div class="timeline-item">
+                        <div class="timeline-icon payment">
+                          <mat-icon>payment</mat-icon>
+                        </div>
+                        <div class="timeline-content">
+                          <div class="timeline-title">تم تسجيل دفعة</div>
+                          <div class="timeline-details">
+                            <span
+                              >المبلغ:
+                              {{ formatCurrency(payment.amount) }}</span
+                            >
+                            <span>{{
+                              formatDateTime(payment.paymentDate + "T00:00:00")
+                            }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      }
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+            </mat-tab>
+          </mat-tab-group>
+        </div>
+      </div>
+      }
+
+      <!-- Empty State -->
+      @if (!loading() && !invoice()) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">receipt_long</mat-icon>
+        <h3>لم يتم العثور على الفاتورة</h3>
+        <p>الفاتورة المطلوبة غير موجودة أو تم حذفها.</p>
+        <button mat-raised-button color="primary" (click)="navigateBack()">
+          <mat-icon>arrow_back</mat-icon>
+          العودة للقائمة
+        </button>
+      </div>
+      }
+    </div>
+  </app-sidebar>
+</div>
