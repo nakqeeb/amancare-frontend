@@ -1,0 +1,578 @@
+<!-- ===================================================================
+     Clinic Details Component Template
+     src/app/features/clinics/components/clinic-details/clinic-details.component.html
+     =================================================================== -->
+
+<app-header></app-header>
+
+<app-sidebar>
+  <div class="clinic-details-container">
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading()">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>جاري تحميل بيانات العيادة...</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="clinic-content" *ngIf="!loading() && clinic()">
+      <!-- Header Section -->
+      <div class="clinic-header">
+        <mat-card class="header-card">
+          <mat-card-content>
+            <div class="header-content">
+              <!-- Clinic Logo and Basic Info -->
+              <div class="clinic-info">
+                <div class="clinic-logo" *ngIf="clinic()!.logoUrl">
+                  <img [src]="clinic()!.logoUrl" [alt]="clinic()!.name" />
+                </div>
+                <div class="clinic-logo-placeholder" *ngIf="!clinic()!.logoUrl">
+                  <mat-icon>local_hospital</mat-icon>
+                </div>
+
+                <div class="clinic-details">
+                  <h1 class="clinic-name">{{ clinic()!.name }}</h1>
+                  <p class="clinic-description" *ngIf="clinic()!.description">
+                    {{ clinic()!.description }}
+                  </p>
+
+                  <div class="clinic-badges">
+                    <mat-chip [color]="getStatusColor()" selected>
+                      <mat-icon>{{ getStatusIcon() }}</mat-icon>
+                      {{ getStatusText() }}
+                    </mat-chip>
+
+                    <mat-chip [color]="getSubscriptionColor()" selected>
+                      {{ subscriptionFeatures()?.name }}
+                    </mat-chip>
+
+                    <mat-chip
+                      color="warn"
+                      selected
+                      *ngIf="isSubscriptionExpiringSoon()"
+                      [matTooltip]="
+                        'الاشتراك ينتهي خلال ' + getDaysUntilExpiry() + ' يوم'
+                      "
+                    >
+                      <mat-icon>warning</mat-icon>
+                      اشتراك منتهي قريباً
+                    </mat-chip>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="header-actions">
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="actionsMenu"
+                  matTooltip="المزيد"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+
+                <mat-menu #actionsMenu="matMenu">
+                  <button mat-menu-item (click)="onEditClinic()">
+                    <mat-icon>edit</mat-icon>
+                    تعديل العيادة
+                  </button>
+                  <button mat-menu-item (click)="onClinicSettings()">
+                    <mat-icon>settings</mat-icon>
+                    الإعدادات
+                  </button>
+                  <button mat-menu-item (click)="onRefreshData()">
+                    <mat-icon>refresh</mat-icon>
+                    تحديث البيانات
+                  </button>
+                  <mat-divider></mat-divider>
+                  <button mat-menu-item (click)="onToggleStatus()">
+                    <mat-icon>{{
+                      clinic()!.isActive ? "cancel" : "check_circle"
+                    }}</mat-icon>
+                    {{ clinic()!.isActive ? "إلغاء التفعيل" : "تفعيل العيادة" }}
+                  </button>
+                  <button
+                    mat-menu-item
+                    (click)="onDeleteClinic()"
+                    class="danger-action"
+                  >
+                    <mat-icon>delete</mat-icon>
+                    حذف العيادة
+                  </button>
+                </mat-menu>
+
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="onEditClinic()"
+                >
+                  <mat-icon>edit</mat-icon>
+                  تعديل
+                </button>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Quick Stats Section -->
+      <div class="quick-stats">
+        <div class="stats-grid">
+          <mat-card
+            *ngFor="let stat of quickStats()"
+            class="stat-card"
+            [class]="'stat-' + stat.color"
+          >
+            <mat-card-content>
+              <div class="stat-content">
+                <div class="stat-info">
+                  <div class="stat-value">{{ stat.value }}</div>
+                  <div class="stat-label">{{ stat.label }}</div>
+                  <div class="stat-trend" *ngIf="stat.trend">
+                    <mat-icon
+                      [class.positive]="stat.trend.isPositive"
+                      [class.negative]="!stat.trend.isPositive"
+                    >
+                      {{
+                        stat.trend.isPositive ? "trending_up" : "trending_down"
+                      }}
+                    </mat-icon>
+                    <span>{{ stat.trend.value }}%</span>
+                  </div>
+                </div>
+                <div class="stat-icon">
+                  <mat-icon>{{ stat.icon }}</mat-icon>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+
+      <!-- Main Tabs -->
+      <mat-card class="tabs-card">
+        <mat-tab-group
+          [(selectedIndex)]="selectedTab"
+          (selectedTabChange)="onTabChange($event.index)"
+        >
+          <!-- Overview Tab -->
+          <mat-tab label="نظرة عامة">
+            <div class="tab-content">
+              <div class="overview-grid">
+                <!-- Contact Information -->
+                <mat-card class="info-card">
+                  <mat-card-header>
+                    <mat-card-title>
+                      <mat-icon>contact_phone</mat-icon>
+                      معلومات الاتصال
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="info-list">
+                      <div class="info-item">
+                        <mat-icon>location_on</mat-icon>
+                        <div class="info-details">
+                          <label>العنوان</label>
+                          <span>{{ clinic()!.address }}</span>
+                        </div>
+                      </div>
+
+                      <div class="info-item">
+                        <mat-icon>phone</mat-icon>
+                        <div class="info-details">
+                          <label>الهاتف</label>
+                          <span>{{ clinic()!.phone }}</span>
+                        </div>
+                      </div>
+
+                      <div class="info-item">
+                        <mat-icon>email</mat-icon>
+                        <div class="info-details">
+                          <label>البريد الإلكتروني</label>
+                          <span>{{ clinic()!.email }}</span>
+                        </div>
+                      </div>
+
+                      <div class="info-item" *ngIf="clinic()!.website">
+                        <mat-icon>language</mat-icon>
+                        <div class="info-details">
+                          <label>الموقع الإلكتروني</label>
+                          <a [href]="clinic()!.website" target="_blank">{{
+                            clinic()!.website
+                          }}</a>
+                        </div>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <!-- Working Hours -->
+                <mat-card class="info-card">
+                  <mat-card-header>
+                    <mat-card-title>
+                      <mat-icon>schedule</mat-icon>
+                      ساعات العمل
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="working-hours">
+                      <div class="time-range">
+                        <mat-icon>access_time</mat-icon>
+                        <span>
+                          {{ formatTime(clinic()!.workingHoursStart) }} -
+                          {{ formatTime(clinic()!.workingHoursEnd) }}
+                        </span>
+                      </div>
+
+                      <div class="working-days">
+                        <label>أيام العمل:</label>
+                        <mat-chip-set>
+                          <mat-chip *ngFor="let dayName of workingDaysNames()">
+                            {{ dayName }}
+                          </mat-chip>
+                        </mat-chip-set>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <!-- Subscription Information -->
+                <mat-card class="info-card">
+                  <mat-card-header>
+                    <mat-card-title>
+                      <mat-icon>credit_card</mat-icon>
+                      معلومات الاشتراك
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="subscription-info">
+                      <div class="subscription-plan">
+                        <label>الخطة الحالية:</label>
+                        <mat-chip [color]="getSubscriptionColor()" selected>
+                          {{ subscriptionFeatures()?.name }}
+                        </mat-chip>
+                      </div>
+
+                      <div class="subscription-period">
+                        <div class="period-item">
+                          <label>تاريخ البداية:</label>
+                          <span>{{
+                            formatDate(clinic()!.subscriptionStartDate)
+                          }}</span>
+                        </div>
+                        <div class="period-item">
+                          <label>تاريخ الانتهاء:</label>
+                          <span>{{
+                            formatDate(clinic()!.subscriptionEndDate)
+                          }}</span>
+                        </div>
+                      </div>
+
+                      <div class="subscription-limits">
+                        <div class="limit-item">
+                          <mat-icon>people</mat-icon>
+                          <span>
+                            {{ clinic()!.totalUsers || 0 }} /
+                            {{
+                              subscriptionFeatures()?.maxUsers === -1
+                                ? "غير محدود"
+                                : subscriptionFeatures()?.maxUsers
+                            }}
+                            مستخدم
+                          </span>
+                        </div>
+                        <div class="limit-item">
+                          <mat-icon>person</mat-icon>
+                          <span>
+                            {{ clinic()!.totalPatients || 0 }} /
+                            {{
+                              subscriptionFeatures()?.maxPatients === -1
+                                ? "غير محدود"
+                                : subscriptionFeatures()?.maxPatients
+                            }}
+                            مريض
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <!-- Quick Actions -->
+                <mat-card class="info-card">
+                  <mat-card-header>
+                    <mat-card-title>
+                      <mat-icon>speed</mat-icon>
+                      إجراءات سريعة
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="quick-actions">
+                      <button
+                        mat-stroked-button
+                        class="action-btn"
+                        (click)="onManageUsers()"
+                      >
+                        <mat-icon>people</mat-icon>
+                        إدارة المستخدمين
+                        <!-- <mat-badge
+                          [content]="clinic()!.totalUsers || 0"
+                          size="small"
+                        ></mat-badge> -->
+                        <span
+                          [matBadge]="clinic()!.totalUsers || 0"
+                          matBadgeSize="small"
+                        >
+                        </span>
+                      </button>
+
+                      <button
+                        mat-stroked-button
+                        class="action-btn"
+                        (click)="onManageServices()"
+                      >
+                        <mat-icon>medical_services</mat-icon>
+                        إدارة الخدمات
+                        <!-- <mat-badge
+                          [content]="clinicServices().length"
+                          size="small"
+                        ></mat-badge> -->
+
+                        <span
+                          [matBadge]="clinicServices().length"
+                          matBadgeSize="small"
+                        >
+                        </span>
+                      </button>
+
+                      <button
+                        mat-stroked-button
+                        class="action-btn"
+                        (click)="onViewAnalytics()"
+                      >
+                        <mat-icon>analytics</mat-icon>
+                        التحليلات
+                      </button>
+
+                      <button
+                        mat-stroked-button
+                        class="action-btn"
+                        (click)="onClinicSettings()"
+                      >
+                        <mat-icon>settings</mat-icon>
+                        الإعدادات
+                      </button>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Services Tab -->
+          <mat-tab label="الخدمات">
+            <div class="tab-content">
+              <div class="services-section">
+                <div class="section-header">
+                  <h3>خدمات العيادة</h3>
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="onManageServices()"
+                  >
+                    <mat-icon>add</mat-icon>
+                    إدارة الخدمات
+                  </button>
+                </div>
+
+                <div class="services-grid" *ngIf="clinicServices().length > 0">
+                  <mat-card
+                    *ngFor="let service of clinicServices()"
+                    class="service-card"
+                  >
+                    <mat-card-header>
+                      <mat-card-title>{{ service.serviceName }}</mat-card-title>
+                      <mat-chip
+                        [color]="service.isActive ? 'primary' : 'warn'"
+                        selected
+                      >
+                        {{ service.isActive ? "نشط" : "غير نشط" }}
+                      </mat-chip>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <p *ngIf="service.description">
+                        {{ service.description }}
+                      </p>
+                      <div class="service-details">
+                        <div class="detail-item">
+                          <mat-icon>attach_money</mat-icon>
+                          <span
+                            >{{ service.price }} {{ clinic()!.currency }}</span
+                          >
+                        </div>
+                        <div class="detail-item">
+                          <mat-icon>schedule</mat-icon>
+                          <span>{{ service.durationMinutes }} دقيقة</span>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+
+                <div class="empty-state" *ngIf="clinicServices().length === 0">
+                  <mat-icon>medical_services</mat-icon>
+                  <h4>لا توجد خدمات مسجلة</h4>
+                  <p>لم يتم إضافة أي خدمات لهذه العيادة بعد</p>
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="onManageServices()"
+                  >
+                    إضافة خدمة جديدة
+                  </button>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Recent Activity Tab -->
+          <mat-tab label="النشاطات الحديثة">
+            <div class="tab-content">
+              <div class="activity-section">
+                <div class="section-header">
+                  <h3>النشاطات الحديثة</h3>
+                  <button
+                    mat-icon-button
+                    (click)="onRefreshData()"
+                    matTooltip="تحديث"
+                  >
+                    <mat-icon>refresh</mat-icon>
+                  </button>
+                </div>
+
+                <div class="activity-timeline">
+                  <div
+                    *ngFor="let activity of recentActivities()"
+                    class="activity-item"
+                  >
+                    <div class="activity-icon">
+                      <mat-icon [color]="getActivityColor(activity)">
+                        {{ getActivityIcon(activity) }}
+                      </mat-icon>
+                    </div>
+
+                    <div class="activity-content">
+                      <div class="activity-header">
+                        <h4 class="activity-title">{{ activity.title }}</h4>
+                        <span class="activity-time">{{
+                          formatDateTime(activity.timestamp)
+                        }}</span>
+                      </div>
+                      <p class="activity-description">
+                        {{ activity.description }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="load-more" *ngIf="recentActivities().length > 0">
+                  <button mat-button color="primary">
+                    عرض المزيد من النشاطات
+                    <mat-icon>expand_more</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- System Information Tab -->
+          <mat-tab label="معلومات النظام">
+            <div class="tab-content">
+              <div class="system-info">
+                <mat-card class="info-card">
+                  <mat-card-header>
+                    <mat-card-title>
+                      <mat-icon>info</mat-icon>
+                      معلومات النظام
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="system-details">
+                      <div class="detail-row">
+                        <label>معرف العيادة:</label>
+                        <span>{{ clinic()!.id }}</span>
+                      </div>
+
+                      <div class="detail-row">
+                        <label>تاريخ الإنشاء:</label>
+                        <span>{{ formatDate(clinic()!.createdAt) }}</span>
+                      </div>
+
+                      <div class="detail-row">
+                        <label>آخر تحديث:</label>
+                        <span>{{ formatDate(clinic()!.updatedAt) }}</span>
+                      </div>
+
+                      <div class="detail-row">
+                        <label>المنطقة الزمنية:</label>
+                        <span>{{ clinic()!.timezone }}</span>
+                      </div>
+
+                      <div class="detail-row">
+                        <label>لغة النظام:</label>
+                        <span>{{
+                          clinic()!.language === "ar" ? "العربية" : "English"
+                        }}</span>
+                      </div>
+
+                      <div class="detail-row">
+                        <label>العملة:</label>
+                        <span>{{ clinic()!.currency }}</span>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <mat-card class="info-card">
+                  <mat-card-header>
+                    <mat-card-title>
+                      <mat-icon>assessment</mat-icon>
+                      إحصائيات التخزين
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="storage-stats">
+                      <div class="stat-item">
+                        <label>السجلات الطبية:</label>
+                        <span
+                          >{{ (clinic()!.totalPatients || 0) * 3 }} سجل</span
+                        >
+                      </div>
+
+                      <div class="stat-item">
+                        <label>الفواتير:</label>
+                        <span
+                          >{{
+                            (clinic()!.totalAppointments || 0) * 0.8
+                              | number : "1.0-0"
+                          }}
+                          فاتورة</span
+                        >
+                      </div>
+
+                      <div class="stat-item">
+                        <label>المرفقات:</label>
+                        <span
+                          >{{ (clinic()!.totalPatients || 0) * 5 }} ملف</span
+                        >
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </mat-card>
+    </div>
+  </div>
+</app-sidebar>

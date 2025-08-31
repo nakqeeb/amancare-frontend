@@ -1,0 +1,697 @@
+<!-- ===================================================================
+     Clinic Form Component Template
+     src/app/features/clinics/components/clinic-form/clinic-form.component.html
+     =================================================================== -->
+
+<app-header></app-header>
+
+<app-sidebar>
+  <div class="clinic-form-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">
+            <mat-icon>{{ isEditMode() ? "edit" : "add" }}</mat-icon>
+            {{ isEditMode() ? "تعديل العيادة" : "إضافة عيادة جديدة" }}
+          </h1>
+          <p class="page-subtitle" *ngIf="!isEditMode()">
+            إنشاء عيادة جديدة في النظام مع تحديد المعلومات الأساسية والاشتراك
+          </p>
+          <p class="page-subtitle" *ngIf="isEditMode() && selectedClinic()">
+            تعديل معلومات عيادة "{{ selectedClinic()!.name }}"
+          </p>
+        </div>
+
+        <div class="header-actions">
+          <button mat-stroked-button (click)="onCancel()" [disabled]="saving()">
+            <mat-icon>close</mat-icon>
+            إلغاء
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading()">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>جاري تحميل بيانات العيادة...</p>
+    </div>
+
+    <!-- Main Form Content -->
+    <div class="form-content" *ngIf="!loading()">
+      <mat-card class="form-card">
+        <mat-card-content>
+          <!-- Stepper Form -->
+          <mat-stepper
+            #stepper
+            [linear]="true"
+            orientation="horizontal"
+            class="clinic-stepper"
+          >
+            <!-- Step 1: Basic Information -->
+            <mat-step [stepControl]="basicInfoForm" label="المعلومات الأساسية">
+              <form [formGroup]="basicInfoForm" class="step-form">
+                <div class="step-header">
+                  <h3>المعلومات الأساسية للعيادة</h3>
+                  <p>أدخل المعلومات الأساسية للعيادة أو المركز الطبي</p>
+                </div>
+
+                <div class="form-grid">
+                  <!-- Clinic Name -->
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>اسم العيادة *</mat-label>
+                    <input
+                      matInput
+                      formControlName="name"
+                      placeholder="مثال: عيادة الدكتور أحمد للأسنان"
+                    />
+                    <mat-icon matSuffix>local_hospital</mat-icon>
+                    <mat-error *ngIf="hasFormError('basicInfo', 'name')">
+                      {{ getFormErrorMessage("basicInfo", "name") }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <!-- Description -->
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>وصف العيادة</mat-label>
+                    <textarea
+                      matInput
+                      formControlName="description"
+                      rows="3"
+                      placeholder="وصف مختصر عن العيادة والخدمات المقدمة"
+                    ></textarea>
+                    <mat-icon matSuffix>description</mat-icon>
+                    <mat-error *ngIf="hasFormError('basicInfo', 'description')">
+                      {{ getFormErrorMessage("basicInfo", "description") }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <!-- Language -->
+                  <mat-form-field appearance="outline">
+                    <mat-label>لغة النظام *</mat-label>
+                    <mat-select formControlName="language">
+                      <mat-option value="ar">العربية</mat-option>
+                      <mat-option value="en">English</mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>language</mat-icon>
+                  </mat-form-field>
+
+                  <!-- Currency -->
+                  <mat-form-field appearance="outline">
+                    <mat-label>العملة *</mat-label>
+                    <mat-select formControlName="currency">
+                      <mat-option value="SAR">ريال سعودي (SAR)</mat-option>
+                      <mat-option value="USD">دولار أمريكي (USD)</mat-option>
+                      <mat-option value="EUR">يورو (EUR)</mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>attach_money</mat-icon>
+                  </mat-form-field>
+
+                  <!-- Timezone -->
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>المنطقة الزمنية</mat-label>
+                    <mat-select formControlName="timezone">
+                      <mat-option value="Asia/Riyadh"
+                        >الرياض (Asia/Riyadh)</mat-option
+                      >
+                      <mat-option value="Asia/Dubai"
+                        >دبي (Asia/Dubai)</mat-option
+                      >
+                      <mat-option value="Asia/Qatar"
+                        >قطر (Asia/Qatar)</mat-option
+                      >
+                      <mat-option value="Asia/Kuwait"
+                        >الكويت (Asia/Kuwait)</mat-option
+                      >
+                    </mat-select>
+                    <mat-icon matSuffix>schedule</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <div class="step-actions">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    matStepperNext
+                    [disabled]="basicInfoForm.invalid"
+                  >
+                    التالي
+                    <mat-icon>navigate_next</mat-icon>
+                  </button>
+                </div>
+              </form>
+            </mat-step>
+
+            <!-- Step 2: Contact Information -->
+            <mat-step [stepControl]="contactInfoForm" label="معلومات الاتصال">
+              <form [formGroup]="contactInfoForm" class="step-form">
+                <div class="step-header">
+                  <h3>معلومات الاتصال والموقع</h3>
+                  <p>أدخل عنوان العيادة ومعلومات التواصل</p>
+                </div>
+
+                <div class="form-grid">
+                  <!-- Address -->
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>العنوان *</mat-label>
+                    <textarea
+                      matInput
+                      formControlName="address"
+                      rows="2"
+                      placeholder="العنوان الكامل للعيادة"
+                    ></textarea>
+                    <mat-icon matSuffix>location_on</mat-icon>
+                    <mat-error *ngIf="hasFormError('contactInfo', 'address')">
+                      {{ getFormErrorMessage("contactInfo", "address") }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <!-- Phone -->
+                  <mat-form-field appearance="outline">
+                    <mat-label>رقم الهاتف *</mat-label>
+                    <input
+                      matInput
+                      formControlName="phone"
+                      placeholder="05xxxxxxxx"
+                    />
+                    <mat-icon matSuffix>phone</mat-icon>
+                    <mat-error *ngIf="hasFormError('contactInfo', 'phone')">
+                      {{ getFormErrorMessage("contactInfo", "phone") }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <!-- Email -->
+                  <mat-form-field appearance="outline">
+                    <mat-label>البريد الإلكتروني *</mat-label>
+                    <input
+                      matInput
+                      formControlName="email"
+                      placeholder="info@clinic.com"
+                    />
+                    <mat-icon matSuffix>email</mat-icon>
+                    <mat-error *ngIf="hasFormError('contactInfo', 'email')">
+                      {{ getFormErrorMessage("contactInfo", "email") }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <!-- Website -->
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>الموقع الإلكتروني</mat-label>
+                    <input
+                      matInput
+                      formControlName="website"
+                      placeholder="https://www.clinic.com"
+                    />
+                    <mat-icon matSuffix>language</mat-icon>
+                    <mat-error *ngIf="hasFormError('contactInfo', 'website')">
+                      {{ getFormErrorMessage("contactInfo", "website") }}
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="step-actions">
+                  <button mat-button matStepperPrevious>
+                    <mat-icon>navigate_before</mat-icon>
+                    السابق
+                  </button>
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    matStepperNext
+                    [disabled]="contactInfoForm.invalid"
+                  >
+                    التالي
+                    <mat-icon>navigate_next</mat-icon>
+                  </button>
+                </div>
+              </form>
+            </mat-step>
+
+            <!-- Step 3: Working Hours -->
+            <mat-step [stepControl]="workingHoursForm" label="ساعات العمل">
+              <form [formGroup]="workingHoursForm" class="step-form">
+                <div class="step-header">
+                  <h3>ساعات العمل وأيام التشغيل</h3>
+                  <p>حدد ساعات العمل وأيام التشغيل للعيادة</p>
+                </div>
+
+                <div class="working-hours-section">
+                  <!-- Working Hours -->
+                  <div class="hours-grid">
+                    <mat-form-field appearance="outline">
+                      <mat-label>بداية العمل *</mat-label>
+                      <input
+                        matInput
+                        type="time"
+                        formControlName="workingHoursStart"
+                      />
+                      <mat-icon matSuffix>access_time</mat-icon>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>نهاية العمل *</mat-label>
+                      <input
+                        matInput
+                        type="time"
+                        formControlName="workingHoursEnd"
+                      />
+                      <mat-icon matSuffix>access_time</mat-icon>
+                    </mat-form-field>
+                  </div>
+
+                  <!-- Working Hours Error Display -->
+                  <div class="error-message" *ngIf="hasWorkingHoursError()">
+                    <mat-icon>error</mat-icon>
+                    {{ getWorkingHoursError() }}
+                  </div>
+
+                  <!-- Working Days -->
+                  <div class="working-days-section">
+                    <h4>أيام العمل *</h4>
+                    <p class="section-subtitle">اختر أيام العمل للعيادة</p>
+
+                    <div class="working-days-grid">
+                      <mat-checkbox
+                        *ngFor="let day of workingDaysOptions"
+                        [checked]="isWorkingDaySelected(day)"
+                        (change)="onWorkingDayToggle(day, $event)"
+                        class="working-day-checkbox"
+                      >
+                        {{ getWorkingDayName(day) }}
+                      </mat-checkbox>
+                    </div>
+
+                    <mat-error
+                      *ngIf="hasFormError('workingHours', 'workingDays')"
+                    >
+                      {{ getFormErrorMessage("workingHours", "workingDays") }}
+                    </mat-error>
+                  </div>
+                </div>
+
+                <div class="step-actions">
+                  <button mat-button matStepperPrevious>
+                    <mat-icon>navigate_before</mat-icon>
+                    السابق
+                  </button>
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    matStepperNext
+                    [disabled]="workingHoursForm.invalid"
+                  >
+                    التالي
+                    <mat-icon>navigate_next</mat-icon>
+                  </button>
+                </div>
+              </form>
+            </mat-step>
+
+            <!-- Step 4: Subscription Plan (Only for new clinics) -->
+            <mat-step
+              [stepControl]="subscriptionForm"
+              label="خطة الاشتراك"
+              *ngIf="!isEditMode()"
+            >
+              <form [formGroup]="subscriptionForm" class="step-form">
+                <div class="step-header">
+                  <h3>اختيار خطة الاشتراك</h3>
+                  <p>اختر الخطة المناسبة لاحتياجات العيادة</p>
+                </div>
+
+                <div class="subscription-plans">
+                  <div class="plans-grid">
+                    <!-- Basic Plan -->
+                    <mat-card
+                      class="subscription-card"
+                      [class.selected]="
+                        subscriptionForm.get('subscriptionPlan')?.value ===
+                        SubscriptionPlan.BASIC
+                      "
+                      (click)="onSubscriptionPlanChange(SubscriptionPlan.BASIC)"
+                    >
+                      <mat-card-header>
+                        <div class="plan-header">
+                          <mat-card-title>{{
+                            SUBSCRIPTION_FEATURES.BASIC.name
+                          }}</mat-card-title>
+                          <div class="plan-price">
+                            {{ SUBSCRIPTION_FEATURES.BASIC.price }}
+                            {{ SUBSCRIPTION_FEATURES.BASIC.currency }}
+                            <small>/شهر</small>
+                          </div>
+                        </div>
+                        <mat-radio-button
+                          value="BASIC"
+                          formControlName="subscriptionPlan"
+                        >
+                        </mat-radio-button>
+                      </mat-card-header>
+
+                      <mat-card-content>
+                        <div class="plan-limits">
+                          <div class="limit-item">
+                            <mat-icon>people</mat-icon>
+                            حتى
+                            {{ SUBSCRIPTION_FEATURES.BASIC.maxUsers }} مستخدمين
+                          </div>
+                          <div class="limit-item">
+                            <mat-icon>person</mat-icon>
+                            حتى
+                            {{ SUBSCRIPTION_FEATURES.BASIC.maxPatients }} مريض
+                          </div>
+                        </div>
+
+                        <div class="plan-features">
+                          <div
+                            *ngFor="
+                              let feature of SUBSCRIPTION_FEATURES.BASIC
+                                .features
+                            "
+                            class="feature-item"
+                          >
+                            <mat-icon>check</mat-icon>
+                            {{ feature }}
+                          </div>
+                        </div>
+                      </mat-card-content>
+                    </mat-card>
+
+                    <!-- Premium Plan -->
+                    <mat-card
+                      class="subscription-card premium"
+                      [class.selected]="
+                        subscriptionForm.get('subscriptionPlan')?.value ===
+                        SubscriptionPlan.PREMIUM
+                      "
+                      (click)="
+                        onSubscriptionPlanChange(SubscriptionPlan.PREMIUM)
+                      "
+                    >
+                      <div class="popular-badge">الأكثر شيوعاً</div>
+
+                      <mat-card-header>
+                        <div class="plan-header">
+                          <mat-card-title>{{
+                            SUBSCRIPTION_FEATURES.PREMIUM.name
+                          }}</mat-card-title>
+                          <div class="plan-price">
+                            {{ SUBSCRIPTION_FEATURES.PREMIUM.price }}
+                            {{ SUBSCRIPTION_FEATURES.PREMIUM.currency }}
+                            <small>/شهر</small>
+                          </div>
+                        </div>
+                        <mat-radio-button
+                          value="PREMIUM"
+                          formControlName="subscriptionPlan"
+                        >
+                        </mat-radio-button>
+                      </mat-card-header>
+
+                      <mat-card-content>
+                        <div class="plan-limits">
+                          <div class="limit-item">
+                            <mat-icon>people</mat-icon>
+                            حتى
+                            {{ SUBSCRIPTION_FEATURES.PREMIUM.maxUsers }} مستخدم
+                          </div>
+                          <div class="limit-item">
+                            <mat-icon>person</mat-icon>
+                            حتى
+                            {{ SUBSCRIPTION_FEATURES.PREMIUM.maxPatients }} مريض
+                          </div>
+                        </div>
+
+                        <div class="plan-features">
+                          <div
+                            *ngFor="
+                              let feature of SUBSCRIPTION_FEATURES.PREMIUM
+                                .features
+                            "
+                            class="feature-item"
+                          >
+                            <mat-icon>check</mat-icon>
+                            {{ feature }}
+                          </div>
+                        </div>
+                      </mat-card-content>
+                    </mat-card>
+
+                    <!-- Enterprise Plan -->
+                    <mat-card
+                      class="subscription-card enterprise"
+                      [class.selected]="
+                        subscriptionForm.get('subscriptionPlan')?.value ===
+                        SubscriptionPlan.ENTERPRISE
+                      "
+                      (click)="
+                        onSubscriptionPlanChange(SubscriptionPlan.ENTERPRISE)
+                      "
+                    >
+                      <mat-card-header>
+                        <div class="plan-header">
+                          <mat-card-title>{{
+                            SUBSCRIPTION_FEATURES.ENTERPRISE.name
+                          }}</mat-card-title>
+                          <div class="plan-price">
+                            {{ SUBSCRIPTION_FEATURES.ENTERPRISE.price }}
+                            {{ SUBSCRIPTION_FEATURES.ENTERPRISE.currency }}
+                            <small>/شهر</small>
+                          </div>
+                        </div>
+                        <mat-radio-button
+                          value="ENTERPRISE"
+                          formControlName="subscriptionPlan"
+                        >
+                        </mat-radio-button>
+                      </mat-card-header>
+
+                      <mat-card-content>
+                        <div class="plan-limits">
+                          <div class="limit-item">
+                            <mat-icon>people</mat-icon>
+                            مستخدمين غير محدودين
+                          </div>
+                          <div class="limit-item">
+                            <mat-icon>person</mat-icon>
+                            مرضى غير محدودين
+                          </div>
+                        </div>
+
+                        <div class="plan-features">
+                          <div
+                            *ngFor="
+                              let feature of SUBSCRIPTION_FEATURES.ENTERPRISE
+                                .features
+                            "
+                            class="feature-item"
+                          >
+                            <mat-icon>check</mat-icon>
+                            {{ feature }}
+                          </div>
+                        </div>
+                      </mat-card-content>
+                    </mat-card>
+                  </div>
+                </div>
+
+                <div class="step-actions">
+                  <button mat-button matStepperPrevious>
+                    <mat-icon>navigate_before</mat-icon>
+                    السابق
+                  </button>
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    matStepperNext
+                    [disabled]="subscriptionForm.invalid"
+                  >
+                    التالي
+                    <mat-icon>navigate_next</mat-icon>
+                  </button>
+                </div>
+              </form>
+            </mat-step>
+
+            <!-- Step 5: Review and Confirm -->
+            <mat-step label="مراجعة وتأكيد">
+              <div class="step-form">
+                <div class="step-header">
+                  <h3>مراجعة البيانات</h3>
+                  <p>
+                    تأكد من صحة البيانات قبل
+                    {{ isEditMode() ? "حفظ التعديلات" : "إنشاء العيادة" }}
+                  </p>
+                </div>
+
+                <div class="review-sections">
+                  <!-- Basic Information Review -->
+                  <mat-card class="review-card">
+                    <mat-card-header>
+                      <mat-card-title>
+                        <mat-icon>local_hospital</mat-icon>
+                        المعلومات الأساسية
+                      </mat-card-title>
+                      <button
+                        mat-icon-button
+                        (click)="stepper.selectedIndex = 0"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="review-item">
+                        <strong>اسم العيادة:</strong>
+                        {{ basicInfoForm.get("name")?.value }}
+                      </div>
+                      <div
+                        class="review-item"
+                        *ngIf="basicInfoForm.get('description')?.value"
+                      >
+                        <strong>الوصف:</strong>
+                        {{ basicInfoForm.get("description")?.value }}
+                      </div>
+                      <div class="review-item">
+                        <strong>اللغة:</strong>
+                        {{
+                          basicInfoForm.get("language")?.value === "ar"
+                            ? "العربية"
+                            : "English"
+                        }}
+                      </div>
+                      <div class="review-item">
+                        <strong>العملة:</strong>
+                        {{ basicInfoForm.get("currency")?.value }}
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- Contact Information Review -->
+                  <mat-card class="review-card">
+                    <mat-card-header>
+                      <mat-card-title>
+                        <mat-icon>contact_phone</mat-icon>
+                        معلومات الاتصال
+                      </mat-card-title>
+                      <button
+                        mat-icon-button
+                        (click)="stepper.selectedIndex = 1"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="review-item">
+                        <strong>العنوان:</strong>
+                        {{ contactInfoForm.get("address")?.value }}
+                      </div>
+                      <div class="review-item">
+                        <strong>الهاتف:</strong>
+                        {{ contactInfoForm.get("phone")?.value }}
+                      </div>
+                      <div class="review-item">
+                        <strong>البريد الإلكتروني:</strong>
+                        {{ contactInfoForm.get("email")?.value }}
+                      </div>
+                      <div
+                        class="review-item"
+                        *ngIf="contactInfoForm.get('website')?.value"
+                      >
+                        <strong>الموقع الإلكتروني:</strong>
+                        {{ contactInfoForm.get("website")?.value }}
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- Working Hours Review -->
+                  <mat-card class="review-card">
+                    <mat-card-header>
+                      <mat-card-title>
+                        <mat-icon>schedule</mat-icon>
+                        ساعات العمل
+                      </mat-card-title>
+                      <button
+                        mat-icon-button
+                        (click)="stepper.selectedIndex = 2"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="review-item">
+                        <strong>ساعات العمل:</strong>
+                        {{ workingHoursForm.get("workingHoursStart")?.value }} -
+                        {{ workingHoursForm.get("workingHoursEnd")?.value }}
+                      </div>
+                      <div class="review-item">
+                        <strong>أيام العمل:</strong>
+                        <mat-chip-set>
+                          <mat-chip
+                            *ngFor="
+                              let day of workingHoursForm.get('workingDays')
+                                ?.value
+                            "
+                          >
+                            {{ getWorkingDayName(day) }}
+                          </mat-chip>
+                        </mat-chip-set>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- Subscription Review (only for new clinics) -->
+                  <mat-card class="review-card" *ngIf="!isEditMode()">
+                    <mat-card-header>
+                      <mat-card-title>
+                        <mat-icon>credit_card</mat-icon>
+                        خطة الاشتراك
+                      </mat-card-title>
+                      <button
+                        mat-icon-button
+                        (click)="stepper.selectedIndex = 3"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="review-item">
+                        <strong>الخطة المختارة:</strong>
+                        {{ getSubscriptionFeature("name") }}
+                      </div>
+                      <div class="review-item">
+                        <strong>السعر الشهري:</strong>
+                        {{ getSubscriptionFeature("price") }}
+                        {{ getSubscriptionFeature("currency") }}
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+
+                <div class="step-actions">
+                  <button mat-button matStepperPrevious [disabled]="saving()">
+                    <mat-icon>navigate_before</mat-icon>
+                    السابق
+                  </button>
+
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="onSave()"
+                    [disabled]="saving()"
+                  >
+                    <mat-spinner diameter="20" *ngIf="saving()"></mat-spinner>
+                    <mat-icon *ngIf="!saving()">{{
+                      isEditMode() ? "save" : "add"
+                    }}</mat-icon>
+                    {{ isEditMode() ? "حفظ التعديلات" : "إنشاء العيادة" }}
+                  </button>
+                </div>
+              </div>
+            </mat-step>
+          </mat-stepper>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</app-sidebar>

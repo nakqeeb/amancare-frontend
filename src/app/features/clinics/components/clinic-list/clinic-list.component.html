@@ -1,0 +1,501 @@
+<!-- ===================================================================
+     Clinic List Component Template
+     src/app/features/clinics/components/clinic-list/clinic-list.component.html
+     =================================================================== -->
+
+<app-header></app-header>
+
+<app-sidebar>
+  <div class="clinic-list-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">
+            <mat-icon>local_hospital</mat-icon>
+            إدارة العيادات
+          </h1>
+          <p class="page-subtitle">إدارة العيادات والمراكز الطبية في النظام</p>
+        </div>
+
+        <div class="header-actions">
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="onCreateClinic()"
+            [disabled]="loading()"
+          >
+            <mat-icon>add</mat-icon>
+            إضافة عيادة جديدة
+          </button>
+        </div>
+      </div>
+
+      <!-- Statistics Cards -->
+      <div class="stats-container" *ngIf="stats()">
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <div class="stat-number">{{ stats()!.totalClinics }}</div>
+              <div class="stat-label">إجمالي العيادات</div>
+            </div>
+            <mat-icon class="stat-icon">local_hospital</mat-icon>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <div class="stat-number">{{ stats()!.activeClinics }}</div>
+              <div class="stat-label">العيادات النشطة</div>
+            </div>
+            <mat-icon class="stat-icon" color="primary">check_circle</mat-icon>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <div class="stat-number">{{ stats()!.totalUsers }}</div>
+              <div class="stat-label">إجمالي المستخدمين</div>
+            </div>
+            <mat-icon class="stat-icon">people</mat-icon>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <div class="stat-number">
+                {{ formatRevenue(stats()!.totalRevenue) }}
+              </div>
+              <div class="stat-label">الإيرادات الشهرية</div>
+            </div>
+            <mat-icon class="stat-icon" color="accent">attach_money</mat-icon>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Search and Filters Section -->
+    <mat-card class="search-card">
+      <mat-card-content>
+        <div class="search-section">
+          <!-- Search Bar -->
+          <div class="search-bar">
+            <form [formGroup]="searchForm" class="search-form">
+              <mat-form-field appearance="outline" class="search-field">
+                <mat-label>البحث في العيادات</mat-label>
+                <input
+                  matInput
+                  formControlName="query"
+                  placeholder="البحث بالاسم، البريد الإلكتروني، أو رقم الهاتف"
+                />
+                <mat-icon matSuffix>search</mat-icon>
+              </mat-form-field>
+            </form>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <!-- View Mode Toggle -->
+            <div class="view-toggle">
+              <button
+                mat-icon-button
+                [class.active]="viewMode() === 'grid'"
+                (click)="onViewModeChange('grid')"
+                matTooltip="عرض شبكي"
+              >
+                <mat-icon>grid_view</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                [class.active]="viewMode() === 'list'"
+                (click)="onViewModeChange('list')"
+                matTooltip="عرض قائمة"
+              >
+                <mat-icon>list</mat-icon>
+              </button>
+            </div>
+
+            <mat-divider [vertical]="true"></mat-divider>
+
+            <!-- Filter Toggle -->
+            <button
+              mat-stroked-button
+              (click)="onToggleFilters()"
+              [class.active]="showFilters()"
+            >
+              <mat-icon>filter_list</mat-icon>
+              تصفية
+            </button>
+
+            <!-- Bulk Actions (when items are selected) -->
+            <div class="bulk-actions" *ngIf="hasSelection()">
+              <span class="selection-count">
+                {{ selectedClinics().length }} محدد
+              </span>
+
+              <button
+                mat-menu-anchor
+                mat-icon-button
+                [matMenuTriggerFor]="bulkMenu"
+                matTooltip="إجراءات مجمعة"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+
+              <mat-menu #bulkMenu="matMenu">
+                <button mat-menu-item (click)="onBulkStatusChange(true)">
+                  <mat-icon>check_circle</mat-icon>
+                  تفعيل المحدد
+                </button>
+                <button mat-menu-item (click)="onBulkStatusChange(false)">
+                  <mat-icon>cancel</mat-icon>
+                  إلغاء تفعيل المحدد
+                </button>
+                <mat-divider></mat-divider>
+                <button
+                  mat-menu-item
+                  (click)="onBulkDelete()"
+                  class="danger-action"
+                >
+                  <mat-icon>delete</mat-icon>
+                  حذف المحدد
+                </button>
+              </mat-menu>
+            </div>
+
+            <!-- Export Button -->
+            <button mat-stroked-button (click)="onExportClinics()">
+              <mat-icon>download</mat-icon>
+              تصدير
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters Panel -->
+        <div class="filters-panel" *ngIf="showFilters()" [@slideInOut]>
+          <form [formGroup]="filterForm" class="filters-form">
+            <div class="filters-grid">
+              <!-- Subscription Plan Filter -->
+              <mat-form-field appearance="outline">
+                <mat-label>نوع الاشتراك</mat-label>
+                <mat-select formControlName="subscriptionPlan">
+                  <mat-option value="">جميع الاشتراكات</mat-option>
+                  <mat-option value="BASIC">الباقة الأساسية</mat-option>
+                  <mat-option value="PREMIUM">الباقة المتقدمة</mat-option>
+                  <mat-option value="ENTERPRISE">باقة المؤسسات</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <!-- Status Filter -->
+              <mat-form-field appearance="outline">
+                <mat-label>حالة العيادة</mat-label>
+                <mat-select formControlName="status">
+                  <mat-option value="">جميع الحالات</mat-option>
+                  <mat-option value="ACTIVE">نشطة</mat-option>
+                  <mat-option value="INACTIVE">غير نشطة</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <!-- City Filter -->
+              <mat-form-field appearance="outline">
+                <mat-label>المدينة</mat-label>
+                <input matInput formControlName="city" />
+              </mat-form-field>
+
+              <!-- Date Range -->
+              <mat-form-field appearance="outline">
+                <mat-label>من تاريخ</mat-label>
+                <input
+                  matInput
+                  [matDatepicker]="startPicker"
+                  formControlName="createdAfter"
+                />
+                <mat-datepicker-toggle
+                  matSuffix
+                  [for]="startPicker"
+                ></mat-datepicker-toggle>
+                <mat-datepicker #startPicker></mat-datepicker>
+              </mat-form-field>
+            </div>
+
+            <div class="filters-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="onFilterApply()"
+              >
+                تطبيق التصفية
+              </button>
+              <button mat-button (click)="onFilterClear()">مسح التصفية</button>
+            </div>
+          </form>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading()">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>جاري تحميل العيادات...</p>
+    </div>
+
+    <!-- Clinics Grid/List View -->
+    <div class="clinics-content" *ngIf="!loading()">
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="clinics().length === 0">
+        <mat-icon class="empty-icon">local_hospital</mat-icon>
+        <h3>لا توجد عيادات</h3>
+        <p>لم يتم العثور على عيادات تطابق معايير البحث</p>
+        <button mat-raised-button color="primary" (click)="onCreateClinic()">
+          إضافة أول عيادة
+        </button>
+      </div>
+
+      <!-- Grid View -->
+      <div
+        class="clinics-grid"
+        *ngIf="clinics().length > 0 && viewMode() === 'grid'"
+      >
+        <mat-card
+          *ngFor="let clinic of clinics()"
+          class="clinic-card"
+          [class.selected]="isSelected(clinic)"
+        >
+          <!-- Card Header -->
+          <mat-card-header>
+            <div class="card-header-content">
+              <mat-checkbox
+                [checked]="isSelected(clinic)"
+                (change)="onClinicSelect(clinic, $event.checked)"
+                (click)="$event.stopPropagation()"
+              >
+              </mat-checkbox>
+
+              <div class="clinic-logo" *ngIf="clinic.logoUrl">
+                <img [src]="clinic.logoUrl" [alt]="clinic.name" />
+              </div>
+
+              <div class="clinic-info">
+                <mat-card-title>{{ clinic.name }}</mat-card-title>
+                <mat-card-subtitle>{{ clinic.address }}</mat-card-subtitle>
+              </div>
+
+              <button
+                mat-icon-button
+                [matMenuTriggerFor]="clinicMenu"
+                (click)="$event.stopPropagation()"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+
+              <mat-menu #clinicMenu="matMenu">
+                <button mat-menu-item (click)="onViewClinic(clinic)">
+                  <mat-icon>visibility</mat-icon>
+                  عرض التفاصيل
+                </button>
+                <button mat-menu-item (click)="onEditClinic(clinic)">
+                  <mat-icon>edit</mat-icon>
+                  تعديل
+                </button>
+                <button mat-menu-item (click)="onClinicSettings(clinic)">
+                  <mat-icon>settings</mat-icon>
+                  الإعدادات
+                </button>
+                <mat-divider></mat-divider>
+                <button mat-menu-item (click)="onToggleStatus(clinic)">
+                  <mat-icon>{{
+                    clinic.isActive ? "cancel" : "check_circle"
+                  }}</mat-icon>
+                  {{ clinic.isActive ? "إلغاء التفعيل" : "تفعيل" }}
+                </button>
+                <button
+                  mat-menu-item
+                  (click)="onDeleteClinic(clinic)"
+                  class="danger-action"
+                >
+                  <mat-icon>delete</mat-icon>
+                  حذف
+                </button>
+              </mat-menu>
+            </div>
+          </mat-card-header>
+
+          <!-- Card Content -->
+          <mat-card-content (click)="onViewClinic(clinic)" class="clickable">
+            <!-- Status and Subscription -->
+            <div class="clinic-status">
+              <mat-chip [color]="getClinicStatusColor(clinic)" selected>
+                {{ getClinicStatusText(clinic) }}
+              </mat-chip>
+
+              <mat-chip
+                [color]="getSubscriptionColor(clinic.subscriptionPlan)"
+                selected
+              >
+                {{ SUBSCRIPTION_FEATURES[clinic.subscriptionPlan].name }}
+              </mat-chip>
+            </div>
+
+            <!-- Contact Info -->
+            <div class="contact-info">
+              <div class="info-item">
+                <mat-icon>phone</mat-icon>
+                <span>{{ clinic.phone }}</span>
+              </div>
+              <div class="info-item">
+                <mat-icon>email</mat-icon>
+                <span>{{ clinic.email }}</span>
+              </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="clinic-stats">
+              <div class="stat-item">
+                <span class="stat-number">{{ clinic.totalUsers || 0 }}</span>
+                <span class="stat-label">مستخدمين</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">{{ clinic.totalPatients || 0 }}</span>
+                <span class="stat-label">مرضى</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">{{
+                  formatRevenue(clinic.monthlyRevenue || 0)
+                }}</span>
+                <span class="stat-label">الإيرادات</span>
+              </div>
+            </div>
+          </mat-card-content>
+
+          <!-- Card Actions -->
+          <mat-card-actions>
+            <button mat-button color="primary" (click)="onViewClinic(clinic)">
+              <mat-icon>visibility</mat-icon>
+              عرض
+            </button>
+            <button mat-button (click)="onEditClinic(clinic)">
+              <mat-icon>edit</mat-icon>
+              تعديل
+            </button>
+            <button mat-button (click)="onClinicSettings(clinic)">
+              <mat-icon>settings</mat-icon>
+              إعدادات
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+
+      <!-- List View -->
+      <mat-card
+        class="clinics-list"
+        *ngIf="clinics().length > 0 && viewMode() === 'list'"
+      >
+        <div class="list-header">
+          <mat-checkbox
+            [indeterminate]="
+              hasSelection() && selectedClinics().length < clinics().length
+            "
+            [checked]="selectedClinics().length === clinics().length"
+            (change)="onSelectAll($event.checked)"
+          >
+          </mat-checkbox>
+          <span class="header-title">العيادات</span>
+        </div>
+
+        <div class="clinic-list-item" *ngFor="let clinic of clinics()">
+          <div class="item-selection">
+            <mat-checkbox
+              [checked]="isSelected(clinic)"
+              (change)="onClinicSelect(clinic, $event.checked)"
+            >
+            </mat-checkbox>
+          </div>
+
+          <div class="item-content" (click)="onViewClinic(clinic)">
+            <div class="clinic-logo" *ngIf="clinic.logoUrl">
+              <img [src]="clinic.logoUrl" [alt]="clinic.name" />
+            </div>
+
+            <div class="clinic-details">
+              <h4 class="clinic-name">{{ clinic.name }}</h4>
+              <p class="clinic-address">{{ clinic.address }}</p>
+              <div class="clinic-contact">
+                <span>{{ clinic.phone }}</span> •
+                <span>{{ clinic.email }}</span>
+              </div>
+            </div>
+
+            <div class="clinic-metadata">
+              <mat-chip [color]="getClinicStatusColor(clinic)" selected>
+                {{ getClinicStatusText(clinic) }}
+              </mat-chip>
+
+              <mat-chip
+                [color]="getSubscriptionColor(clinic.subscriptionPlan)"
+                selected
+              >
+                {{ SUBSCRIPTION_FEATURES[clinic.subscriptionPlan].name }}
+              </mat-chip>
+            </div>
+
+            <div class="clinic-revenue">
+              {{ formatRevenue(clinic.monthlyRevenue || 0) }}
+            </div>
+          </div>
+
+          <div class="item-actions">
+            <button mat-icon-button [matMenuTriggerFor]="listMenu">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+
+            <mat-menu #listMenu="matMenu">
+              <button mat-menu-item (click)="onViewClinic(clinic)">
+                <mat-icon>visibility</mat-icon>
+                عرض التفاصيل
+              </button>
+              <button mat-menu-item (click)="onEditClinic(clinic)">
+                <mat-icon>edit</mat-icon>
+                تعديل
+              </button>
+              <button mat-menu-item (click)="onClinicSettings(clinic)">
+                <mat-icon>settings</mat-icon>
+                الإعدادات
+              </button>
+              <mat-divider></mat-divider>
+              <button mat-menu-item (click)="onToggleStatus(clinic)">
+                <mat-icon>{{
+                  clinic.isActive ? "cancel" : "check_circle"
+                }}</mat-icon>
+                {{ clinic.isActive ? "إلغاء التفعيل" : "تفعيل" }}
+              </button>
+              <button
+                mat-menu-item
+                (click)="onDeleteClinic(clinic)"
+                class="danger-action"
+              >
+                <mat-icon>delete</mat-icon>
+                حذف
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- Pagination -->
+      <div class="pagination-container" *ngIf="totalElements() > pageSize()">
+        <mat-paginator
+          [length]="totalElements()"
+          [pageSize]="pageSize()"
+          [pageIndex]="currentPage()"
+          [pageSizeOptions]="viewMode() === 'grid' ? [6, 9, 12] : [10, 20, 50]"
+          (page)="onPageChange($event.pageIndex)"
+          showFirstLastButtons
+        >
+        </mat-paginator>
+      </div>
+    </div>
+  </div>
+</app-sidebar>

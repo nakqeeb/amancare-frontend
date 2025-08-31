@@ -1,0 +1,708 @@
+<!-- ===================================================================
+     Clinic Settings Component Template
+     src/app/features/clinics/components/clinic-settings/clinic-settings.component.html
+     =================================================================== -->
+
+<app-header></app-header>
+
+<app-sidebar>
+  <div class="clinic-settings-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <button mat-icon-button (click)="onGoBack()" class="back-button">
+            <mat-icon>arrow_back</mat-icon>
+          </button>
+          <div class="title-info">
+            <h1 class="page-title">
+              <mat-icon>settings</mat-icon>
+              إعدادات العيادة
+            </h1>
+            <p class="page-subtitle" *ngIf="clinic()">
+              إدارة إعدادات عيادة "{{ clinic()!.name }}"
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading()">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>جاري تحميل إعدادات العيادة...</p>
+    </div>
+
+    <!-- Main Settings Content -->
+    <div class="settings-content" *ngIf="!loading() && clinic()">
+      <mat-card class="settings-card">
+        <mat-tab-group
+          [(selectedIndex)]="selectedTab"
+          (selectedTabChange)="onTabChange($event.index)"
+        >
+          <!-- Basic Settings Tab -->
+          <mat-tab label="الإعدادات الأساسية">
+            <div class="tab-content">
+              <form [formGroup]="basicSettingsForm" class="settings-form">
+                <div class="form-header">
+                  <h3>المعلومات الأساسية</h3>
+                  <p>تحديث المعلومات الأساسية للعيادة</p>
+                </div>
+
+                <div class="form-grid">
+                  <!-- Clinic Name -->
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>اسم العيادة *</mat-label>
+                    <input matInput formControlName="name" />
+                    <mat-icon matSuffix>local_hospital</mat-icon>
+                    <mat-error *ngIf="hasFormError('basicSettings', 'name')">
+                      {{ getFormErrorMessage("basicSettings", "name") }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <!-- Description -->
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>وصف العيادة</mat-label>
+                    <textarea
+                      matInput
+                      formControlName="description"
+                      rows="3"
+                    ></textarea>
+                    <mat-icon matSuffix>description</mat-icon>
+                  </mat-form-field>
+
+                  <!-- Address -->
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>العنوان *</mat-label>
+                    <textarea
+                      matInput
+                      formControlName="address"
+                      rows="2"
+                    ></textarea>
+                    <mat-icon matSuffix>location_on</mat-icon>
+                    <mat-error *ngIf="hasFormError('basicSettings', 'address')">
+                      {{ getFormErrorMessage("basicSettings", "address") }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <!-- Phone -->
+                  <mat-form-field appearance="outline">
+                    <mat-label>رقم الهاتف *</mat-label>
+                    <input matInput formControlName="phone" />
+                    <mat-icon matSuffix>phone</mat-icon>
+                    <mat-error *ngIf="hasFormError('basicSettings', 'phone')">
+                      {{ getFormErrorMessage("basicSettings", "phone") }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <!-- Email -->
+                  <mat-form-field appearance="outline">
+                    <mat-label>البريد الإلكتروني *</mat-label>
+                    <input matInput formControlName="email" />
+                    <mat-icon matSuffix>email</mat-icon>
+                    <mat-error *ngIf="hasFormError('basicSettings', 'email')">
+                      {{ getFormErrorMessage("basicSettings", "email") }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <!-- Website -->
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>الموقع الإلكتروني</mat-label>
+                    <input matInput formControlName="website" />
+                    <mat-icon matSuffix>language</mat-icon>
+                  </mat-form-field>
+
+                  <!-- Language -->
+                  <mat-form-field appearance="outline">
+                    <mat-label>لغة النظام</mat-label>
+                    <mat-select formControlName="language">
+                      <mat-option value="ar">العربية</mat-option>
+                      <mat-option value="en">English</mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>translate</mat-icon>
+                  </mat-form-field>
+
+                  <!-- Currency -->
+                  <mat-form-field appearance="outline">
+                    <mat-label>العملة</mat-label>
+                    <mat-select formControlName="currency">
+                      <mat-option value="SAR">ريال سعودي</mat-option>
+                      <mat-option value="USD">دولار أمريكي</mat-option>
+                      <mat-option value="EUR">يورو</mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>attach_money</mat-icon>
+                  </mat-form-field>
+
+                  <!-- Timezone -->
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>المنطقة الزمنية</mat-label>
+                    <mat-select formControlName="timezone">
+                      <mat-option value="Asia/Riyadh">الرياض</mat-option>
+                      <mat-option value="Asia/Dubai">دبي</mat-option>
+                      <mat-option value="Asia/Qatar">قطر</mat-option>
+                      <mat-option value="Asia/Kuwait">الكويت</mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>schedule</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-actions">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="onSaveBasicSettings()"
+                    [disabled]="basicSettingsForm.invalid || saving()"
+                  >
+                    <mat-spinner diameter="20" *ngIf="saving()"></mat-spinner>
+                    <mat-icon *ngIf="!saving()">save</mat-icon>
+                    حفظ الإعدادات
+                  </button>
+                </div>
+              </form>
+            </div>
+          </mat-tab>
+
+          <!-- Working Hours Tab -->
+          <mat-tab label="ساعات العمل">
+            <div class="tab-content">
+              <form [formGroup]="workingHoursForm" class="settings-form">
+                <div class="form-header">
+                  <h3>ساعات العمل وأيام التشغيل</h3>
+                  <p>تحديد ساعات عمل العيادة وأيام التشغيل</p>
+                </div>
+
+                <div class="working-hours-section">
+                  <!-- Working Hours -->
+                  <mat-card class="section-card">
+                    <mat-card-header>
+                      <mat-card-title>ساعات العمل</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="hours-grid">
+                        <mat-form-field appearance="outline">
+                          <mat-label>بداية العمل</mat-label>
+                          <input
+                            matInput
+                            type="time"
+                            formControlName="workingHoursStart"
+                          />
+                          <mat-icon matSuffix>access_time</mat-icon>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>نهاية العمل</mat-label>
+                          <input
+                            matInput
+                            type="time"
+                            formControlName="workingHoursEnd"
+                          />
+                          <mat-icon matSuffix>access_time</mat-icon>
+                        </mat-form-field>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- Working Days -->
+                  <mat-card class="section-card">
+                    <mat-card-header>
+                      <mat-card-title>أيام العمل</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="working-days-grid">
+                        <mat-checkbox
+                          *ngFor="let day of workingDaysOptions"
+                          [checked]="isWorkingDaySelected(day)"
+                          (change)="onWorkingDayToggle(day, $event)"
+                          class="working-day-item"
+                        >
+                          {{ getWorkingDayName(day) }}
+                        </mat-checkbox>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+
+                <div class="form-actions">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="onSaveWorkingHours()"
+                    [disabled]="workingHoursForm.invalid || saving()"
+                  >
+                    <mat-spinner diameter="20" *ngIf="saving()"></mat-spinner>
+                    <mat-icon *ngIf="!saving()">save</mat-icon>
+                    حفظ ساعات العمل
+                  </button>
+                </div>
+              </form>
+            </div>
+          </mat-tab>
+
+          <!-- Notifications Tab -->
+          <mat-tab label="الإشعارات">
+            <div class="tab-content">
+              <form [formGroup]="notificationForm" class="settings-form">
+                <div class="form-header">
+                  <h3>إعدادات الإشعارات</h3>
+                  <p>تخصيص أنواع الإشعارات التي تريد استلامها</p>
+                </div>
+
+                <div class="notification-sections">
+                  <!-- Email Notifications -->
+                  <mat-card class="section-card">
+                    <mat-card-header>
+                      <mat-card-title>
+                        <mat-icon>email</mat-icon>
+                        إشعارات البريد الإلكتروني
+                      </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="notification-options">
+                        <mat-slide-toggle formControlName="emailNotifications">
+                          تفعيل إشعارات البريد الإلكتروني
+                        </mat-slide-toggle>
+
+                        <mat-slide-toggle
+                          formControlName="appointmentReminders"
+                          [disabled]="
+                            !notificationForm.get('emailNotifications')?.value
+                          "
+                        >
+                          تذكيرات المواعيد
+                        </mat-slide-toggle>
+
+                        <mat-slide-toggle
+                          formControlName="paymentNotifications"
+                          [disabled]="
+                            !notificationForm.get('emailNotifications')?.value
+                          "
+                        >
+                          إشعارات الدفع
+                        </mat-slide-toggle>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- SMS Notifications -->
+                  <mat-card class="section-card">
+                    <mat-card-header>
+                      <mat-card-title>
+                        <mat-icon>sms</mat-icon>
+                        إشعارات الرسائل النصية
+                      </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="notification-options">
+                        <mat-slide-toggle formControlName="smsNotifications">
+                          تفعيل الرسائل النصية
+                        </mat-slide-toggle>
+
+                        <div class="info-note">
+                          <mat-icon>info</mat-icon>
+                          <span>قد تترتب رسوم إضافية على الرسائل النصية</span>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- System Notifications -->
+                  <mat-card class="section-card">
+                    <mat-card-header>
+                      <mat-card-title>
+                        <mat-icon>notifications</mat-icon>
+                        إشعارات النظام
+                      </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="notification-options">
+                        <mat-slide-toggle formControlName="systemUpdates">
+                          تحديثات النظام
+                        </mat-slide-toggle>
+
+                        <mat-slide-toggle formControlName="maintenanceAlerts">
+                          تنبيهات الصيانة
+                        </mat-slide-toggle>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+
+                <div class="form-actions">
+                  <button
+                    mat-stroked-button
+                    (click)="onTestNotifications()"
+                    class="test-button"
+                  >
+                    <mat-icon>send</mat-icon>
+                    إرسال إشعار تجريبي
+                  </button>
+
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="onSaveNotificationSettings()"
+                  >
+                    <mat-icon>save</mat-icon>
+                    حفظ إعدادات الإشعارات
+                  </button>
+
+                  <button
+                    mat-button
+                    (click)="onResetSettings('notification')"
+                    class="reset-button"
+                  >
+                    <mat-icon>restore</mat-icon>
+                    إعادة تعيين
+                  </button>
+                </div>
+              </form>
+            </div>
+          </mat-tab>
+
+          <!-- Security Tab -->
+          <mat-tab label="الأمان">
+            <div class="tab-content">
+              <form [formGroup]="securityForm" class="settings-form">
+                <div class="form-header">
+                  <h3>إعدادات الأمان</h3>
+                  <p>تكوين إعدادات الأمان وحماية الحساب</p>
+                </div>
+
+                <div class="security-sections">
+                  <!-- Authentication -->
+                  <mat-card class="section-card">
+                    <mat-card-header>
+                      <mat-card-title>
+                        <mat-icon>security</mat-icon>
+                        المصادقة
+                      </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="security-options">
+                        <mat-slide-toggle formControlName="twoFactorAuth">
+                          المصادقة الثنائية
+                        </mat-slide-toggle>
+
+                        <mat-form-field
+                          appearance="outline"
+                          class="session-timeout"
+                        >
+                          <mat-label>مهلة انتهاء الجلسة (بالدقائق)</mat-label>
+                          <input
+                            matInput
+                            type="number"
+                            formControlName="sessionTimeout"
+                            min="15"
+                            max="480"
+                          />
+                          <mat-icon matSuffix>timer</mat-icon>
+                          <mat-error
+                            *ngIf="hasFormError('security', 'sessionTimeout')"
+                          >
+                            {{
+                              getFormErrorMessage("security", "sessionTimeout")
+                            }}
+                          </mat-error>
+                        </mat-form-field>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- Password Policy -->
+                  <mat-card class="section-card">
+                    <mat-card-header>
+                      <mat-card-title>
+                        <mat-icon>lock</mat-icon>
+                        سياسة كلمات المرور
+                      </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="password-policy">
+                        <mat-form-field appearance="outline">
+                          <mat-label>الحد الأدنى لطول كلمة المرور</mat-label>
+                          <input
+                            matInput
+                            type="number"
+                            formControlName="minPasswordLength"
+                            min="6"
+                            max="20"
+                          />
+                          <mat-error
+                            *ngIf="
+                              hasFormError('security', 'minPasswordLength')
+                            "
+                          >
+                            {{
+                              getFormErrorMessage(
+                                "security",
+                                "minPasswordLength"
+                              )
+                            }}
+                          </mat-error>
+                        </mat-form-field>
+
+                        <div class="password-requirements">
+                          <mat-checkbox formControlName="requireNumbers">
+                            يجب أن تحتوي على أرقام
+                          </mat-checkbox>
+
+                          <mat-checkbox formControlName="requireSymbols">
+                            يجب أن تحتوي على رموز
+                          </mat-checkbox>
+
+                          <mat-checkbox formControlName="requireUppercase">
+                            يجب أن تحتوي على أحرف كبيرة
+                          </mat-checkbox>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- Access Control -->
+                  <mat-card class="section-card">
+                    <mat-card-header>
+                      <mat-card-title>
+                        <mat-icon>admin_panel_settings</mat-icon>
+                        التحكم في الوصول
+                      </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="access-control">
+                        <div class="ip-whitelist">
+                          <h4>القائمة البيضاء لعناوين IP</h4>
+                          <p class="helper-text">
+                            تحديد عناوين IP المسموح لها بالوصول للنظام (اختياري)
+                          </p>
+
+                          <div class="ip-list">
+                            <mat-chip-set>
+                              <mat-chip
+                                *ngFor="
+                                  let ip of securitySettings().ipWhitelist
+                                "
+                                removable="true"
+                              >
+                                {{ ip }}
+                                <mat-icon matChipRemove>cancel</mat-icon>
+                              </mat-chip>
+                            </mat-chip-set>
+
+                            <mat-form-field
+                              appearance="outline"
+                              class="ip-input"
+                            >
+                              <mat-label>إضافة عنوان IP</mat-label>
+                              <input matInput placeholder="192.168.1.1" />
+                              <button mat-icon-button matSuffix>
+                                <mat-icon>add</mat-icon>
+                              </button>
+                            </mat-form-field>
+                          </div>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+
+                <div class="form-actions">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="onSaveSecuritySettings()"
+                    [disabled]="securityForm.invalid"
+                  >
+                    <mat-icon>save</mat-icon>
+                    حفظ إعدادات الأمان
+                  </button>
+
+                  <button
+                    mat-button
+                    (click)="onResetSettings('security')"
+                    class="reset-button"
+                  >
+                    <mat-icon>restore</mat-icon>
+                    إعادة تعيين
+                  </button>
+                </div>
+              </form>
+            </div>
+          </mat-tab>
+
+          <!-- Backup Tab -->
+          <mat-tab label="النسخ الاحتياطي">
+            <div class="tab-content">
+              <form [formGroup]="backupForm" class="settings-form">
+                <div class="form-header">
+                  <h3>إعدادات النسخ الاحتياطي</h3>
+                  <p>إدارة النسخ الاحتياطي للبيانات</p>
+                </div>
+
+                <div class="backup-sections">
+                  <!-- Auto Backup Settings -->
+                  <mat-card class="section-card">
+                    <mat-card-header>
+                      <mat-card-title>
+                        <mat-icon>backup</mat-icon>
+                        النسخ الاحتياطي التلقائي
+                      </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="backup-options">
+                        <mat-slide-toggle formControlName="autoBackup">
+                          تفعيل النسخ الاحتياطي التلقائي
+                        </mat-slide-toggle>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>تكرار النسخ الاحتياطي</mat-label>
+                          <mat-select
+                            formControlName="backupFrequency"
+                            [disabled]="!backupForm.get('autoBackup')?.value"
+                          >
+                            <mat-option value="daily">يومي</mat-option>
+                            <mat-option value="weekly">أسبوعي</mat-option>
+                            <mat-option value="monthly">شهري</mat-option>
+                          </mat-select>
+                          <mat-icon matSuffix>schedule</mat-icon>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>فترة الاحتفاظ (بالأيام)</mat-label>
+                          <input
+                            matInput
+                            type="number"
+                            formControlName="retentionPeriod"
+                            min="7"
+                            max="365"
+                            [disabled]="!backupForm.get('autoBackup')?.value"
+                          />
+                          <mat-icon matSuffix>storage</mat-icon>
+                          <mat-error
+                            *ngIf="hasFormError('backup', 'retentionPeriod')"
+                          >
+                            {{
+                              getFormErrorMessage("backup", "retentionPeriod")
+                            }}
+                          </mat-error>
+                        </mat-form-field>
+
+                        <mat-checkbox
+                          formControlName="includeAttachments"
+                          [disabled]="!backupForm.get('autoBackup')?.value"
+                        >
+                          تضمين المرفقات والصور
+                        </mat-checkbox>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- Manual Backup -->
+                  <mat-card class="section-card">
+                    <mat-card-header>
+                      <mat-card-title>
+                        <mat-icon>cloud_download</mat-icon>
+                        النسخ الاحتياطي اليدوي
+                      </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="manual-backup">
+                        <p>إنشاء نسخة احتياطية فورية من جميع بيانات العيادة</p>
+
+                        <div class="backup-info">
+                          <div class="info-item">
+                            <mat-icon>info</mat-icon>
+                            <span>آخر نسخة احتياطية: منذ 3 ساعات</span>
+                          </div>
+                          <div class="info-item">
+                            <mat-icon>storage</mat-icon>
+                            <span
+                              >حجم النسخة الاحتياطية المتوقع: ~45 ميجابايت</span
+                            >
+                          </div>
+                        </div>
+
+                        <button
+                          mat-raised-button
+                          color="accent"
+                          (click)="onCreateBackupNow()"
+                          class="backup-now-btn"
+                        >
+                          <mat-icon>backup</mat-icon>
+                          إنشاء نسخة احتياطية الآن
+                        </button>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+
+                  <!-- Restore Options -->
+                  <mat-card class="section-card">
+                    <mat-card-header>
+                      <mat-card-title>
+                        <mat-icon>restore</mat-icon>
+                        استعادة البيانات
+                      </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="restore-options">
+                        <p>استعادة البيانات من نسخة احتياطية سابقة</p>
+
+                        <div class="available-backups">
+                          <h4>النسخ الاحتياطية المتاحة:</h4>
+                          <div class="backup-list">
+                            <mat-list>
+                              <mat-list-item>
+                                <mat-icon matListItemIcon>backup</mat-icon>
+                                <div matListItemTitle>
+                                  2024-01-15 - نسخة يومية
+                                </div>
+                                <div matListItemLine>الحجم: 42 ميجابايت</div>
+                                <button mat-icon-button matListItemMeta>
+                                  <mat-icon>download</mat-icon>
+                                </button>
+                              </mat-list-item>
+
+                              <mat-list-item>
+                                <mat-icon matListItemIcon>backup</mat-icon>
+                                <div matListItemTitle>
+                                  2024-01-14 - نسخة يومية
+                                </div>
+                                <div matListItemLine>الحجم: 41 ميجابايت</div>
+                                <button mat-icon-button matListItemMeta>
+                                  <mat-icon>download</mat-icon>
+                                </button>
+                              </mat-list-item>
+                            </mat-list>
+                          </div>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+
+                <div class="form-actions">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="onSaveBackupSettings()"
+                    [disabled]="backupForm.invalid"
+                  >
+                    <mat-icon>save</mat-icon>
+                    حفظ إعدادات النسخ الاحتياطي
+                  </button>
+
+                  <button
+                    mat-button
+                    (click)="onResetSettings('backup')"
+                    class="reset-button"
+                  >
+                    <mat-icon>restore</mat-icon>
+                    إعادة تعيين
+                  </button>
+                </div>
+              </form>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </mat-card>
+    </div>
+  </div>
+</app-sidebar>
