@@ -39,6 +39,7 @@ import {
   ReportType,
   ChartData
 } from '../../models/report.model';
+import { MatProgressBarModule } from "@angular/material/progress-bar";
 
 interface MedicalStatistics {
   totalRecords: number;
@@ -109,12 +110,14 @@ interface TreatmentOutcome {
     MatListModule,
     HeaderComponent,
     SidebarComponent,
-    ChartWidgetComponent
-  ],
+    ChartWidgetComponent,
+    MatProgressBarModule
+],
   templateUrl: './medical-reports.component.html',
   styleUrl: './medical-reports.component.scss'
 })
 export class MedicalReportsComponent implements OnInit {
+  exportFormat = ExportFormat;
   // Services
   private reportService = inject(ReportService);
   private authService = inject(AuthService);

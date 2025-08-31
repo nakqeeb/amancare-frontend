@@ -81,7 +81,7 @@ export const REPORTS_ROUTES: Routes = [
     loadComponent: () =>
       import('./components/scheduled-reports/scheduled-reports.component')
         .then(m => m.ScheduledReportsComponent),
-    canActivate: [RoleGuard],
+    // canActivate: [RoleGuard],
     data: { roles: ['ADMIN', 'SYSTEM_ADMIN'] },
     title: 'التقارير المجدولة'
   }

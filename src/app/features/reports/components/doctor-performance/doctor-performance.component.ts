@@ -81,6 +81,7 @@ interface DoctorKPI {
   styleUrl: './doctor-performance.component.scss'
 })
 export class DoctorPerformanceComponent implements OnInit {
+  exportFormat = ExportFormat;
   // Services
   private reportService = inject(ReportService);
   private authService = inject(AuthService);

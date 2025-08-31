@@ -70,6 +70,7 @@ import {
   styleUrl: './patient-reports.component.scss'
 })
 export class PatientReportsComponent implements OnInit {
+  exportFormat = ExportFormat;
   // Services
   private reportService = inject(ReportService);
   private authService = inject(AuthService);

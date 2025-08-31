@@ -29,15 +29,15 @@
           </button>
 
           <mat-menu #exportMenu="matMenu">
-            <button mat-menu-item (click)="onExportReport('PDF')">
+            <button mat-menu-item (click)="onExportReport(exportFormat.PDF)">
               <mat-icon>picture_as_pdf</mat-icon>
               تصدير PDF
             </button>
-            <button mat-menu-item (click)="onExportReport('EXCEL')">
+            <button mat-menu-item (click)="onExportReport(exportFormat.EXCEL)">
               <mat-icon>table_chart</mat-icon>
               تصدير Excel
             </button>
-            <button mat-menu-item (click)="onExportReport('CSV')">
+            <button mat-menu-item (click)="onExportReport(exportFormat.CSV)">
               <mat-icon>text_snippet</mat-icon>
               تصدير CSV
             </button>
@@ -631,8 +631,8 @@
                     >
                     <mat-cell *matCellDef="let payment">
                       <mat-chip
-                        [class]="getPaymentStatusClass(payment.daysPastDue)"
-                        [selected]="true"
+                        [class]="getPaymentStatusClass(payment.daysPastDue)" [ariaSelected]="true"
+                        selected
                       >
                         {{ payment.daysPastDue }} يوم
                       </mat-chip>

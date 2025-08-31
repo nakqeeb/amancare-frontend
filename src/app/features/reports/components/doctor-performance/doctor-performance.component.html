@@ -24,11 +24,11 @@
           </button>
 
           <mat-menu #exportMenu="matMenu">
-            <button mat-menu-item (click)="onExportReport('PDF')">
+            <button mat-menu-item (click)="onExportReport(exportFormat.PDF)">
               <mat-icon>picture_as_pdf</mat-icon>
               تصدير PDF
             </button>
-            <button mat-menu-item (click)="onExportReport('EXCEL')">
+            <button mat-menu-item (click)="onExportReport(exportFormat.EXCEL)">
               <mat-icon>table_chart</mat-icon>
               تصدير Excel
             </button>

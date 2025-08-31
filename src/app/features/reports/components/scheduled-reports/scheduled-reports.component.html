@@ -1,0 +1,709 @@
+<!-- ===================================================================
+     src/app/features/reports/components/scheduled-reports/scheduled-reports.component.html
+     =================================================================== -->
+<app-header></app-header>
+
+<app-sidebar>
+  <div class="scheduled-reports-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>
+        <mat-icon>schedule</mat-icon>
+        التقارير المجدولة
+      </h1>
+      <div class="header-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="onCreateNewSchedule()"
+        >
+          <mat-icon>add</mat-icon>
+          إنشاء جدولة جديدة
+        </button>
+        <button
+          mat-stroked-button
+          (click)="onRefreshData()"
+          [disabled]="loading()"
+        >
+          <mat-icon>refresh</mat-icon>
+          تحديث
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Statistics -->
+    <div class="quick-stats">
+      <div class="stat-card total">
+        <div class="stat-icon">
+          <mat-icon>folder</mat-icon>
+        </div>
+        <div class="stat-value">{{ totalReports() }}</div>
+        <div class="stat-label">إجمالي الجدولات</div>
+      </div>
+
+      <div class="stat-card active">
+        <div class="stat-icon">
+          <mat-icon>play_circle</mat-icon>
+        </div>
+        <div class="stat-value">{{ activeReports().length }}</div>
+        <div class="stat-label">جدولات نشطة</div>
+      </div>
+
+      <div class="stat-card paused">
+        <div class="stat-icon">
+          <mat-icon>pause_circle</mat-icon>
+        </div>
+        <div class="stat-value">{{ pausedReports().length }}</div>
+        <div class="stat-label">جدولات متوقفة</div>
+      </div>
+
+      <div class="stat-card failed">
+        <div class="stat-icon">
+          <mat-icon>error</mat-icon>
+        </div>
+        <div class="stat-value">{{ errorReports().length }}</div>
+        <div class="stat-label">جدولات معطلة</div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (loading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>جاري تحميل التقارير المجدولة...</p>
+    </div>
+    } @if (!loading()) {
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Reports List -->
+      <div class="reports-list-section">
+        <mat-card class="reports-list-card">
+          <div class="list-header">
+            <h3 class="header-title">
+              <mat-icon>list</mat-icon>
+              قائمة التقارير المجدولة
+            </h3>
+            <div class="list-actions">
+              <button mat-icon-button [matMenuTriggerFor]="sortMenu">
+                <mat-icon>sort</mat-icon>
+              </button>
+              <mat-menu #sortMenu="matMenu">
+                <button mat-menu-item>
+                  <mat-icon>schedule</mat-icon>
+                  ترتيب حسب التوقيت
+                </button>
+                <button mat-menu-item>
+                  <mat-icon>person</mat-icon>
+                  ترتيب حسب المنشئ
+                </button>
+                <button mat-menu-item>
+                  <mat-icon>category</mat-icon>
+                  ترتيب حسب النوع
+                </button>
+              </mat-menu>
+            </div>
+          </div>
+
+          @if (scheduledReports().length > 0) {
+          <div class="reports-list">
+            @for (report of scheduledReports(); track report.id) {
+            <div
+              class="report-item"
+              [ngClass]="{ selected: selectedReport()?.id === report.id }"
+              (click)="selectedReport.set(report)"
+            >
+              <div class="report-header">
+                <div class="report-info">
+                  <h4 class="report-name">
+                    <mat-icon class="report-type-icon">{{
+                      getReportTypeIcon(report.type)
+                    }}</mat-icon>
+                    {{ report.name }}
+                  </h4>
+                  @if (report.description) {
+                  <p class="report-description">{{ report.description }}</p>
+                  }
+                </div>
+
+                <div class="report-status" [ngClass]="report.status">
+                  <div class="status-dot"></div>
+                  {{ getStatusLabel(report.status) }}
+                </div>
+              </div>
+
+              <div class="report-schedule">
+                <div class="schedule-item">
+                  <mat-icon>schedule</mat-icon>
+                  {{ getFrequencyLabel(report.schedule.frequency) }} في
+                  {{ formatTime(report.schedule.time) }}
+                </div>
+                @if (report.nextExecution) {
+                <div class="schedule-item">
+                  <mat-icon>event</mat-icon>
+                  التشغيل القادم: {{ formatDateTime(report.nextExecution) }}
+                </div>
+                }
+                <div class="schedule-item">
+                  <mat-icon>people</mat-icon>
+                  {{ report.recipients.length }} مستلم
+                </div>
+              </div>
+
+              <div class="report-metrics">
+                <div class="metric">
+                  <div class="metric-value">
+                    {{ report.statistics.totalExecutions }}
+                  </div>
+                  <div class="metric-label">تشغيل</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-value">
+                    {{ report.statistics.successfulExecutions }}
+                  </div>
+                  <div class="metric-label">ناجح</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-value">
+                    {{ report.statistics.failedExecutions }}
+                  </div>
+                  <div class="metric-label">فاشل</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-value">
+                    {{ formatFileSize(report.statistics.totalDataSize) }}
+                  </div>
+                  <div class="metric-label">البيانات</div>
+                </div>
+              </div>
+
+              <div class="report-actions">
+                <div class="last-run">
+                  @if (report.lastExecution) { آخر تشغيل:
+                  <span
+                    class="last-run-status"
+                    [ngClass]="report.lastExecution.status"
+                  >
+                    {{
+                      report.lastExecution.status === "completed"
+                        ? "نجح"
+                        : report.lastExecution.status === "failed"
+                        ? "فشل"
+                        : "يعمل"
+                    }}
+                  </span>
+                  {{ formatDateTime(report.lastExecution.startTime) }}
+                  } @else { لم يتم التشغيل بعد }
+                </div>
+
+                <div class="action-buttons">
+                  @if (report.status === 'active') {
+                  <button
+                    mat-icon-button
+                    class="action-btn pause-btn"
+                    [matTooltip]="'إيقاف الجدولة'"
+                    (click)="
+                      onToggleReportStatus(report); $event.stopPropagation()
+                    "
+                  >
+                    <mat-icon>pause</mat-icon>
+                  </button>
+                  } @else {
+                  <button
+                    mat-icon-button
+                    class="action-btn play-btn"
+                    [matTooltip]="'تفعيل الجدولة'"
+                    (click)="
+                      onToggleReportStatus(report); $event.stopPropagation()
+                    "
+                  >
+                    <mat-icon>play_arrow</mat-icon>
+                  </button>
+                  }
+
+                  <button
+                    mat-icon-button
+                    class="action-btn run-btn"
+                    [matTooltip]="'تشغيل الآن'"
+                    (click)="onRunNow(report); $event.stopPropagation()"
+                    [disabled]="report.status === 'disabled'"
+                  >
+                    <mat-icon>play_circle</mat-icon>
+                  </button>
+
+                  <button
+                    mat-icon-button
+                    class="action-btn view-btn"
+                    [matTooltip]="'عرض التاريخ'"
+                    (click)="
+                      onViewExecutionHistory(report); $event.stopPropagation()
+                    "
+                  >
+                    <mat-icon>history</mat-icon>
+                  </button>
+
+                  <button
+                    mat-icon-button
+                    class="action-btn edit-btn"
+                    [matTooltip]="'تعديل الجدولة'"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+
+                  <button
+                    mat-icon-button
+                    class="action-btn delete-btn"
+                    [matTooltip]="'حذف الجدولة'"
+                    (click)="
+                      onDeleteScheduledReport(report); $event.stopPropagation()
+                    "
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+          } @else {
+          <div class="empty-list">
+            <mat-icon class="empty-icon">schedule</mat-icon>
+            <h3 class="empty-title">لا توجد تقارير مجدولة</h3>
+            <p class="empty-description">
+              ابدأ بإنشاء جدولة تقرير جديدة لتوليد التقارير تلقائياً
+            </p>
+            <button
+              mat-raised-button
+              color="primary"
+              class="empty-action"
+              (click)="onCreateNewSchedule()"
+            >
+              <mat-icon>add</mat-icon>
+              إنشاء جدولة جديدة
+            </button>
+          </div>
+          }
+        </mat-card>
+      </div>
+
+      <!-- Schedule Creation/Edit Panel -->
+      @if (showCreateForm()) {
+      <mat-card class="schedule-panel">
+        <div class="panel-header">
+          <h3>
+            <mat-icon>add_circle</mat-icon>
+            إنشاء جدولة تقرير جديدة
+          </h3>
+        </div>
+
+        <div class="panel-content">
+          <form [formGroup]="scheduleForm" (ngSubmit)="onSubmitSchedule()">
+            <!-- Basic Information Section -->
+            <div class="form-section">
+              <h4 class="section-title">
+                <mat-icon>info</mat-icon>
+                المعلومات الأساسية
+              </h4>
+
+              <div class="form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>اسم التقرير</mat-label>
+                  <input
+                    matInput
+                    formControlName="name"
+                    placeholder="أدخل اسم التقرير"
+                  />
+                  <mat-error>اسم التقرير مطلوب</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>نوع التقرير</mat-label>
+                  <mat-select formControlName="type">
+                    @for (type of reportTypes; track type.value) {
+                    <mat-option [value]="type.value">
+                      <mat-icon>{{ type.icon }}</mat-icon>
+                      {{ type.label }}
+                    </mat-option>
+                    }
+                  </mat-select>
+                  <mat-error>نوع التقرير مطلوب</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>الوصف (اختياري)</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="description"
+                    rows="2"
+                    placeholder="وصف مختصر للتقرير"
+                  ></textarea>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <!-- Schedule Configuration Section -->
+            <div class="form-section">
+              <h4 class="section-title">
+                <mat-icon>schedule</mat-icon>
+                إعدادات الجدولة
+              </h4>
+
+              <div class="frequency-options">
+                @for (option of frequencyOptions; track option.value) {
+                <div
+                  class="frequency-option"
+                  [ngClass]="{
+                    selected:
+                      scheduleForm.get('frequency')?.value === option.value
+                  }"
+                  (click)="
+                    scheduleForm.get('frequency')?.setValue(option.value)
+                  "
+                >
+                  <mat-icon>{{ option.icon }}</mat-icon>
+                  <p class="option-label">{{ option.label }}</p>
+                </div>
+                }
+              </div>
+
+              <div class="form-grid two-column">
+                <mat-form-field appearance="outline">
+                  <mat-label>الوقت</mat-label>
+                  <mat-select formControlName="time">
+                    @for (slot of timeSlots.slice(0, 48); track slot.value) {
+                    <mat-option [value]="slot.value">{{
+                      slot.label
+                    }}</mat-option>
+                    }
+                  </mat-select>
+                  <mat-error>الوقت مطلوب</mat-error>
+                </mat-form-field>
+
+                @if (scheduleForm.get('frequency')?.value === 'weekly') {
+                <mat-form-field appearance="outline">
+                  <mat-label>يوم الأسبوع</mat-label>
+                  <mat-select formControlName="dayOfWeek">
+                    <mat-option [value]="0">الأحد</mat-option>
+                    <mat-option [value]="1">الاثنين</mat-option>
+                    <mat-option [value]="2">الثلاثاء</mat-option>
+                    <mat-option [value]="3">الأربعاء</mat-option>
+                    <mat-option [value]="4">الخميس</mat-option>
+                    <mat-option [value]="5">الجمعة</mat-option>
+                    <mat-option [value]="6">السبت</mat-option>
+                  </mat-select>
+                  <mat-error>يوم الأسبوع مطلوب</mat-error>
+                </mat-form-field>
+                } @if (scheduleForm.get('frequency')?.value === 'monthly' ||
+                scheduleForm.get('frequency')?.value === 'quarterly' ||
+                scheduleForm.get('frequency')?.value === 'yearly') {
+                <mat-form-field appearance="outline">
+                  <mat-label>يوم الشهر</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    min="1"
+                    max="31"
+                    formControlName="dayOfMonth"
+                  />
+                  <mat-error>يوم الشهر مطلوب (1-31)</mat-error>
+                </mat-form-field>
+                }
+
+                <mat-form-field appearance="outline">
+                  <mat-label>تاريخ البداية</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="startDatePicker"
+                    formControlName="startDate"
+                  />
+                  <mat-datepicker-toggle
+                    matIconSuffix
+                    [for]="startDatePicker"
+                  ></mat-datepicker-toggle>
+                  <mat-datepicker #startDatePicker></mat-datepicker>
+                  <mat-error>تاريخ البداية مطلوب</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>تاريخ الانتهاء (اختياري)</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="endDatePicker"
+                    formControlName="endDate"
+                  />
+                  <mat-datepicker-toggle
+                    matIconSuffix
+                    [for]="endDatePicker"
+                  ></mat-datepicker-toggle>
+                  <mat-datepicker #endDatePicker></mat-datepicker>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <!-- Report Configuration Section -->
+            <div class="form-section">
+              <h4 class="section-title">
+                <mat-icon>settings</mat-icon>
+                إعدادات التقرير
+              </h4>
+
+              <div class="form-grid two-column">
+                <mat-form-field appearance="outline">
+                  <mat-label>صيغة التصدير</mat-label>
+                  <mat-select formControlName="format">
+                    @for (format of exportFormats; track format.value) {
+                    <mat-option [value]="format.value">
+                      <mat-icon>{{ format.icon }}</mat-icon>
+                      {{ format.label }}
+                    </mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>اللغة</mat-label>
+                  <mat-select formControlName="language">
+                    <mat-option value="ar">العربية</mat-option>
+                    <mat-option value="en">English</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>العيادة (اختياري)</mat-label>
+                  <mat-select formControlName="clinicId">
+                    <mat-option [value]="null">جميع العيادات</mat-option>
+                    <!-- Add clinic options dynamically -->
+                  </mat-select>
+                </mat-form-field>
+
+                <div class="checkbox-group">
+                  <mat-checkbox formControlName="includeCharts">
+                    تضمين الرسوم البيانية
+                  </mat-checkbox>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recipients Section -->
+            <div class="form-section">
+              <h4 class="section-title">
+                <mat-icon>email</mat-icon>
+                المستلمون
+              </h4>
+
+              <div class="recipients-list">
+                @for (recipient of recipientsFormArray.controls; track $index;
+                let i = $index) {
+                <div class="recipient-item" [formGroup]="$any(recipient)">
+                  <div class="recipient-form">
+                    <mat-form-field appearance="outline">
+                      <mat-label>البريد الإلكتروني</mat-label>
+                      <input matInput type="email" formControlName="email" />
+                      <mat-error>بريد إلكتروني صحيح مطلوب</mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>الاسم</mat-label>
+                      <input matInput formControlName="name" />
+                      <mat-error>الاسم مطلوب</mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>المسمى الوظيفي</mat-label>
+                      <input matInput formControlName="role" />
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>طريقة التسليم</mat-label>
+                      <mat-select formControlName="deliveryMethod">
+                        <mat-option value="email">بريد إلكتروني</mat-option>
+                        <mat-option value="notification">إشعار</mat-option>
+                        <mat-option value="both">كلاهما</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+
+                    @if (recipientsFormArray.length > 1) {
+                    <button
+                      mat-icon-button
+                      type="button"
+                      color="warn"
+                      (click)="removeRecipient(i)"
+                    >
+                      <mat-icon>remove_circle</mat-icon>
+                    </button>
+                    }
+                  </div>
+                </div>
+                }
+
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="addRecipient()"
+                >
+                  <mat-icon>add</mat-icon>
+                  إضافة مستلم
+                </button>
+              </div>
+            </div>
+
+            <!-- Schedule Preview -->
+            @if (scheduleForm.get('frequency')?.value &&
+            scheduleForm.get('time')?.value) {
+            <div class="schedule-preview">
+              <h5 class="preview-title">معاينة الجدولة</h5>
+              <p class="preview-text">
+                سيتم تشغيل هذا التقرير
+                {{ getFrequencyLabel(scheduleForm.get("frequency")?.value) }} في
+                تمام الساعة
+                {{ formatTime(scheduleForm.get("time")?.value) }} @if
+                (scheduleForm.get('frequency')?.value === 'weekly' &&
+                scheduleForm.get('dayOfWeek')?.value !== null) { يوم
+                {{
+                  [
+                    "الأحد",
+                    "الاثنين",
+                    "الثلاثاء",
+                    "الأربعاء",
+                    "الخميس",
+                    "الجمعة",
+                    "السبت"
+                  ][scheduleForm.get("dayOfWeek")?.value]
+                }}
+                } @if ((scheduleForm.get('frequency')?.value === 'monthly' ||
+                scheduleForm.get('frequency')?.value === 'quarterly' ||
+                scheduleForm.get('frequency')?.value === 'yearly') &&
+                scheduleForm.get('dayOfMonth')?.value) { في يوم
+                {{ scheduleForm.get("dayOfMonth")?.value }} من الشهر }
+              </p>
+              <div class="next-run">
+                التشغيل القادم المتوقع:
+                {{ formatDateTime("2024-09-01T09:00:00Z") }}
+              </div>
+            </div>
+            }
+
+            <!-- Form Actions -->
+            <div class="panel-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                type="submit"
+                [disabled]="scheduleForm.invalid || loading()"
+              >
+                @if (loading()) {
+                <mat-spinner diameter="20"></mat-spinner>
+                } @else {
+                <mat-icon>save</mat-icon>
+                } إنشاء الجدولة
+              </button>
+
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="onCancelCreate()"
+              >
+                إلغاء
+              </button>
+            </div>
+          </form>
+        </div>
+      </mat-card>
+      }
+    </div>
+
+    <!-- Recent Executions -->
+    <mat-card class="recent-executions">
+      <div class="executions-header">
+        <h3>
+          <mat-icon>play_circle</mat-icon>
+          آخر التنفيذات
+        </h3>
+      </div>
+
+      @if (recentExecutions().length > 0) {
+      <div class="executions-list">
+        @for (execution of recentExecutions(); track execution.id) {
+        <div class="execution-item">
+          <div class="execution-header">
+            <div class="execution-info">
+              <!-- <h4 class="report-name">
+              {{ scheduledReports().find(r => r.id === execution.scheduledReportId)?.name || 'تقرير غير معروف' }}
+            </h4> -->
+              <h4 class="report-name">
+                {{ getReportName(execution) }}
+              </h4>
+              <p class="execution-time">
+                {{ formatDateTime(execution.startTime) }}
+              </p>
+            </div>
+
+            <div class="execution-status" [ngClass]="execution.status">
+              <mat-icon class="status-icon">{{
+                getExecutionStatusIcon(execution.status)
+              }}</mat-icon>
+              {{
+                execution.status === "completed"
+                  ? "مكتمل"
+                  : execution.status === "failed"
+                  ? "فاشل"
+                  : execution.status === "running"
+                  ? "يعمل"
+                  : "ملغي"
+              }}
+            </div>
+          </div>
+
+          @if (execution.status === 'completed') {
+          <div class="execution-details">
+            <div class="detail-item">
+              <span class="detail-label">المدة:</span>
+              {{ formatDuration(execution.duration) }}
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">الحجم:</span>
+              {{ formatFileSize(execution.fileSize || 0) }}
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">أرسل إلى:</span>
+              {{ execution.sentTo.length }} مستلم
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">التنزيلات:</span>
+              {{ execution.downloadCount }}
+            </div>
+          </div>
+
+          <div class="execution-actions">
+            <a
+              href="#"
+              class="action-link"
+              (click)="onDownloadExecution(execution); $event.preventDefault()"
+            >
+              <mat-icon>file_download</mat-icon>
+              تنزيل
+            </a>
+            <a href="#" class="action-link">
+              <mat-icon>share</mat-icon>
+              مشاركة
+            </a>
+          </div>
+          } @if (execution.status === 'failed' && execution.errorMessage) {
+          <div class="execution-error">
+            <mat-icon>error</mat-icon>
+            {{ execution.errorMessage }}
+          </div>
+          }
+        </div>
+        }
+      </div>
+      } @else {
+      <div class="empty-executions">
+        <mat-icon>hourglass_empty</mat-icon>
+        <p>لا توجد تنفيذات حديثة</p>
+      </div>
+      }
+    </mat-card>
+    }
+  </div>
+</app-sidebar>

@@ -1,0 +1,497 @@
+<!-- ===================================================================
+     src/app/features/reports/components/reports-history/reports-history.component.html
+     =================================================================== -->
+<app-header></app-header>
+
+<app-sidebar>
+<div class="reports-history-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>
+      <mat-icon>history</mat-icon>
+      سجل التقارير
+    </h1>
+    <div class="header-actions">
+      <!-- Bulk Actions (shown when reports are selected) -->
+      <div class="bulk-actions" [ngClass]="{ show: selectedCount() > 0 }">
+        <button
+          mat-stroked-button
+          (click)="onBulkDownload()"
+          [disabled]="loading()"
+        >
+          <mat-icon>file_download</mat-icon>
+          تنزيل المحدد ({{ selectedCount() }})
+        </button>
+        <button
+          mat-stroked-button
+          color="warn"
+          (click)="onBulkDelete()"
+          [disabled]="loading()"
+        >
+          <mat-icon>delete</mat-icon>
+          حذف المحدد
+        </button>
+      </div>
+
+      <button
+        mat-stroked-button
+        (click)="onRefreshData()"
+        [disabled]="loading()"
+      >
+        <mat-icon>refresh</mat-icon>
+        تحديث
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistics Overview -->
+  <div class="stats-overview">
+    <div class="stat-card total">
+      <div class="stat-icon">
+        <mat-icon>folder</mat-icon>
+      </div>
+      <div class="stat-value">{{ reportStats().totalReports }}</div>
+      <div class="stat-label">إجمالي التقارير</div>
+      @if (reportStats().totalReports > 0) {
+      <div class="stat-change positive">
+        <mat-icon>trending_up</mat-icon>
+        +12%
+      </div>
+      }
+    </div>
+
+    <div class="stat-card successful">
+      <div class="stat-icon">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="stat-value">{{ reportStats().successfulReports }}</div>
+      <div class="stat-label">تقارير ناجحة</div>
+      @if (reportStats().successfulReports > 0) {
+      <div class="stat-change positive">
+        <mat-icon>trending_up</mat-icon>
+        +5%
+      </div>
+      }
+    </div>
+
+    <div class="stat-card failed">
+      <div class="stat-icon">
+        <mat-icon>error</mat-icon>
+      </div>
+      <div class="stat-value">{{ reportStats().failedReports }}</div>
+      <div class="stat-label">تقارير فاشلة</div>
+      @if (reportStats().failedReports > 0) {
+      <div class="stat-change negative">
+        <mat-icon>trending_down</mat-icon>
+        -2%
+      </div>
+      }
+    </div>
+
+    <div class="stat-card scheduled">
+      <div class="stat-icon">
+        <mat-icon>schedule</mat-icon>
+      </div>
+      <div class="stat-value">{{ reportStats().scheduledReports }}</div>
+      <div class="stat-label">تقارير مجدولة</div>
+    </div>
+  </div>
+
+  <!-- Search and Filters -->
+  <mat-card class="search-filters-card">
+    <!-- Search Section -->
+    <div class="search-section">
+      <form [formGroup]="searchForm" class="search-form">
+        <div class="search-field">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>البحث في التقارير</mat-label>
+            <!-- <input
+            matInput
+            [formControl]="searchForm.get('searchTerm')!"
+            placeholder="اسم التقرير، الوصف، أو المنشئ..."
+          /> -->
+            <input
+              matInput
+              formControlName="searchTerm"
+              placeholder="اسم التقرير، الوصف، أو المنشئ..."
+            />
+            <mat-icon matIconPrefix>search</mat-icon>
+            @if (searchForm.get('searchTerm')?.value) {
+            <button
+              matIconSuffix
+              mat-icon-button
+              aria-label="Clear search"
+              (click)="onSearchClear()"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+            }
+          </mat-form-field>
+        </div>
+      </form>
+
+      <div class="search-actions">
+        <button mat-raised-button color="primary" (click)="onRefreshData()">
+          <mat-icon>search</mat-icon>
+          بحث
+        </button>
+      </div>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="filters-section">
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>tune</mat-icon>
+            فلاتر متقدمة
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <div class="filters-content">
+          <form [formGroup]="filtersForm">
+            <mat-form-field appearance="outline">
+              <mat-label>نوع التقرير</mat-label>
+              <mat-select formControlName="type">
+                <mat-option [value]="null">جميع الأنواع</mat-option>
+                @for (type of reportTypes; track type.value) {
+                <mat-option [value]="type.value">{{ type.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>الحالة</mat-label>
+              <mat-select formControlName="status">
+                <mat-option [value]="null">جميع الحالات</mat-option>
+                @for (status of statusOptions; track status.value) {
+                <mat-option [value]="status.value">{{
+                  status.label
+                }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>منشئ التقرير</mat-label>
+              <mat-select formControlName="createdBy">
+                <mat-option [value]="null">جميع المنشئين</mat-option>
+                <!-- Add dynamic user options -->
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>من تاريخ</mat-label>
+              <input
+                matInput
+                [matDatepicker]="fromDatePicker"
+                formControlName="dateFrom"
+              />
+              <mat-datepicker-toggle
+                matIconSuffix
+                [for]="fromDatePicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #fromDatePicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>إلى تاريخ</mat-label>
+              <input
+                matInput
+                [matDatepicker]="toDatePicker"
+                formControlName="dateTo"
+              />
+              <mat-datepicker-toggle
+                matIconSuffix
+                [for]="toDatePicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #toDatePicker></mat-datepicker>
+            </mat-form-field>
+
+            <div class="filter-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="onFiltersChange()"
+              >
+                تطبيق الفلاتر
+              </button>
+              <button mat-stroked-button (click)="onFiltersReset()">
+                إعادة تعيين
+              </button>
+            </div>
+          </form>
+        </div>
+      </mat-expansion-panel>
+    </div>
+  </mat-card>
+
+  <!-- Loading State -->
+  @if (loading()) {
+  <div class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p class="loading-message">جاري تحميل سجل التقارير...</p>
+  </div>
+  } @if (!loading()) {
+  <!-- Reports Table -->
+  @if (filteredReports().length > 0) {
+  <mat-card class="reports-table-card">
+    <div class="table-header">
+      <div class="header-title">
+        سجل التقارير
+        <span class="results-count"
+          >({{ filteredReports().length }} تقرير)</span
+        >
+      </div>
+      <div class="table-actions">
+        <button mat-icon-button [matMenuTriggerFor]="viewMenu">
+          <mat-icon>view_column</mat-icon>
+        </button>
+        <mat-menu #viewMenu="matMenu">
+          <button mat-menu-item>
+            <mat-icon>visibility</mat-icon>
+            إظهار/إخفاء الأعمدة
+          </button>
+        </mat-menu>
+
+        <button mat-icon-button [matMenuTriggerFor]="sortMenu">
+          <mat-icon>sort</mat-icon>
+        </button>
+        <mat-menu #sortMenu="matMenu">
+          <button mat-menu-item>
+            <mat-icon>schedule</mat-icon>
+            ترتيب حسب التاريخ
+          </button>
+          <button mat-menu-item>
+            <mat-icon>person</mat-icon>
+            ترتيب حسب المنشئ
+          </button>
+        </mat-menu>
+      </div>
+    </div>
+
+    <div class="table-container" [ngClass]="{ loading: loading() }">
+      <table mat-table [dataSource]="dataSource" class="reports-table" matSort>
+        <!-- Selection Column -->
+        <ng-container matColumnDef="select">
+          <th mat-header-cell *matHeaderCellDef>
+            <mat-checkbox
+              [checked]="isAllSelected()"
+              [indeterminate]="selectedReports.hasValue() && !isAllSelected()"
+              (change)="onMasterToggle()"
+            >
+            </mat-checkbox>
+          </th>
+          <td mat-cell *matCellDef="let report">
+            <mat-checkbox
+              [checked]="selectedReports.isSelected(report)"
+              (change)="onReportSelect(report, $event)"
+            >
+            </mat-checkbox>
+          </td>
+        </ng-container>
+
+        <!-- Name Column -->
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>اسم التقرير</th>
+          <td mat-cell *matCellDef="let report">
+            <div class="report-info">
+              <a
+                href="#"
+                class="report-name"
+                (click)="onViewReport(report); $event.preventDefault()"
+              >
+                {{ report.name }}
+              </a>
+              @if (report.description) {
+              <div class="report-description">{{ report.description }}</div>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Type Column -->
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>النوع</th>
+          <td mat-cell *matCellDef="let report">
+            <span class="type-chip" [ngClass]="report.type.toLowerCase()">
+              <mat-icon>{{ getReportTypeIcon(report.type) }}</mat-icon>
+              {{ getReportTypeLabel(report.type) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>الحالة</th>
+          <td mat-cell *matCellDef="let report">
+            <div class="status-indicator" [ngClass]="report.status">
+              <div class="status-dot"></div>
+              {{ getStatusLabel(report.status) }}
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Created Date Column -->
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>
+            تاريخ الإنشاء
+          </th>
+          <td mat-cell *matCellDef="let report">
+            <div class="date-info">
+              <div class="date-main">{{ formatDate(report.createdAt) }}</div>
+              <div class="date-time">{{ formatDate(report.createdAt) }}</div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Created By Column -->
+        <ng-container matColumnDef="createdBy">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>المنشئ</th>
+          <td mat-cell *matCellDef="let report">
+            <div class="user-info">
+              <div class="user-avatar">
+                {{ report.createdByName.charAt(0) }}
+              </div>
+              <div class="user-name">{{ report.createdByName }}</div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- File Size Column -->
+        <ng-container matColumnDef="size">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>الحجم</th>
+          <td mat-cell *matCellDef="let report">
+            {{ formatFileSize(report.fileSize) }}
+          </td>
+        </ng-container>
+
+        <!-- Duration Column -->
+        <ng-container matColumnDef="duration">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>مدة الإنشاء</th>
+          <td mat-cell *matCellDef="let report">
+            {{ formatDuration(report.duration) }}
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+          <td mat-cell *matCellDef="let report">
+            <div class="action-buttons">
+              <button
+                mat-icon-button
+                class="action-btn view-btn"
+                [matTooltip]="'عرض التقرير'"
+                (click)="onViewReport(report)"
+                [disabled]="report.status !== 'completed'"
+              >
+                <mat-icon>visibility</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                class="action-btn download-btn"
+                [matTooltip]="'تنزيل التقرير'"
+                (click)="onDownloadReport(report)"
+                [disabled]="report.status !== 'completed'"
+              >
+                <mat-icon>file_download</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                class="action-btn share-btn"
+                [matTooltip]="'مشاركة التقرير'"
+                [disabled]="report.status !== 'completed'"
+              >
+                <mat-icon>share</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                class="action-btn delete-btn"
+                [matTooltip]="'حذف التقرير'"
+                (click)="onDeleteReport(report)"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let report; columns: displayedColumns"
+          [ngClass]="{ selected: selectedReports.isSelected(report) }"
+          (click)="
+            onReportSelect(report, {
+              checked: !selectedReports.isSelected(report)
+            })
+          "
+        ></tr>
+      </table>
+    </div>
+
+    <div class="table-footer">
+      <div class="footer-info">
+        عرض {{ filteredReports().length }} تقرير @if (selectedCount() > 0) {
+        <span class="selection-info"> • محدد {{ selectedCount() }} تقرير </span>
+        }
+      </div>
+      <div class="footer-actions">
+        @if (selectedCount() > 0) {
+        <button mat-stroked-button (click)="onBulkDownload()">
+          <mat-icon>file_download</mat-icon>
+          تنزيل المحدد
+        </button>
+        <button mat-stroked-button color="warn" (click)="onBulkDelete()">
+          <mat-icon>delete</mat-icon>
+          حذف المحدد
+        </button>
+        }
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- Pagination -->
+  <div class="pagination-container">
+    <mat-paginator
+      [pageSizeOptions]="[10, 25, 50, 100]"
+      [pageSize]="25"
+      [length]="filteredReports().length"
+      showFirstLastButtons
+    >
+    </mat-paginator>
+  </div>
+  }
+
+  <!-- Empty State -->
+  @if (filteredReports().length === 0) {
+  <div class="empty-state">
+    <mat-icon class="empty-icon">folder_open</mat-icon>
+    <h2 class="empty-title">لا توجد تقارير</h2>
+    <p class="empty-description">
+      @if (searchForm.get('searchTerm')?.value || filtersForm.get('type')?.value
+      || filtersForm.get('status')?.value) { لم يتم العثور على تقارير تطابق
+      معايير البحث والفلاتر المحددة. } @else { لم يتم إنشاء أي تقارير بعد. ابدأ
+      بإنشاء تقرير جديد من قسم التقارير. }
+    </p>
+    <div class="empty-actions">
+      @if (searchForm.get('searchTerm')?.value ||
+      filtersForm.get('type')?.value) {
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="onFiltersReset(); onSearchClear()"
+      >
+        إعادة تعيين البحث والفلاتر
+      </button>
+      }
+      <button mat-stroked-button routerLink="/reports">إنشاء تقرير جديد</button>
+    </div>
+  </div>
+  } }
+</div>
+</app-sidebar>
