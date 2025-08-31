@@ -1,0 +1,693 @@
+<!-- ===================================================================
+     src/app/features/reports/components/financial-reports/financial-reports.component.html
+     =================================================================== -->
+<app-header></app-header>
+
+<app-sidebar>
+  <div class="financial-reports-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">
+            <mat-icon>assessment</mat-icon>
+            التقارير المالية
+          </h1>
+          <p class="page-subtitle">
+            تحليل مفصل للإيرادات والمدفوعات والأداء المالي
+          </p>
+        </div>
+
+        <div class="header-actions">
+          <button
+            mat-raised-button
+            color="primary"
+            [matMenuTriggerFor]="exportMenu"
+          >
+            <mat-icon>download</mat-icon>
+            تصدير التقرير
+          </button>
+
+          <mat-menu #exportMenu="matMenu">
+            <button mat-menu-item (click)="onExportReport('PDF')">
+              <mat-icon>picture_as_pdf</mat-icon>
+              تصدير PDF
+            </button>
+            <button mat-menu-item (click)="onExportReport('EXCEL')">
+              <mat-icon>table_chart</mat-icon>
+              تصدير Excel
+            </button>
+            <button mat-menu-item (click)="onExportReport('CSV')">
+              <mat-icon>text_snippet</mat-icon>
+              تصدير CSV
+            </button>
+          </mat-menu>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters Section -->
+    <mat-card class="filters-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>filter_alt</mat-icon>
+          فلاتر التقرير
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="filterForm" class="filters-form">
+          <div class="filter-row">
+            <mat-form-field appearance="outline">
+              <mat-label>من تاريخ</mat-label>
+              <input
+                matInput
+                [matDatepicker]="startPicker"
+                formControlName="startDate"
+              />
+              <mat-datepicker-toggle
+                matIconSuffix
+                [for]="startPicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #startPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>إلى تاريخ</mat-label>
+              <input
+                matInput
+                [matDatepicker]="endPicker"
+                formControlName="endDate"
+              />
+              <mat-datepicker-toggle
+                matIconSuffix
+                [for]="endPicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #endPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>حالة الدفع</mat-label>
+              <mat-select formControlName="status">
+                <mat-option value="all">جميع الحالات</mat-option>
+                <mat-option value="PAID">مدفوعة</mat-option>
+                <mat-option value="PENDING">معلقة</mat-option>
+                <mat-option value="OVERDUE">متأخرة</mat-option>
+                <mat-option value="CANCELLED">ملغاة</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <div class="filter-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="onFilterChange()"
+                [disabled]="loading()"
+              >
+                <mat-icon>search</mat-icon>
+                تطبيق
+              </button>
+              <button mat-stroked-button (click)="onResetFilters()">
+                <mat-icon>refresh</mat-icon>
+                إعادة تعيين
+              </button>
+            </div>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Loading State -->
+    <div *ngIf="loading()" class="loading-container">
+      <mat-progress-spinner
+        mode="indeterminate"
+        diameter="50"
+      ></mat-progress-spinner>
+      <p>جاري تحميل البيانات المالية...</p>
+    </div>
+
+    <!-- Financial Data -->
+    <div *ngIf="!loading() && financialSummary()" class="financial-content">
+      <!-- Summary Cards -->
+      <div class="summary-grid">
+        <mat-card class="summary-card revenue">
+          <mat-card-content>
+            <div class="summary-icon">
+              <mat-icon>monetization_on</mat-icon>
+            </div>
+            <div class="summary-details">
+              <h3>إجمالي الإيرادات</h3>
+              <p class="summary-value">
+                {{ formatCurrency(financialSummary()!.totalRevenue) }}
+              </p>
+              <span class="summary-subtitle"
+                >{{
+                  formatNumber(financialSummary()!.totalInvoices)
+                }}
+                فاتورة</span
+              >
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="summary-card paid">
+          <mat-card-content>
+            <div class="summary-icon">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+            <div class="summary-details">
+              <h3>المبالغ المحصلة</h3>
+              <p class="summary-value">
+                {{ formatCurrency(financialSummary()!.totalPaid) }}
+              </p>
+              <span class="summary-subtitle"
+                >معدل التحصيل {{ formatPercentage(getCollectionRate()) }}</span
+              >
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="summary-card pending">
+          <mat-card-content>
+            <div class="summary-icon">
+              <mat-icon>schedule</mat-icon>
+            </div>
+            <div class="summary-details">
+              <h3>مبالغ معلقة</h3>
+              <p class="summary-value">
+                {{ formatCurrency(financialSummary()!.totalPending) }}
+              </p>
+              <span class="summary-subtitle"
+                >{{ formatPercentage(getPendingRate()) }} من الإجمالي</span
+              >
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="summary-card overdue">
+          <mat-card-content>
+            <div class="summary-icon">
+              <mat-icon>warning</mat-icon>
+            </div>
+            <div class="summary-details">
+              <h3>مبالغ متأخرة</h3>
+              <p class="summary-value">
+                {{ formatCurrency(financialSummary()!.totalOverdue) }}
+              </p>
+              <span class="summary-subtitle"
+                >{{ formatPercentage(getOverdueRate()) }} من الإجمالي</span
+              >
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="summary-card average">
+          <mat-card-content>
+            <div class="summary-icon">
+              <mat-icon>calculate</mat-icon>
+            </div>
+            <div class="summary-details">
+              <h3>متوسط قيمة الفاتورة</h3>
+              <p class="summary-value">
+                {{ formatCurrency(financialSummary()!.averageInvoiceAmount) }}
+              </p>
+              <span class="summary-subtitle">لكل فاتورة</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Tabs Section -->
+      <mat-card class="tabs-card">
+        <mat-tab-group
+          [selectedIndex]="selectedTab()"
+          (selectedTabChange)="onTabChange($event.index)"
+        >
+          <!-- Revenue Trends Tab -->
+          <mat-tab label="اتجاهات الإيرادات">
+            <div class="tab-content">
+              <div class="charts-row">
+                <div class="chart-container">
+                  <h3>الإيرادات اليومية</h3>
+                  <app-chart-widget
+                    [data]="revenueChartData()"
+                    chartType="line"
+                    [height]="350"
+                    colorScheme="cool"
+                    [showXAxisLabel]="true"
+                    [showYAxisLabel]="true"
+                    xAxisLabel="التاريخ"
+                    yAxisLabel="المبلغ (ريال)"
+                    [gradient]="true"
+                  >
+                  </app-chart-widget>
+                </div>
+              </div>
+
+              <!-- Revenue Summary Table -->
+              <div class="data-table-section">
+                <h3>تفاصيل الإيرادات اليومية</h3>
+                <mat-table
+                  [dataSource]="financialSummary()!.revenueByPeriod"
+                  class="revenue-table"
+                >
+                  <ng-container matColumnDef="period">
+                    <mat-header-cell *matHeaderCellDef>التاريخ</mat-header-cell>
+                    <mat-cell *matCellDef="let revenue">{{
+                      formatDate(revenue.period)
+                    }}</mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="revenue">
+                    <mat-header-cell *matHeaderCellDef
+                      >الإيرادات</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let revenue">{{
+                      formatCurrency(revenue.revenue)
+                    }}</mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="invoiceCount">
+                    <mat-header-cell *matHeaderCellDef
+                      >عدد الفواتير</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let revenue">{{
+                      formatNumber(revenue.invoiceCount)
+                    }}</mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="averageAmount">
+                    <mat-header-cell *matHeaderCellDef
+                      >متوسط المبلغ</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let revenue">{{
+                      formatCurrency(revenue.averageAmount)
+                    }}</mat-cell>
+                  </ng-container>
+
+                  <mat-header-row
+                    *matHeaderRowDef="[
+                      'period',
+                      'revenue',
+                      'invoiceCount',
+                      'averageAmount'
+                    ]"
+                  ></mat-header-row>
+                  <mat-row
+                    *matRowDef="
+                      let row;
+                      columns: [
+                        'period',
+                        'revenue',
+                        'invoiceCount',
+                        'averageAmount'
+                      ]
+                    "
+                  ></mat-row>
+                </mat-table>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Payment Methods Tab -->
+          <mat-tab label="طرق الدفع">
+            <div class="tab-content">
+              <div class="charts-row">
+                <div class="chart-container">
+                  <h3>توزيع طرق الدفع</h3>
+                  <app-chart-widget
+                    [data]="paymentMethodsChartData()"
+                    chartType="pie"
+                    [height]="350"
+                    colorScheme="vivid"
+                    [doughnut]="true"
+                  >
+                  </app-chart-widget>
+                </div>
+              </div>
+
+              <!-- Payment Methods Table -->
+              <div class="data-table-section">
+                <h3>تفاصيل طرق الدفع</h3>
+                <mat-table
+                  [dataSource]="financialSummary()!.paymentMethods"
+                  class="payment-methods-table"
+                >
+                  <ng-container matColumnDef="method">
+                    <mat-header-cell *matHeaderCellDef
+                      >طريقة الدفع</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let method">{{
+                      method.method
+                    }}</mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="amount">
+                    <mat-header-cell *matHeaderCellDef>المبلغ</mat-header-cell>
+                    <mat-cell *matCellDef="let method">{{
+                      formatCurrency(method.amount)
+                    }}</mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="count">
+                    <mat-header-cell *matHeaderCellDef
+                      >عدد المعاملات</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let method">{{
+                      formatNumber(method.count)
+                    }}</mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="percentage">
+                    <mat-header-cell *matHeaderCellDef>النسبة</mat-header-cell>
+                    <mat-cell *matCellDef="let method">
+                      <div class="percentage-cell">
+                        <span>{{ formatPercentage(method.percentage) }}</span>
+                        <div class="percentage-bar">
+                          <div
+                            class="percentage-fill"
+                            [style.width.%]="method.percentage"
+                          ></div>
+                        </div>
+                      </div>
+                    </mat-cell>
+                  </ng-container>
+
+                  <mat-header-row
+                    *matHeaderRowDef="[
+                      'method',
+                      'amount',
+                      'count',
+                      'percentage'
+                    ]"
+                  ></mat-header-row>
+                  <mat-row
+                    *matRowDef="
+                      let row;
+                      columns: ['method', 'amount', 'count', 'percentage']
+                    "
+                  ></mat-row>
+                </mat-table>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Service Revenue Tab -->
+          <mat-tab label="إيرادات الخدمات">
+            <div class="tab-content">
+              <div class="charts-row">
+                <div class="chart-container">
+                  <h3>الإيرادات حسب نوع الخدمة</h3>
+                  <app-chart-widget
+                    [data]="serviceRevenueChartData()"
+                    chartType="bar"
+                    [height]="350"
+                    colorScheme="natural"
+                    [showXAxisLabel]="true"
+                    [showYAxisLabel]="true"
+                    xAxisLabel="الخدمة"
+                    yAxisLabel="الإيرادات (ريال)"
+                  >
+                  </app-chart-widget>
+                </div>
+              </div>
+
+              <!-- Service Revenue Table -->
+              <div class="data-table-section">
+                <h3>تفاصيل إيرادات الخدمات</h3>
+                <mat-table
+                  [dataSource]="revenueByService()"
+                  class="service-revenue-table"
+                  matSort
+                >
+                  <ng-container matColumnDef="serviceCategory">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header
+                      >فئة الخدمة</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let service">
+                      <mat-chip-set>
+                        <mat-chip>{{ service.serviceCategory }}</mat-chip>
+                      </mat-chip-set>
+                    </mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="serviceName">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header
+                      >اسم الخدمة</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let service">{{
+                      service.serviceName
+                    }}</mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="totalRevenue">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header
+                      >إجمالي الإيرادات</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let service">
+                      <strong>{{
+                        formatCurrency(service.totalRevenue)
+                      }}</strong>
+                    </mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="count">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header
+                      >عدد مرات التقديم</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let service">{{
+                      formatNumber(service.count)
+                    }}</mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="averagePrice">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header
+                      >متوسط السعر</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let service">{{
+                      formatCurrency(service.averagePrice)
+                    }}</mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="percentage">
+                    <mat-header-cell *matHeaderCellDef
+                      >نسبة المساهمة</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let service">
+                      <div class="percentage-cell">
+                        <span>{{ formatPercentage(service.percentage) }}</span>
+                        <div class="percentage-bar">
+                          <div
+                            class="percentage-fill"
+                            [style.width.%]="service.percentage"
+                          ></div>
+                        </div>
+                      </div>
+                    </mat-cell>
+                  </ng-container>
+
+                  <mat-header-row
+                    *matHeaderRowDef="[
+                      'serviceCategory',
+                      'serviceName',
+                      'totalRevenue',
+                      'count',
+                      'averagePrice',
+                      'percentage'
+                    ]"
+                  ></mat-header-row>
+                  <mat-row
+                    *matRowDef="
+                      let row;
+                      columns: [
+                        'serviceCategory',
+                        'serviceName',
+                        'totalRevenue',
+                        'count',
+                        'averagePrice',
+                        'percentage'
+                      ]
+                    "
+                  ></mat-row>
+                </mat-table>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Outstanding Payments Tab -->
+          <mat-tab label="المدفوعات المعلقة">
+            <div class="tab-content">
+              <!-- Outstanding Summary -->
+              <div class="outstanding-summary">
+                <mat-card class="summary-card critical">
+                  <mat-card-content>
+                    <div class="summary-icon">
+                      <mat-icon>warning</mat-icon>
+                    </div>
+                    <div class="summary-details">
+                      <h3>إجمالي المبالغ المعلقة</h3>
+                      <p class="summary-value">
+                        {{ formatCurrency(totalOutstanding()) }}
+                      </p>
+                      <span class="summary-subtitle"
+                        >{{ outstandingPayments().length }} فاتورة معلقة</span
+                      >
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <mat-card class="summary-card info">
+                  <mat-card-content>
+                    <div class="summary-icon">
+                      <mat-icon>schedule</mat-icon>
+                    </div>
+                    <div class="summary-details">
+                      <h3>متوسط أيام التأخير</h3>
+                      <p class="summary-value">
+                        {{ averageDaysPastDue() }} يوم
+                      </p>
+                      <span class="summary-subtitle">للفواتير المتأخرة</span>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <mat-card class="summary-card danger">
+                  <mat-card-content>
+                    <div class="summary-icon">
+                      <mat-icon>error</mat-icon>
+                    </div>
+                    <div class="summary-details">
+                      <h3>فواتير حرجة</h3>
+                      <p class="summary-value">
+                        {{ criticalPayments().length }}
+                      </p>
+                      <span class="summary-subtitle">أكثر من 30 يوم</span>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+
+              <!-- Outstanding Payments Table -->
+              <div class="data-table-section">
+                <div class="table-header">
+                  <h3>تفاصيل المدفوعات المعلقة</h3>
+                  <div class="table-actions">
+                    <button mat-stroked-button color="accent">
+                      <mat-icon>email</mat-icon>
+                      إرسال تذكيرات
+                    </button>
+                  </div>
+                </div>
+
+                <mat-table
+                  [dataSource]="outstandingPayments()"
+                  class="outstanding-table"
+                  matSort
+                >
+                  <ng-container matColumnDef="patientName">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header
+                      >اسم المريض</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let payment">{{
+                      payment.patientName
+                    }}</mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="invoiceNumber">
+                    <mat-header-cell *matHeaderCellDef
+                      >رقم الفاتورة</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let payment">
+                      <button
+                        mat-button
+                        color="primary"
+                        (click)="onViewInvoiceDetails(payment)"
+                      >
+                        {{ payment.invoiceNumber }}
+                      </button>
+                    </mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="amount">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header
+                      >المبلغ</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let payment">
+                      <strong>{{ formatCurrency(payment.amount) }}</strong>
+                    </mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="dueDate">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header
+                      >تاريخ الاستحقاق</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let payment">{{
+                      formatDate(payment.dueDate)
+                    }}</mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="daysPastDue">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header
+                      >أيام التأخير</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let payment">
+                      <mat-chip
+                        [class]="getPaymentStatusClass(payment.daysPastDue)"
+                        [selected]="true"
+                      >
+                        {{ payment.daysPastDue }} يوم
+                      </mat-chip>
+                    </mat-cell>
+                  </ng-container>
+
+                  <ng-container matColumnDef="actions">
+                    <mat-header-cell *matHeaderCellDef
+                      >الإجراءات</mat-header-cell
+                    >
+                    <mat-cell *matCellDef="let payment">
+                      <button
+                        mat-icon-button
+                        [matMenuTriggerFor]="actionMenu"
+                        matTooltip="الإجراءات"
+                      >
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+
+                      <mat-menu #actionMenu="matMenu">
+                        <button
+                          mat-menu-item
+                          (click)="onViewInvoiceDetails(payment)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                          عرض الفاتورة
+                        </button>
+                        <button
+                          mat-menu-item
+                          (click)="onContactPatient(payment)"
+                        >
+                          <mat-icon>phone</mat-icon>
+                          الاتصال بالمريض
+                        </button>
+                        <mat-divider></mat-divider>
+                        <button mat-menu-item>
+                          <mat-icon>email</mat-icon>
+                          إرسال تذكير
+                        </button>
+                      </mat-menu>
+                    </mat-cell>
+                  </ng-container>
+
+                  <mat-header-row
+                    *matHeaderRowDef="outstandingColumns"
+                  ></mat-header-row>
+                  <mat-row
+                    *matRowDef="let row; columns: outstandingColumns"
+                  ></mat-row>
+                </mat-table>
+              </div>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </mat-card>
+    </div>
+  </div>
+</app-sidebar>

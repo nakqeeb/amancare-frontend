@@ -1,0 +1,388 @@
+<!-- ===================================================================
+     src/app/features/reports/components/reports-overview/reports-overview.component.html
+     =================================================================== -->
+<app-header></app-header>
+
+<app-sidebar>
+  <div class="reports-overview-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">
+            <mat-icon>assessment</mat-icon>
+            التقارير والإحصائيات
+          </h1>
+          <p class="page-subtitle">
+            تحليل شامل لأداء العيادة وإحصائيات الأعمال
+          </p>
+        </div>
+
+        <div class="header-actions">
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="generateDailyReport()"
+          >
+            <mat-icon>today</mat-icon>
+            تقرير اليوم
+          </button>
+
+          <button mat-stroked-button (click)="onRefreshStats()">
+            <mat-icon>refresh</mat-icon>
+            تحديث
+          </button>
+
+          <button
+            mat-icon-button
+            [matMenuTriggerFor]="exportMenu"
+            matTooltip="خيارات التصدير"
+          >
+            <mat-icon>more_vert</mat-icon>
+          </button>
+
+          <mat-menu #exportMenu="matMenu">
+            <button mat-menu-item (click)="onExportSummary()">
+              <mat-icon>picture_as_pdf</mat-icon>
+              تصدير ملخص PDF
+            </button>
+            <button mat-menu-item (click)="scheduleWeeklyReport()">
+              <mat-icon>schedule</mat-icon>
+              جدولة تقرير أسبوعي
+            </button>
+            <button mat-menu-item (click)="viewTrends()">
+              <mat-icon>trending_up</mat-icon>
+              عرض الاتجاهات
+            </button>
+          </mat-menu>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading()" class="loading-container">
+      <mat-progress-spinner
+        mode="indeterminate"
+        diameter="50"
+      ></mat-progress-spinner>
+      <p>جاري تحميل الإحصائيات...</p>
+    </div>
+
+    <!-- Dashboard Stats -->
+    <div *ngIf="!loading() && dashboardStats()" class="dashboard-content">
+      <!-- Key Metrics Cards -->
+      <div class="metrics-grid">
+        <!-- Financial Metrics -->
+        <mat-card class="metric-card financial">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>monetization_on</mat-icon>
+              الأداء المالي
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="metric-item">
+              <span class="metric-label">إيرادات اليوم</span>
+              <span class="metric-value">{{
+                formatCurrency(dashboardStats()!.financial.todayRevenue)
+              }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">إيرادات الشهر</span>
+              <span class="metric-value">{{
+                formatCurrency(dashboardStats()!.financial.monthRevenue)
+              }}</span>
+              <span class="metric-change" [class]="getTrendColor('increase')">
+                <mat-icon>{{ getTrendIcon("increase") }}</mat-icon>
+                {{
+                  formatPercentage(dashboardStats()!.financial.revenueChange)
+                }}
+              </span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">مبالغ معلقة</span>
+              <span class="metric-value pending">{{
+                formatCurrency(dashboardStats()!.financial.pendingAmount)
+              }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">مبالغ متأخرة</span>
+              <span class="metric-value overdue">{{
+                formatCurrency(dashboardStats()!.financial.overdueAmount)
+              }}</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Operational Metrics -->
+        <mat-card class="metric-card operational">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>event_available</mat-icon>
+              العمليات اليومية
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="metric-item">
+              <span class="metric-label">مواعيد اليوم</span>
+              <span class="metric-value">{{
+                formatNumber(dashboardStats()!.operational.todayAppointments)
+              }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">مكتملة</span>
+              <span class="metric-value completed">{{
+                formatNumber(dashboardStats()!.operational.completedToday)
+              }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">ملغاة</span>
+              <span class="metric-value cancelled">{{
+                formatNumber(dashboardStats()!.operational.cancelledToday)
+              }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">مواعيد قادمة</span>
+              <span class="metric-value">{{
+                formatNumber(dashboardStats()!.operational.upcomingAppointments)
+              }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">متوسط الانتظار</span>
+              <span class="metric-value"
+                >{{ dashboardStats()!.operational.averageWaitTime }} دقيقة</span
+              >
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Patient Metrics -->
+        <mat-card class="metric-card patients">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>people</mat-icon>
+              إحصائيات المرضى
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="metric-item">
+              <span class="metric-label">إجمالي المرضى</span>
+              <span class="metric-value">{{
+                formatNumber(dashboardStats()!.patient.totalActivePatients)
+              }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">مرضى جدد اليوم</span>
+              <span class="metric-value new">{{
+                formatNumber(dashboardStats()!.patient.newPatientsToday)
+              }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">مرضى جدد هذا الشهر</span>
+              <span class="metric-value">{{
+                formatNumber(dashboardStats()!.patient.newPatientsThisMonth)
+              }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">معدل النمو</span>
+              <span class="metric-value" [class]="getTrendColor('increase')">
+                <mat-icon>{{ getTrendIcon("increase") }}</mat-icon>
+                {{
+                  formatPercentage(dashboardStats()!.patient.patientGrowthRate)
+                }}
+              </span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Trends Summary -->
+        <mat-card class="metric-card trends">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>trending_up</mat-icon>
+              الاتجاهات العامة
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div
+              *ngFor="let trend of dashboardStats()!.trends"
+              class="metric-item"
+            >
+              <span class="metric-label">{{ trend.label }}</span>
+              <div class="trend-value">
+                <span class="metric-value">{{
+                  formatNumber(trend.current)
+                }}</span>
+                <span
+                  class="metric-change"
+                  [class]="getTrendColor(trend.changeType)"
+                >
+                  <mat-icon>{{ getTrendIcon(trend.changeType) }}</mat-icon>
+                  {{ formatPercentage(trend.change) }}
+                </span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="charts-section">
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>الإيرادات - آخر 7 أيام</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <app-chart-widget
+              [data]="revenueChartData()"
+              chartType="line"
+              [height]="300"
+              colorScheme="cool"
+            >
+            </app-chart-widget>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>توزيع المواعيد اليوم</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <app-chart-widget
+              [data]="appointmentsChartData()"
+              chartType="pie"
+              [height]="300"
+              colorScheme="vivid"
+            >
+            </app-chart-widget>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Quick Reports Section -->
+      <div class="quick-reports-section">
+        <h2 class="section-title">
+          <mat-icon>report</mat-icon>
+          التقارير السريعة
+        </h2>
+
+        <div class="reports-grid">
+          <mat-card
+            *ngFor="let report of getVisibleReports()"
+            class="report-card"
+            [class]="'report-' + report.color"
+            (click)="navigateToReport(report.route)"
+            matRipple
+          >
+            <mat-card-header>
+              <mat-icon mat-card-avatar [class]="'icon-' + report.color">
+                {{ report.icon }}
+              </mat-icon>
+              <mat-card-title>{{ report.title }}</mat-card-title>
+              <mat-card-subtitle>{{ report.description }}</mat-card-subtitle>
+            </mat-card-header>
+
+            <mat-card-actions align="end">
+              <button mat-icon-button color="primary">
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+      </div>
+
+      <!-- Recent Reports & Scheduled Reports -->
+      <div class="bottom-section">
+        <div class="recent-reports">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>history</mat-icon>
+                التقارير الأخيرة
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="recent-report-item">
+                <div class="report-info">
+                  <span class="report-name">تقرير الإيرادات الشهري</span>
+                  <span class="report-date">منذ يومين</span>
+                </div>
+                <button mat-icon-button matTooltip="تحميل">
+                  <mat-icon>download</mat-icon>
+                </button>
+              </div>
+
+              <div class="recent-report-item">
+                <div class="report-info">
+                  <span class="report-name">تحليل المواعيد الأسبوعي</span>
+                  <span class="report-date">منذ 5 أيام</span>
+                </div>
+                <button mat-icon-button matTooltip="تحميل">
+                  <mat-icon>download</mat-icon>
+                </button>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="view-all-reports">
+                <button
+                  mat-button
+                  color="primary"
+                  routerLink="/reports/history"
+                >
+                  عرض جميع التقارير
+                  <mat-icon>arrow_forward</mat-icon>
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <div class="scheduled-reports">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>schedule</mat-icon>
+                التقارير المجدولة
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="scheduled-report-item">
+                <div class="schedule-info">
+                  <span class="schedule-name">تقرير الإيرادات الشهري</span>
+                  <span class="schedule-next">التشغيل التالي: 1 سبتمبر</span>
+                </div>
+                <mat-chip-set>
+                  <mat-chip color="accent" selected>نشط</mat-chip>
+                </mat-chip-set>
+              </div>
+
+              <div class="scheduled-report-item">
+                <div class="schedule-info">
+                  <span class="schedule-name">تقرير المواعيد الأسبوعي</span>
+                  <span class="schedule-next">التشغيل التالي: 2 سبتمبر</span>
+                </div>
+                <mat-chip-set>
+                  <mat-chip color="accent" selected>نشط</mat-chip>
+                </mat-chip-set>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="manage-scheduled">
+                <button
+                  mat-button
+                  color="primary"
+                  routerLink="/reports/scheduled"
+                >
+                  إدارة التقارير المجدولة
+                  <mat-icon>settings</mat-icon>
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-sidebar>

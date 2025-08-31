@@ -1,0 +1,137 @@
+<div class="chart-container" [style.height.px]="height">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="chart-loading">
+    <mat-progress-spinner
+      mode="indeterminate"
+      diameter="40"
+    ></mat-progress-spinner>
+    <span>جاري تحميل البيانات...</span>
+  </div>
+
+  <!-- Chart Content -->
+  <div *ngIf="!loading && hasData" class="chart-content">
+    <!-- Bar Chart -->
+    <ngx-charts-bar-vertical
+      *ngIf="chartType === 'bar'"
+      [results]="data"
+      [scheme]="colorScheme"
+      [gradient]="gradient"
+      [xAxis]="true"
+      [yAxis]="true"
+      [legend]="showLegend"
+      [showXAxisLabel]="showXAxisLabel"
+      [showYAxisLabel]="showYAxisLabel"
+      [xAxisLabel]="xAxisLabel"
+      [yAxisLabel]="yAxisLabel"
+      [animations]="true"
+      [roundDomains]="true"
+      [tooltipDisabled]="false"
+      (select)="onSelect($event)"
+      (activate)="onActivate($event)"
+      (deactivate)="onDeactivate($event)"
+    >
+    </ngx-charts-bar-vertical>
+
+    <!-- Line Chart -->
+    <ngx-charts-line-chart
+      *ngIf="chartType === 'line'"
+      [results]="data"
+      [scheme]="colorScheme"
+      [gradient]="gradient"
+      [xAxis]="true"
+      [yAxis]="true"
+      [legend]="showLegend"
+      [showXAxisLabel]="showXAxisLabel"
+      [showYAxisLabel]="showYAxisLabel"
+      [xAxisLabel]="xAxisLabel"
+      [yAxisLabel]="yAxisLabel"
+      [animations]="true"
+      [curve]="curve"
+      [roundDomains]="true"
+      [tooltipDisabled]="false"
+      (select)="onSelect($event)"
+      (activate)="onActivate($event)"
+      (deactivate)="onDeactivate($event)"
+    >
+    </ngx-charts-line-chart>
+
+    <!-- Pie Chart -->
+    <ngx-charts-pie-chart
+      *ngIf="chartType === 'pie'"
+      [results]="data"
+      [scheme]="colorScheme"
+      [gradient]="gradient"
+      [legend]="showLegend"
+      [labels]="showLabels"
+      [doughnut]="doughnut"
+      [animations]="true"
+      [tooltipDisabled]="false"
+      (select)="onSelect($event)"
+      (activate)="onActivate($event)"
+      (deactivate)="onDeactivate($event)"
+    >
+    </ngx-charts-pie-chart>
+
+    <!-- Area Chart -->
+    <ngx-charts-area-chart
+      *ngIf="chartType === 'area'"
+      [results]="data"
+      [scheme]="colorScheme"
+      [gradient]="gradient"
+      [xAxis]="true"
+      [yAxis]="true"
+      [legend]="showLegend"
+      [showXAxisLabel]="showXAxisLabel"
+      [showYAxisLabel]="showYAxisLabel"
+      [xAxisLabel]="xAxisLabel"
+      [yAxisLabel]="yAxisLabel"
+      [animations]="true"
+      [curve]="curve"
+      [roundDomains]="true"
+      [tooltipDisabled]="false"
+      (select)="onSelect($event)"
+      (activate)="onActivate($event)"
+      (deactivate)="onDeactivate($event)"
+    >
+    </ngx-charts-area-chart>
+
+    <!-- Number Cards -->
+    <ngx-charts-number-card
+      *ngIf="chartType === 'number-card'"
+      [results]="data"
+      [scheme]="colorScheme"
+      [animations]="true"
+      (select)="onSelect($event)"
+    >
+    </ngx-charts-number-card>
+  </div>
+
+  <!-- No Data State -->
+  <div *ngIf="!loading && !hasData" class="no-data">
+    <mat-icon>bar_chart</mat-icon>
+    <span>لا توجد بيانات لعرضها</span>
+    <button
+      mat-button
+      color="primary"
+      (click)="onRefresh()"
+      *ngIf="showRefresh"
+    >
+      <mat-icon>refresh</mat-icon>
+      إعادة المحاولة
+    </button>
+  </div>
+
+  <!-- Chart Actions -->
+  <div *ngIf="showActions && !loading" class="chart-actions">
+    <button
+      mat-icon-button
+      matTooltip="تصدير الرسم البياني"
+      (click)="onExportChart()"
+    >
+      <mat-icon>download</mat-icon>
+    </button>
+    <button mat-icon-button matTooltip="ملء الشاشة" (click)="onFullscreen()">
+      <mat-icon>fullscreen</mat-icon>
+    </button>
+  </div>
+</div>

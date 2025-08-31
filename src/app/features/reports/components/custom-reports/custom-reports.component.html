@@ -1,0 +1,543 @@
+<app-header></app-header>
+
+<app-sidebar>
+  <div class="custom-reports-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">
+            <mat-icon>tune</mat-icon>
+            التقارير المخصصة
+          </h1>
+          <p class="page-subtitle">إنشاء تقارير مخصصة حسب احتياجاتك الخاصة</p>
+        </div>
+
+        <div class="header-actions">
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="onSaveTemplate()"
+            [disabled]="!reportForm.valid || generating()"
+          >
+            <mat-icon>save</mat-icon>
+            حفظ كقالب
+          </button>
+          <button mat-stroked-button (click)="onResetForm()">
+            <mat-icon>refresh</mat-icon>
+            إعادة تعيين
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Templates -->
+    <mat-card class="templates-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>library_books</mat-icon>
+          قوالب جاهزة
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="templates-grid">
+          <mat-card
+            *ngFor="let template of reportTemplates"
+            class="template-card"
+            [class.selected]="selectedTemplate()?.id === template.id"
+            (click)="onSelectTemplate(template)"
+            matRipple
+          >
+            <mat-card-header>
+              <mat-icon mat-card-avatar>{{
+                getTemplateIcon(template.category)
+              }}</mat-icon>
+              <mat-card-title>{{ template.name }}</mat-card-title>
+              <mat-card-subtitle>{{ template.description }}</mat-card-subtitle>
+            </mat-card-header>
+
+            <mat-card-content>
+              <div class="template-info">
+                <mat-chip-set>
+                  <mat-chip
+                    *ngFor="let chartType of template.chartTypes.slice(0, 2)"
+                    color="accent"
+                    selected
+                  >
+                    {{ getChartTypeLabel(chartType) }}
+                  </mat-chip>
+                  <mat-chip
+                    *ngIf="template.chartTypes.length > 2"
+                    color="primary"
+                  >
+                    +{{ template.chartTypes.length - 2 }}
+                  </mat-chip>
+                </mat-chip-set>
+              </div>
+            </mat-card-content>
+
+            <mat-card-actions align="end">
+              <button mat-button color="primary">استخدام</button>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Report Builder -->
+    <mat-card class="builder-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>build</mat-icon>
+          منشئ التقارير المخصصة
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-stepper [linear]="true" #stepper>
+          <!-- Step 1: Basic Configuration -->
+          <mat-step [stepControl]="basicConfigGroup" label="الإعدادات الأساسية">
+            <form [formGroup]="basicConfigGroup">
+              <div class="step-content">
+                <h3>تكوين التقرير الأساسي</h3>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>اسم التقرير</mat-label>
+                    <input
+                      matInput
+                      formControlName="reportName"
+                      placeholder="أدخل اسم التقرير"
+                    />
+                    <mat-error
+                      *ngIf="
+                        basicConfigGroup.get('reportName')?.hasError('required')
+                      "
+                    >
+                      اسم التقرير مطلوب
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>نوع التقرير</mat-label>
+                    <mat-select formControlName="reportType">
+                      <mat-option value="FINANCIAL">مالي</mat-option>
+                      <mat-option value="OPERATIONAL">عملياتي</mat-option>
+                      <mat-option value="PATIENT">المرضى</mat-option>
+                      <mat-option value="CUSTOM">مخصص</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>وصف التقرير</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="reportDescription"
+                    rows="3"
+                    placeholder="وصف مختصر لهدف التقرير"
+                  ></textarea>
+                </mat-form-field>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>من تاريخ</mat-label>
+                    <input
+                      matInput
+                      [matDatepicker]="startPicker"
+                      formControlName="startDate"
+                    />
+                    <mat-datepicker-toggle
+                      matIconSuffix
+                      [for]="startPicker"
+                    ></mat-datepicker-toggle>
+                    <mat-datepicker #startPicker></mat-datepicker>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>إلى تاريخ</mat-label>
+                    <input
+                      matInput
+                      [matDatepicker]="endPicker"
+                      formControlName="endDate"
+                    />
+                    <mat-datepicker-toggle
+                      matIconSuffix
+                      [for]="endPicker"
+                    ></mat-datepicker-toggle>
+                    <mat-datepicker #endPicker></mat-datepicker>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div class="step-actions">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  matStepperNext
+                  [disabled]="!basicConfigGroup.valid"
+                >
+                  التالي
+                </button>
+              </div>
+            </form>
+          </mat-step>
+
+          <!-- Step 2: Field Selection -->
+          <mat-step [stepControl]="fieldsGroup" label="اختيار الحقول">
+            <form [formGroup]="fieldsGroup">
+              <div class="step-content">
+                <h3>اختر الحقول المطلوبة</h3>
+
+                <mat-tab-group>
+                  <mat-tab label="بيانات المرضى">
+                    <div class="fields-section">
+                      <div class="fields-grid">
+                        <mat-checkbox
+                          *ngFor="let field of getFieldsByCategory('patient')"
+                          [checked]="isFieldSelected(field.key)"
+                          (change)="onFieldToggle(field, $event.checked)"
+                        >
+                          {{ field.label }}
+                        </mat-checkbox>
+                      </div>
+                    </div>
+                  </mat-tab>
+
+                  <mat-tab label="المواعيد">
+                    <div class="fields-section">
+                      <div class="fields-grid">
+                        <mat-checkbox
+                          *ngFor="
+                            let field of getFieldsByCategory('appointment')
+                          "
+                          [checked]="isFieldSelected(field.key)"
+                          (change)="onFieldToggle(field, $event.checked)"
+                        >
+                          {{ field.label }}
+                        </mat-checkbox>
+                      </div>
+                    </div>
+                  </mat-tab>
+
+                  <mat-tab label="البيانات المالية">
+                    <div class="fields-section">
+                      <div class="fields-grid">
+                        <mat-checkbox
+                          *ngFor="let field of getFieldsByCategory('financial')"
+                          [checked]="isFieldSelected(field.key)"
+                          (change)="onFieldToggle(field, $event.checked)"
+                        >
+                          {{ field.label }}
+                        </mat-checkbox>
+                      </div>
+                    </div>
+                  </mat-tab>
+
+                  <mat-tab label="البيانات الطبية">
+                    <div class="fields-section">
+                      <div class="fields-grid">
+                        <mat-checkbox
+                          *ngFor="let field of getFieldsByCategory('medical')"
+                          [checked]="isFieldSelected(field.key)"
+                          (change)="onFieldToggle(field, $event.checked)"
+                        >
+                          {{ field.label }}
+                        </mat-checkbox>
+                      </div>
+                    </div>
+                  </mat-tab>
+                </mat-tab-group>
+
+                <div
+                  class="selected-fields-summary"
+                  *ngIf="selectedFields().length > 0"
+                >
+                  <h4>الحقول المختارة ({{ selectedFields().length }}):</h4>
+                  <mat-chip-set>
+                    <mat-chip
+                      *ngFor="let field of selectedFields()"
+                      (removed)="onRemoveField(field)"
+                      [removable]="true"
+                    >
+                      {{ getFieldLabel(field) }}
+                      <mat-icon matChipRemove>cancel</mat-icon>
+                    </mat-chip>
+                  </mat-chip-set>
+                </div>
+              </div>
+
+              <div class="step-actions">
+                <button mat-button matStepperPrevious>السابق</button>
+                <button
+                  mat-raised-button
+                  color="primary"
+                  matStepperNext
+                  [disabled]="selectedFields().length === 0"
+                >
+                  التالي
+                </button>
+              </div>
+            </form>
+          </mat-step>
+
+          <!-- Step 3: Chart Configuration -->
+          <mat-step [stepControl]="chartsGroup" label="إعداد الرسوم البيانية">
+            <form [formGroup]="chartsGroup">
+              <div class="step-content">
+                <h3>تكوين الرسوم البيانية</h3>
+
+                <mat-slide-toggle
+                  formControlName="includeCharts"
+                  color="primary"
+                >
+                  تضمين الرسوم البيانية
+                </mat-slide-toggle>
+
+                <div
+                  *ngIf="chartsGroup.get('includeCharts')?.value"
+                  class="charts-config"
+                >
+                  <mat-form-field appearance="outline">
+                    <mat-label>نوع الرسم البياني الأساسي</mat-label>
+                    <mat-select formControlName="primaryChartType">
+                      <mat-option value="bar">أعمدة</mat-option>
+                      <mat-option value="line">خط</mat-option>
+                      <mat-option value="pie">دائري</mat-option>
+                      <mat-option value="area">مساحة</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <div class="chart-options">
+                    <h4>خيارات إضافية:</h4>
+                    <mat-checkbox formControlName="showLegend"
+                      >عرض وسيلة الإيضاح</mat-checkbox
+                    >
+                    <mat-checkbox formControlName="showDataLabels"
+                      >عرض تسميات البيانات</mat-checkbox
+                    >
+                    <mat-checkbox formControlName="enableInteractivity"
+                      >تفعيل التفاعل</mat-checkbox
+                    >
+                  </div>
+
+                  <div class="color-scheme-selection">
+                    <mat-form-field appearance="outline">
+                      <mat-label>نظام الألوان</mat-label>
+                      <mat-select formControlName="colorScheme">
+                        <mat-option value="cool">بارد</mat-option>
+                        <mat-option value="warm">دافئ</mat-option>
+                        <mat-option value="vivid">حيوي</mat-option>
+                        <mat-option value="natural">طبيعي</mat-option>
+                        <mat-option value="ocean">محيطي</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+              </div>
+
+              <div class="step-actions">
+                <button mat-button matStepperPrevious>السابق</button>
+                <button mat-raised-button color="primary" matStepperNext>
+                  التالي
+                </button>
+              </div>
+            </form>
+          </mat-step>
+
+          <!-- Step 4: Preview & Generate -->
+          <mat-step label="معاينة وإنشاء">
+            <div class="step-content">
+              <h3>معاينة التقرير</h3>
+
+              <!-- Report Summary -->
+              <mat-card class="preview-summary">
+                <mat-card-header>
+                  <mat-card-title>{{
+                    basicConfigGroup.get("reportName")?.value
+                  }}</mat-card-title>
+                  <mat-card-subtitle>{{
+                    basicConfigGroup.get("reportDescription")?.value
+                  }}</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="summary-details">
+                    <div class="summary-item">
+                      <span class="label">نوع التقرير:</span>
+                      <span class="value">{{
+                        getReportTypeLabel(
+                          basicConfigGroup.get("reportType")?.value
+                        )
+                      }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="label">الفترة الزمنية:</span>
+                      <span class="value">
+                        {{
+                          formatDate(basicConfigGroup.get("startDate")?.value)
+                        }}
+                        -
+                        {{ formatDate(basicConfigGroup.get("endDate")?.value) }}
+                      </span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="label">عدد الحقول:</span>
+                      <span class="value"
+                        >{{ selectedFields().length }} حقل</span
+                      >
+                    </div>
+                    <div class="summary-item">
+                      <span class="label">الرسوم البيانية:</span>
+                      <span class="value">
+                        {{
+                          chartsGroup.get("includeCharts")?.value ? "نعم" : "لا"
+                        }}
+                        <span *ngIf="chartsGroup.get('includeCharts')?.value">
+                          ({{
+                            getChartTypeLabel(
+                              chartsGroup.get("primaryChartType")?.value
+                            )
+                          }})
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- Sample Chart Preview -->
+              <mat-card
+                *ngIf="
+                  chartsGroup.get('includeCharts')?.value &&
+                  previewData().length > 0
+                "
+                class="chart-preview"
+              >
+                <mat-card-header>
+                  <mat-card-title>معاينة الرسم البياني</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <app-chart-widget
+                    [data]="previewData()"
+                    [chartType]="chartsGroup.get('primaryChartType')?.value"
+                    [height]="300"
+                    [colorScheme]="chartsGroup.get('colorScheme')?.value"
+                    [showLegend]="chartsGroup.get('showLegend')?.value"
+                    [showLabels]="chartsGroup.get('showDataLabels')?.value"
+                  >
+                  </app-chart-widget>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- Generate Actions -->
+              <div class="generate-section">
+                <h4>إنشاء التقرير</h4>
+                <div class="generate-actions">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="onGenerateReport('view')"
+                    [disabled]="generating()"
+                  >
+                    <mat-icon>visibility</mat-icon>
+                    عرض التقرير
+                  </button>
+
+                  <button
+                    mat-raised-button
+                    color="accent"
+                    [matMenuTriggerFor]="exportMenu"
+                    [disabled]="generating()"
+                  >
+                    <mat-icon>download</mat-icon>
+                    تصدير
+                  </button>
+
+                  <mat-menu #exportMenu="matMenu">
+                    <button mat-menu-item (click)="onGenerateReport('pdf')">
+                      <mat-icon>picture_as_pdf</mat-icon>
+                      تصدير PDF
+                    </button>
+                    <button mat-menu-item (click)="onGenerateReport('excel')">
+                      <mat-icon>table_chart</mat-icon>
+                      تصدير Excel
+                    </button>
+                    <button mat-menu-item (click)="onGenerateReport('csv')">
+                      <mat-icon>text_snippet</mat-icon>
+                      تصدير CSV
+                    </button>
+                  </mat-menu>
+                </div>
+
+                <!-- Loading State -->
+                <div *ngIf="generating()" class="generating-state">
+                  <mat-progress-spinner
+                    mode="indeterminate"
+                    diameter="32"
+                  ></mat-progress-spinner>
+                  <span>جاري إنشاء التقرير...</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="step-actions">
+              <button mat-button matStepperPrevious>السابق</button>
+              <button mat-button (click)="stepper.reset()">بداية جديدة</button>
+            </div>
+          </mat-step>
+        </mat-stepper>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Generated Report Display -->
+    <mat-card *ngIf="generatedReportData().length > 0" class="result-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>assessment</mat-icon>
+          نتائج التقرير
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <!-- Chart Display -->
+        <div
+          *ngIf="chartsGroup.get('includeCharts')?.value"
+          class="result-chart"
+        >
+          <app-chart-widget
+            [data]="generatedReportData()"
+            [chartType]="chartsGroup.get('primaryChartType')?.value"
+            [height]="400"
+            [colorScheme]="chartsGroup.get('colorScheme')?.value"
+            [showLegend]="chartsGroup.get('showLegend')?.value"
+            [showLabels]="chartsGroup.get('showDataLabels')?.value"
+          >
+          </app-chart-widget>
+        </div>
+
+        <!-- Data Summary -->
+        <div class="data-summary">
+          <h4>ملخص البيانات</h4>
+          <div class="summary-stats">
+            <div class="stat-item">
+              <span class="stat-label">إجمالي الصفوف:</span>
+              <span class="stat-value">{{
+                formatNumber(generatedReportData().length)
+              }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">إجمالي القيمة:</span>
+              <span class="stat-value">{{
+                formatNumber(getTotalValue())
+              }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">المتوسط:</span>
+              <span class="stat-value">{{
+                formatNumber(getAverageValue())
+              }}</span>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</app-sidebar>
