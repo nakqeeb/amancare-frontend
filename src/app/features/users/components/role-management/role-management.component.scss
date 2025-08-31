@@ -1,0 +1,730 @@
+// ===================================================================
+// Role Management Component Styles
+// src/app/features/users/components/role-management/role-management.component.scss
+// ===================================================================
+
+.role-management-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+// ===================================================================
+// PAGE HEADER
+// ===================================================================
+.page-header {
+  margin-bottom: 24px;
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  .title-section {
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--primary-color);
+      margin: 0 0 8px 0;
+
+      mat-icon {
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    .page-subtitle {
+      color: var(--text-secondary);
+      font-size: 16px;
+      margin: 0;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 12px;
+
+    @media (max-width: 768px) {
+      justify-content: stretch;
+
+      button {
+        flex: 1;
+      }
+    }
+  }
+}
+
+// ===================================================================
+// LOADING STATE
+// ===================================================================
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+
+  mat-spinner {
+    margin-bottom: 16px;
+  }
+
+  p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    margin: 0;
+  }
+}
+
+// ===================================================================
+// ROLES OVERVIEW
+// ===================================================================
+.roles-overview-card {
+  margin-bottom: 24px;
+
+  mat-card-header {
+    padding: 24px 24px 0 24px;
+
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+
+      mat-icon {
+        color: var(--primary-color);
+      }
+    }
+  }
+
+  mat-card-content {
+    padding: 24px !important;
+  }
+}
+
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.role-card {
+  padding: 20px;
+  border: 2px solid var(--divider-color);
+  border-radius: 12px;
+  background: var(--background-card);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+
+  &:hover {
+    border-color: var(--primary-color);
+    background: var(--background-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  &.selected {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-lighter) 100%);
+
+    .role-header .role-icon mat-icon {
+      color: var(--primary-color);
+    }
+
+    .role-info h3 {
+      color: var(--primary-color);
+    }
+  }
+
+  &.system-role {
+    &::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      right: -1px;
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid #f44336;
+      border-bottom: 20px solid transparent;
+      border-top: 20px solid #f44336;
+      border-top-right-radius: 12px;
+    }
+
+    &::after {
+      content: '👑';
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      font-size: 12px;
+      z-index: 1;
+    }
+  }
+}
+
+.role-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  .role-icon {
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    background: var(--background-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .role-info {
+    flex: 1;
+
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 4px 0;
+    }
+
+    p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 0;
+      line-height: 1.4;
+    }
+  }
+
+  .role-badge {
+    flex-shrink: 0;
+  }
+}
+
+.role-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 12px;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+  }
+
+  .system-indicator {
+    color: #f44336;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// ===================================================================
+// PERMISSIONS MANAGEMENT
+// ===================================================================
+.permissions-card {
+  margin-bottom: 24px;
+
+  mat-card-header {
+    padding: 24px 24px 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .permissions-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+
+      mat-icon {
+        color: var(--primary-color);
+      }
+    }
+
+    .permissions-actions {
+      display: flex;
+      gap: 12px;
+
+      @media (max-width: 768px) {
+        flex-direction: column;
+        width: 100%;
+        margin-top: 16px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  mat-card-content {
+    padding: 0 !important;
+  }
+}
+
+.permissions-content {
+  padding: 24px;
+}
+
+.permissions-accordion {
+  :host ::ng-deep .mat-expansion-panel {
+    border-radius: 8px !important;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .mat-expansion-panel-header {
+      padding: 16px 20px;
+
+      .mat-expansion-panel-header-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+
+        mat-icon {
+          color: var(--primary-color);
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+
+      .mat-expansion-panel-header-description {
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+    }
+
+    .mat-expansion-panel-content {
+      .mat-expansion-panel-body {
+        padding: 0 20px 16px 20px;
+      }
+    }
+  }
+}
+
+.permissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.permission-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--background-hover);
+  border-radius: 8px;
+  border: 1px solid var(--divider-color);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--background-card);
+    border-color: var(--primary-color);
+  }
+
+  .permission-info {
+    flex: 1;
+
+    .permission-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+
+      .permission-icon {
+        color: var(--primary-color);
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .permission-details {
+        flex: 1;
+
+        h4 {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--text-primary);
+          margin: 0 0 4px 0;
+        }
+
+        p {
+          font-size: 12px;
+          color: var(--text-secondary);
+          margin: 0 0 8px 0;
+          line-height: 1.4;
+        }
+
+        .system-chip {
+          font-size: 10px;
+        }
+      }
+    }
+  }
+
+  .permission-control {
+    margin-left: 16px;
+    flex-shrink: 0;
+  }
+}
+
+// ===================================================================
+// ROLE ASSIGNMENT
+// ===================================================================
+.role-assignment-card {
+  margin-bottom: 24px;
+
+  mat-card-header {
+    padding: 24px 24px 0 24px;
+
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+
+      mat-icon {
+        color: var(--primary-color);
+      }
+    }
+  }
+
+  mat-card-content {
+    padding: 24px !important;
+  }
+}
+
+.users-with-role {
+  .users-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .user-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--background-hover);
+    border-radius: 8px;
+    border: 1px solid var(--divider-color);
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: var(--background-card);
+      border-color: var(--primary-color);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-avatar {
+      .avatar-img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--divider-color);
+      }
+    }
+
+    .user-info {
+      flex: 1;
+
+      .user-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+      }
+
+      .user-email {
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+    }
+
+    .user-status {
+      margin-right: 12px;
+    }
+
+    .user-actions {
+      display: flex;
+      gap: 8px;
+    }
+  }
+}
+
+.empty-users {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  p {
+    font-size: 16px;
+    margin: 0;
+  }
+}
+
+// ===================================================================
+// NO SELECTION STATE
+// ===================================================================
+.no-selection-card {
+  .no-selection {
+    text-align: center;
+    padding: 60px 20px;
+
+    .no-selection-icon {
+      font-size: 80px;
+      width: 80px;
+      height: 80px;
+      color: var(--text-disabled);
+      margin-bottom: 24px;
+    }
+
+    h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 12px 0;
+    }
+
+    p {
+      color: var(--text-secondary);
+      font-size: 16px;
+      margin: 0;
+    }
+  }
+}
+
+// ===================================================================
+// RESPONSIVE DESIGN
+// ===================================================================
+@media (max-width: 768px) {
+  .role-management-container {
+    padding: 16px;
+  }
+
+  .page-header {
+    margin-bottom: 16px;
+  }
+
+  .roles-overview-card,
+  .permissions-card,
+  .role-assignment-card,
+  .no-selection-card {
+    margin-bottom: 16px;
+  }
+
+  .permissions-content {
+    padding: 16px;
+  }
+
+  .permission-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+
+    .permission-control {
+      margin-left: 0;
+      align-self: flex-end;
+    }
+  }
+
+  .user-item {
+    padding: 12px;
+
+    .user-actions {
+      flex-direction: column;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .role-card {
+    padding: 16px;
+  }
+
+  .role-header {
+    gap: 12px;
+
+    .role-icon {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  .permission-item {
+    padding: 12px;
+  }
+
+  .user-item {
+    flex-wrap: wrap;
+
+    .user-avatar,
+    .user-info {
+      flex: 1 1 auto;
+    }
+
+    .user-status,
+    .user-actions {
+      flex: 1 1 100%;
+      margin-top: 8px;
+    }
+  }
+}
+
+// ===================================================================
+// DARK THEME SUPPORT
+// ===================================================================
+.dark-theme {
+  .role-card {
+    background: var(--background-card-dark);
+    border-color: var(--divider-color-dark);
+
+    &:hover {
+      background: var(--background-hover-dark);
+    }
+
+    &.selected {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-darker) 100%);
+    }
+
+    .role-icon {
+      background: var(--background-hover-dark);
+    }
+  }
+
+  .permission-item,
+  .user-item {
+    background: var(--background-hover-dark);
+    border-color: var(--divider-color-dark);
+
+    &:hover {
+      background: var(--background-card-dark);
+    }
+  }
+
+  :host ::ng-deep .mat-expansion-panel {
+    background: var(--background-card-dark) !important;
+  }
+}
+
+// ===================================================================
+// RTL SUPPORT
+// ===================================================================
+[dir="rtl"] {
+
+  .header-content,
+  .permissions-actions,
+  .role-header,
+  .permission-header,
+  .user-item {
+    flex-direction: row-reverse;
+  }
+
+  .permission-control {
+    margin-left: 0;
+    margin-right: 16px;
+  }
+
+  .user-status {
+    margin-right: 0;
+    margin-left: 12px;
+  }
+
+  .role-card {
+    &.system-role {
+      &::before {
+        right: auto;
+        left: -1px;
+        border-left: 20px solid #f44336;
+        border-right: 20px solid transparent;
+        border-top-right-radius: 0;
+        border-top-left-radius: 12px;
+      }
+
+      &::after {
+        right: auto;
+        left: 4px;
+      }
+    }
+  }
+}
+
+// ===================================================================
+// PRINT STYLES
+// ===================================================================
+@media print {
+
+  .page-header .header-actions,
+  .permissions-actions,
+  .user-actions {
+    display: none !important;
+  }
+
+  .role-card,
+  .permissions-card,
+  .role-assignment-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd;
+  }
+
+  .roles-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

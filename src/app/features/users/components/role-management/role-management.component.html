@@ -1,0 +1,282 @@
+<!-- ===================================================================
+     Role Management Component Template
+     src/app/features/users/components/role-management/role-management.component.html
+     =================================================================== -->
+
+<app-header></app-header>
+
+<app-sidebar>
+  <div class="role-management-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">
+            <mat-icon>security</mat-icon>
+            إدارة الأدوار والصلاحيات
+          </h1>
+          <p class="page-subtitle">
+            تخصيص صلاحيات المستخدمين وإدارة أدوارهم في النظام
+          </p>
+        </div>
+
+        <div class="header-actions">
+          <button mat-stroked-button (click)="onBulkAssignRole()">
+            <mat-icon>group_add</mat-icon>
+            تعيين مجمع للأدوار
+          </button>
+
+          <button mat-stroked-button (click)="onExportRoleMatrix()">
+            <mat-icon>download</mat-icon>
+            تصدير مصفوفة الأدوار
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading()">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>جاري تحميل بيانات الأدوار...</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content" *ngIf="!loading()">
+      <!-- Roles Overview -->
+      <mat-card class="roles-overview-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>groups</mat-icon>
+            نظرة عامة على الأدوار
+          </mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="roles-grid">
+            <div
+              *ngFor="let roleConfig of roleConfigs()"
+              class="role-card"
+              [class.selected]="selectedRole() === roleConfig.role"
+              [class.system-role]="roleConfig.isSystemRole"
+              (click)="onRoleSelect(roleConfig.role)"
+            >
+              <div class="role-header">
+                <div class="role-icon">
+                  <mat-icon [color]="roleConfig.color">{{
+                    roleConfig.icon
+                  }}</mat-icon>
+                </div>
+
+                <div class="role-info">
+                  <h3>{{ roleConfig.name }}</h3>
+                  <p>{{ roleConfig.description }}</p>
+                </div>
+
+                <div class="role-badge">
+                  <mat-chip [color]="roleConfig.color" selected>
+                    {{ roleConfig.userCount }} مستخدم
+                  </mat-chip>
+                </div>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="role-stats">
+                <div class="stat-item">
+                  <span class="stat-label">عدد الصلاحيات:</span>
+                  <span class="stat-value">
+                    <!-- {{ Object.values(roleConfig.permissions).filter(p => p).length }}
+                    من {{ permissions.length }} -->
+                    {{ getPermissionCount(roleConfig) }}
+                    من {{ permissions.length }}
+                  </span>
+                </div>
+
+                <div class="stat-item" *ngIf="roleConfig.isSystemRole">
+                  <mat-icon
+                    class="system-indicator"
+                    matTooltip="دور على مستوى النظام"
+                  >
+                    verified_user
+                  </mat-icon>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Permission Management -->
+      <mat-card class="permissions-card" *ngIf="selectedRole()">
+        <mat-card-header>
+          <mat-card-title>
+            <div class="permissions-title">
+              <mat-icon>tune</mat-icon>
+              <span>صلاحيات {{ selectedRoleConfig()?.name }}</span>
+            </div>
+          </mat-card-title>
+
+          <div class="permissions-actions" *ngIf="canModifyRoles()">
+            <button
+              mat-stroked-button
+              color="warn"
+              (click)="onResetToDefaults()"
+            >
+              <mat-icon>restore</mat-icon>
+              استعادة الافتراضي
+            </button>
+
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="onSavePermissions()"
+            >
+              <mat-icon>save</mat-icon>
+              حفظ التغييرات
+            </button>
+          </div>
+        </mat-card-header>
+
+        <mat-card-content>
+          <!-- Permission Categories -->
+          <div class="permissions-content">
+            <mat-accordion multi="true" class="permissions-accordion">
+              <mat-expansion-panel
+                *ngFor="let category of permissionCategories()"
+                [expanded]="true"
+              >
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    <mat-icon>{{
+                      getPermissionsByCategory(category)[0]?.icon || "folder"
+                    }}</mat-icon>
+                    <span>{{ category }}</span>
+                  </mat-panel-title>
+
+                  <mat-panel-description>
+                    {{ getPermissionsByCategory(category).length }} صلاحية
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <div class="permissions-list">
+                  <div
+                    *ngFor="
+                      let permission of getPermissionsByCategory(category)
+                    "
+                    class="permission-item"
+                  >
+                    <div class="permission-info">
+                      <div class="permission-header">
+                        <mat-icon class="permission-icon">{{
+                          permission.icon
+                        }}</mat-icon>
+                        <div class="permission-details">
+                          <h4>{{ permission.name }}</h4>
+                          <p>{{ permission.description }}</p>
+
+                          <mat-chip
+                            *ngIf="permission.isSystemLevel"
+                            color="warn"
+                            selected
+                            class="system-chip"
+                          >
+                            <mat-icon matChipAvatar>security</mat-icon>
+                            مستوى النظام
+                          </mat-chip>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="permission-control">
+                      <mat-slide-toggle
+                        [checked]="hasPermission(permission.id)"
+                        [disabled]="
+                          !canModifyPermission(permission) || !canModifyRoles()
+                        "
+                        (change)="
+                          onPermissionToggle(permission.id, $event.checked)
+                        "
+                        [color]="'primary'"
+                      >
+                      </mat-slide-toggle>
+                    </div>
+                  </div>
+                </div>
+              </mat-expansion-panel>
+            </mat-accordion>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Role Assignment Section -->
+      <mat-card class="role-assignment-card" *ngIf="selectedRole()">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>people</mat-icon>
+            المستخدمون بدور {{ selectedRoleConfig()?.name }}
+          </mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="users-with-role">
+            <div class="users-list" *ngIf="hasUsersWithRole()">
+              <div *ngFor="let user of filteredUsers()" class="user-item">
+                <div class="user-avatar">
+                  <img
+                    [src]="
+                      user.profilePicture || '/assets/images/default-avatar.png'
+                    "
+                    [alt]="user.fullName"
+                    class="avatar-img"
+                  />
+                </div>
+
+                <div class="user-info">
+                  <div class="user-name">
+                    {{ user.firstName }} {{ user.lastName }}
+                  </div>
+                  <div class="user-email">{{ user.email }}</div>
+                </div>
+
+                <div class="user-status">
+                  <mat-chip
+                    [color]="user.isActive ? 'primary' : 'warn'"
+                    selected
+                  >
+                    {{ user.isActive ? "نشط" : "غير نشط" }}
+                  </mat-chip>
+                </div>
+
+                <div class="user-actions" *ngIf="canModifyRoles()">
+                  <button
+                    mat-icon-button
+                    matTooltip="تعديل المستخدم"
+                    routerLink="/users/edit/{{ user.id }}"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="empty-users" *ngIf="!hasUsersWithRole()">
+              <mat-icon>person_off</mat-icon>
+              <p>لا يوجد مستخدمون بهذا الدور حالياً</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- No Role Selected State -->
+      <mat-card class="no-selection-card" *ngIf="!selectedRole()">
+        <mat-card-content>
+          <div class="no-selection">
+            <mat-icon class="no-selection-icon">security</mat-icon>
+            <h3>اختر دوراً لإدارة صلاحياته</h3>
+            <p>قم باختيار أحد الأدوار أعلاه لعرض وتعديل صلاحياته</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</app-sidebar>

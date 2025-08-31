@@ -1,0 +1,361 @@
+<!-- ===================================================================
+     User List Component Template
+     src/app/features/users/components/user-list/user-list.component.html
+     =================================================================== -->
+
+<app-header></app-header>
+
+<app-sidebar>
+  <div class="users-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">
+            <mat-icon>people</mat-icon>
+            إدارة المستخدمين
+          </h1>
+          <p class="page-subtitle">إدارة حسابات الموظفين والأطباء في النظام</p>
+        </div>
+
+        <div class="header-actions">
+          <button mat-raised-button color="primary" (click)="onNewUser()">
+            <mat-icon>person_add</mat-icon>
+            إضافة مستخدم جديد
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-section">
+      <div class="stats-grid">
+        <mat-card class="stat-card total">
+          <mat-card-content>
+            <div class="stat-icon">
+              <mat-icon>people</mat-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-number">{{ userStats()?.totalUsers || 0 }}</div>
+              <div class="stat-label">إجمالي المستخدمين</div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="stat-card active">
+          <mat-card-content>
+            <div class="stat-icon">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-number">{{ activeUsersCount() }}</div>
+              <div class="stat-label">المستخدمين النشطين</div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="stat-card doctors">
+          <mat-card-content>
+            <div class="stat-icon">
+              <mat-icon>local_hospital</mat-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-number">{{ doctorsCount() }}</div>
+              <div class="stat-label">الأطباء</div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="stat-card nurses">
+          <mat-card-content>
+            <div class="stat-icon">
+              <mat-icon>healing</mat-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-number">{{ nursesCount() }}</div>
+              <div class="stat-label">الممرضين</div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Filters Section -->
+    <mat-card class="filters-card">
+      <mat-card-content>
+        <form [formGroup]="filterForm" class="filters-form">
+          <div class="filters-row">
+            <!-- Search -->
+            <mat-form-field class="search-field">
+              <mat-label>البحث في المستخدمين</mat-label>
+              <input
+                matInput
+                formControlName="search"
+                placeholder="البحث بالاسم، البريد الإلكتروني، أو اسم المستخدم"
+              />
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+
+            <!-- Role Filter -->
+            <mat-form-field>
+              <mat-label>الدور</mat-label>
+              <mat-select formControlName="role">
+                <mat-option
+                  *ngFor="let role of roleOptions"
+                  [value]="role.value"
+                >
+                  {{ role.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <!-- Status Filter -->
+            <mat-form-field>
+              <mat-label>الحالة</mat-label>
+              <mat-select formControlName="isActive">
+                <mat-option
+                  *ngFor="let status of statusOptions"
+                  [value]="status.value"
+                >
+                  {{ status.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <!-- Sort Options -->
+            <mat-form-field>
+              <mat-label>ترتيب حسب</mat-label>
+              <mat-select formControlName="sortBy">
+                <mat-option value="fullName">الاسم</mat-option>
+                <mat-option value="email">البريد الإلكتروني</mat-option>
+                <mat-option value="role">الدور</mat-option>
+                <mat-option value="createdAt">تاريخ الإنشاء</mat-option>
+                <mat-option value="lastLoginAt">آخر دخول</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <!-- Clear Filters -->
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="clearFilters()"
+              class="clear-filters-btn"
+            >
+              <mat-icon>clear</mat-icon>
+              مسح الفلاتر
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Bulk Actions -->
+    <div class="bulk-actions" *ngIf="hasSelectedUsers()">
+      <mat-card>
+        <mat-card-content>
+          <div class="bulk-actions-content">
+            <div class="selection-info">
+              <mat-icon>info</mat-icon>
+              <span>تم اختيار {{ selection.selected.length }} مستخدم</span>
+            </div>
+
+            <div class="bulk-buttons">
+              <button
+                mat-stroked-button
+                color="primary"
+                (click)="onBulkActivate()"
+              >
+                <mat-icon>check_circle</mat-icon>
+                تفعيل المحدد
+              </button>
+
+              <button
+                mat-stroked-button
+                color="warn"
+                (click)="onBulkDeactivate()"
+              >
+                <mat-icon>block</mat-icon>
+                إلغاء تفعيل المحدد
+              </button>
+
+              <button mat-stroked-button (click)="selection.clear()">
+                <mat-icon>clear</mat-icon>
+                إلغاء التحديد
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Users List -->
+    <mat-card class="table-card">
+      <mat-card-header>
+        <mat-card-title>
+          <div class="table-header">
+            <div class="table-title">
+              <mat-icon>list</mat-icon>
+              قائمة المستخدمين
+            </div>
+
+            <div class="table-actions">
+              <!-- Select All Checkbox -->
+              <mat-checkbox
+                [checked]="selection.hasValue() && isAllSelected()"
+                [indeterminate]="selection.hasValue() && !isAllSelected()"
+                (change)="onSelectAll()"
+                matTooltip="تحديد الكل"
+              >
+              </mat-checkbox>
+
+              <!-- Export Button -->
+              <button
+                mat-icon-button
+                matTooltip="تصدير البيانات"
+                (click)="exportUsers()"
+              >
+                <mat-icon>download</mat-icon>
+              </button>
+
+              <!-- Refresh Button -->
+              <button
+                mat-icon-button
+                matTooltip="تحديث القائمة"
+                (click)="refreshUsers()"
+              >
+                <mat-icon>refresh</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <!-- Loading Spinner -->
+        <div class="loading-container" *ngIf="loading()">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p>جاري تحميل المستخدمين...</p>
+        </div>
+
+        <!-- Users Grid -->
+        <div class="users-grid" *ngIf="!loading()">
+          <div *ngFor="let user of users()" class="user-card">
+            <!-- Selection Checkbox -->
+            <div class="user-selection">
+              <mat-checkbox
+                [checked]="selection.isSelected(user)"
+                [disabled]="user.id === currentUser()?.id"
+                (change)="onSelectionChange(user)"
+              >
+              </mat-checkbox>
+            </div>
+
+            <!-- User Info -->
+            <div class="user-info-section">
+              <div class="user-avatar">
+                <img
+                  [src]="
+                    user.profilePicture || '/assets/images/default-avatar.png'
+                  "
+                  [alt]="user.fullName"
+                  class="avatar-img"
+                />
+                <div
+                  class="status-indicator"
+                  [class.active]="user.isActive"
+                  [class.inactive]="!user.isActive"
+                ></div>
+              </div>
+
+              <div class="user-details">
+                <div class="user-name">
+                  {{ user.firstName }} {{ user.lastName }}
+                </div>
+                <div class="user-username">@{{ user.username }}</div>
+                <div class="user-email">{{ user.email }}</div>
+                <div class="user-phone" *ngIf="user.phone">
+                  📞 {{ user.phone }}
+                </div>
+              </div>
+            </div>
+
+            <!-- User Role & Status -->
+            <div class="user-badges">
+              <mat-chip class="role-chip role-{{ user.role.toLowerCase() }}">
+                {{ userService.getRoleDisplayName(user.role) }}
+              </mat-chip>
+
+              <mat-chip
+                [color]="user.isActive ? 'primary' : 'warn'"
+                selected
+                class="status-chip"
+              >
+                {{ user.isActive ? "نشط" : "غير نشط" }}
+              </mat-chip>
+            </div>
+
+            <!-- User Actions -->
+            <div class="user-actions">
+              <button
+                mat-icon-button
+                matTooltip="عرض الملف"
+                (click)="onViewUser(user)"
+              >
+                <mat-icon>visibility</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                matTooltip="تعديل"
+                (click)="onEditUser(user)"
+                *ngIf="canEdit(user)"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+
+              <button mat-icon-button [matMenuTriggerFor]="userActionsMenu">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+
+              <mat-menu #userActionsMenu="matMenu">
+                <button
+                  mat-menu-item
+                  (click)="onResetPassword(user)"
+                  *ngIf="canResetPassword(user)"
+                >
+                  <mat-icon>key</mat-icon>
+                  <span>إعادة تعيين كلمة المرور</span>
+                </button>
+
+                <mat-divider></mat-divider>
+
+                <button
+                  mat-menu-item
+                  (click)="onToggleStatus(user)"
+                  *ngIf="canToggleStatus(user)"
+                  [class.text-warn]="user.isActive"
+                >
+                  <mat-icon>{{
+                    user.isActive ? "block" : "check_circle"
+                  }}</mat-icon>
+                  <span>{{ user.isActive ? "إلغاء التفعيل" : "تفعيل" }}</span>
+                </button>
+              </mat-menu>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="!loading() && users().length === 0">
+          <mat-icon class="empty-icon">people_outline</mat-icon>
+          <h3>لا توجد مستخدمين</h3>
+          <p>لم يتم العثور على مستخدمين مطابقين لمعايير البحث</p>
+          <button mat-raised-button color="primary" (click)="onNewUser()">
+            <mat-icon>person_add</mat-icon>
+            إضافة أول مستخدم
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</app-sidebar>

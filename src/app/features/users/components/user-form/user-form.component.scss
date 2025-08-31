@@ -1,0 +1,792 @@
+// ===================================================================
+// User Form Component Styles
+// src/app/features/users/components/user-form/user-form.component.scss
+// ===================================================================
+
+.user-form-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+// ===================================================================
+// PAGE HEADER
+// ===================================================================
+.page-header {
+  margin-bottom: 24px;
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  .title-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    .back-btn {
+      margin-top: 4px;
+      color: var(--primary-color);
+
+      @media (max-width: 768px) {
+        margin-top: 0;
+      }
+    }
+
+    .title-info {
+      .page-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin: 0 0 8px 0;
+
+        mat-icon {
+          font-size: 32px;
+          width: 32px;
+          height: 32px;
+        }
+      }
+
+      .page-subtitle {
+        color: var(--text-secondary);
+        font-size: 16px;
+        margin: 0;
+      }
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 12px;
+
+    @media (max-width: 768px) {
+      justify-content: stretch;
+
+      button {
+        flex: 1;
+      }
+    }
+  }
+}
+
+// ===================================================================
+// LOADING STATE
+// ===================================================================
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+
+  mat-spinner {
+    margin-bottom: 16px;
+  }
+
+  p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    margin: 0;
+  }
+}
+
+// ===================================================================
+// FORM CONTENT
+// ===================================================================
+.form-content {
+  margin-bottom: 40px;
+}
+
+.stepper-card {
+  mat-card-content {
+    padding: 0 !important;
+  }
+}
+
+// ===================================================================
+// STEPPER CUSTOMIZATION
+// ===================================================================
+:host ::ng-deep .mat-stepper-horizontal {
+  .mat-step-header {
+    padding: 24px;
+
+    .mat-step-icon {
+      width: 36px;
+      height: 36px;
+      margin-right: 12px;
+
+      .mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .mat-step-label {
+      font-size: 16px;
+      font-weight: 500;
+
+      &.mat-step-label-active {
+        color: var(--primary-color);
+      }
+    }
+  }
+
+  .mat-step-content {
+    padding: 0;
+    margin-top: 0;
+  }
+
+  @media (max-width: 768px) {
+    .mat-step-header {
+      padding: 16px 12px;
+
+      .mat-step-label {
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+// ===================================================================
+// STEP CONTENT
+// ===================================================================
+.step-content {
+  padding: 32px;
+
+  @media (max-width: 768px) {
+    padding: 24px;
+  }
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--divider-color);
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: var(--primary-color);
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+  }
+
+  p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0;
+  }
+}
+
+.step-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--divider-color);
+
+  @media (max-width: 768px) {
+    justify-content: stretch;
+
+    button {
+      flex: 1;
+    }
+  }
+}
+
+// ===================================================================
+// FORM STYLING
+// ===================================================================
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+.form-field {
+  flex: 1;
+  width: 100%;
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+// ===================================================================
+// PROFILE PICTURE SECTION
+// ===================================================================
+.profile-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.profile-picture-container {
+  text-align: center;
+
+  .profile-picture {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 12px;
+    cursor: pointer;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--primary-color);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+
+      .upload-overlay {
+        opacity: 1;
+      }
+    }
+
+    .avatar-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .upload-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+
+      mat-icon {
+        color: white;
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    .file-input {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+  }
+
+  .upload-hint {
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin: 0;
+  }
+}
+
+// ===================================================================
+// PASSWORD SECTION
+// ===================================================================
+.password-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: var(--background-card);
+  border-radius: 8px;
+  border: 1px solid var(--divider-color);
+}
+
+.password-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+
+  h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .generate-btn {
+    font-size: 12px;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+}
+
+.password-strength {
+  margin-top: 12px;
+
+  .strength-bar {
+    height: 4px;
+    background: var(--divider-color);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 8px;
+
+    .strength-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+
+      &.weak {
+        width: 40%;
+        background: linear-gradient(90deg, #f44336 0%, #ff5722 100%);
+      }
+
+      &.strong {
+        width: 100%;
+        background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+      }
+    }
+  }
+
+  .strength-text {
+    font-size: 12px;
+    font-weight: 500;
+    margin: 0;
+
+    &.weak {
+      color: #f44336;
+    }
+
+    &.strong {
+      color: #4caf50;
+    }
+  }
+}
+
+.edit-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border: 1px solid #2196f3;
+  border-radius: 8px;
+  margin-bottom: 16px;
+
+  mat-icon {
+    color: #1976d2;
+    flex-shrink: 0;
+  }
+
+  p {
+    flex: 1;
+    margin: 0;
+    color: #1976d2;
+    font-size: 14px;
+  }
+
+  button {
+    flex-shrink: 0;
+  }
+}
+
+.status-section {
+  padding: 16px;
+  background: var(--background-hover);
+  border-radius: 8px;
+
+  :host ::ng-deep .mat-checkbox {
+    .mat-checkbox-label {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+
+      strong {
+        font-size: 16px;
+        margin-bottom: 4px;
+      }
+
+      .checkbox-description {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-left: 0;
+      }
+    }
+  }
+}
+
+// ===================================================================
+// ROLE SELECTION
+// ===================================================================
+.role-selection {
+  margin-bottom: 32px;
+
+  h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 20px 0;
+  }
+}
+
+.role-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.role-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border: 2px solid var(--divider-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--background-card);
+
+  &:hover {
+    border-color: var(--primary-color);
+    background: var(--background-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  &.selected {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-lighter) 100%);
+
+    .role-icon {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .role-info h5 {
+      color: var(--primary-color);
+    }
+  }
+
+  .role-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background-hover);
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .role-info {
+    flex: 1;
+
+    h5 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 4px 0;
+      transition: color 0.2s ease;
+    }
+
+    p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 0;
+      line-height: 1.4;
+    }
+  }
+
+  .role-check {
+    flex-shrink: 0;
+
+    mat-icon {
+      color: var(--primary-color);
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+  }
+}
+
+// ===================================================================
+// DOCTOR FIELDS
+// ===================================================================
+.doctor-fields {
+  margin-top: 24px;
+  padding-top: 24px;
+
+  mat-divider {
+    margin-bottom: 24px;
+  }
+
+  h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 16px 0;
+  }
+}
+
+// ===================================================================
+// PERMISSIONS GRID
+// ===================================================================
+.permissions-form {
+  .permissions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .permission-item {
+    padding: 20px;
+    border: 1px solid var(--divider-color);
+    border-radius: 12px;
+    background: var(--background-card);
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: var(--background-hover);
+      border-color: var(--primary-color);
+    }
+
+    :host ::ng-deep .mat-checkbox {
+      width: 100%;
+
+      .mat-checkbox-layout {
+        width: 100%;
+      }
+
+      .mat-checkbox-label {
+        width: 100%;
+      }
+    }
+
+    .permission-info {
+      .permission-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+
+        mat-icon {
+          color: var(--primary-color);
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+
+      p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin: 0;
+        line-height: 1.4;
+      }
+    }
+  }
+}
+
+.permissions-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fff3e0 0%, #ffcc02 20%);
+  border: 1px solid #ff9800;
+  border-radius: 8px;
+
+  mat-icon {
+    color: #ef6c00;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  p {
+    color: #ef6c00;
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+// ===================================================================
+// RESPONSIVE DESIGN
+// ===================================================================
+@media (max-width: 768px) {
+  .user-form-container {
+    padding: 16px;
+  }
+
+  .page-header {
+    margin-bottom: 16px;
+  }
+
+  .step-content {
+    padding: 20px;
+  }
+
+  .step-header {
+    margin-bottom: 24px;
+
+    h3 {
+      font-size: 18px;
+    }
+  }
+
+  .role-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .role-card {
+    padding: 16px;
+  }
+
+  .permissions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .step-content {
+    padding: 16px;
+  }
+
+  .profile-picture-container .profile-picture {
+    width: 100px;
+    height: 100px;
+  }
+
+  .password-header {
+    .generate-btn {
+      width: 100%;
+    }
+  }
+}
+
+// ===================================================================
+// DARK THEME SUPPORT
+// ===================================================================
+.dark-theme {
+
+  .password-section,
+  .status-section,
+  .role-card,
+  .permission-item {
+    background: var(--background-card-dark);
+    border-color: var(--divider-color-dark);
+  }
+
+  .edit-note {
+    background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+    border-color: #3f51b5;
+
+    mat-icon,
+    p {
+      color: #90caf9;
+    }
+  }
+
+  .permissions-note {
+    background: linear-gradient(135deg, #3e2723 0%, #5d4037 100%);
+    border-color: #8d6e63;
+
+    mat-icon,
+    p {
+      color: #ffab91;
+    }
+  }
+}
+
+// ===================================================================
+// RTL SUPPORT
+// ===================================================================
+[dir="rtl"] {
+  .title-section {
+    flex-direction: row-reverse;
+  }
+
+  .step-header {
+    flex-direction: row-reverse;
+  }
+
+  .password-header {
+    flex-direction: row-reverse;
+  }
+
+  .role-card {
+    flex-direction: row-reverse;
+  }
+
+  .permissions-note,
+  .edit-note {
+    flex-direction: row-reverse;
+  }
+}
+
+// ===================================================================
+// PRINT STYLES
+// ===================================================================
+@media print {
+
+  .page-header .header-actions,
+  .step-actions {
+    display: none !important;
+  }
+
+  .stepper-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd;
+  }
+}

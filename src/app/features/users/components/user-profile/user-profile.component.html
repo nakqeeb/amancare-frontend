@@ -1,0 +1,503 @@
+<!-- ===================================================================
+     User Profile Component Template
+     src/app/features/users/components/user-profile/user-profile.component.html
+     =================================================================== -->
+
+<app-header></app-header>
+
+<app-sidebar>
+  <div class="user-profile-container">
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading()">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>جاري تحميل ملف المستخدم...</p>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="profile-content" *ngIf="!loading() && user()">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="header-content">
+          <div class="title-section">
+            <button mat-icon-button (click)="onBackToList()" class="back-btn">
+              <mat-icon>arrow_back</mat-icon>
+            </button>
+
+            <div class="title-info">
+              <h1 class="page-title">
+                <mat-icon>person</mat-icon>
+                ملف المستخدم
+              </h1>
+              <p class="page-subtitle">عرض تفاصيل وإحصائيات المستخدم</p>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <!-- Action Menu -->
+            <button
+              mat-icon-button
+              [matMenuTriggerFor]="actionsMenu"
+              matTooltip="المزيد من الإجراءات"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #actionsMenu="matMenu">
+              <button mat-menu-item (click)="onSendNotification()">
+                <mat-icon>notifications</mat-icon>
+                <span>إرسال إشعار</span>
+              </button>
+              <button mat-menu-item (click)="onExportUserData()">
+                <mat-icon>download</mat-icon>
+                <span>تصدير البيانات</span>
+              </button>
+              <button mat-menu-item (click)="onPrintProfile()">
+                <mat-icon>print</mat-icon>
+                <span>طباعة الملف</span>
+              </button>
+              <mat-divider></mat-divider>
+              <button mat-menu-item (click)="onViewFullActivityLog()">
+                <mat-icon>history</mat-icon>
+                <span>سجل الأنشطة الكامل</span>
+              </button>
+            </mat-menu>
+
+            <!-- Primary Actions -->
+            <button
+              mat-stroked-button
+              *ngIf="canResetPassword()"
+              (click)="onResetPassword()"
+            >
+              <mat-icon>key</mat-icon>
+              إعادة تعيين كلمة المرور
+            </button>
+
+            <button
+              mat-stroked-button
+              [color]="user()!.isActive ? 'warn' : 'primary'"
+              *ngIf="canToggleStatus()"
+              (click)="onToggleStatus()"
+            >
+              <mat-icon>{{ getStatusIcon(!user()!.isActive) }}</mat-icon>
+              {{ user()!.isActive ? "إلغاء التفعيل" : "تفعيل الحساب" }}
+            </button>
+
+            <button
+              mat-raised-button
+              color="primary"
+              *ngIf="canEditUser()"
+              (click)="onEditUser()"
+            >
+              <mat-icon>edit</mat-icon>
+              تعديل المستخدم
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Profile Card -->
+      <mat-card class="profile-card">
+        <mat-card-content>
+          <div class="profile-header">
+            <!-- Profile Picture & Basic Info -->
+            <div class="profile-basic">
+              <div class="avatar-section">
+                <img
+                  [src]="
+                    user()!.profilePicture ||
+                    '/assets/images/default-avatar.png'
+                  "
+                  [alt]="user()!.fullName"
+                  class="profile-avatar"
+                />
+                <div
+                  class="status-indicator"
+                  [class.active]="user()!.isActive"
+                  [class.inactive]="!user()!.isActive"
+                ></div>
+              </div>
+
+              <div class="profile-info">
+                <h2 class="user-name">
+                  {{ user()!.firstName }} {{ user()!.lastName }}
+                </h2>
+                <p class="username">@{{ user()!.username }}</p>
+                <div class="role-badge">
+                  <mat-chip [color]="getRoleColor(user()!.role)" selected>
+                    <mat-icon matChipAvatar>{{
+                      getRoleIcon(user()!.role)
+                    }}</mat-icon>
+                    {{ getRoleDisplayName(user()!.role) }}
+                  </mat-chip>
+                </div>
+                <div class="status-badge">
+                  <mat-chip [color]="getStatusColor(user()!.isActive)" selected>
+                    <mat-icon matChipAvatar>{{
+                      getStatusIcon(user()!.isActive)
+                    }}</mat-icon>
+                    {{ user()!.isActive ? "نشط" : "غير نشط" }}
+                  </mat-chip>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="contact-info">
+              <div class="contact-item" *ngIf="user()!.email">
+                <mat-icon>email</mat-icon>
+                <div class="contact-details">
+                  <span class="contact-label">البريد الإلكتروني</span>
+                  <span class="contact-value">{{ user()!.email }}</span>
+                </div>
+              </div>
+
+              <div class="contact-item" *ngIf="user()!.phone">
+                <mat-icon>phone</mat-icon>
+                <div class="contact-details">
+                  <span class="contact-label">رقم الهاتف</span>
+                  <span class="contact-value">{{ user()!.phone }}</span>
+                </div>
+              </div>
+
+              <div class="contact-item" *ngIf="user()!.specialization">
+                <mat-icon>local_hospital</mat-icon>
+                <div class="contact-details">
+                  <span class="contact-label">التخصص</span>
+                  <span class="contact-value">{{
+                    user()!.specialization
+                  }}</span>
+                </div>
+              </div>
+
+              <div class="contact-item" *ngIf="user()!.licenseNumber">
+                <mat-icon>verified</mat-icon>
+                <div class="contact-details">
+                  <span class="contact-label">رقم الترخيص</span>
+                  <span class="contact-value">{{ user()!.licenseNumber }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Statistics Cards -->
+      <div class="stats-section">
+        <div class="stats-grid">
+          <mat-card class="stat-card logins">
+            <mat-card-content>
+              <div class="stat-icon">
+                <mat-icon>login</mat-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-number">{{ userStats().totalLogins }}</div>
+                <div class="stat-label">إجمالي تسجيلات الدخول</div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card sessions">
+            <mat-card-content>
+              <div class="stat-icon">
+                <mat-icon>schedule</mat-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-number">
+                  {{ userStats().sessionsThisMonth }}
+                </div>
+                <div class="stat-label">جلسات هذا الشهر</div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card
+            class="stat-card appointments"
+            *ngIf="
+              user()!.role === 'DOCTOR' ||
+              user()!.role === 'NURSE' ||
+              user()!.role === 'RECEPTIONIST'
+            "
+          >
+            <mat-card-content>
+              <div class="stat-icon">
+                <mat-icon>event</mat-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-number">
+                  {{ userStats().appointmentsManaged }}
+                </div>
+                <div class="stat-label">المواعيد المُدارة</div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card
+            class="stat-card patients"
+            *ngIf="user()!.role === 'DOCTOR' || user()!.role === 'NURSE'"
+          >
+            <mat-card-content>
+              <div class="stat-icon">
+                <mat-icon>people</mat-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-number">{{ userStats().patientsHandled }}</div>
+                <div class="stat-label">المرضى المُعالجين</div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card
+            class="stat-card reports"
+            *ngIf="user()!.role === 'ADMIN' || user()!.role === 'DOCTOR'"
+          >
+            <mat-card-content>
+              <div class="stat-icon">
+                <mat-icon>assessment</mat-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-number">
+                  {{ userStats().reportsGenerated }}
+                </div>
+                <div class="stat-label">التقارير المُنشأة</div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+
+      <!-- Detailed Information Tabs -->
+      <mat-card class="details-card">
+        <mat-card-content>
+          <mat-tab-group
+            [selectedIndex]="selectedTab()"
+            (selectedTabChange)="onTabChange($event.index)"
+          >
+            <!-- Account Information Tab -->
+            <mat-tab label="معلومات الحساب">
+              <div class="tab-content">
+                <div class="info-section">
+                  <h3>
+                    <mat-icon>account_circle</mat-icon>
+                    معلومات الحساب
+                  </h3>
+
+                  <div class="info-grid">
+                    <div class="info-item">
+                      <span class="info-label">اسم المستخدم</span>
+                      <span class="info-value">{{ user()!.username }}</span>
+                    </div>
+
+                    <div class="info-item">
+                      <span class="info-label">تاريخ إنشاء الحساب</span>
+                      <span class="info-value">{{
+                        formatDate(userStats().accountCreatedAt)
+                      }}</span>
+                    </div>
+
+                    <div class="info-item" *ngIf="userStats().lastLoginAt">
+                      <span class="info-label">آخر تسجيل دخول</span>
+                      <span class="info-value">{{
+                        formatDateTime(userStats().lastLoginAt!)
+                      }}</span>
+                    </div>
+
+                    <div class="info-item">
+                      <span class="info-label">حالة الحساب</span>
+                      <span class="info-value">
+                        <mat-chip
+                          [color]="getStatusColor(user()!.isActive)"
+                          selected
+                        >
+                          {{ user()!.isActive ? "نشط" : "غير نشط" }}
+                        </mat-chip>
+                      </span>
+                    </div>
+
+                    <div class="info-item">
+                      <span class="info-label">العيادة</span>
+                      <span class="info-value">{{
+                        user()!.clinicName || "غير محدد"
+                      }}</span>
+                    </div>
+
+                    <div class="info-item">
+                      <span class="info-label">تاريخ آخر تحديث</span>
+                      <span class="info-value">{{
+                        user()!.updatedAt
+                          ? formatDate(user()!.updatedAt!)
+                          : "غير متوفر"
+                      }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <mat-divider></mat-divider>
+
+                <div class="info-section" *ngIf="user()!.role === 'DOCTOR'">
+                  <h3>
+                    <mat-icon>local_hospital</mat-icon>
+                    المعلومات المهنية
+                  </h3>
+
+                  <div class="info-grid">
+                    <div class="info-item">
+                      <span class="info-label">التخصص</span>
+                      <span class="info-value">{{
+                        user()!.specialization || "غير محدد"
+                      }}</span>
+                    </div>
+
+                    <div class="info-item">
+                      <span class="info-label">رقم الترخيص</span>
+                      <span class="info-value">{{
+                        user()!.licenseNumber || "غير محدد"
+                      }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </mat-tab>
+
+            <!-- Activity Log Tab -->
+            <mat-tab label="سجل الأنشطة">
+              <div class="tab-content">
+                <div class="activities-header">
+                  <h3>
+                    <mat-icon>history</mat-icon>
+                    الأنشطة الأخيرة
+                  </h3>
+                  <button mat-stroked-button (click)="onViewFullActivityLog()">
+                    <mat-icon>visibility</mat-icon>
+                    عرض الكامل
+                  </button>
+                </div>
+
+                <div class="activities-list">
+                  <div
+                    *ngFor="let activity of recentActivities()"
+                    class="activity-item"
+                    [class.success]="activity.success"
+                    [class.failed]="!activity.success"
+                  >
+                    <div class="activity-icon">
+                      <mat-icon [color]="getActivityColor(activity.success)">
+                        {{ getActivityIcon(activity.action) }}
+                      </mat-icon>
+                    </div>
+
+                    <div class="activity-info">
+                      <div class="activity-description">
+                        {{ activity.description }}
+                      </div>
+                      <div class="activity-time">
+                        {{ getTimeAgo(activity.timestamp) }}
+                      </div>
+                      <div class="activity-details" *ngIf="activity.ipAddress">
+                        <span class="ip-address"
+                          >IP: {{ activity.ipAddress }}</span
+                        >
+                      </div>
+                    </div>
+
+                    <div class="activity-status">
+                      <mat-icon *ngIf="activity.success" color="primary"
+                        >check_circle</mat-icon
+                      >
+                      <mat-icon *ngIf="!activity.success" color="warn"
+                        >error</mat-icon
+                      >
+                    </div>
+                  </div>
+
+                  <div
+                    class="empty-activities"
+                    *ngIf="recentActivities().length === 0"
+                  >
+                    <mat-icon>history</mat-icon>
+                    <p>لا توجد أنشطة مسجلة</p>
+                  </div>
+                </div>
+              </div>
+            </mat-tab>
+
+            <!-- Security Tab -->
+            <mat-tab label="الأمان" *ngIf="canEditUser() || isOwnProfile()">
+              <div class="tab-content">
+                <div class="security-section">
+                  <h3>
+                    <mat-icon>security</mat-icon>
+                    إعدادات الأمان
+                  </h3>
+
+                  <div class="security-items">
+                    <div class="security-item">
+                      <div class="security-info">
+                        <div class="security-title">
+                          <mat-icon>key</mat-icon>
+                          كلمة المرور
+                        </div>
+                        <p>
+                          آخر تغيير:
+                          {{ formatDate(userStats().accountCreatedAt) }}
+                        </p>
+                      </div>
+                      <div class="security-actions">
+                        <button
+                          mat-stroked-button
+                          *ngIf="canResetPassword()"
+                          (click)="onResetPassword()"
+                        >
+                          إعادة تعيين
+                        </button>
+                      </div>
+                    </div>
+
+                    <mat-divider></mat-divider>
+
+                    <div class="security-item">
+                      <div class="security-info">
+                        <div class="security-title">
+                          <mat-icon>login</mat-icon>
+                          جلسات تسجيل الدخول
+                        </div>
+                        <p>{{ userStats().totalLogins }} جلسة إجمالية</p>
+                      </div>
+                      <div class="security-actions">
+                        <button mat-stroked-button disabled>
+                          إنهاء جميع الجلسات
+                        </button>
+                      </div>
+                    </div>
+
+                    <mat-divider></mat-divider>
+
+                    <div class="security-item">
+                      <div class="security-info">
+                        <div class="security-title">
+                          <mat-icon>verified_user</mat-icon>
+                          حالة الحساب
+                        </div>
+                        <p>
+                          الحساب {{ user()!.isActive ? "مفعل" : "غير مفعل" }}
+                        </p>
+                      </div>
+                      <div class="security-actions">
+                        <button
+                          mat-stroked-button
+                          [color]="user()!.isActive ? 'warn' : 'primary'"
+                          *ngIf="canToggleStatus()"
+                          (click)="onToggleStatus()"
+                        >
+                          {{ user()!.isActive ? "إلغاء التفعيل" : "تفعيل" }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </mat-tab>
+          </mat-tab-group>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</app-sidebar>
