@@ -1,0 +1,187 @@
+.activity-history-container {
+  padding: 20px;
+  margin-right: 260px;
+  margin-top: 60px;
+  min-height: calc(100vh - 60px);
+  background-color: #f5f5f5;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
+
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #333;
+  }
+}
+
+.filters-card {
+  margin-bottom: 20px;
+  border-radius: 12px;
+}
+
+.filters-row {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+
+  mat-form-field {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .filter-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding-top: 10px;
+  }
+}
+
+.quick-filters {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e0e0e0;
+
+  mat-chip-listbox {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+mat-card {
+  border-radius: 12px;
+}
+
+mat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  mat-card-title {
+    margin: 0;
+    font-size: 18px;
+  }
+}
+
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: #ccc;
+    margin-bottom: 20px;
+  }
+
+  h3 {
+    font-size: 20px;
+    margin: 0 0 10px 0;
+    color: #666;
+  }
+
+  p {
+    color: #999;
+    margin: 0;
+  }
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.activity-table {
+  width: 100%;
+
+  th {
+    font-weight: 500;
+    color: #666;
+    background: #f9f9f9;
+  }
+
+  .action-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .ip-address {
+    font-family: monospace;
+    font-size: 12px;
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .device-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: #666;
+    }
+
+    span {
+      font-size: 12px;
+    }
+  }
+
+  .timestamp-cell {
+    display: flex;
+    flex-direction: column;
+
+    .date {
+      font-size: 12px;
+      color: #333;
+    }
+
+    .time {
+      font-size: 11px;
+      color: #999;
+    }
+  }
+
+  mat-chip {
+    font-size: 11px;
+    height: 24px;
+    padding: 0 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .activity-history-container {
+    margin-right: 0;
+    padding: 10px;
+  }
+
+  .filters-row {
+    flex-direction: column;
+
+    mat-form-field {
+      width: 100%;
+    }
+  }
+
+  .activity-table {
+    font-size: 12px;
+  }
+}

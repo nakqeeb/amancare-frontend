@@ -1,0 +1,294 @@
+.profile-overview-container {
+  padding: 20px;
+  margin-right: 260px;
+  margin-top: 60px;
+  min-height: calc(100vh - 60px);
+  background-color: #f5f5f5;
+}
+
+.profile-header-card {
+  margin-bottom: 20px;
+  border-radius: 12px;
+}
+
+.profile-header {
+  display: flex;
+  gap: 30px;
+  padding: 20px;
+}
+
+.profile-picture-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.profile-picture-wrapper {
+  position: relative;
+  width: 150px;
+  height: 150px;
+}
+
+.profile-picture,
+.profile-picture-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #e0e0e0;
+}
+
+.profile-picture-placeholder {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    font-size: 60px;
+    width: 60px;
+    height: 60px;
+    color: white;
+  }
+}
+
+.picture-edit-btn {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  transform: scale(0.8);
+}
+
+.profile-completeness {
+  width: 150px;
+  text-align: center;
+
+  .completeness-label {
+    font-size: 12px;
+    color: #666;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  mat-progress-bar {
+    border-radius: 10px;
+    height: 8px;
+  }
+
+  .completeness-percentage {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    display: block;
+    margin-top: 8px;
+  }
+}
+
+.profile-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.name-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  .profile-name {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 500;
+    color: #333;
+  }
+}
+
+.role-chip {
+  &.role-system_admin {
+    background: #9c27b0;
+    color: white;
+  }
+
+  &.role-admin {
+    background: #3f51b5;
+    color: white;
+  }
+
+  &.role-doctor {
+    background: #009688;
+    color: white;
+  }
+
+  &.role-nurse {
+    background: #ff5722;
+    color: white;
+  }
+
+  &.role-receptionist {
+    background: #795548;
+    color: white;
+  }
+
+  mat-icon {
+    margin-left: 4px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.contact-info {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #999;
+    }
+  }
+}
+
+.professional-info {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  mat-chip {
+    mat-icon {
+      margin-left: 4px;
+    }
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.profile-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 180px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
+
+  mat-icon {
+    color: #666;
+  }
+
+  .stat-info {
+    display: flex;
+    flex-direction: column;
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+    }
+  }
+}
+
+.profile-tabs {
+  background: white;
+  border-radius: 12px;
+
+  ::ng-deep .mat-mdc-tab-label {
+    min-width: 150px;
+  }
+}
+
+.tab-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+
+  .info-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    label {
+      font-size: 12px;
+      color: #999;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    span {
+      font-size: 14px;
+      color: #333;
+    }
+
+    &.full-width {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+mat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  mat-card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+
+    mat-icon {
+      color: #666;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-overview-container {
+    margin-right: 0;
+    padding: 10px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+  }
+
+  .profile-stats {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-around;
+  }
+}

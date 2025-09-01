@@ -1,0 +1,473 @@
+<app-header></app-header>
+<app-sidebar>
+  <div class="notification-preferences-container">
+    <div class="page-header">
+      <button mat-icon-button routerLink="/profile/overview">
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+      <h1>إعدادات الإشعارات</h1>
+    </div>
+
+    <!-- Master Controls -->
+    <mat-card class="master-controls-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>notifications</mat-icon>
+          التحكم الرئيسي
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="master-toggles">
+          <div class="toggle-item">
+            <mat-slide-toggle
+              [checked]="masterEmailEnabled()"
+              (change)="toggleMasterEmail($event.checked)"
+            >
+              <mat-icon>email</mat-icon>
+              البريد الإلكتروني
+            </mat-slide-toggle>
+            <p class="toggle-description">
+              تفعيل/تعطيل جميع إشعارات البريد الإلكتروني
+            </p>
+          </div>
+
+          <div class="toggle-item">
+            <mat-slide-toggle
+              [checked]="masterSmsEnabled()"
+              (change)="toggleMasterSms($event.checked)"
+            >
+              <mat-icon>sms</mat-icon>
+              الرسائل النصية
+            </mat-slide-toggle>
+            <p class="toggle-description">تفعيل/تعطيل جميع الرسائل النصية</p>
+          </div>
+
+          <div class="toggle-item">
+            <mat-slide-toggle
+              [checked]="masterPushEnabled()"
+              (change)="toggleMasterPush($event.checked)"
+            >
+              <mat-icon>notifications_active</mat-icon>
+              الإشعارات الفورية
+            </mat-slide-toggle>
+            <p class="toggle-description">تفعيل/تعطيل جميع الإشعارات الفورية</p>
+          </div>
+
+          <div class="toggle-item">
+            <mat-slide-toggle
+              [checked]="masterInAppEnabled()"
+              (change)="toggleMasterInApp($event.checked)"
+            >
+              <mat-icon>app_settings_alt</mat-icon>
+              إشعارات التطبيق
+            </mat-slide-toggle>
+            <p class="toggle-description">تفعيل/تعطيل إشعارات داخل التطبيق</p>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Notification Categories -->
+    <mat-accordion multi>
+      <!-- Email Notifications -->
+      <mat-expansion-panel [expanded]="true" [disabled]="!masterEmailEnabled()">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>email</mat-icon>
+            إشعارات البريد الإلكتروني
+          </mat-panel-title>
+          <mat-panel-description>
+            تخصيص إشعارات البريد الإلكتروني
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <form [formGroup]="emailForm">
+          <div class="notification-settings">
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="appointments">
+                  <mat-icon>event</mat-icon>
+                  المواعيد
+                </mat-slide-toggle>
+              </div>
+              <p class="setting-description">
+                إشعارات المواعيد الجديدة، التذكيرات، الإلغاءات والتعديلات
+              </p>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="patients">
+                  <mat-icon>people</mat-icon>
+                  المرضى
+                </mat-slide-toggle>
+              </div>
+              <p class="setting-description">
+                إشعارات المرضى الجدد والتحديثات على ملفات المرضى
+              </p>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="invoices">
+                  <mat-icon>receipt</mat-icon>
+                  الفواتير
+                </mat-slide-toggle>
+              </div>
+              <p class="setting-description">
+                إشعارات الفواتير الجديدة، المدفوعات، والتذكيرات
+              </p>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="reports">
+                  <mat-icon>assessment</mat-icon>
+                  التقارير
+                </mat-slide-toggle>
+              </div>
+              <p class="setting-description">
+                إشعارات التقارير الجاهزة والتحليلات الدورية
+              </p>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="systemUpdates">
+                  <mat-icon>system_update</mat-icon>
+                  تحديثات النظام
+                </mat-slide-toggle>
+              </div>
+              <p class="setting-description">
+                إشعارات الصيانة، التحديثات والميزات الجديدة
+              </p>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="reminders">
+                  <mat-icon>alarm</mat-icon>
+                  التذكيرات
+                </mat-slide-toggle>
+              </div>
+              <p class="setting-description">
+                تذكيرات المهام والمواعيد النهائية
+              </p>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="digest-setting">
+              <mat-form-field>
+                <mat-label>ملخص البريد الإلكتروني</mat-label>
+                <mat-select formControlName="digest">
+                  <mat-option value="none">بدون ملخص</mat-option>
+                  <mat-option value="daily">ملخص يومي</mat-option>
+                  <mat-option value="weekly">ملخص أسبوعي</mat-option>
+                </mat-select>
+                <mat-hint>تجميع الإشعارات في بريد واحد</mat-hint>
+              </mat-form-field>
+            </div>
+          </div>
+        </form>
+      </mat-expansion-panel>
+
+      <!-- SMS Notifications -->
+      <mat-expansion-panel [disabled]="!masterSmsEnabled()">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>sms</mat-icon>
+            الرسائل النصية
+          </mat-panel-title>
+          <mat-panel-description> تخصيص الرسائل النصية </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <form [formGroup]="smsForm">
+          <div class="notification-settings">
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="appointments">
+                  <mat-icon>event</mat-icon>
+                  تذكيرات المواعيد
+                </mat-slide-toggle>
+              </div>
+              <p class="setting-description">
+                رسائل تذكير قبل المواعيد بـ 24 ساعة
+              </p>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="urgentAlerts">
+                  <mat-icon>warning</mat-icon>
+                  التنبيهات العاجلة
+                </mat-slide-toggle>
+              </div>
+              <p class="setting-description">
+                رسائل للحالات الطارئة والمهمة فقط
+              </p>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="sms-limit-info">
+              <mat-icon>info</mat-icon>
+              <p>
+                عدد الرسائل المتبقية هذا الشهر:
+                <strong>{{ smsRemaining() }} / {{ smsLimit() }}</strong>
+              </p>
+            </div>
+          </div>
+        </form>
+      </mat-expansion-panel>
+
+      <!-- Push Notifications -->
+      <mat-expansion-panel [disabled]="!masterPushEnabled()">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>notifications_active</mat-icon>
+            الإشعارات الفورية
+          </mat-panel-title>
+          <mat-panel-description>
+            إشعارات المتصفح والجوال
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <form [formGroup]="pushForm">
+          <div class="notification-settings">
+            @if (!pushPermissionGranted()) {
+            <div class="permission-request">
+              <mat-icon>notifications_off</mat-icon>
+              <h3>الإشعارات الفورية غير مفعلة</h3>
+              <p>يجب السماح للتطبيق بإرسال الإشعارات من المتصفح</p>
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="requestPushPermission()"
+              >
+                <mat-icon>notifications</mat-icon>
+                تفعيل الإشعارات
+              </button>
+            </div>
+            } @else {
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="appointments">
+                  <mat-icon>event</mat-icon>
+                  المواعيد
+                </mat-slide-toggle>
+              </div>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="messages">
+                  <mat-icon>message</mat-icon>
+                  الرسائل
+                </mat-slide-toggle>
+              </div>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="alerts">
+                  <mat-icon>notification_important</mat-icon>
+                  التنبيهات المهمة
+                </mat-slide-toggle>
+              </div>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="quiet-hours">
+              <h4>ساعات الهدوء</h4>
+              <p>إيقاف الإشعارات الفورية خلال فترة محددة</p>
+
+              <mat-slide-toggle formControlName="quietHoursEnabled">
+                تفعيل ساعات الهدوء
+              </mat-slide-toggle>
+
+              @if (pushForm.get('quietHoursEnabled')?.value) {
+              <div class="time-selection">
+                <mat-form-field>
+                  <mat-label>من الساعة</mat-label>
+                  <input
+                    matInput
+                    type="time"
+                    formControlName="quietHoursStart"
+                  />
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>إلى الساعة</mat-label>
+                  <input matInput type="time" formControlName="quietHoursEnd" />
+                </mat-form-field>
+              </div>
+              }
+            </div>
+            }
+          </div>
+        </form>
+      </mat-expansion-panel>
+
+      <!-- In-App Notifications -->
+      <mat-expansion-panel [disabled]="!masterInAppEnabled()">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>app_settings_alt</mat-icon>
+            إشعارات التطبيق
+          </mat-panel-title>
+          <mat-panel-description>
+            الإشعارات داخل التطبيق
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <form [formGroup]="inAppForm">
+          <div class="notification-settings">
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="showToasts">
+                  <mat-icon>announcement</mat-icon>
+                  إشعارات منبثقة
+                </mat-slide-toggle>
+              </div>
+              <p class="setting-description">عرض إشعارات منبثقة أسفل الشاشة</p>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="playSound">
+                  <mat-icon>volume_up</mat-icon>
+                  تشغيل صوت
+                </mat-slide-toggle>
+              </div>
+              <p class="setting-description">تشغيل صوت عند وصول إشعار جديد</p>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="setting-item">
+              <div class="setting-header">
+                <mat-slide-toggle formControlName="showBadge">
+                  <mat-icon>badge</mat-icon>
+                  عداد الإشعارات
+                </mat-slide-toggle>
+              </div>
+              <p class="setting-description">عرض عدد الإشعارات غير المقروءة</p>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <div class="notification-position">
+              <mat-form-field>
+                <mat-label>موضع الإشعارات</mat-label>
+                <mat-select formControlName="position">
+                  <mat-option value="top-right">أعلى اليمين</mat-option>
+                  <mat-option value="top-left">أعلى اليسار</mat-option>
+                  <mat-option value="bottom-right">أسفل اليمين</mat-option>
+                  <mat-option value="bottom-left">أسفل اليسار</mat-option>
+                  <mat-option value="top-center">أعلى الوسط</mat-option>
+                  <mat-option value="bottom-center">أسفل الوسط</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="notification-duration">
+              <mat-form-field>
+                <mat-label>مدة العرض</mat-label>
+                <mat-select formControlName="duration">
+                  <mat-option value="3000">3 ثواني</mat-option>
+                  <mat-option value="5000">5 ثواني</mat-option>
+                  <mat-option value="10000">10 ثواني</mat-option>
+                  <mat-option value="0">حتى الإغلاق اليدوي</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+        </form>
+      </mat-expansion-panel>
+    </mat-accordion>
+
+    <!-- Test Notification -->
+    <mat-card class="test-notification-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>bug_report</mat-icon>
+          اختبار الإشعارات
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>أرسل إشعار تجريبي للتأكد من عمل الإعدادات بشكل صحيح</p>
+        <div class="test-buttons">
+          <button
+            mat-stroked-button
+            (click)="sendTestNotification('email')"
+            [disabled]="!masterEmailEnabled()"
+          >
+            <mat-icon>email</mat-icon>
+            بريد إلكتروني تجريبي
+          </button>
+          <button
+            mat-stroked-button
+            (click)="sendTestNotification('sms')"
+            [disabled]="!masterSmsEnabled()"
+          >
+            <mat-icon>sms</mat-icon>
+            رسالة نصية تجريبية
+          </button>
+          <button
+            mat-stroked-button
+            (click)="sendTestNotification('push')"
+            [disabled]="!masterPushEnabled() || !pushPermissionGranted()"
+          >
+            <mat-icon>notifications</mat-icon>
+            إشعار فوري تجريبي
+          </button>
+          <button
+            mat-stroked-button
+            (click)="sendTestNotification('inapp')"
+            [disabled]="!masterInAppEnabled()"
+          >
+            <mat-icon>app_settings_alt</mat-icon>
+            إشعار داخلي تجريبي
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Save Button -->
+    <div class="save-section">
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="saveAllSettings()"
+        [disabled]="loading()"
+      >
+        @if (loading()) {
+        <mat-spinner diameter="20"></mat-spinner>
+        } @else {
+        <mat-icon>save</mat-icon>
+        } حفظ جميع الإعدادات
+      </button>
+      <button mat-button routerLink="/profile/overview">إلغاء</button>
+    </div>
+  </div>
+</app-sidebar>

@@ -1,0 +1,439 @@
+<app-header></app-header>
+<app-sidebar>
+  <div class="profile-overview-container">
+    <!-- Profile Header Card -->
+    <mat-card class="profile-header-card">
+      <div class="profile-header">
+        <div class="profile-picture-section">
+          <div class="profile-picture-wrapper">
+            @if (profile()?.profilePicture) {
+            <img
+              [src]="profile()?.profilePicture"
+              alt="Profile Picture"
+              class="profile-picture"
+            />
+            } @else {
+            <div class="profile-picture-placeholder">
+              <mat-icon>person</mat-icon>
+            </div>
+            }
+
+            <button
+              mat-mini-fab
+              color="primary"
+              class="picture-edit-btn"
+              (click)="openProfilePictureDialog()"
+              matTooltip="تغيير الصورة"
+            >
+              <mat-icon>camera_alt</mat-icon>
+            </button>
+          </div>
+
+          <div class="profile-completeness">
+            <span class="completeness-label">اكتمال الملف الشخصي</span>
+            <mat-progress-bar
+              mode="determinate"
+              [value]="profileCompleteness()"
+              [color]="getCompletenessColor()"
+            >
+            </mat-progress-bar>
+            <span class="completeness-percentage"
+              >{{ profileCompleteness() }}%</span
+            >
+          </div>
+        </div>
+
+        <div class="profile-info">
+          <div class="name-section">
+            <h1 class="profile-name">{{ profile()?.fullName }}</h1>
+            @if (profile()?.role) {
+            <mat-chip
+              class="role-chip"
+              [ngClass]="'role-' + profile()?.role?.toLowerCase()"
+            >
+              <mat-icon>{{ getRoleIcon(profile()?.role!) }}</mat-icon>
+              {{ getRoleName(profile()?.role!) }}
+            </mat-chip>
+            }
+          </div>
+
+          <div class="contact-info">
+            <div class="info-item">
+              <mat-icon>email</mat-icon>
+              <span>{{ profile()?.email }}</span>
+            </div>
+            <div class="info-item">
+              <mat-icon>phone</mat-icon>
+              <span dir="ltr">{{ profile()?.phone }}</span>
+            </div>
+            @if (profile()?.clinicName) {
+            <div class="info-item">
+              <mat-icon>local_hospital</mat-icon>
+              <span>{{ profile()?.clinicName }}</span>
+            </div>
+            }
+          </div>
+
+          <div class="professional-info">
+            @if (profile()?.specialization) {
+            <mat-chip>
+              <mat-icon>medical_services</mat-icon>
+              {{ profile()?.specialization }}
+            </mat-chip>
+            } @if (profile()?.licenseNumber) {
+            <mat-chip>
+              <mat-icon>badge</mat-icon>
+              {{ profile()?.licenseNumber }}
+            </mat-chip>
+            } @if (profile()?.yearsOfExperience) {
+            <mat-chip>
+              <mat-icon>work_history</mat-icon>
+              {{ profile()?.yearsOfExperience }} سنوات خبرة
+            </mat-chip>
+            }
+          </div>
+
+          <div class="action-buttons">
+            <button
+              mat-raised-button
+              color="primary"
+              routerLink="/profile/edit"
+            >
+              <mat-icon>edit</mat-icon>
+              تعديل الملف الشخصي
+            </button>
+            <button mat-raised-button routerLink="/profile/settings">
+              <mat-icon>settings</mat-icon>
+              الإعدادات
+            </button>
+            <button mat-raised-button routerLink="/profile/security">
+              <mat-icon>lock</mat-icon>
+              الأمان
+            </button>
+
+            <button mat-icon-button [matMenuTriggerFor]="moreMenu">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+
+            <mat-menu #moreMenu="matMenu">
+              <button mat-menu-item (click)="exportProfile()">
+                <mat-icon>download</mat-icon>
+                <span>تصدير البيانات</span>
+              </button>
+              <button mat-menu-item routerLink="/profile/activity">
+                <mat-icon>history</mat-icon>
+                <span>سجل النشاط</span>
+              </button>
+              <button mat-menu-item routerLink="/profile/notifications">
+                <mat-icon>notifications</mat-icon>
+                <span>إعدادات الإشعارات</span>
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+
+        <div class="profile-stats">
+          <div class="stat-card">
+            <mat-icon>login</mat-icon>
+            <div class="stat-info">
+              <span class="stat-value">{{
+                profile()?.statistics?.totalLogins
+              }}</span>
+              <span class="stat-label">تسجيل دخول</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <mat-icon>calendar_today</mat-icon>
+            <div class="stat-info">
+              <span class="stat-value">{{
+                profile()?.statistics?.appointmentsManaged
+              }}</span>
+              <span class="stat-label">موعد</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <mat-icon>people</mat-icon>
+            <div class="stat-info">
+              <span class="stat-value">{{
+                profile()?.statistics?.patientsHandled
+              }}</span>
+              <span class="stat-label">مريض</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <mat-icon>receipt</mat-icon>
+            <div class="stat-info">
+              <span class="stat-value">{{
+                profile()?.statistics?.invoicesProcessed
+              }}</span>
+              <span class="stat-label">فاتورة</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+
+    <!-- Tab Content -->
+    <mat-tab-group animationDuration="0ms" class="profile-tabs">
+      <!-- Personal Information Tab -->
+      <mat-tab label="المعلومات الشخصية">
+        <div class="tab-content">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>person</mat-icon>
+                المعلومات الأساسية
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-grid">
+                <div class="info-field">
+                  <label>الاسم الأول</label>
+                  <span>{{ profile()?.firstName }}</span>
+                </div>
+                <div class="info-field">
+                  <label>الاسم الأخير</label>
+                  <span>{{ profile()?.lastName }}</span>
+                </div>
+                <div class="info-field">
+                  <label>اسم المستخدم</label>
+                  <span>{{ profile()?.username }}</span>
+                </div>
+                <div class="info-field">
+                  <label>البريد الإلكتروني</label>
+                  <span>{{ profile()?.email }}</span>
+                </div>
+                <div class="info-field">
+                  <label>رقم الهاتف</label>
+                  <span dir="ltr">{{ profile()?.phone }}</span>
+                </div>
+                @if (profile()?.bio) {
+                <div class="info-field full-width">
+                  <label>نبذة شخصية</label>
+                  <span>{{ profile()?.bio }}</span>
+                </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          @if (profile()?.address) {
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>location_on</mat-icon>
+                العنوان
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-grid">
+                <div class="info-field">
+                  <label>الشارع</label>
+                  <span>{{ profile()?.address?.street }}</span>
+                </div>
+                <div class="info-field">
+                  <label>المدينة</label>
+                  <span>{{ profile()?.address?.city }}</span>
+                </div>
+                <div class="info-field">
+                  <label>المنطقة</label>
+                  <span>{{ profile()?.address?.state }}</span>
+                </div>
+                <div class="info-field">
+                  <label>الرمز البريدي</label>
+                  <span>{{ profile()?.address?.postalCode }}</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+          }
+        </div>
+      </mat-tab>
+
+      <!-- Professional Information Tab -->
+      <mat-tab label="المعلومات المهنية">
+        <div class="tab-content">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>work</mat-icon>
+                المعلومات المهنية
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-grid">
+                <div class="info-field">
+                  <label>التخصص</label>
+                  <span>{{ profile()?.specialization || "غير محدد" }}</span>
+                </div>
+                <div class="info-field">
+                  <label>رقم الترخيص</label>
+                  <span>{{ profile()?.licenseNumber || "غير محدد" }}</span>
+                </div>
+                <div class="info-field">
+                  <label>سنوات الخبرة</label>
+                  <span>{{ profile()?.yearsOfExperience || 0 }} سنوات</span>
+                </div>
+                <div class="info-field">
+                  <label>اللغات</label>
+                  <span>{{
+                    profile()?.languages?.join(", ") || "غير محدد"
+                  }}</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Education Section -->
+          @if (profile()?.education && profile()?.education.length > 0) {
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>school</mat-icon>
+                التعليم
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <mat-list>
+                @for (edu of profile()?.education; track edu.id) {
+                <mat-list-item>
+                  <mat-icon matListItemIcon>school</mat-icon>
+                  <div matListItemTitle>
+                    {{ edu.degree }} في {{ edu.field }}
+                  </div>
+                  <div matListItemLine>
+                    {{ edu.institution }} - {{ edu.graduationYear }}
+                  </div>
+                </mat-list-item>
+                }
+              </mat-list>
+            </mat-card-content>
+          </mat-card>
+          }
+
+          <!-- Certifications Section -->
+          @if (profile()?.certifications && profile()?.certifications.length >
+          0) {
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>verified</mat-icon>
+                الشهادات
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <mat-list>
+                @for (cert of profile()?.certifications; track cert.id) {
+                <mat-list-item>
+                  <mat-icon matListItemIcon>workspace_premium</mat-icon>
+                  <div matListItemTitle>{{ cert.name }}</div>
+                  <div matListItemLine>
+                    {{ cert.issuingOrganization }} -
+                    {{ formatDate(cert.issueDate) }}
+                  </div>
+                </mat-list-item>
+                }
+              </mat-list>
+            </mat-card-content>
+          </mat-card>
+          }
+        </div>
+      </mat-tab>
+
+      <!-- System Information Tab -->
+      <mat-tab label="معلومات النظام">
+        <div class="tab-content">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>info</mat-icon>
+                معلومات الحساب
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-grid">
+                <div class="info-field">
+                  <label>معرف المستخدم</label>
+                  <span>#{{ profile()?.id }}</span>
+                </div>
+                <div class="info-field">
+                  <label>الدور</label>
+                  <span>{{ getRoleName(profile()?.role!) }}</span>
+                </div>
+                <div class="info-field">
+                  <label>حالة الحساب</label>
+                  <mat-chip [color]="profile()?.isActive ? 'primary' : 'warn'">
+                    {{ profile()?.isActive ? "نشط" : "غير نشط" }}
+                  </mat-chip>
+                </div>
+                <div class="info-field">
+                  <label>المصادقة الثنائية</label>
+                  <mat-chip
+                    [color]="profile()?.twoFactorEnabled ? 'primary' : ''"
+                  >
+                    {{ profile()?.twoFactorEnabled ? "مفعلة" : "غير مفعلة" }}
+                  </mat-chip>
+                </div>
+                <div class="info-field">
+                  <label>تاريخ الإنشاء</label>
+                  <span>{{ formatDate(profile()?.createdAt!) }}</span>
+                </div>
+                <div class="info-field">
+                  <label>آخر تحديث</label>
+                  <span>{{ formatDate(profile()?.updatedAt!) }}</span>
+                </div>
+                <div class="info-field">
+                  <label>آخر تسجيل دخول</label>
+                  <span>{{
+                    formatDate(profile()?.statistics?.lastLoginAt!)
+                  }}</span>
+                </div>
+                <div class="info-field">
+                  <label>المساحة المستخدمة</label>
+                  <span>{{
+                    formatStorageSize(profile()?.statistics?.storageUsed!)
+                  }}</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Recent Activity -->
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>history</mat-icon>
+                النشاط الأخير
+              </mat-card-title>
+              <button mat-button color="primary" routerLink="/profile/activity">
+                عرض الكل
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </mat-card-header>
+            <mat-card-content>
+              <mat-list>
+                @for (activity of recentActivities(); track activity.id) {
+                <mat-list-item>
+                  <mat-icon
+                    matListItemIcon
+                    [color]="activity.success ? 'primary' : 'warn'"
+                  >
+                    {{ getActivityIcon(activity.action) }}
+                  </mat-icon>
+                  <div matListItemTitle>{{ activity.description }}</div>
+                  <div matListItemLine>
+                    {{ formatRelativeTime(activity.timestamp) }}
+                  </div>
+                </mat-list-item>
+                }
+              </mat-list>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</app-sidebar>

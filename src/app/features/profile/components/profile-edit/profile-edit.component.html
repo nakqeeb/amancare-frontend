@@ -1,0 +1,339 @@
+<app-header></app-header>
+<app-sidebar>
+  <div class="profile-edit-container">
+    <div class="page-header">
+      <button mat-icon-button routerLink="/profile/overview">
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+      <h1>تعديل الملف الشخصي</h1>
+    </div>
+
+    <mat-stepper #stepper orientation="vertical" [linear]="false">
+      <!-- Personal Information Step -->
+      <mat-step [stepControl]="personalForm">
+        <ng-template matStepLabel>المعلومات الشخصية</ng-template>
+
+        <mat-card>
+          <mat-card-content>
+            <form [formGroup]="personalForm">
+              <div class="form-grid">
+                <mat-form-field>
+                  <mat-label>الاسم الأول</mat-label>
+                  <input matInput formControlName="firstName" />
+                  <mat-icon matPrefix>person</mat-icon>
+                  @if (personalForm.get('firstName')?.hasError('required')) {
+                  <mat-error>الاسم الأول مطلوب</mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>الاسم الأخير</mat-label>
+                  <input matInput formControlName="lastName" />
+                  <mat-icon matPrefix>person</mat-icon>
+                  @if (personalForm.get('lastName')?.hasError('required')) {
+                  <mat-error>الاسم الأخير مطلوب</mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>البريد الإلكتروني</mat-label>
+                  <input matInput type="email" formControlName="email" />
+                  <mat-icon matPrefix>email</mat-icon>
+                  @if (personalForm.get('email')?.hasError('required')) {
+                  <mat-error>البريد الإلكتروني مطلوب</mat-error>
+                  } @if (personalForm.get('email')?.hasError('email')) {
+                  <mat-error>البريد الإلكتروني غير صحيح</mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>رقم الهاتف</mat-label>
+                  <input
+                    matInput
+                    type="tel"
+                    formControlName="phone"
+                    dir="ltr"
+                  />
+                  <mat-icon matPrefix>phone</mat-icon>
+                  @if (personalForm.get('phone')?.hasError('pattern')) {
+                  <mat-error>رقم الهاتف غير صحيح</mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>تاريخ الميلاد</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="picker"
+                    formControlName="dateOfBirth"
+                  />
+                  <mat-datepicker-toggle
+                    matIconSuffix
+                    [for]="picker"
+                  ></mat-datepicker-toggle>
+                  <mat-datepicker #picker></mat-datepicker>
+                  <mat-icon matPrefix>cake</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>الجنس</mat-label>
+                  <mat-select formControlName="gender">
+                    <mat-option value="MALE">ذكر</mat-option>
+                    <mat-option value="FEMALE">أنثى</mat-option>
+                    <mat-option value="OTHER">آخر</mat-option>
+                  </mat-select>
+                  <mat-icon matPrefix>wc</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field class="full-width">
+                  <mat-label>نبذة شخصية</mat-label>
+                  <textarea matInput formControlName="bio" rows="4"></textarea>
+                  <mat-icon matPrefix>description</mat-icon>
+                  <mat-hint>اكتب نبذة مختصرة عن نفسك</mat-hint>
+                </mat-form-field>
+              </div>
+
+              <div class="step-actions">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="savePersonalInfo()"
+                  [disabled]="loading()"
+                >
+                  @if (loading()) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                  } @else {
+                  <mat-icon>save</mat-icon>
+                  } حفظ المعلومات الشخصية
+                </button>
+                <button mat-button matStepperNext>
+                  التالي
+                  <mat-icon>arrow_back</mat-icon>
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+      </mat-step>
+
+      <!-- Professional Information Step -->
+      <mat-step [stepControl]="professionalForm">
+        <ng-template matStepLabel>المعلومات المهنية</ng-template>
+
+        <mat-card>
+          <mat-card-content>
+            <form [formGroup]="professionalForm">
+              <div class="form-grid">
+                <mat-form-field>
+                  <mat-label>التخصص</mat-label>
+                  <input matInput formControlName="specialization" />
+                  <mat-icon matPrefix>medical_services</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>رقم الترخيص</mat-label>
+                  <input matInput formControlName="licenseNumber" />
+                  <mat-icon matPrefix>badge</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>سنوات الخبرة</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="yearsOfExperience"
+                  />
+                  <mat-icon matPrefix>work_history</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>اللغات</mat-label>
+                  <mat-chip-grid #chipGrid>
+                    @for (lang of languages(); track lang) {
+                    <mat-chip-row (removed)="removeLanguage(lang)">
+                      {{ lang }}
+                      <button matChipRemove>
+                        <mat-icon>cancel</mat-icon>
+                      </button>
+                    </mat-chip-row>
+                    }
+                    <input
+                      placeholder="أضف لغة..."
+                      [matChipInputFor]="chipGrid"
+                      (matChipInputTokenEnd)="addLanguage($event)"
+                    />
+                  </mat-chip-grid>
+                  <mat-icon matPrefix>language</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="step-actions">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="saveProfessionalInfo()"
+                  [disabled]="loading()"
+                >
+                  @if (loading()) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                  } @else {
+                  <mat-icon>save</mat-icon>
+                  } حفظ المعلومات المهنية
+                </button>
+                <button mat-button matStepperPrevious>
+                  <mat-icon>arrow_forward</mat-icon>
+                  السابق
+                </button>
+                <button mat-button matStepperNext>
+                  التالي
+                  <mat-icon>arrow_back</mat-icon>
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+      </mat-step>
+
+      <!-- Address Step -->
+      <mat-step [stepControl]="addressForm">
+        <ng-template matStepLabel>العنوان</ng-template>
+
+        <mat-card>
+          <mat-card-content>
+            <form [formGroup]="addressForm">
+              <div class="form-grid">
+                <mat-form-field class="full-width">
+                  <mat-label>الشارع</mat-label>
+                  <input matInput formControlName="street" />
+                  <mat-icon matPrefix>home</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>المدينة</mat-label>
+                  <input matInput formControlName="city" />
+                  <mat-icon matPrefix>location_city</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>المنطقة</mat-label>
+                  <input matInput formControlName="state" />
+                  <mat-icon matPrefix>map</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>الرمز البريدي</mat-label>
+                  <input matInput formControlName="postalCode" />
+                  <mat-icon matPrefix>markunread_mailbox</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>الدولة</mat-label>
+                  <mat-select formControlName="country">
+                    <mat-option value="SA">المملكة العربية السعودية</mat-option>
+                    <mat-option value="AE">الإمارات العربية المتحدة</mat-option>
+                    <mat-option value="KW">الكويت</mat-option>
+                    <mat-option value="QA">قطر</mat-option>
+                    <mat-option value="BH">البحرين</mat-option>
+                    <mat-option value="OM">عمان</mat-option>
+                    <mat-option value="EG">مصر</mat-option>
+                    <mat-option value="JO">الأردن</mat-option>
+                    <mat-option value="LB">لبنان</mat-option>
+                  </mat-select>
+                  <mat-icon matPrefix>public</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="step-actions">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="saveAddress()"
+                  [disabled]="loading()"
+                >
+                  @if (loading()) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                  } @else {
+                  <mat-icon>save</mat-icon>
+                  } حفظ العنوان
+                </button>
+                <button mat-button matStepperPrevious>
+                  <mat-icon>arrow_forward</mat-icon>
+                  السابق
+                </button>
+                <button mat-button matStepperNext>
+                  التالي
+                  <mat-icon>arrow_back</mat-icon>
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+      </mat-step>
+
+      <!-- Emergency Contact Step -->
+      <mat-step [stepControl]="emergencyForm">
+        <ng-template matStepLabel>جهة اتصال الطوارئ</ng-template>
+
+        <mat-card>
+          <mat-card-content>
+            <form [formGroup]="emergencyForm">
+              <div class="form-grid">
+                <mat-form-field>
+                  <mat-label>الاسم</mat-label>
+                  <input matInput formControlName="name" />
+                  <mat-icon matPrefix>person</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>صلة القرابة</mat-label>
+                  <input matInput formControlName="relationship" />
+                  <mat-icon matPrefix>family_restroom</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>رقم الهاتف</mat-label>
+                  <input
+                    matInput
+                    type="tel"
+                    formControlName="phone"
+                    dir="ltr"
+                  />
+                  <mat-icon matPrefix>phone</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field>
+                  <mat-label>البريد الإلكتروني</mat-label>
+                  <input matInput type="email" formControlName="email" />
+                  <mat-icon matPrefix>email</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="step-actions">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="saveEmergencyContact()"
+                  [disabled]="loading()"
+                >
+                  @if (loading()) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                  } @else {
+                  <mat-icon>save</mat-icon>
+                  } حفظ جهة اتصال الطوارئ
+                </button>
+                <button mat-button matStepperPrevious>
+                  <mat-icon>arrow_forward</mat-icon>
+                  السابق
+                </button>
+                <button mat-button (click)="saveAllAndReturn()">
+                  <mat-icon>check</mat-icon>
+                  حفظ الكل والعودة
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+      </mat-step>
+    </mat-stepper>
+  </div>
+</app-sidebar>
