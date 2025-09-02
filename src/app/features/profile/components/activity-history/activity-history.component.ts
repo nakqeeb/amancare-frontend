@@ -63,8 +63,7 @@ export class ActivityHistoryComponent implements OnInit {
   private notificationService = inject(NotificationService);
 
   loading = this.profileService.loading;
-  // activityHistory = this.profileService.activityHistory;
-  activityHistory = signal<ActivityHistory[]>([]);
+  activityHistory = this.profileService.activityHistory;
 
   // Filters
   searchControl = new FormControl('');
