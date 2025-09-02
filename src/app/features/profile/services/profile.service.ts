@@ -82,7 +82,7 @@ export class ProfileService {
     lastName: 'محمد',
     fullName: 'د. أحمد محمد',
     phone: '+966501234567',
-    profilePicture: null,
+    profilePicture: undefined,
     role: 'DOCTOR' as any,
     isActive: true,
     clinicId: 1,
@@ -189,7 +189,7 @@ export class ProfileService {
       }),
       catchError(error => {
         this._loading.set(false);
-        this.notificationService.showError('فشل تحميل الملف الشخصي');
+        this.notificationService.error('فشل تحميل الملف الشخصي');
         return throwError(() => error);
       })
     );
@@ -202,7 +202,7 @@ export class ProfileService {
     //   }),
     //   catchError(error => {
     //     this._loading.set(false);
-    //     this.notificationService.showError('Failed to load profile');
+    //     this.notificationService.error('Failed to load profile');
     //     return throwError(() => error);
     //   })
     // );
@@ -229,7 +229,7 @@ export class ProfileService {
       }),
       catchError(error => {
         this._loading.set(false);
-        this.notificationService.showError('فشل تحديث الملف الشخصي');
+        this.notificationService.error('فشل تحديث الملف الشخصي');
         return throwError(() => error);
       })
     );
@@ -243,7 +243,7 @@ export class ProfileService {
     //   }),
     //   catchError(error => {
     //     this._loading.set(false);
-    //     this.notificationService.showError('Failed to update profile');
+    //     this.notificationService.error('Failed to update profile');
     //     return throwError(() => error);
     //   })
     // );
@@ -301,7 +301,7 @@ export class ProfileService {
       }),
       catchError(error => {
         this._loading.set(false);
-        this.notificationService.showError('فشل تغيير كلمة المرور');
+        this.notificationService.error('فشل تغيير كلمة المرور');
         return throwError(() => error);
       })
     );
@@ -368,7 +368,7 @@ export class ProfileService {
       tap(() => {
         const currentProfile = this._currentProfile();
         if (currentProfile) {
-          currentProfile.profilePicture = null;
+          currentProfile.profilePicture = undefined;
           this._currentProfile.set({ ...currentProfile });
         }
         this._loading.set(false);
