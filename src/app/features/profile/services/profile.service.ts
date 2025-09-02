@@ -537,7 +537,7 @@ export class ProfileService {
       preferences: {
         ...profile.preferences,
         [key]: {
-          ...profile.preferences[key],
+         // ...profile.preferences[key],
           ...settings
         }
       }
