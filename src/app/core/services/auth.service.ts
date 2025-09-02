@@ -1,3 +1,7 @@
+// ===================================================================
+// src/app/core/services/auth.service.ts - خدمة المصادقة المُحدثة
+// متكاملة بالكامل مع Spring Boot Auth API Endpoints
+// ===================================================================
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -8,6 +12,10 @@ import { environment } from '../../../environments/environment';
 import { StorageService } from './storage.service';
 import { NotificationService } from './notification.service';
 
+// ===================================================================
+// INTERFACES & TYPES - متطابقة مع Spring Boot DTOs
+// ===================================================================
+
 export interface User {
   id: number;
   username: string;
@@ -16,24 +24,86 @@ export interface User {
   lastName: string;
   fullName: string;
   phone?: string;
-  role: 'SYSTEM_ADMIN' | 'ADMIN' | 'DOCTOR' | 'NURSE' | 'RECEPTIONIST';
+  role: UserRole;
   specialization?: string;
   clinicId: number;
   clinicName: string;
   isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
+export type UserRole = 'SYSTEM_ADMIN' | 'ADMIN' | 'DOCTOR' | 'NURSE' | 'RECEPTIONIST';
+
+// API Response wrapper
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp?: string;
+}
+
+// Authentication DTOs
 export interface LoginRequest {
   usernameOrEmail: string;
   password: string;
+}
+
+export interface JwtAuthenticationResponse {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  expiresIn: number;
 }
 
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   tokenType: string;
+  expiresIn: number;
   user: User;
 }
+
+export interface ClinicRegistrationRequest {
+  // بيانات العيادة
+  clinicName: string;
+  clinicDescription?: string;
+  clinicAddress: string;
+  clinicPhone: string;
+  clinicEmail: string;
+
+  // بيانات مدير العيادة
+  adminUsername: string;
+  adminEmail: string;
+  adminPassword: string;
+  adminFirstName: string;
+  adminLastName: string;
+  adminPhone?: string;
+}
+
+export interface UserCreationRequest {
+  username: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  role: UserRole;
+  specialization?: string;
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+// ===================================================================
+// AUTH SERVICE
+// ===================================================================
 
 @Injectable({
   providedIn: 'root'
@@ -62,6 +132,10 @@ export class AuthService {
     this.initializeAuthState();
   }
 
+  // ===================================================================
+  // INITIALIZATION
+  // ===================================================================
+
   /**
    * تهيئة حالة المصادقة عند بدء التطبيق
    */
@@ -74,13 +148,30 @@ export class AuthService {
     }
   }
 
+  // ===================================================================
+  // AUTH API ENDPOINTS - متكاملة مع Spring Boot
+  // ===================================================================
+
   /**
-   * تسجيل الدخول
+   * 1. تسجيل الدخول - POST /auth/login
    */
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials).pipe(
+    return this.http.post<ApiResponse<JwtAuthenticationResponse>>(`${this.apiUrl}/login`, credentials).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        // Combine JWT response with user data for frontend
+        const loginResponse: LoginResponse = {
+          ...response.data,
+          user: this.currentUser() || {} as User // Will be fetched after login
+        };
+        return loginResponse;
+      }),
       tap(response => {
         this.handleLoginSuccess(response);
+        // Fetch current user data after successful login
+        this.getCurrentUser().subscribe();
       }),
       catchError(error => {
         this.handleLoginError(error);
@@ -90,32 +181,92 @@ export class AuthService {
   }
 
   /**
-   * تسجيل الخروج
+   * 2. تسجيل عيادة جديدة - POST /auth/register-clinic
    */
-  logout(): void {
-    // استدعاء API لتسجيل الخروج
-    this.http.post(`${this.apiUrl}/logout`, {}).subscribe({
-      next: () => {
-        this.handleLogoutSuccess();
-      },
-      error: () => {
-        // حتى لو فشل في API، سنقوم بتسجيل الخروج محلياً
-        this.handleLogoutSuccess();
-      }
-    });
+  registerClinic(request: ClinicRegistrationRequest): Observable<User> {
+    return this.http.post<ApiResponse<User>>(`${this.apiUrl}/register-clinic`, request).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response.data;
+      }),
+      tap(user => {
+        this.notificationService.success('تم تسجيل العيادة وإنشاء حساب المدير بنجاح');
+        // Optionally auto-login the created admin
+        // this.setAuthState(user);
+      }),
+      catchError(error => {
+        const message = error.error?.message || 'فشل في تسجيل العيادة';
+        this.notificationService.error(message);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
-   * تحديث الرمز المميز
+   * 3. إنشاء مستخدم جديد - POST /auth/create-user
    */
-  refreshToken(): Observable<LoginResponse> {
+  createUser(request: UserCreationRequest): Observable<User> {
+    return this.http.post<ApiResponse<User>>(`${this.apiUrl}/create-user`, request).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response.data;
+      }),
+      tap(() => {
+        this.notificationService.success('تم إنشاء المستخدم بنجاح');
+      }),
+      catchError(error => {
+        const message = error.error?.message || 'فشل في إنشاء المستخدم';
+        this.notificationService.error(message);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * 4. تغيير كلمة المرور - POST /auth/change-password
+   */
+  changePassword(request: ChangePasswordRequest): Observable<void> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/change-password`, request).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response.data;
+      }),
+      tap(() => {
+        this.notificationService.success('تم تغيير كلمة المرور بنجاح');
+      }),
+      catchError(error => {
+        const message = error.error?.message || 'فشل في تغيير كلمة المرور';
+        this.notificationService.error(message);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * 5. تحديث الرمز المميز - POST /auth/refresh
+   */
+  refreshToken(): Observable<JwtAuthenticationResponse> {
     const refreshToken = this.getRefreshToken();
 
     if (!refreshToken) {
       return throwError(() => new Error('No refresh token available'));
     }
 
-    return this.http.post<LoginResponse>(`${this.apiUrl}/refresh`, { refreshToken }).pipe(
+    const request: RefreshTokenRequest = { refreshToken };
+
+    return this.http.post<ApiResponse<JwtAuthenticationResponse>>(`${this.apiUrl}/refresh`, request).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response.data;
+      }),
       tap(response => {
         this.setToken(response.accessToken);
         this.setRefreshToken(response.refreshToken);
@@ -128,35 +279,71 @@ export class AuthService {
   }
 
   /**
-   * تغيير كلمة المرور
+   * 6. معلومات المستخدم الحالي - GET /auth/me
    */
-  changePassword(oldPassword: string, newPassword: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/change-password`, {
-      oldPassword,
-      newPassword
-    }).pipe(
-      tap(() => {
-        this.notificationService.success('تم تغيير كلمة المرور بنجاح');
+  getCurrentUser(): Observable<User> {
+    return this.http.get<ApiResponse<User>>(`${this.apiUrl}/me`).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response.data;
+      }),
+      tap(user => {
+        this.setAuthState(user);
+        this.storageService.setItem(environment.userKey, user);
       }),
       catchError(error => {
-        this.notificationService.error('فشل في تغيير كلمة المرور');
+        console.error('Error fetching current user:', error);
         return throwError(() => error);
       })
     );
   }
 
   /**
-   * التحقق من صحة الرمز المميز
+   * 7. تسجيل الخروج - POST /auth/logout
+   */
+  logout(): Observable<void> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/logout`, {}).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response.data;
+      }),
+      tap(() => {
+        this.handleLogoutSuccess();
+      }),
+      catchError(error => {
+        // حتى لو فشل في API، سنقوم بتسجيل الخروج محلياً
+        console.warn('Logout API failed, performing local logout:', error);
+        this.handleLogoutSuccess();
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * 8. فحص صحة الرمز المميز - GET /auth/validate
    */
   validateToken(): Observable<boolean> {
-    return this.http.get<{valid: boolean}>(`${this.apiUrl}/validate`).pipe(
-      map(response => response.valid),
+    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/validate`).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response.data;
+      }),
       catchError(() => {
         this.logout();
         return throwError(() => false);
       })
     );
   }
+
+  // ===================================================================
+  // UTILITY METHODS
+  // ===================================================================
 
   /**
    * الحصول على الرمز المميز
@@ -219,16 +406,61 @@ export class AuthService {
   }
 
   /**
+   * التحقق من أن المستخدم ممرض
+   */
+  isNurse(): boolean {
+    return this.hasRole('NURSE');
+  }
+
+  /**
+   * التحقق من أن المستخدم موظف استقبال
+   */
+  isReceptionist(): boolean {
+    return this.hasRole('RECEPTIONIST');
+  }
+
+  /**
+   * التحقق من الصلاحيات المتعددة
+   */
+  hasAnyRole(roles: UserRole[]): boolean {
+    return this.hasRole(roles);
+  }
+
+  /**
+   * الحصول على اسم الدور بالعربية
+   */
+  getRoleDisplayName(role?: UserRole): string {
+    const user = this.currentUser();
+    const userRole = role || user?.role;
+
+    const roleNames: Record<UserRole, string> = {
+      'SYSTEM_ADMIN': 'مدير النظام',
+      'ADMIN': 'مدير العيادة',
+      'DOCTOR': 'طبيب',
+      'NURSE': 'ممرض/ممرضة',
+      'RECEPTIONIST': 'موظف استقبال'
+    };
+
+    return userRole ? roleNames[userRole] : 'غير محدد';
+  }
+
+  // ===================================================================
+  // PRIVATE HELPER METHODS
+  // ===================================================================
+
+  /**
    * معالجة نجاح تسجيل الدخول
    */
   private handleLoginSuccess(response: LoginResponse): void {
     this.setToken(response.accessToken);
     this.setRefreshToken(response.refreshToken);
-    this.storageService.setItem(environment.userKey, response.user);
 
-    this.setAuthState(response.user);
+    if (response.user) {
+      this.storageService.setItem(environment.userKey, response.user);
+      this.setAuthState(response.user);
+      this.notificationService.success(`مرحباً ${response.user.fullName}`);
+    }
 
-    this.notificationService.success(`مرحباً ${response.user.fullName}`);
     this.router.navigate(['/dashboard']);
   }
 
@@ -244,6 +476,8 @@ export class AuthService {
       message = 'اسم المستخدم أو كلمة المرور غير صحيحة';
     } else if (error.status === 403) {
       message = 'الحساب معطل أو لا يملك صلاحيات';
+    } else if (error.status === 0) {
+      message = 'فشل في الاتصال بالخادم. تأكد من اتصالك بالإنترنت';
     }
 
     this.notificationService.error(message);
@@ -284,3 +518,4 @@ export class AuthService {
     this.storageService.removeItem(environment.clinicKey);
   }
 }
+
