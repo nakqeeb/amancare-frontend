@@ -1,4 +1,9 @@
+<!-- ===================================================================
+     src/app/features/auth/components/login/login.component.html
+     =================================================================== -->
+
 <div class="auth-container">
+  <!-- Background -->
   <div class="auth-background">
     <div class="background-shapes">
       <div class="shape shape-1"></div>
@@ -7,6 +12,7 @@
     </div>
   </div>
 
+  <!-- Content -->
   <div class="auth-content">
     <!-- Logo & Title -->
     <div class="auth-header">
@@ -36,11 +42,6 @@
             >
               اسم المستخدم مطلوب
             </mat-error>
-            <mat-error
-              *ngIf="loginForm.get('usernameOrEmail')?.hasError('email')"
-            >
-              البريد الإلكتروني غير صحيح
-            </mat-error>
           </mat-form-field>
 
           <!-- Password -->
@@ -59,40 +60,30 @@
               type="button"
               (click)="togglePasswordVisibility()"
             >
-              <mat-icon>{{
-                hidePassword() ? "visibility_off" : "visibility"
-              }}</mat-icon>
+              <mat-icon>
+                {{ hidePassword() ? "visibility" : "visibility_off" }}
+              </mat-icon>
             </button>
             <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
               كلمة المرور مطلوبة
             </mat-error>
-            <mat-error *ngIf="loginForm.get('password')?.hasError('minlength')">
-              كلمة المرور يجب أن تكون 6 أحرف على الأقل
-            </mat-error>
           </mat-form-field>
 
-          <!-- Role Selection (for demo) -->
-          <mat-form-field appearance="outline" class="form-field">
-            <mat-label>نوع الحساب</mat-label>
-            <mat-select formControlName="role" placeholder="اختر نوع الحساب">
-              <mat-option value="SYSTEM_ADMIN">مدير النظام</mat-option>
-              <mat-option value="ADMIN">مدير العيادة</mat-option>
-              <mat-option value="DOCTOR">طبيب</mat-option>
-              <mat-option value="NURSE">ممرض/ممرضة</mat-option>
-              <mat-option value="RECEPTIONIST">موظف استقبال</mat-option>
-            </mat-select>
-            <mat-icon matSuffix>work</mat-icon>
-          </mat-form-field>
-
-          <!-- Remember Me -->
+          <!-- Form Options -->
           <div class="form-options">
-            <mat-checkbox formControlName="rememberMe">تذكرني</mat-checkbox>
-            <a routerLink="/auth/forgot-password" class="forgot-link"
-              >نسيت كلمة المرور؟</a
+            <mat-checkbox
+              formControlName="rememberMe"
+              class="remember-checkbox"
             >
+              تذكرني
+            </mat-checkbox>
+
+            <a routerLink="/auth/forgot-password" class="forgot-link">
+              نسيت كلمة المرور؟
+            </a>
           </div>
 
-          <!-- Submit Button -->
+          <!-- Login Button -->
           <button
             mat-raised-button
             color="primary"
@@ -100,42 +91,66 @@
             class="submit-button"
             [disabled]="loginForm.invalid || isLoading()"
           >
-            <mat-spinner diameter="20" *ngIf="isLoading()"></mat-spinner>
-            <span *ngIf="!isLoading()">
-              <mat-icon>login</mat-icon>
-              تسجيل الدخول
-            </span>
-            <span *ngIf="isLoading()">جاري تسجيل الدخول...</span>
+            @if (isLoading()) {
+            <mat-spinner diameter="20"></mat-spinner>
+            جاري تسجيل الدخول... } @else {
+            <mat-icon>login</mat-icon>
+            تسجيل الدخول }
           </button>
 
-          <!-- Demo Credentials -->
-          <div class="demo-section">
-            <h4>حسابات تجريبية:</h4>
-            <div class="demo-buttons">
-              <button
-                mat-button
-                type="button"
-                (click)="fillDemoCredentials('admin')"
-              >
-                مدير عيادة
-              </button>
-              <button
-                mat-button
-                type="button"
-                (click)="fillDemoCredentials('doctor')"
-              >
-                طبيب
-              </button>
-              <button
-                mat-button
-                type="button"
-                (click)="fillDemoCredentials('nurse')"
-              >
-                ممرض/ممرضة
-              </button>
-            </div>
+          <!-- Divider -->
+          <div class="auth-divider">
+            <mat-divider></mat-divider>
+            <span class="divider-text">أو</span>
+            <mat-divider></mat-divider>
           </div>
+
+          <!-- Register Button -->
+          <button
+            mat-stroked-button
+            color="primary"
+            type="button"
+            class="register-button"
+            (click)="navigateToRegister()"
+          >
+            <mat-icon>person_add</mat-icon>
+            تسجيل عيادة جديدة
+          </button>
         </form>
+
+        <!-- Demo Section (for development) -->
+        <div class="demo-section" *ngIf="!isProduction">
+          <h4>بيانات تجريبية للاختبار</h4>
+          <div class="demo-buttons">
+            <button
+              mat-button
+              color="primary"
+              type="button"
+              (click)="fillDemoData('admin')"
+              class="demo-btn"
+            >
+              مدير عيادة
+            </button>
+            <button
+              mat-button
+              color="accent"
+              type="button"
+              (click)="fillDemoData('doctor')"
+              class="demo-btn"
+            >
+              طبيب
+            </button>
+            <button
+              mat-button
+              color="warn"
+              type="button"
+              (click)="fillDemoData('nurse')"
+              class="demo-btn"
+            >
+              ممرض/ة
+            </button>
+          </div>
+        </div>
       </mat-card-content>
     </mat-card>
 
@@ -145,3 +160,4 @@
     </div>
   </div>
 </div>
+ƒ

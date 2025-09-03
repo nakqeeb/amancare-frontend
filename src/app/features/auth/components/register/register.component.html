@@ -1,0 +1,381 @@
+<!-- ===================================================================
+     src/app/features/auth/components/register/register.component.html
+     قالب تسجيل عيادة جديدة
+     =================================================================== -->
+
+<div class="auth-container">
+  <!-- Background -->
+  <div class="auth-background">
+    <div class="background-shapes">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="auth-content">
+    <!-- Header -->
+    <div class="auth-header">
+      <mat-icon class="app-logo">local_hospital</mat-icon>
+      <h1>تسجيل عيادة جديدة</h1>
+      <p>انضم إلى نظام أمان كير وابدأ إدارة عيادتك بكفاءة</p>
+    </div>
+
+    <!-- Registration Card -->
+    <mat-card class="auth-card">
+      <mat-stepper
+        #stepper
+        orientation="horizontal"
+        linear="true">
+
+        <!-- Step 1: Clinic Information -->
+        <mat-step
+          [stepControl]="clinicForm"
+          [completed]="clinicForm.valid">
+          <ng-template matStepLabel>معلومات العيادة</ng-template>
+
+          <form [formGroup]="clinicForm" class="step-form">
+            <h3 class="step-title">
+              <mat-icon>business</mat-icon>
+              معلومات العيادة
+            </h3>
+
+            <!-- Clinic Name -->
+            <mat-form-field class="form-field">
+              <mat-label>اسم العيادة *</mat-label>
+              <input
+                matInput
+                formControlName="clinicName"
+                placeholder="مثال: عيادة الأسنان المتخصصة">
+              <mat-icon matSuffix>business</mat-icon>
+              <mat-error *ngIf="isFieldInvalid(clinicForm, 'clinicName')">
+                {{ getFieldError(clinicForm, 'clinicName') }}
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Clinic Description -->
+            <mat-form-field class="form-field">
+              <mat-label>وصف العيادة</mat-label>
+              <textarea
+                matInput
+                formControlName="clinicDescription"
+                rows="3"
+                placeholder="اكتب وصف مختصر عن العيادة وخدماتها"></textarea>
+              <mat-error *ngIf="isFieldInvalid(clinicForm, 'clinicDescription')">
+                {{ getFieldError(clinicForm, 'clinicDescription') }}
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Clinic Address -->
+            <mat-form-field class="form-field">
+              <mat-label>العنوان *</mat-label>
+              <textarea
+                matInput
+                formControlName="clinicAddress"
+                rows="2"
+                placeholder="العنوان التفصيلي للعيادة"></textarea>
+              <mat-icon matSuffix>location_on</mat-icon>
+              <mat-error *ngIf="isFieldInvalid(clinicForm, 'clinicAddress')">
+                {{ getFieldError(clinicForm, 'clinicAddress') }}
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Contact Info Row -->
+            <div class="form-row">
+              <!-- Clinic Phone -->
+              <mat-form-field class="form-field">
+                <mat-label>هاتف العيادة *</mat-label>
+                <input
+                  matInput
+                  formControlName="clinicPhone"
+                  placeholder="05xxxxxxxx">
+                <mat-icon matSuffix>phone</mat-icon>
+                <mat-error *ngIf="isFieldInvalid(clinicForm, 'clinicPhone')">
+                  {{ getFieldError(clinicForm, 'clinicPhone') }}
+                </mat-error>
+              </mat-form-field>
+
+              <!-- Clinic Email -->
+              <mat-form-field class="form-field">
+                <mat-label>البريد الإلكتروني *</mat-label>
+                <input
+                  matInput
+                  type="email"
+                  formControlName="clinicEmail"
+                  placeholder="clinic@example.com">
+                <mat-icon matSuffix>email</mat-icon>
+                <mat-error *ngIf="isFieldInvalid(clinicForm, 'clinicEmail')">
+                  {{ getFieldError(clinicForm, 'clinicEmail') }}
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="step-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                type="button"
+                [disabled]="!clinicForm.valid"
+                (click)="nextStep()">
+                التالي
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Step 2: Admin Information -->
+        <mat-step
+          [stepControl]="adminForm"
+          [completed]="adminForm.valid">
+          <ng-template matStepLabel>بيانات المدير</ng-template>
+
+          <form [formGroup]="adminForm" class="step-form">
+            <h3 class="step-title">
+              <mat-icon>person</mat-icon>
+              بيانات مدير العيادة
+            </h3>
+
+            <!-- Name Row -->
+            <div class="form-row">
+              <!-- First Name -->
+              <mat-form-field class="form-field">
+                <mat-label>الاسم الأول *</mat-label>
+                <input
+                  matInput
+                  formControlName="adminFirstName"
+                  placeholder="أحمد">
+                <mat-error *ngIf="isFieldInvalid(adminForm, 'adminFirstName')">
+                  {{ getFieldError(adminForm, 'adminFirstName') }}
+                </mat-error>
+              </mat-form-field>
+
+              <!-- Last Name -->
+              <mat-form-field class="form-field">
+                <mat-label>الاسم الأخير *</mat-label>
+                <input
+                  matInput
+                  formControlName="adminLastName"
+                  placeholder="محمد">
+                <mat-error *ngIf="isFieldInvalid(adminForm, 'adminLastName')">
+                  {{ getFieldError(adminForm, 'adminLastName') }}
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <!-- Username & Email Row -->
+            <div class="form-row">
+              <!-- Username -->
+              <mat-form-field class="form-field">
+                <mat-label>اسم المستخدم *</mat-label>
+                <input
+                  matInput
+                  formControlName="adminUsername"
+                  placeholder="admin_clinic">
+                <mat-icon matSuffix>account_circle</mat-icon>
+                <mat-error *ngIf="isFieldInvalid(adminForm, 'adminUsername')">
+                  {{ getFieldError(adminForm, 'adminUsername') }}
+                </mat-error>
+              </mat-form-field>
+
+              <!-- Admin Email -->
+              <mat-form-field class="form-field">
+                <mat-label>البريد الإلكتروني *</mat-label>
+                <input
+                  matInput
+                  type="email"
+                  formControlName="adminEmail"
+                  placeholder="admin@example.com">
+                <mat-icon matSuffix>email</mat-icon>
+                <mat-error *ngIf="isFieldInvalid(adminForm, 'adminEmail')">
+                  {{ getFieldError(adminForm, 'adminEmail') }}
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <!-- Phone -->
+            <mat-form-field class="form-field">
+              <mat-label>رقم الهاتف</mat-label>
+              <input
+                matInput
+                formControlName="adminPhone"
+                placeholder="05xxxxxxxx">
+              <mat-icon matSuffix>phone</mat-icon>
+              <mat-error *ngIf="isFieldInvalid(adminForm, 'adminPhone')">
+                {{ getFieldError(adminForm, 'adminPhone') }}
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Password -->
+            <mat-form-field class="form-field">
+              <mat-label>كلمة المرور *</mat-label>
+              <input
+                matInput
+                [type]="hidePassword() ? 'password' : 'text'"
+                formControlName="adminPassword"
+                placeholder="كلمة مرور قوية">
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                (click)="hidePassword.set(!hidePassword())">
+                <mat-icon>{{ hidePassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
+              </button>
+
+              <!-- Password Strength Indicator -->
+              <div class="password-strength" *ngIf="adminForm.get('adminPassword')?.value">
+                <div class="strength-bar">
+                  <div
+                    class="strength-fill"
+                    [style.width.%]="getPasswordStrength().score * 20"
+                    [ngClass]="'strength-' + getPasswordStrength().color"></div>
+                </div>
+                <span class="strength-label">{{ getPasswordStrength().label }}</span>
+              </div>
+
+              <mat-error *ngIf="isFieldInvalid(adminForm, 'adminPassword')">
+                {{ getFieldError(adminForm, 'adminPassword') }}
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Confirm Password -->
+            <mat-form-field class="form-field">
+              <mat-label>تأكيد كلمة المرور *</mat-label>
+              <input
+                matInput
+                [type]="hideConfirmPassword() ? 'password' : 'text'"
+                formControlName="confirmPassword"
+                placeholder="أعد كتابة كلمة المرور">
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                (click)="hideConfirmPassword.set(!hideConfirmPassword())">
+                <mat-icon>{{ hideConfirmPassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
+              </button>
+              <mat-error *ngIf="isFieldInvalid(adminForm, 'confirmPassword')">
+                {{ getFieldError(adminForm, 'confirmPassword') }}
+              </mat-error>
+              <mat-error *ngIf="hasPasswordMismatch()">
+                كلمات المرور غير متطابقة
+              </mat-error>
+            </mat-form-field>
+
+            <div class="step-actions">
+              <button
+                mat-button
+                type="button"
+                (click)="previousStep()">
+                <mat-icon>arrow_back</mat-icon>
+                السابق
+              </button>
+
+              <button
+                mat-raised-button
+                color="primary"
+                type="button"
+                [disabled]="!adminForm.valid"
+                (click)="nextStep()">
+                التالي
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </form>
+        </mat-step>
+
+        <!-- Step 3: Terms & Conditions -->
+        <mat-step
+          [stepControl]="termsForm"
+          [completed]="termsForm.valid">
+          <ng-template matStepLabel>الشروط والأحكام</ng-template>
+
+          <form [formGroup]="termsForm" class="step-form">
+            <h3 class="step-title">
+              <mat-icon>gavel</mat-icon>
+              الشروط والأحكام
+            </h3>
+
+            <div class="terms-content">
+              <p class="terms-intro">
+                قبل إكمال التسجيل، يرجى قراءة والموافقة على الشروط والأحكام التالية:
+              </p>
+
+              <!-- Terms Checkboxes -->
+              <div class="terms-checkboxes">
+                <mat-checkbox formControlName="acceptTerms" class="terms-checkbox">
+                  أوافق على
+                  <a href="#" target="_blank">الشروط والأحكام</a>
+                  لاستخدام نظام أمان كير *
+                </mat-checkbox>
+
+                <mat-checkbox formControlName="acceptPrivacy" class="terms-checkbox">
+                  أوافق على
+                  <a href="#" target="_blank">سياسة الخصوصية</a>
+                  وحماية البيانات *
+                </mat-checkbox>
+
+                <mat-checkbox formControlName="newsletterSubscribe" class="terms-checkbox">
+                  أرغب في تلقي النشرة الإخبارية والتحديثات
+                </mat-checkbox>
+              </div>
+
+              <!-- Summary -->
+              <mat-card class="registration-summary">
+                <mat-card-header>
+                  <mat-card-title>ملخص التسجيل</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                  <div class="summary-item">
+                    <strong>اسم العيادة:</strong>
+                    {{ clinicForm.get('clinicName')?.value }}
+                  </div>
+                  <div class="summary-item">
+                    <strong>مدير العيادة:</strong>
+                    {{ adminForm.get('adminFirstName')?.value }} {{ adminForm.get('adminLastName')?.value }}
+                  </div>
+                  <div class="summary-item">
+                    <strong>البريد الإلكتروني:</strong>
+                    {{ clinicForm.get('clinicEmail')?.value }}
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+
+            <div class="step-actions">
+              <button
+                mat-button
+                type="button"
+                (click)="previousStep()">
+                <mat-icon>arrow_back</mat-icon>
+                السابق
+              </button>
+
+              <button
+                mat-raised-button
+                color="primary"
+                type="button"
+                [disabled]="!termsForm.valid || isLoading()"
+                (click)="onSubmit()">
+                @if (isLoading()) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                } @else {
+                  <mat-icon>check</mat-icon>
+                }
+                {{ isLoading() ? 'جاري التسجيل...' : 'إكمال التسجيل' }}
+              </button>
+            </div>
+          </form>
+        </mat-step>
+      </mat-stepper>
+
+      <!-- Footer -->
+      <div class="form-footer">
+        <mat-divider></mat-divider>
+        <p>
+          لديك حساب بالفعل؟
+          <a routerLink="/auth/login" class="auth-link">تسجيل الدخول</a>
+        </p>
+      </div>
+    </mat-card>
+  </div>
+</div>

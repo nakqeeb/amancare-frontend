@@ -85,21 +85,21 @@ export const routes: Routes = [
     title: 'التقارير - نظام أمان كير'
   },
 
-  // الإعدادات - Settings
-  {
-    path: 'settings',
-    loadChildren: () => import('./features/settings/settings.routes').then(r => r.SETTINGS_ROUTES),
-    canActivate: [AuthGuard],
-    title: 'الإعدادات - نظام أمان كير'
-  },
+  // // الإعدادات - Settings
+  // {
+  //   path: 'settings',
+  //   loadChildren: () => import('./features/settings/settings.routes').then(r => r.SETTINGS_ROUTES),
+  //   canActivate: [AuthGuard],
+  //   title: 'الإعدادات - نظام أمان كير'
+  // },
 
-  // الملف الشخصي - Profile
-  {
-    path: 'profile',
-    loadChildren: () => import('./features/profile/profile.routes').then(r => r.PROFILE_ROUTES),
-    canActivate: [AuthGuard],
-    title: 'الملف الشخصي - نظام أمان كير'
-  },
+  // // الملف الشخصي - Profile
+  // {
+  //   path: 'profile',
+  //   loadChildren: () => import('./features/profile/profile.routes').then(r => r.PROFILE_ROUTES),
+  //   canActivate: [AuthGuard],
+  //   title: 'الملف الشخصي - نظام أمان كير'
+  // },
 
   // صفحة 404
   {

@@ -341,6 +341,74 @@ export class AuthService {
     );
   }
 
+  /**
+ * 9. طلب إعادة تعيين كلمة المرور - POST /auth/forgot-password
+ */
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/forgot-password`, { email }).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response;
+      }),
+      tap(() => {
+        this.notificationService.success('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
+      }),
+      catchError(error => {
+        const message = error.error?.message || 'فشل في إرسال رابط إعادة التعيين';
+        this.notificationService.error(message);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * 10. التحقق من رمز إعادة التعيين - GET /auth/validate-reset-token
+   */
+  validateResetToken(token: string): Observable<boolean> {
+    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/validate-reset-token`, {
+      params: { token }
+    }).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response.data;
+      }),
+      catchError(error => {
+        const message = error.error?.message || 'الرمز غير صحيح أو منتهي الصلاحية';
+        this.notificationService.error(message);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * 11. إعادة تعيين كلمة المرور - POST /auth/reset-password
+   */
+  resetPassword(token: string, newPassword: string): Observable<any> {
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/reset-password`, {
+      token,
+      newPassword
+    }).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response;
+      }),
+      tap(() => {
+        this.notificationService.success('تم تغيير كلمة المرور بنجاح');
+      }),
+      catchError(error => {
+        const message = error.error?.message || 'فشل في تغيير كلمة المرور';
+        this.notificationService.error(message);
+        return throwError(() => error);
+      })
+    );
+  }
+
   // ===================================================================
   // UTILITY METHODS
   // ===================================================================
