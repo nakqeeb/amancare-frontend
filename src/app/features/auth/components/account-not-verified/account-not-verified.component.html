@@ -1,0 +1,71 @@
+<div class="auth-container">
+  <div class="auth-background">
+    <div class="background-shapes">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+    </div>
+  </div>
+
+  <div class="auth-content">
+    <div class="auth-header">
+      <mat-icon class="app-logo">local_hospital</mat-icon>
+      <h1>تأكيد البريد الإلكتروني مطلوب</h1>
+      <p>يجب تفعيل حسابك قبل تسجيل الدخول</p>
+    </div>
+
+    <mat-card class="auth-card">
+      <div class="verification-content">
+        <mat-icon class="warning-icon">warning</mat-icon>
+        <h3>حسابك غير مفعل</h3>
+        <p>
+          لم يتم تفعيل حسابك بعد. يرجى التحقق من بريدك الإلكتروني والنقر على
+          رابط التأكيد.
+        </p>
+
+        <div class="resend-section">
+          <p>لم تتلق البريد الإلكتروني؟</p>
+
+          <form [formGroup]="resendForm" (ngSubmit)="onResend()">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>البريد الإلكتروني</mat-label>
+              <input
+                matInput
+                type="email"
+                formControlName="email"
+                placeholder="أدخل بريدك الإلكتروني"
+              />
+              <mat-icon matSuffix>email</mat-icon>
+              <mat-error *ngIf="resendForm.get('email')?.hasError('required')">
+                البريد الإلكتروني مطلوب
+              </mat-error>
+              <mat-error *ngIf="resendForm.get('email')?.hasError('email')">
+                البريد الإلكتروني غير صحيح
+              </mat-error>
+            </mat-form-field>
+
+            <button
+              mat-raised-button
+              color="primary"
+              type="submit"
+              [disabled]="resendForm.invalid || isResending()"
+              class="resend-button"
+            >
+              @if (isResending()) {
+              <mat-spinner diameter="20"></mat-spinner>
+              جاري الإرسال... } @else {
+              <mat-icon>refresh</mat-icon>
+              إعادة إرسال رابط التأكيد }
+            </button>
+          </form>
+        </div>
+
+        <div class="actions">
+          <button mat-button (click)="goToLogin()">
+            <mat-icon>arrow_back</mat-icon>
+            العودة لتسجيل الدخول
+          </button>
+        </div>
+      </div>
+    </mat-card>
+  </div>
+</div>

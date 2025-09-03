@@ -73,7 +73,7 @@ export class HeaderComponent implements OnInit {
   }
 
   logout(): void {
-    this.authService.logout();
+    this.authService.logout().subscribe();
   }
 
   getRoleDisplayName(role?: string): string {

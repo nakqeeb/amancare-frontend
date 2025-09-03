@@ -1,0 +1,103 @@
+<div class="auth-container">
+  <!-- Background -->
+  <div class="auth-background">
+    <div class="background-shapes">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="auth-content">
+    <!-- Header -->
+    <div class="auth-header">
+      <mat-icon class="app-logo">local_hospital</mat-icon>
+      <h1>تأكيد البريد الإلكتروني</h1>
+      <p>تفعيل حسابك في نظام أمان كير</p>
+    </div>
+
+    <!-- Verification Card -->
+    <mat-card class="auth-card">
+      <!-- Loading State -->
+      @if (isVerifying()) {
+      <div class="loading-content">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>جاري التحقق من الرمز...</p>
+      </div>
+      }
+
+      <!-- Success State -->
+      @else if (isVerified()) {
+      <div class="success-content">
+        <mat-icon class="success-icon">check_circle</mat-icon>
+        <h3>تم تفعيل حسابك بنجاح!</h3>
+        <p>
+          مرحباً بك في نظام أمان كير. يمكنك الآن تسجيل الدخول والاستفادة من جميع
+          الخدمات.
+        </p>
+
+        <div class="success-actions">
+          <button mat-raised-button color="primary" (click)="goToLogin()">
+            <mat-icon>login</mat-icon>
+            تسجيل الدخول
+          </button>
+        </div>
+      </div>
+      }
+
+      <!-- Error State -->
+      @else if (hasError()) {
+      <div class="error-content">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <h3>خطأ في التحقق</h3>
+        <p>{{ errorMessage() }}</p>
+
+        <!-- Resend Verification -->
+        <div class="resend-section">
+          <p>هل تحتاج لرابط جديد؟</p>
+
+          <form [formGroup]="resendForm" (ngSubmit)="onResend()">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>البريد الإلكتروني</mat-label>
+              <input
+                matInput
+                type="email"
+                formControlName="email"
+                placeholder="أدخل بريدك الإلكتروني"
+              />
+              <mat-icon matSuffix>email</mat-icon>
+              <mat-error *ngIf="resendForm.get('email')?.hasError('required')">
+                البريد الإلكتروني مطلوب
+              </mat-error>
+              <mat-error *ngIf="resendForm.get('email')?.hasError('email')">
+                البريد الإلكتروني غير صحيح
+              </mat-error>
+            </mat-form-field>
+
+            <button
+              mat-raised-button
+              color="accent"
+              type="submit"
+              [disabled]="resendForm.invalid || isResending()"
+              class="resend-button"
+            >
+              @if (isResending()) {
+              <mat-spinner diameter="20"></mat-spinner>
+              جاري الإرسال... } @else {
+              <mat-icon>refresh</mat-icon>
+              إعادة إرسال رابط التأكيد }
+            </button>
+          </form>
+        </div>
+
+        <div class="error-actions">
+          <button mat-button (click)="goToLogin()">
+            <mat-icon>arrow_back</mat-icon>
+            العودة لتسجيل الدخول
+          </button>
+        </div>
+      </div>
+      }
+    </mat-card>
+  </div>
+</div>

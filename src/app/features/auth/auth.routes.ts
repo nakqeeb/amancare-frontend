@@ -28,5 +28,15 @@ export const AUTH_ROUTES: Routes = [
     path: 'reset-password',
     loadComponent: () => import('./components/reset-password/reset-password.component').then(c => c.ResetPasswordComponent),
     title: 'إعادة تعيين كلمة المرور - نظام أمان كير'
+  },
+  {
+    path: 'verify-email',
+    loadComponent: () => import('./components/verify-email/verify-email.component').then(c => c.VerifyEmailComponent),
+    title: 'تأكيد البريد الإلكتروني - نظام أمان كير'
+  },
+  {
+    path: 'account-not-verified',
+    loadComponent: () => import('./components/account-not-verified/account-not-verified.component').then(c => c.AccountNotVerifiedComponent),
+    title: 'حساب غير مفعل - نظام أمان كير'
   }
 ];

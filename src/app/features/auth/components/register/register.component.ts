@@ -32,12 +32,12 @@ import { NotificationService } from '../../../../core/services/notification.serv
 
 // Custom Validators
 /*
-	•	771234567 ✅
-	•	781234567 ✅
-	•	731234567 ✅
-	•	701234567 ✅
-	•	+967771234567 ✅
-	•	00967781234567 ✅
+  •	771234567 ✅
+  •	781234567 ✅
+  •	731234567 ✅
+  •	701234567 ✅
+  •	+967771234567 ✅
+  •	00967781234567 ✅
 */
 export function phoneValidator(control: AbstractControl): ValidationErrors | null {
   const phone = control.value;
@@ -191,7 +191,15 @@ export class RegisterComponent implements OnInit {
       { label: 'قوية جداً', color: 'primary' }
     ];
 
-    return { score, ...levels[score] || levels[0] };
+    // return { score, ...levels[score] || levels[0] };
+    // Make sure we don't exceed the array bounds
+    const levelIndex = Math.min(score, levels.length - 1);
+
+    return {
+      score,
+      label: levels[levelIndex].label,
+      color: levels[levelIndex].color
+    };
   }
 
   // Step navigation

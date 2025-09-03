@@ -166,6 +166,9 @@ export class LoginComponent implements OnInit {
     } catch (error: any) {
       console.error('Login error:', error);
       const errorMessage = error.error?.message || error.message || 'فشل في تسجيل الدخول';
+      if (errorMessage === "بيانات تسجيل الدخول غير صحيحة: User is disabled") {
+        this.router.navigate(['/auth/account-not-verified']);
+      }
       this.notificationService.error(errorMessage);
     } finally {
       this.isLoading.set(false);

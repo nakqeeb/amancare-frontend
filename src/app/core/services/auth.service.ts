@@ -409,6 +409,73 @@ export class AuthService {
     );
   }
 
+  /**
+ * 8. التحقق من رمز تأكيد البريد الإلكتروني - GET /auth/validate-verification-token
+ */
+  validateVerificationToken(token: string): Observable<boolean> {
+    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/validate-verification-token`, {
+      params: { token }
+    }).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response.data;
+      }),
+      catchError(error => {
+        const message = error.error?.message || 'الرمز غير صحيح أو منتهي الصلاحية';
+        this.notificationService.error(message);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * 9. تأكيد البريد الإلكتروني - POST /auth/verify-email
+   */
+  verifyEmail(token: string): Observable<any> {
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/verify-email`, null, {
+      params: { token }
+    }).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response;
+      }),
+      tap(() => {
+        this.notificationService.success('تم تفعيل حسابك بنجاح. يمكنك الآن تسجيل الدخول');
+      }),
+      catchError(error => {
+        const message = error.error?.message || 'فشل في تفعيل الحساب';
+        this.notificationService.error(message);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * 10. إعادة إرسال رابط التأكيد - POST /auth/resend-verification
+   */
+  resendVerificationEmail(email: string): Observable<any> {
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/resend-verification`, { email }).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        return response;
+      }),
+      tap(() => {
+        this.notificationService.success('تم إعادة إرسال رابط التأكيد إلى بريدك الإلكتروني');
+      }),
+      catchError(error => {
+        const message = error.error?.message || 'فشل في إعادة إرسال رابط التأكيد';
+        this.notificationService.error(message);
+        return throwError(() => error);
+      })
+    );
+  }
+
   // ===================================================================
   // UTILITY METHODS
   // ===================================================================
