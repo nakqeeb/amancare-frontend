@@ -16,24 +16,32 @@ import { MatDividerModule } from '@angular/material/divider';
 export interface TableColumn {
   key: string;
   label: string;
-  type?: 'text' | 'number' | 'date' | 'boolean' | 'actions';
   sortable?: boolean;
   width?: string;
-  searchable?: boolean; // Add this
-  format?: (value: any) => string;
-  cellTemplate?: (row: any) => string; // Add this
+  type?: 'text' | 'number' | 'date' | 'boolean' | 'actions';
+  // Updated format function to accept optional row parameter
+  format?: (value: any, row?: any) => string;
+  visible?: boolean | ((row: any) => boolean);
+  cssClass?: string;
 }
 
+// export interface TableAction {
+//   label: string;
+//   icon: string;
+//   // color?: 'primary' | 'accent' | 'warn';
+//   color?: 'primary' | 'accent' | 'warn' | 'success' | 'info'; // Expand color options
+//   action: (row: any) => void;
+//   visible?: (row: any) => boolean;
+//   show?: (row: any) => boolean; // Add this for backward compatibility
+// }
 export interface TableAction {
   label: string;
   icon: string;
-  // color?: 'primary' | 'accent' | 'warn';
-  color?: 'primary' | 'accent' | 'warn' | 'success' | 'info'; // Expand color options
+  color?: 'primary' | 'accent' | 'warn';
   action: (row: any) => void;
   visible?: (row: any) => boolean;
-  show?: (row: any) => boolean; // Add this for backward compatibility
+  disabled?: (row: any) => boolean;
 }
-
 @Component({
   selector: 'app-data-table',
   imports: [

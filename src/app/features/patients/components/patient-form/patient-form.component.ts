@@ -1,7 +1,8 @@
 // ===================================================================
 // src/app/features/patients/components/patient-form/patient-form.component.ts
+// Updated to use integrated PatientService with Spring Boot APIs
 // ===================================================================
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -16,6 +17,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { Subject, takeUntil } from 'rxjs';
 
 // Shared Components
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -24,7 +27,17 @@ import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.
 // Services & Models
 import { PatientService } from '../../services/patient.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { Patient, CreatePatientRequest, UpdatePatientRequest } from '../../models/patient.model';
+import {
+  Patient,
+  CreatePatientRequest,
+  UpdatePatientRequest,
+  Gender,
+  BloodType,
+  BLOOD_TYPE_OPTIONS,
+  GENDER_OPTIONS,
+  PATIENT_CONSTANTS,
+  calculateAge
+} from '../../models/patient.model';
 
 @Component({
   selector: 'app-patient-form',
@@ -44,14 +57,14 @@ import { Patient, CreatePatientRequest, UpdatePatientRequest } from '../../model
     MatProgressSpinnerModule,
     MatStepperModule,
     MatDividerModule,
+    MatToolbarModule,
     HeaderComponent,
     SidebarComponent
   ],
   templateUrl: './patient-form.component.html',
   styleUrl: './patient-form.component.scss'
 })
-
-export class PatientFormComponent implements OnInit {
+export class PatientFormComponent implements OnInit, OnDestroy {
   // Services
   private patientService = inject(PatientService);
   private notificationService = inject(NotificationService);
@@ -59,266 +72,425 @@ export class PatientFormComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
 
-  // Signals
+  // Destroy subject for unsubscribing
+  private destroy$ = new Subject<void>();
+
+  // ===================================================================
+  // STATE MANAGEMENT
+  // ===================================================================
+
+  // UI State signals
   loading = signal(false);
+  saving = signal(false);
   isEditMode = signal(false);
   patientId = signal<number | null>(null);
+  currentPatient = signal<Patient | null>(null);
 
-  // Form
+  // Form Groups
   patientForm!: FormGroup;
   basicInfoGroup!: FormGroup;
   contactInfoGroup!: FormGroup;
   medicalInfoGroup!: FormGroup;
 
-  // Data
-  bloodTypes = this.patientService.getBloodTypes();
-  genders = this.patientService.getGenders();
+  // Dropdown options
+  bloodTypes = BLOOD_TYPE_OPTIONS;
+  genders = GENDER_OPTIONS;
 
-  constructor() {
-    this.initializeForms();
-  }
+  // Constants
+  readonly maxDate = new Date(); // Can't be born in the future
+  readonly minDate = new Date(1900, 0, 1); // Reasonable minimum date
+
+  // ===================================================================
+  // LIFECYCLE HOOKS
+  // ===================================================================
 
   ngOnInit(): void {
-    this.checkRouteParams();
+    this.initializeForms();
+    this.checkEditMode();
+    this.setupFormValidation();
   }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.patientService.clearSelectedPatient();
+  }
+
+  // ===================================================================
+  // FORM INITIALIZATION
+  // ===================================================================
 
   private initializeForms(): void {
-    // Basic Info Group
+    // Basic Information Form Group
     this.basicInfoGroup = this.fb.group({
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
-      dateOfBirth: [''],
-      gender: ['', Validators.required]
+      firstName: ['', [
+        Validators.required,
+        Validators.maxLength(PATIENT_CONSTANTS.MAX_NAME_LENGTH),
+        Validators.pattern(/^[a-zA-Zأ-ي\s]+$/)
+      ]],
+      lastName: ['', [
+        Validators.required,
+        Validators.maxLength(PATIENT_CONSTANTS.MAX_NAME_LENGTH),
+        Validators.pattern(/^[a-zA-Zأ-ي\s]+$/)
+      ]],
+      dateOfBirth: ['', Validators.required],
+      gender: ['', Validators.required],
+      bloodType: ['']
     });
 
-    // Contact Info Group
+    // Contact Information Form Group
     this.contactInfoGroup = this.fb.group({
-      phone: ['', [Validators.required, Validators.pattern(/^05\d{8}$/)]],
-      email: ['', Validators.email],
-      address: [''],
-      emergencyContactName: [''],
-      emergencyContactPhone: ['', Validators.pattern(/^05\d{8}$/)]
+      phone: ['', [
+        Validators.required,
+        Validators.pattern(PATIENT_CONSTANTS.PHONE_PATTERN)
+      ]],
+      email: ['', [
+        Validators.email,
+        Validators.maxLength(PATIENT_CONSTANTS.MAX_EMAIL_LENGTH)
+      ]],
+      address: ['', [
+        Validators.maxLength(PATIENT_CONSTANTS.MAX_ADDRESS_LENGTH)
+      ]],
+      emergencyContactName: ['', [
+        Validators.maxLength(PATIENT_CONSTANTS.MAX_NAME_LENGTH)
+      ]],
+      emergencyContactPhone: ['', [
+        Validators.pattern(PATIENT_CONSTANTS.PHONE_PATTERN)
+      ]]
     });
 
-    // Medical Info Group
+    // Medical Information Form Group
     this.medicalInfoGroup = this.fb.group({
-      bloodType: [''],
-      allergies: [''],
-      chronicDiseases: [''],
-      notes: [''],
-      isActive: [true]
+      allergies: ['', [
+        Validators.maxLength(PATIENT_CONSTANTS.MAX_ALLERGIES_LENGTH)
+      ]],
+      chronicDiseases: ['', [
+        Validators.maxLength(PATIENT_CONSTANTS.MAX_CHRONIC_DISEASES_LENGTH)
+      ]],
+      notes: ['', [
+        Validators.maxLength(PATIENT_CONSTANTS.MAX_NOTES_LENGTH)
+      ]]
     });
 
-    // Main Form
+    // Main Patient Form
     this.patientForm = this.fb.group({
-      ...this.basicInfoGroup.controls,
-      ...this.contactInfoGroup.controls,
-      ...this.medicalInfoGroup.controls
+      basicInfo: this.basicInfoGroup,
+      contactInfo: this.contactInfoGroup,
+      medicalInfo: this.medicalInfoGroup
     });
   }
 
-  private checkRouteParams(): void {
-    const id = this.route.snapshot.paramMap.get('id');
+  private setupFormValidation(): void {
+    // Custom validators and form logic can be added here
+    this.basicInfoGroup.get('dateOfBirth')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(date => {
+        if (date) {
+          const age = calculateAge(date);
+          if (age < 0 || age > PATIENT_CONSTANTS.MAX_AGE) {
+            this.basicInfoGroup.get('dateOfBirth')?.setErrors({ 'invalidAge': true });
+          }
+        }
+      });
+  }
 
+  // ===================================================================
+  // EDIT MODE HANDLING
+  // ===================================================================
+
+  private checkEditMode(): void {
+    const id = this.route.snapshot.paramMap.get('id');
     if (id && id !== 'new') {
       this.isEditMode.set(true);
       this.patientId.set(+id);
       this.loadPatient(+id);
-    } else {
-      this.isEditMode.set(false);
     }
   }
 
   private loadPatient(id: number): void {
     this.loading.set(true);
 
-    this.patientService.getPatientById(id).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.populateForm(response.data);
+    this.patientService.getPatientById(id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.currentPatient.set(response.data!);
+            this.populateForm(response.data!);
+          }
+          this.loading.set(false);
+        },
+        error: (error) => {
+          this.loading.set(false);
+          this.notificationService.error('فشل في تحميل بيانات المريض');
+          this.router.navigate(['/patients']);
         }
-        this.loading.set(false);
-      },
-      error: (error) => {
-        this.loading.set(false);
-        this.notificationService.error('حدث خطأ في تحميل بيانات المريض');
-        this.router.navigate(['/patients']);
-      }
-    });
+      });
   }
 
   private populateForm(patient: Patient): void {
-    this.patientForm.patchValue({
+    // Populate basic info
+    this.basicInfoGroup.patchValue({
       firstName: patient.firstName,
       lastName: patient.lastName,
-      dateOfBirth: patient.dateOfBirth ? new Date(patient.dateOfBirth) : null,
+      dateOfBirth: new Date(patient.dateOfBirth),
       gender: patient.gender,
-      phone: patient.phone,
-      email: patient.email,
-      address: patient.address,
-      bloodType: patient.bloodType,
-      allergies: patient.allergies,
-      chronicDiseases: patient.chronicDiseases,
-      emergencyContactName: patient.emergencyContactName,
-      emergencyContactPhone: patient.emergencyContactPhone,
-      notes: patient.notes,
-      isActive: patient.isActive
+      bloodType: patient.bloodType || ''
     });
 
-    // Mark form as pristine after loading data
-    this.patientForm.markAsPristine();
+    // Populate contact info
+    this.contactInfoGroup.patchValue({
+      phone: patient.phone,
+      email: patient.email || '',
+      address: patient.address || '',
+      emergencyContactName: patient.emergencyContactName || '',
+      emergencyContactPhone: patient.emergencyContactPhone || ''
+    });
+
+    // Populate medical info
+    this.medicalInfoGroup.patchValue({
+      allergies: patient.allergies || '',
+      chronicDiseases: patient.chronicDiseases || '',
+      notes: patient.notes || ''
+    });
   }
 
-  calculateAge(): string | null {
-    const dateOfBirth = this.patientForm.get('dateOfBirth')?.value;
-
-    if (!dateOfBirth) {
-      return null;
-    }
-
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-
-    return age >= 0 ? `${age}` : null;
-  }
+  // ===================================================================
+  // FORM SUBMISSION
+  // ===================================================================
 
   onSubmit(): void {
     if (this.patientForm.invalid) {
-      this.markFormGroupTouched();
-      this.notificationService.warning('يرجى تصحيح الأخطاء في النموذج');
+      this.markFormGroupTouched(this.patientForm);
+      this.notificationService.error('يرجى تصحيح الأخطاء في النموذج');
       return;
     }
 
-    this.loading.set(true);
-
-    const formData = this.prepareFormData();
+    this.saving.set(true);
 
     if (this.isEditMode()) {
-      this.updatePatient(formData);
+      this.updatePatient();
     } else {
-      this.createPatient(formData as CreatePatientRequest);
+      this.createPatient();
     }
   }
 
-  private prepareFormData(): CreatePatientRequest | UpdatePatientRequest {
-    const formValue = this.patientForm.value;
-
-    return {
-      firstName: formValue.firstName?.trim(),
-      lastName: formValue.lastName?.trim(),
-      dateOfBirth: formValue.dateOfBirth ?
-        new Date(formValue.dateOfBirth).toISOString().split('T')[0] : undefined,
-      gender: formValue.gender,
-      phone: formValue.phone?.trim(),
-      email: formValue.email?.trim() || undefined,
-      address: formValue.address?.trim() || undefined,
-      bloodType: formValue.bloodType || undefined,
-      allergies: formValue.allergies?.trim() || undefined,
-      chronicDiseases: formValue.chronicDiseases?.trim() || undefined,
-      emergencyContactName: formValue.emergencyContactName?.trim() || undefined,
-      emergencyContactPhone: formValue.emergencyContactPhone?.trim() || undefined,
-      notes: formValue.notes?.trim() || undefined,
-      ...(this.isEditMode() && { isActive: formValue.isActive })
+  private createPatient(): void {
+    const formData = this.getFormData();
+    const createRequest: CreatePatientRequest = {
+      firstName: formData.basicInfo.firstName,
+      lastName: formData.basicInfo.lastName,
+      dateOfBirth: this.formatDateForApi(formData.basicInfo.dateOfBirth),
+      gender: formData.basicInfo.gender,
+      phone: formData.contactInfo.phone,
+      email: formData.contactInfo.email || undefined,
+      address: formData.contactInfo.address || undefined,
+      emergencyContactName: formData.contactInfo.emergencyContactName || undefined,
+      emergencyContactPhone: formData.contactInfo.emergencyContactPhone || undefined,
+      bloodType: formData.basicInfo.bloodType || undefined,
+      allergies: formData.medicalInfo.allergies || undefined,
+      chronicDiseases: formData.medicalInfo.chronicDiseases || undefined,
+      notes: formData.medicalInfo.notes || undefined
     };
-  }
 
-  private createPatient(patientData: CreatePatientRequest): void {
-    this.patientService.createPatient(patientData).subscribe({
-      next: (response) => {
-        this.loading.set(false);
-        if (response.success) {
-          this.notificationService.success('تم إضافة المريض بنجاح');
-          this.router.navigate(['/patients', response.data?.id]);
+    this.patientService.createPatient(createRequest)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.notificationService.success('تم إنشاء المريض بنجاح');
+            this.router.navigate(['/patients', response.data!.id]);
+          }
+          this.saving.set(false);
+        },
+        error: (error) => {
+          this.saving.set(false);
+          this.notificationService.error('فشل في إنشاء المريض');
         }
-      },
-      error: (error) => {
-        this.loading.set(false);
-        this.notificationService.error('حدث خطأ في إضافة المريض');
-      }
-    });
+      });
   }
 
-  private updatePatient(patientData: UpdatePatientRequest): void {
+  private updatePatient(): void {
     const patientId = this.patientId();
     if (!patientId) return;
 
-    this.patientService.updatePatient(patientId, patientData).subscribe({
-      next: (response) => {
-        this.loading.set(false);
-        if (response.success) {
-          this.notificationService.success('تم تحديث بيانات المريض بنجاح');
-          this.patientForm.markAsPristine();
+    const formData = this.getFormData();
+    const updateRequest: UpdatePatientRequest = {
+      firstName: formData.basicInfo.firstName,
+      lastName: formData.basicInfo.lastName,
+      dateOfBirth: this.formatDateForApi(formData.basicInfo.dateOfBirth),
+      gender: formData.basicInfo.gender,
+      phone: formData.contactInfo.phone,
+      email: formData.contactInfo.email || undefined,
+      address: formData.contactInfo.address || undefined,
+      emergencyContactName: formData.contactInfo.emergencyContactName || undefined,
+      emergencyContactPhone: formData.contactInfo.emergencyContactPhone || undefined,
+      bloodType: formData.basicInfo.bloodType || undefined,
+      allergies: formData.medicalInfo.allergies || undefined,
+      chronicDiseases: formData.medicalInfo.chronicDiseases || undefined,
+      notes: formData.medicalInfo.notes || undefined
+    };
+
+    this.patientService.updatePatient(patientId, updateRequest)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.notificationService.success('تم تحديث بيانات المريض بنجاح');
+            this.router.navigate(['/patients', patientId]);
+          }
+          this.saving.set(false);
+        },
+        error: (error) => {
+          this.saving.set(false);
+          this.notificationService.error('فشل في تحديث بيانات المريض');
         }
-      },
-      error: (error) => {
-        this.loading.set(false);
-        this.notificationService.error('حدث خطأ في تحديث بيانات المريض');
+      });
+  }
+
+  getGenderDisplayValue(): string {
+    const genderValue = this.basicInfoGroup.get('gender')?.value;
+    if (!genderValue) return '-';
+
+    const gender = this.genders.find(g => g.value === genderValue);
+    return gender ? gender.arabic : '-';
+  }
+
+  getBloodTypeDisplayValue(): string {
+    const bloodTypeValue = this.basicInfoGroup.get('bloodType')?.value;
+    if (!bloodTypeValue) return 'غير محدد';
+
+    const bloodType = this.bloodTypes.find(bt => bt.value === bloodTypeValue);
+    return bloodType ? bloodType.arabic : 'غير محدد';
+  }
+
+  // ===================================================================
+  // UTILITY METHODS
+  // ===================================================================
+
+  private getFormData() {
+    return {
+      basicInfo: this.basicInfoGroup.value,
+      contactInfo: this.contactInfoGroup.value,
+      medicalInfo: this.medicalInfoGroup.value
+    };
+  }
+
+  private formatDateForApi(date: Date): string {
+    if (!date) return '';
+    return date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+  }
+
+  private markFormGroupTouched(formGroup: FormGroup): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      } else {
+        control?.markAsTouched();
       }
     });
+  }
+
+  // ===================================================================
+  // EVENT HANDLERS
+  // ===================================================================
+
+  onCancel(): void {
+    if (this.isEditMode()) {
+      this.router.navigate(['/patients', this.patientId()]);
+    } else {
+      this.router.navigate(['/patients']);
+    }
   }
 
   onReset(): void {
-    if (this.isEditMode()) {
-      const patientId = this.patientId();
-      if (patientId) {
-        this.loadPatient(patientId);
-      }
+    if (this.isEditMode() && this.currentPatient()) {
+      this.populateForm(this.currentPatient()!);
     } else {
-      this.patientForm.reset({
-        gender: '',
-        isActive: true
-      });
+      this.patientForm.reset();
     }
   }
 
-  private markFormGroupTouched(): void {
-    Object.keys(this.patientForm.controls).forEach(key => {
-      const control = this.patientForm.get(key);
-      control?.markAsTouched();
-    });
+  // ===================================================================
+  // VALIDATION HELPERS
+  // ===================================================================
+
+  /**
+   * Check if a form control has a specific error
+   */
+  hasError(controlName: string, errorType: string, formGroup?: FormGroup): boolean {
+    const group = formGroup || this.patientForm;
+    const control = group.get(controlName);
+    return !!(control?.hasError(errorType) && (control?.dirty || control?.touched));
   }
 
-  // Validation helpers
-  hasError(controlName: string, errorType: string): boolean {
-    const control = this.patientForm.get(controlName);
-    return !!(control?.hasError(errorType) && control.touched);
-  }
+  /**
+   * Get error message for a form control
+   */
+  getErrorMessage(controlName: string, formGroup?: FormGroup): string {
+    const group = formGroup || this.patientForm;
+    const control = group.get(controlName);
 
-  getErrorMessage(controlName: string): string {
-    const control = this.patientForm.get(controlName);
-    if (!control?.errors || !control.touched) return '';
-
-    const errors = control.errors;
-
-    if (errors['required']) return 'هذا الحقل مطلوب';
-    if (errors['email']) return 'البريد الإلكتروني غير صحيح';
-    if (errors['pattern']) return 'التنسيق غير صحيح';
-    if (errors['minlength']) return `يجب أن يكون ${errors['minlength'].requiredLength} أحرف على الأقل`;
-    if (errors['maxlength']) return `يجب أن يكون ${errors['maxlength'].requiredLength} أحرف كحد أقصى`;
-
-    return 'قيمة غير صحيحة';
-  }
-
-  // Form state helpers
-  isFormValid(): boolean {
-    return this.patientForm.valid;
-  }
-
-  hasUnsavedChanges(): boolean {
-    return this.patientForm.dirty;
-  }
-
-  // Navigation guard for unsaved changes
-  canDeactivate(): boolean {
-    if (this.hasUnsavedChanges()) {
-      return confirm('لديك تغييرات غير محفوظة. هل أنت متأكد من المغادرة؟');
+    if (control?.hasError('required')) {
+      return 'هذا الحقل مطلوب';
     }
-    return true;
+    if (control?.hasError('email')) {
+      return 'يرجى إدخال بريد إلكتروني صحيح';
+    }
+    if (control?.hasError('pattern')) {
+      if (controlName.includes('phone') || controlName.includes('Phone')) {
+        return 'يرجى إدخال رقم هاتف صحيح';
+      }
+      if (controlName.includes('name') || controlName.includes('Name')) {
+        return 'يرجى إدخال اسم صحيح بدون أرقام أو رموز';
+      }
+      return 'التنسيق غير صحيح';
+    }
+    if (control?.hasError('maxlength')) {
+      const maxLength = control.errors?.['maxlength'].requiredLength;
+      return `الحد الأقصى ${maxLength} حرف`;
+    }
+    if (control?.hasError('invalidAge')) {
+      return 'العمر غير صحيح';
+    }
+
+    return '';
+  }
+
+  /**
+   * Check if form group is valid
+   */
+  isFormGroupValid(formGroup: FormGroup): boolean {
+    return formGroup.valid;
+  }
+
+  /**
+   * Get calculated age from date of birth
+   */
+  getCalculatedAge(): string {
+    const dateOfBirth = this.basicInfoGroup.get('dateOfBirth')?.value;
+    if (dateOfBirth) {
+      const age = calculateAge(dateOfBirth);
+      return `${age} سنة`;
+    }
+    return '';
+  }
+
+  /**
+   * Get page title
+   */
+  getPageTitle(): string {
+    return this.isEditMode() ? 'تعديل بيانات المريض' : 'إضافة مريض جديد';
+  }
+
+  /**
+   * Get submit button text
+   */
+  getSubmitButtonText(): string {
+    if (this.saving()) {
+      return this.isEditMode() ? 'جاري الحفظ...' : 'جاري الإنشاء...';
+    }
+    return this.isEditMode() ? 'حفظ التغييرات' : 'إنشاء المريض';
   }
 }

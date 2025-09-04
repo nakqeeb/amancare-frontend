@@ -1,4 +1,4 @@
-// ===================================================================
+/* // ===================================================================
 // 1. MEDICAL RECORD LIST COMPONENT
 // src/app/features/medical-records/components/medical-record-list/medical-record-list.component.ts
 // ===================================================================
@@ -426,3 +426,4 @@ export class MedicalRecordListComponent implements OnInit {
     return record.id!;
   }
 }
+ */

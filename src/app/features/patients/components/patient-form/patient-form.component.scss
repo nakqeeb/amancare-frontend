@@ -1,301 +1,540 @@
+// ===================================================================
+// src/app/features/patients/components/patient-form/patient-form.component.scss
+// Patient Form Component Styles
+// ===================================================================
+
 .patient-form-container {
   padding: 2rem;
   background: var(--bg-secondary);
   min-height: calc(100vh - 64px);
-  position: relative;
-}
 
-/* Page Header */
-.page-header {
-  margin-bottom: 2rem;
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.back-button {
-  background: var(--bg-primary);
-  box-shadow: var(--shadow-sm);
-}
-
-.header-text {
-  flex: 1;
-}
-
-.page-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 0.5rem 0;
-}
-
-.page-icon {
-  font-size: 2rem;
-  width: 2rem;
-  height: 2rem;
-  color: var(--primary-color);
-}
-
-.page-subtitle {
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-/* Form Card */
-.form-card {
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  margin-bottom: 6rem;
-  /* Space for sticky summary */
-}
-
-/* Stepper */
-.patient-stepper {
-  background: transparent;
-}
-
-.patient-stepper ::ng-deep .mat-stepper-header {
-  padding: 1.5rem 1rem;
-}
-
-.patient-stepper ::ng-deep .mat-step-header {
-  pointer-events: all !important;
-}
-
-.patient-stepper ::ng-deep .mat-step-header:hover {
-  background-color: var(--bg-light);
-}
-
-/* Step Content */
-.step-content {
-  padding: 2rem 1rem;
-}
-
-.step-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 2rem 0;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid var(--primary-color);
-}
-
-.step-title mat-icon {
-  color: var(--primary-color);
-  font-size: 1.5rem;
-  width: 1.5rem;
-  height: 1.5rem;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin: 2rem 0 1rem 0;
-}
-
-.section-title mat-icon {
-  color: var(--warning-color);
-  font-size: 1.2rem;
-  width: 1.2rem;
-  height: 1.2rem;
-}
-
-/* Form Layout */
-.form-row {
-  display: flex;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-  align-items: flex-start;
-}
-
-.form-field {
-  flex: 1;
-  min-width: 200px;
-}
-
-.form-field.full-width {
-  width: 100%;
-}
-
-/* Active Status */
-.active-status {
-  margin: 2rem 0;
-  padding: 1rem;
-  background: var(--bg-light);
-  border-radius: var(--radius-md);
-  border-left: 4px solid var(--primary-color);
-}
-
-.status-hint {
-  display: block;
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-/* Step Actions */
-.step-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--border-light);
-}
-
-.step-actions button {
-  min-width: 120px;
-  height: 44px;
-  font-weight: 500;
-}
-
-/* Form Summary (Sticky) */
-.form-summary {
-  position: fixed;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
-  max-width: 600px;
-  width: calc(100% - 4rem);
-}
-
-.summary-card {
-  background: var(--bg-primary);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  border: 2px solid var(--primary-color);
-}
-
-.summary-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.5rem 0;
-}
-
-.summary-text {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.summary-icon {
-  color: var(--warning-color);
-  font-size: 1.2rem;
-}
-
-.summary-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.reset-button {
-  color: var(--text-muted);
-}
-
-/* RTL Adjustments */
-[dir="rtl"] .active-status {
-  border-left: none;
-  border-right: 4px solid var(--primary-color);
-}
-
-[dir="rtl"] .step-actions {
-  justify-content: flex-start;
-}
-
-/* Mobile Responsive */
-@media (max-width: 768px) {
-  .patient-form-container {
+  @media (max-width: 768px) {
     padding: 1rem;
   }
 
-  .form-row {
+  // Loading Container
+  .loading-container {
+    display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
     gap: 1rem;
+
+    p {
+      color: var(--text-secondary);
+      margin: 0;
+    }
   }
 
-  .form-field {
-    min-width: unset;
+  // Form Content
+  .form-content {
+    max-width: 1000px;
+    margin: 0 auto;
   }
 
+  // Header
+  .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    gap: 2rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .header-info {
+      flex: 1;
+
+      .page-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 0.5rem 0;
+
+        @media (max-width: 768px) {
+          font-size: 1.5rem;
+        }
+
+        .page-icon {
+          font-size: 2.2rem;
+          width: 2.2rem;
+          height: 2.2rem;
+          color: var(--primary-color);
+        }
+      }
+
+      .page-subtitle {
+        color: var(--text-secondary);
+        font-size: 1rem;
+        margin: 0;
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+
+      @media (max-width: 768px) {
+        width: 100%;
+      }
+
+      button {
+        height: 44px;
+
+        @media (max-width: 768px) {
+          flex: 1;
+        }
+      }
+    }
+  }
+
+  // Form Card
+  .form-card {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+
+    // Stepper Customization
+    ::ng-deep .mat-stepper-horizontal {
+      .mat-step-header {
+        padding: 1.5rem 1rem;
+        pointer-events: auto;
+
+        .mat-step-icon {
+          margin-right: 0.5rem;
+
+          &.mat-step-icon-selected,
+          &.mat-step-icon-state-done {
+            background-color: var(--primary-color);
+          }
+        }
+
+        .mat-step-label {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-weight: 500;
+
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+          }
+        }
+      }
+
+      .mat-stepper-horizontal-line {
+        border-top: 2px solid var(--border-light);
+      }
+    }
+
+    // Mobile Stepper
+    @media (max-width: 768px) {
+      ::ng-deep .mat-stepper-horizontal {
+        .mat-step-header {
+          padding: 1rem 0.5rem;
+
+          .mat-step-label {
+            span {
+              display: none;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Step Content
   .step-content {
-    padding: 1.5rem 0.5rem;
+    padding: 2rem;
+
+    @media (max-width: 768px) {
+      padding: 1.5rem;
+    }
+
+    .step-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 2rem 0;
+      text-align: center;
+    }
   }
 
-  .step-actions {
-    flex-direction: column-reverse;
-    align-items: stretch;
-  }
-
-  .step-actions button {
-    min-width: unset;
-  }
-
-  .summary-content {
+  // Form Section
+  .form-section {
+    display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
   }
 
-  .summary-actions {
-    width: 100%;
-    justify-content: stretch;
+  // Form Row
+  .form-row {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .form-field {
+      flex: 1;
+
+      &.full-width {
+        flex: 1 1 100%;
+      }
+    }
+
+    // Required indicator
+    .required {
+      color: var(--warn-color);
+      font-weight: bold;
+    }
   }
 
-  .summary-actions button {
-    flex: 1;
+  // Step Actions
+  .step-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-light);
+
+    @media (max-width: 768px) {
+      flex-direction: column-reverse;
+    }
+
+    button {
+      min-width: 120px;
+      height: 44px;
+
+      @media (max-width: 768px) {
+        min-width: unset;
+      }
+    }
+
+    &.final-actions {
+      justify-content: space-between;
+
+      @media (max-width: 768px) {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
   }
 
-  .page-title {
-    font-size: 1.5rem;
+  // Review Section
+  .review-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
   }
 
-  .patient-stepper ::ng-deep .mat-stepper-header {
-    padding: 1rem 0.5rem;
+  // Review Card
+  .review-card {
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+
+    .mat-mdc-card-header {
+      padding-bottom: 1rem;
+
+      .mat-mdc-card-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+        font-size: 1.1rem;
+        font-weight: 600;
+
+        mat-icon {
+          color: var(--primary-color);
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+
+      button {
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+
+        &:hover {
+          opacity: 1;
+        }
+      }
+    }
+
+    .mat-mdc-card-content {
+      padding-top: 0;
+    }
+  }
+
+  // Review Grid
+  .review-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+
+    .review-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      &.full-width {
+        grid-column: 1 / -1;
+      }
+
+      label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin: 0;
+      }
+
+      span {
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        word-wrap: break-word;
+
+        &:empty::after {
+          content: '-';
+          color: var(--text-muted);
+        }
+      }
+    }
+  }
+
+  // Form Field Customizations
+  ::ng-deep .mat-mdc-form-field {
+    .mat-mdc-text-field-wrapper {
+      border-radius: var(--radius-sm);
+    }
+
+    .mat-mdc-form-field-subscript-wrapper {
+      margin-top: 0.25rem;
+    }
+
+    .mat-mdc-form-field-hint,
+    .mat-mdc-form-field-error {
+      font-size: 0.75rem;
+    }
+
+    // Error state
+    &.mat-form-field-invalid {
+      .mat-mdc-text-field-wrapper {
+        border-color: var(--warn-color);
+      }
+    }
+
+    // Success state (when valid and touched)
+    &.mat-form-field-appearance-outline.ng-valid.ng-touched:not(.mat-form-field-invalid) {
+      .mat-mdc-text-field-wrapper {
+        .mat-mdc-notched-outline {
+          .mat-mdc-notched-outline-thick {
+            border-color: var(--success-color);
+          }
+        }
+      }
+    }
+  }
+
+  // Select Customizations
+  ::ng-deep .mat-mdc-select {
+    .mat-mdc-select-trigger {
+      .mat-mdc-select-value {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+    }
+  }
+
+  ::ng-deep .mat-mdc-select-panel {
+    .mat-mdc-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+        margin-right: 0.25rem;
+      }
+    }
+  }
+
+  // Button Customizations
+  button {
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    mat-icon {
+      margin-right: 0.5rem;
+
+      &:only-child {
+        margin-right: 0;
+      }
+    }
+
+    mat-spinner {
+      margin-right: 0.5rem;
+    }
+  }
+
+  // Textarea Customizations
+  ::ng-deep .mat-mdc-input-element {
+    &[rows] {
+      resize: vertical;
+      min-height: auto;
+    }
+  }
+
+  // Date Picker Customizations
+  ::ng-deep .mat-datepicker-input {
+    cursor: pointer;
+  }
+
+  // Validation Styles
+  .mat-mdc-form-field {
+    &.mat-form-field-invalid {
+      .mat-mdc-form-field-label {
+        color: var(--warn-color);
+      }
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 480px) {
+    .step-content {
+      padding: 1rem;
+    }
+
+    .form-row {
+      .form-field {
+        min-width: unset;
+      }
+    }
+
+    .step-actions {
+      button {
+        font-size: 0.9rem;
+        min-width: unset;
+      }
+    }
+
+    .review-grid {
+      .review-item {
+
+        label,
+        span {
+          font-size: 0.9rem;
+        }
+      }
+    }
+  }
+
+  // Print Styles
+  @media print {
+
+    .form-header .header-actions,
+    .step-actions {
+      display: none;
+    }
+
+    .form-card {
+      box-shadow: none;
+      border: 1px solid #ddd;
+    }
+
+    .review-card {
+      box-shadow: none;
+      border: 1px solid #eee;
+      margin-bottom: 1rem;
+      break-inside: avoid;
+    }
+
+    .step-content {
+      padding: 1rem;
+    }
   }
 }
 
-/* Form Validation States */
-.mat-mdc-form-field.ng-invalid.ng-touched {
-  --mdc-outlined-text-field-outline-color: var(--error-color);
+// Dark Theme Support
+@media (prefers-color-scheme: dark) {
+  .patient-form-container {
+    .review-card {
+      background: var(--bg-primary);
+
+      &:hover {
+        background: var(--bg-hover);
+      }
+    }
+
+    ::ng-deep .mat-stepper-horizontal {
+      .mat-stepper-horizontal-line {
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+    }
+  }
 }
 
-.mat-mdc-form-field.ng-valid.ng-touched {
-  --mdc-outlined-text-field-outline-color: var(--success-color);
+// Animation Classes
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
 }
 
-/* Custom Input Styles */
-input[dir="ltr"] {
-  text-align: left;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Date Picker RTL Fix */
-.mat-datepicker-toggle {
-  direction: ltr;
+.slide-in {
+  animation: slideIn 0.4s ease-out;
 }
 
-/* Loading States */
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
 
-.mat-mdc-raised-button:disabled {
-  background-color: var(--bg-light) !important;
-  color: var(--text-muted) !important;
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }

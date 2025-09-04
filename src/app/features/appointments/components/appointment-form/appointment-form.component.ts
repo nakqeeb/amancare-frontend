@@ -1,4 +1,4 @@
-// ===================================================================
+/* // ===================================================================
 // 1. APPOINTMENT FORM COMPONENT
 // src/app/features/appointments/components/appointment-form/appointment-form.component.ts
 // ===================================================================
@@ -648,3 +648,4 @@ export class AppointmentFormComponent implements OnInit {
     return age;
   }
 }
+ */

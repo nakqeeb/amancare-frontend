@@ -17,9 +17,11 @@ export class RoleGuard implements CanActivate {
   private notificationService = inject(NotificationService);
 
   canActivate(route: ActivatedRouteSnapshot): Observable<boolean | UrlTree> | boolean | UrlTree {
+    console.log(this.authService.currentUser());
     return this.authService.currentUser$.pipe(
       take(1),
       map(user => {
+        console.log(user);
         if (!user) {
           this.notificationService.warning('يجب تسجيل الدخول أولاً');
           return this.router.createUrlTree(['/auth/login']);

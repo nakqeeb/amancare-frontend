@@ -44,6 +44,7 @@ export class App implements OnInit {
   }
 
   private initializeApp(): void {
+    this.authService.getCurrentUser();
     // إعداد اللغة
     this.translateService.setDefaultLang('ar');
     this.translateService.use('ar');

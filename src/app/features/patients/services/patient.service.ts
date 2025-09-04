@@ -1,388 +1,438 @@
 // ===================================================================
-// src/app/features/patients/services/patient.service.ts - خدمة المرضى
+// src/app/features/patients/services/patient.service.ts - Updated
+// Fully Integrated with Spring Boot Patient API Endpoints
 // ===================================================================
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { delay, map } from 'rxjs/operators';
+import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { tap, catchError, map, finalize } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
-import { PageResponse, ApiResponse } from '../../../core/models/api-response.model';
-import { Patient, CreatePatientRequest, UpdatePatientRequest, PatientSearchCriteria } from '../models/patient.model';
+import { NotificationService } from '../../../core/services/notification.service';
+import { ApiResponse, PageResponse } from '../../../core/models/api-response.model';
+
+// ===================================================================
+// INTERFACES & MODELS - Matching Spring Boot DTOs
+// ===================================================================
+
+export interface Patient {
+  id: number;
+  patientNumber: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  dateOfBirth: string;
+  age?: number;
+  gender: Gender;
+  phone: string;
+  email?: string;
+  address?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  bloodType?: BloodType;
+  allergies?: string;
+  chronicDiseases?: string;
+  notes?: string;
+  isActive: boolean;
+  clinicId: number;
+  appointmentsCount?: number;
+  lastVisit?: string;
+  totalInvoices?: number;
+  outstandingBalance?: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreatePatientRequest {
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender: Gender;
+  phone: string;
+  email?: string;
+  address?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  bloodType?: BloodType;
+  allergies?: string;
+  chronicDiseases?: string;
+  notes?: string;
+}
+
+export interface UpdatePatientRequest {
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  gender?: Gender;
+  phone?: string;
+  email?: string;
+  address?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  bloodType?: BloodType;
+  allergies?: string;
+  chronicDiseases?: string;
+  notes?: string;
+}
+
+export interface PatientSearchCriteria {
+  searchTerm?: string;
+  gender?: Gender;
+  bloodType?: BloodType;
+  ageFrom?: number;
+  ageTo?: number;
+  isActive?: boolean;
+  city?: string;
+  lastVisitFrom?: string;
+  lastVisitTo?: string;
+}
+
+export interface PatientStatistics {
+  totalPatients: number;
+  activePatients: number;
+  inactivePatients: number;
+  newPatientsThisMonth: number;
+  malePatients: number;
+  femalePatients: number;
+  averageAge: number;
+  patientsWithAppointmentsToday: number;
+  patientsWithPendingInvoices: number;
+  totalOutstandingBalance: number;
+}
+
+export interface PatientSummaryResponse {
+  id: number;
+  patientNumber: string;
+  fullName: string;
+  phone: string;
+  appointmentTime?: string;
+  appointmentType?: string;
+  doctorName?: string;
+  status?: string;
+}
+
+export interface PatientPageResponse extends PageResponse<Patient> {
+  // Additional fields specific to patient pagination if needed
+  patients: Patient[]
+}
+
+export type Gender = 'MALE' | 'FEMALE';
+
+export type BloodType =
+  'A_POSITIVE' | 'A_NEGATIVE' |
+  'B_POSITIVE' | 'B_NEGATIVE' |
+  'AB_POSITIVE' | 'AB_NEGATIVE' |
+  'O_POSITIVE' | 'O_NEGATIVE';
+
+// ===================================================================
+// PATIENT SERVICE
+// ===================================================================
 
 @Injectable({
   providedIn: 'root'
 })
 export class PatientService {
   private http = inject(HttpClient);
+  private notificationService = inject(NotificationService);
   private readonly apiUrl = `${environment.apiUrl}/patients`;
 
-  // Signals for state management
+  // ===================================================================
+  // STATE MANAGEMENT
+  // ===================================================================
+
+  // Signals for reactive state management
   patients = signal<Patient[]>([]);
-  loading = signal(false);
   selectedPatient = signal<Patient | null>(null);
+  loading = signal(false);
+  statistics = signal<PatientStatistics | null>(null);
+  todayPatients = signal<PatientSummaryResponse[]>([]);
+
+  // BehaviorSubject for compatibility with existing code
+  private patientsSubject = new BehaviorSubject<Patient[]>([]);
+  public patients$ = this.patientsSubject.asObservable();
+
+  // ===================================================================
+  // CRUD OPERATIONS - Matching Spring Boot Endpoints
+  // ===================================================================
 
   /**
-   * الحصول على جميع المرضى مع الترقيم
+   * 1. GET /patients - Get all patients with pagination and sorting
    */
-  getPatients(page: number = 0, size: number = 10, search?: string): Observable<PageResponse<Patient>> {
+  getAllPatients(
+    page: number = 0,
+    size: number = 10,
+    sortBy: string = 'firstName',
+    sortDirection: string = 'asc'
+  ): Observable<ApiResponse<PatientPageResponse>> {
     this.loading.set(true);
 
-    // Mock data for demo
-    const mockPatients: Patient[] = [
-      {
-        id: 1,
-        patientNumber: 'P-2024-001',
-        firstName: 'أحمد',
-        lastName: 'محمد علي',
-        fullName: 'أحمد محمد علي',
-        dateOfBirth: '1985-05-15',
-        age: 39,
-        gender: 'MALE',
-        phone: '0501234567',
-        email: 'ahmed.m@email.com',
-        address: 'الرياض - حي النخيل',
-        bloodType: 'O_POSITIVE',
-        allergies: 'البنسلين',
-        chronicDiseases: 'ضغط الدم',
-        emergencyContactName: 'فاطمة أحمد',
-        emergencyContactPhone: '0509876543',
-        isActive: true,
-        createdAt: '2024-01-15T10:30:00',
-        appointmentsCount: 12,
-        lastVisit: '2024-08-20',
-        totalInvoices: 8,
-        outstandingBalance: 0
-      },
-      {
-        id: 2,
-        patientNumber: 'P-2024-002',
-        firstName: 'فاطمة',
-        lastName: 'أحمد حسن',
-        fullName: 'فاطمة أحمد حسن',
-        dateOfBirth: '1992-03-22',
-        age: 32,
-        gender: 'FEMALE',
-        phone: '0507654321',
-        email: 'fatima.a@email.com',
-        address: 'جدة - حي الروضة',
-        bloodType: 'A_POSITIVE',
-        allergies: 'لا يوجد',
-        chronicDiseases: '',
-        emergencyContactName: 'محمد أحمد',
-        emergencyContactPhone: '0501111222',
-        isActive: true,
-        createdAt: '2024-02-10T14:15:00',
-        appointmentsCount: 8,
-        lastVisit: '2024-08-25',
-        totalInvoices: 5,
-        outstandingBalance: 350
-      },
-      {
-        id: 3,
-        patientNumber: 'P-2024-003',
-        firstName: 'محمد',
-        lastName: 'عبدالله السالم',
-        fullName: 'محمد عبدالله السالم',
-        dateOfBirth: '1978-11-08',
-        age: 45,
-        gender: 'MALE',
-        phone: '0503456789',
-        email: 'mohammed.s@email.com',
-        address: 'الدمام - حي الشاطئ',
-        bloodType: 'B_NEGATIVE',
-        allergies: 'المكسرات',
-        chronicDiseases: 'السكري',
-        emergencyContactName: 'سارة محمد',
-        emergencyContactPhone: '0502222333',
-        isActive: true,
-        createdAt: '2024-01-20T09:45:00',
-        appointmentsCount: 15,
-        lastVisit: '2024-08-22',
-        totalInvoices: 12,
-        outstandingBalance: 150
-      }
-    ];
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sortBy', sortBy)
+      .set('sortDirection', sortDirection);
 
-    // Filter by search term if provided
-    let filteredPatients = mockPatients;
-    if (search && search.trim()) {
-      const searchTerm = search.toLowerCase().trim();
-      filteredPatients = mockPatients.filter(patient =>
-        patient.firstName.toLowerCase().includes(searchTerm) ||
-        patient.lastName.toLowerCase().includes(searchTerm) ||
-        patient.patientNumber?.toLowerCase().includes(searchTerm) ||
-        patient.phone.includes(searchTerm)
-      );
-    }
-
-    // Simulate pagination
-    const start = page * size;
-    const end = start + size;
-    const paginatedPatients = filteredPatients.slice(start, end);
-
-    const response: PageResponse<Patient> = {
-      content: paginatedPatients,
-      totalElements: filteredPatients.length,
-      totalPages: Math.ceil(filteredPatients.length / size),
-      size: size,
-      number: page,
-      first: page === 0,
-      last: page >= Math.ceil(filteredPatients.length / size) - 1,
-      empty: filteredPatients.length === 0
-    };
-
-    return of(response).pipe(
-      delay(1000),
-      map(result => {
+    return this.http.get<ApiResponse<PatientPageResponse>>(`${this.apiUrl}`, { params }).pipe(
+      tap(response => {
+        if (response.success) {
+          this.patients.set(response.data!.patients);
+          this.patientsSubject.next(response.data!.content);
+        }
         this.loading.set(false);
-        return result;
-      })
+      }),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('خطأ في الحصول على قائمة المرضى', error);
+        return throwError(() => error);
+      }),
+      finalize(() => this.loading.set(false))
     );
   }
 
   /**
-   * البحث المتقدم عن المرضى
+   * 2. GET /patients/search - Search patients
    */
-  searchPatients(criteria: PatientSearchCriteria, page: number = 0, size: number = 10): Observable<PageResponse<Patient>> {
+  searchPatients(
+    criteria: PatientSearchCriteria,
+    page: number = 0,
+    size: number = 10
+  ): Observable<ApiResponse<PatientPageResponse>> {
+    this.loading.set(true);
+
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
 
+    // Add search criteria to params
     if (criteria.searchTerm) {
-      params = params.set('search', criteria.searchTerm);
-    }
-    if (criteria.gender) {
-      params = params.set('gender', criteria.gender);
-    }
-    if (criteria.bloodType) {
-      params = params.set('bloodType', criteria.bloodType);
-    }
-    if (criteria.ageFrom) {
-      params = params.set('ageFrom', criteria.ageFrom.toString());
-    }
-    if (criteria.ageTo) {
-      params = params.set('ageTo', criteria.ageTo.toString());
-    }
-    if (criteria.isActive !== undefined) {
-      params = params.set('isActive', criteria.isActive.toString());
+      params = params.set('q', criteria.searchTerm);
     }
 
-    return this.getPatients(page, size, criteria.searchTerm);
-  }
-
-  /**
-   * الحصول على مريض بالمعرف
-   */
-  getPatientById(id: number): Observable<ApiResponse<Patient>> {
-    this.loading.set(true);
-
-    // Mock patient data
-    const mockPatient: Patient = {
-      id: id,
-      patientNumber: `P-2024-${id.toString().padStart(3, '0')}`,
-      firstName: 'أحمد',
-      lastName: 'محمد علي',
-      fullName: 'أحمد محمد علي',
-      dateOfBirth: '1985-05-15',
-      age: 39,
-      gender: 'MALE',
-      phone: '0501234567',
-      email: 'ahmed.m@email.com',
-      address: 'الرياض - حي النخيل - شارع الملك فهد',
-      bloodType: 'O_POSITIVE',
-      allergies: 'البنسلين، الأسبرين',
-      chronicDiseases: 'ضغط الدم المرتفع، السكري النوع الثاني',
-      emergencyContactName: 'فاطمة أحمد (زوجة)',
-      emergencyContactPhone: '0509876543',
-      notes: 'مريض منتظم في المواعيد، يحتاج متابعة دورية لضغط الدم والسكري',
-      isActive: true,
-      createdAt: '2024-01-15T10:30:00',
-      updatedAt: '2024-08-20T14:20:00',
-      appointmentsCount: 12,
-      lastVisit: '2024-08-20',
-      totalInvoices: 8,
-      outstandingBalance: 0
-    };
-
-    const response: ApiResponse<Patient> = {
-      success: true,
-      message: 'تم العثور على المريض بنجاح',
-      data: mockPatient,
-      timestamp: new Date().toISOString()
-    };
-
-    return of(response).pipe(
-      delay(800),
-      map(result => {
+    return this.http.get<ApiResponse<PatientPageResponse>>(`${this.apiUrl}/search`, { params }).pipe(
+      tap(response => {
+        if (response.success) {
+          this.patients.set(response.data!.patients);
+          this.patientsSubject.next(response.data!.patients);
+        }
         this.loading.set(false);
-        this.selectedPatient.set(result.data || null);
-        return result;
+      }),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('خطأ في البحث عن المرضى', error);
+        return throwError(() => error);
       })
     );
   }
 
   /**
-   * إنشاء مريض جديد
+   * 3. GET /patients/{id} - Get patient by ID
    */
-  createPatient(patient: CreatePatientRequest): Observable<ApiResponse<Patient>> {
-    const newPatient: Patient = {
-      id: Math.floor(Math.random() * 1000) + 100,
-      patientNumber: `P-2024-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-      ...patient,
-      fullName: `${patient.firstName} ${patient.lastName}`,
-      age: this.calculateAge(patient.dateOfBirth),
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      appointmentsCount: 0,
-      totalInvoices: 0,
-      outstandingBalance: 0
-    };
+  getPatientById(id: number): Observable<ApiResponse<Patient>> {
+    this.loading.set(true);
 
-    const response: ApiResponse<Patient> = {
-      success: true,
-      message: 'تم إضافة المريض بنجاح',
-      data: newPatient,
-      timestamp: new Date().toISOString()
-    };
-
-    return of(response).pipe(delay(1500));
+    return this.http.get<ApiResponse<Patient>>(`${this.apiUrl}/${id}`).pipe(
+      tap(response => {
+        if (response.success) {
+          this.selectedPatient.set(response.data!);
+        }
+        this.loading.set(false);
+      }),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('خطأ في الحصول على بيانات المريض', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
-   * تحديث بيانات المريض
+   * 4. GET /patients/number/{patientNumber} - Get patient by patient number
    */
-  updatePatient(id: number, patient: UpdatePatientRequest): Observable<ApiResponse<Patient>> {
-    const updatedPatient: Patient = {
-      id: id,
-      patientNumber: `P-2024-${id.toString().padStart(3, '0')}`,
-      firstName: patient.firstName || 'أحمد',
-      lastName: patient.lastName || 'محمد',
-      fullName: `${patient.firstName || 'أحمد'} ${patient.lastName || 'محمد'}`,
-      dateOfBirth: patient.dateOfBirth || '1985-05-15',
-      age: this.calculateAge(patient.dateOfBirth),
-      gender: patient.gender || 'MALE',
-      phone: patient.phone || '0501234567',
-      email: patient.email,
-      address: patient.address,
-      bloodType: patient.bloodType,
-      allergies: patient.allergies,
-      chronicDiseases: patient.chronicDiseases,
-      emergencyContactName: patient.emergencyContactName,
-      emergencyContactPhone: patient.emergencyContactPhone,
-      notes: patient.notes,
-      isActive: patient.isActive ?? true,
-      updatedAt: new Date().toISOString()
-    };
+  getPatientByNumber(patientNumber: string): Observable<ApiResponse<Patient>> {
+    this.loading.set(true);
 
-    const response: ApiResponse<Patient> = {
-      success: true,
-      message: 'تم تحديث بيانات المريض بنجاح',
-      data: updatedPatient,
-      timestamp: new Date().toISOString()
-    };
-
-    return of(response).pipe(delay(1200));
+    return this.http.get<ApiResponse<Patient>>(`${this.apiUrl}/number/${patientNumber}`).pipe(
+      tap(response => {
+        if (response.success) {
+          this.selectedPatient.set(response.data!);
+        }
+        this.loading.set(false);
+      }),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('خطأ في البحث عن المريض برقم المريض', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
-   * حذف المريض (إلغاء تفعيل)
+   * 5. POST /patients - Create new patient
+   */
+  createPatient(request: CreatePatientRequest): Observable<ApiResponse<Patient>> {
+    this.loading.set(true);
+
+    return this.http.post<ApiResponse<Patient>>(`${this.apiUrl}`, request).pipe(
+      tap(response => {
+        if (response.success) {
+          // Update local state
+          const currentPatients = this.patients();
+          this.patients.set([response.data!, ...currentPatients]);
+          this.patientsSubject.next([response.data!, ...currentPatients]);
+
+          this.selectedPatient.set(response.data!);
+          this.notificationService.success('تم إنشاء المريض بنجاح');
+        }
+        this.loading.set(false);
+      }),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('خطأ في إنشاء المريض', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * 6. PUT /patients/{id} - Update patient
+   */
+  updatePatient(id: number, request: UpdatePatientRequest): Observable<ApiResponse<Patient>> {
+    this.loading.set(true);
+
+    return this.http.put<ApiResponse<Patient>>(`${this.apiUrl}/${id}`, request).pipe(
+      tap(response => {
+        if (response.success) {
+          // Update local state
+          const currentPatients = this.patients();
+          const index = currentPatients.findIndex(p => p.id === id);
+          if (index !== -1) {
+            currentPatients[index] = response.data!;
+            this.patients.set([...currentPatients]);
+            this.patientsSubject.next([...currentPatients]);
+          }
+
+          this.selectedPatient.set(response.data!);
+          this.notificationService.success('تم تحديث بيانات المريض بنجاح');
+        }
+        this.loading.set(false);
+      }),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('خطأ في تحديث بيانات المريض', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * 7. DELETE /patients/{id} - Delete patient (soft delete)
    */
   deletePatient(id: number): Observable<ApiResponse<void>> {
-    const response: ApiResponse<void> = {
-      success: true,
-      message: 'تم حذف المريض بنجاح',
-      timestamp: new Date().toISOString()
-    };
+    this.loading.set(true);
 
-    return of(response).pipe(delay(800));
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`).pipe(
+      tap(response => {
+        if (response.success) {
+          // Remove from local state
+          const currentPatients = this.patients().filter(p => p.id !== id);
+          this.patients.set(currentPatients);
+          this.patientsSubject.next(currentPatients);
+
+          this.notificationService.success('تم حذف المريض بنجاح');
+        }
+        this.loading.set(false);
+      }),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('خطأ في حذف المريض', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
-   * إعادة تفعيل المريض
+   * 8. POST /patients/{id}/reactivate - Reactivate patient
    */
-  restorePatient(id: number): Observable<ApiResponse<Patient>> {
-    const response: ApiResponse<Patient> = {
-      success: true,
-      message: 'تم إعادة تفعيل المريض بنجاح',
-      timestamp: new Date().toISOString()
-    };
+  reactivatePatient(id: number): Observable<ApiResponse<Patient>> {
+    this.loading.set(true);
 
-    return of(response).pipe(delay(800));
+    return this.http.post<ApiResponse<Patient>>(`${this.apiUrl}/${id}/reactivate`, {}).pipe(
+      tap(response => {
+        if (response.success) {
+          // Update local state
+          const currentPatients = this.patients();
+          const index = currentPatients.findIndex(p => p.id === id);
+          if (index !== -1) {
+            currentPatients[index] = response.data!;
+          } else {
+            currentPatients.unshift(response.data!);
+          }
+          this.patients.set([...currentPatients]);
+          this.patientsSubject.next([...currentPatients]);
+
+          this.selectedPatient.set(response.data!);
+          this.notificationService.success('تم إعادة تفعيل المريض بنجاح');
+        }
+        this.loading.set(false);
+      }),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('خطأ في إعادة تفعيل المريض', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
-   * تصدير بيانات المرضى
+   * 9. GET /patients/statistics - Get patient statistics
    */
-  exportPatients(format: 'excel' | 'pdf' = 'excel'): Observable<Blob> {
-    // In real implementation, this would return a blob
-    // For demo, we'll simulate file download
-    const mockBlob = new Blob(['Mock exported data'], {
-      type: format === 'excel'
-        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        : 'application/pdf'
-    });
+  getPatientStatistics(): Observable<ApiResponse<PatientStatistics>> {
+    this.loading.set(true);
 
-    return of(mockBlob).pipe(delay(2000));
+    return this.http.get<ApiResponse<PatientStatistics>>(`${this.apiUrl}/statistics`).pipe(
+      tap(response => {
+        if (response.success) {
+          this.statistics.set(response.data!);
+        }
+        this.loading.set(false);
+      }),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('خطأ في الحصول على إحصائيات المرضى', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
-   * الحصول على إحصائيات المرضى
+   * 10. GET /patients/today - Get today's patients
    */
-  getPatientStatistics(): Observable<any> {
-    const stats = {
-      totalPatients: 1247,
-      activePatients: 1198,
-      inactivePatients: 49,
-      newThisMonth: 56,
-      genderDistribution: {
-        male: 680,
-        female: 567
-      },
-      ageGroups: {
-        '0-18': 125,
-        '19-35': 345,
-        '36-50': 412,
-        '51-65': 278,
-        '65+': 87
-      },
-      bloodTypeDistribution: {
-        'O+': 425,
-        'A+': 312,
-        'B+': 198,
-        'AB+': 89,
-        'O-': 78,
-        'A-': 65,
-        'B-': 52,
-        'AB-': 28
-      }
-    };
+  getTodayPatients(): Observable<ApiResponse<PatientSummaryResponse[]>> {
+    this.loading.set(true);
 
-    return of(stats).pipe(delay(1000));
+    return this.http.get<ApiResponse<PatientSummaryResponse[]>>(`${this.apiUrl}/today`).pipe(
+      tap(response => {
+        if (response.success) {
+          this.todayPatients.set(response.data!);
+        }
+        this.loading.set(false);
+      }),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('خطأ في الحصول على مرضى اليوم', error);
+        return throwError(() => error);
+      })
+    );
   }
 
-  /**
-   * حساب العمر من تاريخ الميلاد
-   */
-  private calculateAge(dateOfBirth?: string): number | undefined {
-    if (!dateOfBirth) return undefined;
-
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-
-    return age;
-  }
+  // ===================================================================
+  // HELPER METHODS
+  // ===================================================================
 
   /**
-   * الحصول على قائمة فصائل الدم
+   * Get blood types for dropdowns
    */
-  getBloodTypes(): { value: string; label: string }[] {
+  getBloodTypes(): { value: BloodType; label: string }[] {
     return [
       { value: 'A_POSITIVE', label: 'A+' },
       { value: 'A_NEGATIVE', label: 'A-' },
@@ -396,12 +446,89 @@ export class PatientService {
   }
 
   /**
-   * الحصول على قائمة الأجناس
+   * Get genders for dropdowns
    */
-  getGenders(): { value: string; label: string }[] {
+  getGenders(): { value: Gender; label: string }[] {
     return [
       { value: 'MALE', label: 'ذكر' },
       { value: 'FEMALE', label: 'أنثى' }
     ];
+  }
+
+  /**
+   * Format blood type for display
+   */
+  formatBloodType(bloodType: BloodType): string {
+    const types = this.getBloodTypes();
+    return types.find(t => t.value === bloodType)?.label || bloodType;
+  }
+
+  /**
+   * Format gender for display
+   */
+  formatGender(gender: Gender): string {
+    const genders = this.getGenders();
+    return genders.find(g => g.value === gender)?.label || gender;
+  }
+
+  /**
+   * Calculate age from date of birth
+   */
+  calculateAge(dateOfBirth: string): number {
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    return age;
+  }
+
+  /**
+   * Clear selected patient
+   */
+  clearSelectedPatient(): void {
+    this.selectedPatient.set(null);
+  }
+
+  /**
+   * Reset service state
+   */
+  reset(): void {
+    this.patients.set([]);
+    this.selectedPatient.set(null);
+    this.statistics.set(null);
+    this.todayPatients.set([]);
+    this.loading.set(false);
+    this.patientsSubject.next([]);
+  }
+
+  // ===================================================================
+  // ERROR HANDLING
+  // ===================================================================
+
+  private handleError(message: string, error: HttpErrorResponse): void {
+    console.error(`${message}:`, error);
+
+    let errorMessage = message;
+
+    if (error.error?.message) {
+      errorMessage = `${message}: ${error.error.message}`;
+    } else if (error.status === 0) {
+      errorMessage = `${message}: خطأ في الاتصال بالخادم`;
+    } else if (error.status === 401) {
+      errorMessage = `${message}: غير مصرح - يرجى تسجيل الدخول مرة أخرى`;
+    } else if (error.status === 403) {
+      errorMessage = `${message}: ممنوع - ليس لديك صلاحية للوصول`;
+    } else if (error.status === 404) {
+      errorMessage = `${message}: المريض غير موجود`;
+    } else if (error.status >= 500) {
+      errorMessage = `${message}: خطأ في الخادم`;
+    }
+
+    this.notificationService.error(errorMessage);
   }
 }

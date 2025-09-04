@@ -24,7 +24,7 @@ import { ChartWidgetComponent } from '../chart-widgets/chart-widget.component';
 
 // Services & Models
 import { ReportService } from '../../services/report.service';
-import { AuthService } from '../../../../core/services/auth.service';
+import { AuthService, UserRole } from '../../../../core/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import {
   DashboardStats,
@@ -40,7 +40,7 @@ interface QuickReportCard {
   icon: string;
   route: string;
   color: string;
-  roles?: string[];
+  roles?: UserRole[];
 }
 
 @Component({

@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatGridListModule } from '@angular/material/grid-list';
 
-import { AuthService } from '../../../../core/services/auth.service';
+import { AuthService, UserRole } from '../../../../core/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 
 interface QuickAction {
@@ -19,7 +19,7 @@ interface QuickAction {
   color: string;
   route?: string;
   action?: () => void;
-  roles?: string[];
+  roles?: UserRole[];
 }
 
 @Component({
@@ -104,7 +104,7 @@ export class QuickActionsComponent {
     }
   ];
 
-  hasPermission(roles?: string[]): boolean {
+  hasPermission(roles?: UserRole[]): boolean {
     if (!roles || roles.length === 0) {
       return true;
     }

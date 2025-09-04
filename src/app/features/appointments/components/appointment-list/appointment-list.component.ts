@@ -1,4 +1,4 @@
-// ===================================================================
+/* // ===================================================================
 // 4. APPOINTMENT LIST COMPONENT
 // src/app/features/appointments/components/appointment-list/appointment-list.component.ts
 // ===================================================================
@@ -512,3 +512,4 @@ export class AppointmentListComponent implements OnInit {
     return appointment.id!;
   }
 }
+ */

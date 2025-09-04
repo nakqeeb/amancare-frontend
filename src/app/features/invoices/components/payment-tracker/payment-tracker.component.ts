@@ -29,7 +29,7 @@ import { ConfirmationDialogComponent } from '../../../../shared/components/confi
 // Services & Models
 import { InvoiceService } from '../../services/invoice.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { AuthService } from '../../../../core/services/auth.service';
+import { AuthService, UserRole } from '../../../../core/services/auth.service';
 import {
   Invoice,
   Payment,
@@ -374,7 +374,7 @@ export class PaymentTrackerComponent implements OnInit {
     });
   }
 
-  hasPermission(roles: string[]): boolean {
+  hasPermission(roles: UserRole[]): boolean {
     return this.authService.hasRole(roles);
   }
 

@@ -10,13 +10,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService, UserRole } from '../../../core/services/auth.service';
 
 interface MenuItem {
   title: string;
   icon: string;
   route: string;
-  roles?: string[];
+  roles?: UserRole[];
   children?: MenuItem[];
   badge?: number;
   expanded?: boolean;
@@ -177,7 +177,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
   }
 
-  hasPermission(roles?: string[]): boolean {
+  hasPermission(roles?: UserRole[]): boolean {
     if (!roles || roles.length === 0) {
       return true;
     }

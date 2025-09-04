@@ -27,7 +27,7 @@ import { ConfirmationDialogComponent } from '../../../../shared/components/confi
 // Services & Models
 import { InvoiceService } from '../../services/invoice.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { AuthService } from '../../../../core/services/auth.service';
+import { AuthService, UserRole } from '../../../../core/services/auth.service';
 import {
   Invoice,
   InvoiceStatus,
@@ -359,7 +359,7 @@ export class InvoiceDetailsComponent implements OnInit {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 
-  hasPermission(roles: string[]): boolean {
+  hasPermission(roles: UserRole[]): boolean {
     return this.authService.hasRole(roles);
   }
 

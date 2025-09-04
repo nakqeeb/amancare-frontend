@@ -31,7 +31,7 @@ import { DataTableComponent } from '../../../../shared/components/data-table/dat
 // Services & Models
 import { InvoiceService } from '../../services/invoice.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { AuthService } from '../../../../core/services/auth.service';
+import { AuthService, UserRole } from '../../../../core/services/auth.service';
 import {
   Invoice,
   InvoiceStatus,
@@ -69,7 +69,6 @@ import { MatDivider } from "@angular/material/divider";
     MatCheckboxModule,
     HeaderComponent,
     SidebarComponent,
-    DataTableComponent,
     MatDivider
 ],
   templateUrl: './invoice-list.component.html',
@@ -419,7 +418,7 @@ export class InvoiceListComponent implements OnInit {
     return dueDate < today && invoice.status !== InvoiceStatus.PAID;
   }
 
-  hasPermission(roles: string[]): boolean {
+  hasPermission(roles: UserRole[]): boolean {
     return this.authService.hasRole(roles);
   }
 }

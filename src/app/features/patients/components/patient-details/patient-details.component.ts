@@ -1,19 +1,22 @@
 // ===================================================================
 // src/app/features/patients/components/patient-details/patient-details.component.ts
+// Patient Profile/Details Component with Spring Boot Integration
 // ===================================================================
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatDialog } from '@angular/material/dialog';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatBadgeModule } from '@angular/material/badge';
+import { Subject, takeUntil, forkJoin } from 'rxjs';
 
 // Shared Components
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -23,7 +26,25 @@ import { ConfirmationDialogComponent } from '../../../../shared/components/confi
 // Services & Models
 import { PatientService } from '../../services/patient.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { Patient } from '../../models/patient.model';
+import { AuthService } from '../../../../core/services/auth.service';
+import {
+  Patient,
+  calculateAge,
+  getBloodTypeLabel,
+  getGenderLabel
+} from '../../models/patient.model';
+
+// Related services (if available)
+// import { AppointmentService } from '../../../appointments/services/appointment.service';
+// import { MedicalRecordService } from '../../../medical-records/services/medical-record.service';
+// import { InvoiceService } from '../../../invoices/services/invoice.service';
+
+interface PatientTab {
+  label: string;
+  icon: string;
+  component?: string;
+  count?: number;
+}
 
 @Component({
   selector: 'app-patient-details',
@@ -34,92 +55,157 @@ import { Patient } from '../../models/patient.model';
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatTabsModule,
-    MatMenuModule,
-    MatChipsModule,
-    MatBadgeModule,
     MatDividerModule,
+    MatChipsModule,
+    MatTabsModule,
     MatProgressSpinnerModule,
+    MatMenuModule,
+    MatDialogModule,
+    MatTooltipModule,
+    MatBadgeModule,
     HeaderComponent,
     SidebarComponent
   ],
   templateUrl: './patient-details.component.html',
   styleUrl: './patient-details.component.scss'
 })
-
-export class PatientDetailsComponent implements OnInit {
+export class PatientDetailsComponent implements OnInit, OnDestroy {
   // Services
   private patientService = inject(PatientService);
   private notificationService = inject(NotificationService);
+  private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private dialog = inject(MatDialog);
 
-  // Signals
-  patient = signal<Patient | null>(null);
-  loading = signal(false);
+  // Destroy subject
+  private destroy$ = new Subject<void>();
 
-  // Mock data
-  mockAppointments = [
+  // ===================================================================
+  // STATE MANAGEMENT
+  // ===================================================================
+
+  // UI State
+  loading = signal(false);
+  patientId = signal<number | null>(null);
+  patient = signal<Patient | null>(null);
+  activeTabIndex = signal(0);
+
+  // Data signals
+  appointmentsCount = signal(0);
+  medicalRecordsCount = signal(0);
+  invoicesCount = signal(0);
+  outstandingBalance = signal(0);
+
+  // User permissions
+  currentUser = this.authService.currentUser;
+
+  // Tab configuration
+  tabs: PatientTab[] = [
     {
-      id: 1,
-      date: '2024-08-20',
-      time: '10:30',
-      status: 'COMPLETED',
-      type: 'استشارة عامة',
-      doctor: 'أحمد محمد',
-      notes: 'فحص دوري - كل شيء طبيعي'
+      label: 'معلومات عامة',
+      icon: 'person',
+      component: 'overview'
     },
     {
-      id: 2,
-      date: '2024-08-15',
-      time: '14:00',
-      status: 'COMPLETED',
-      type: 'متابعة',
-      doctor: 'أحمد محمد',
-      notes: 'متابعة ضغط الدم'
+      label: 'المواعيد',
+      icon: 'event',
+      component: 'appointments'
     },
     {
-      id: 3,
-      date: '2024-07-28',
-      time: '09:15',
-      status: 'COMPLETED',
-      type: 'فحص شامل',
-      doctor: 'سارة أحمد',
-      notes: ''
+      label: 'السجلات الطبية',
+      icon: 'local_hospital',
+      component: 'medical-records'
+    },
+    {
+      label: 'الفواتير',
+      icon: 'receipt',
+      component: 'invoices'
     }
   ];
 
-  bloodTypes = this.patientService.getBloodTypes();
+  // ===================================================================
+  // LIFECYCLE HOOKS
+  // ===================================================================
 
   ngOnInit(): void {
-    const patientId = this.route.snapshot.paramMap.get('id');
-    if (patientId) {
-      this.loadPatient(+patientId);
+    this.checkPatientId();
+    this.loadPatientData();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.patientService.clearSelectedPatient();
+  }
+
+  // ===================================================================
+  // DATA LOADING
+  // ===================================================================
+
+  private checkPatientId(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.patientId.set(+id);
+    } else {
+      this.router.navigate(['/patients']);
     }
   }
 
-  private loadPatient(id: number): void {
+  private loadPatientData(): void {
+    const id = this.patientId();
+    if (!id) return;
+
     this.loading.set(true);
 
-    this.patientService.getPatientById(id).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.patient.set(response.data);
+    this.patientService.getPatientById(id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.patient.set(response.data!);
+            this.updateTabCounts(response.data!);
+          } else {
+            this.notificationService.error('المريض غير موجود');
+            this.router.navigate(['/patients']);
+          }
+          this.loading.set(false);
+        },
+        error: (error) => {
+          this.loading.set(false);
+          this.notificationService.error('فشل في تحميل بيانات المريض');
+          this.router.navigate(['/patients']);
         }
-        this.loading.set(false);
-      },
-      error: (error) => {
-        this.loading.set(false);
-        this.notificationService.error('حدث خطأ في تحميل بيانات المريض');
+      });
+  }
+
+  private updateTabCounts(patient: Patient): void {
+    // Update tab counts from patient data
+    this.appointmentsCount.set(patient.appointmentsCount || 0);
+    this.invoicesCount.set(patient.totalInvoices || 0);
+    this.outstandingBalance.set(patient.outstandingBalance || 0);
+
+    // Update tabs with counts
+    this.tabs = this.tabs.map(tab => {
+      switch (tab.component) {
+        case 'appointments':
+          return { ...tab, count: this.appointmentsCount() };
+        case 'invoices':
+          return { ...tab, count: this.invoicesCount() };
+        default:
+          return tab;
       }
     });
   }
 
+  // ===================================================================
+  // PATIENT ACTIONS
+  // ===================================================================
+
   onEditPatient(): void {
-    const patient = this.patient();
-    if (patient) {
-      this.router.navigate(['/patients', patient.id, 'edit']);
+    const patientId = this.patientId();
+    if (patientId) {
+      this.router.navigate(['/patients', patientId, 'edit']);
     }
   }
 
@@ -128,99 +214,273 @@ export class PatientDetailsComponent implements OnInit {
     if (!patient) return;
 
     const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '400px',
       data: {
-        title: 'حذف المريض',
-        message: `هل أنت متأكد من حذف المريض "${patient.fullName}"؟`,
+        title: 'تأكيد الحذف',
+        message: `هل أنت متأكد من حذف المريض "${patient.fullName}"؟ سيتم إلغاء تفعيل المريض فقط.`,
         confirmText: 'حذف',
         cancelText: 'إلغاء',
-        type: 'danger'
+        type: 'warn'
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.patientService.deletePatient(patient.id!).subscribe({
-          next: () => {
-            this.notificationService.success('تم حذف المريض بنجاح');
-            this.router.navigate(['/patients']);
-          },
-          error: () => {
-            this.notificationService.error('حدث خطأ في حذف المريض');
-          }
-        });
+        this.patientService.deletePatient(patient.id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (response) => {
+              if (response.success) {
+                this.notificationService.success('تم حذف المريض بنجاح');
+                this.router.navigate(['/patients']);
+              }
+            },
+            error: (error) => {
+              this.notificationService.error('فشل في حذف المريض');
+            }
+          });
       }
     });
   }
 
-  onRestorePatient(): void {
+  onReactivatePatient(): void {
     const patient = this.patient();
     if (!patient) return;
 
-    this.patientService.restorePatient(patient.id!).subscribe({
-      next: () => {
-        this.notificationService.success('تم إعادة تفعيل المريض بنجاح');
-        this.loadPatient(patient.id!);
-      },
-      error: () => {
-        this.notificationService.error('حدث خطأ في إعادة تفعيل المريض');
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'تأكيد إعادة التفعيل',
+        message: `هل أنت متأكد من إعادة تفعيل المريض "${patient.fullName}"؟`,
+        confirmText: 'إعادة تفعيل',
+        cancelText: 'إلغاء',
+        type: 'primary'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.patientService.reactivatePatient(patient.id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (response) => {
+              if (response.success) {
+                this.patient.set(response.data!);
+                this.notificationService.success('تم إعادة تفعيل المريض بنجاح');
+              }
+            },
+            error: (error) => {
+              this.notificationService.error('فشل في إعادة تفعيل المريض');
+            }
+          });
       }
     });
   }
 
-  onPrintProfile(): void {
-    window.print();
+  onCreateAppointment(): void {
+    const patientId = this.patientId();
+    if (patientId) {
+      this.router.navigate(['/appointments/new'], {
+        queryParams: { patientId }
+      });
+    }
   }
 
-  onExportProfile(): void {
-    this.notificationService.info('جاري تصدير ملف المريض...');
-    // Implement export functionality
+  onViewMedicalHistory(): void {
+    const patientId = this.patientId();
+    if (patientId) {
+      this.router.navigate(['/medical-records'], {
+        queryParams: { patientId }
+      });
+    }
   }
 
-  callPatient(phoneNumber: string): void {
-    window.location.href = `tel:${phoneNumber}`;
+  onCreateInvoice(): void {
+    const patientId = this.patientId();
+    if (patientId) {
+      this.router.navigate(['/invoices/new'], {
+        queryParams: { patientId }
+      });
+    }
   }
 
-  emailPatient(email: string): void {
-    window.location.href = `mailto:${email}`;
+  onPrintPatientCard(): void {
+    // TODO: Implement patient card printing
+    this.notificationService.info('طباعة بطاقة المريض قريباً...');
   }
 
-  // Helper methods
-  getGenderText(gender?: string): string {
-    return gender === 'MALE' ? 'ذكر' : gender === 'FEMALE' ? 'أنثى' : '-';
+  onExportPatientData(): void {
+    // TODO: Implement patient data export
+    this.notificationService.info('تصدير بيانات المريض قريباً...');
   }
 
-  getBloodTypeLabel(bloodType?: string): string {
-    if (!bloodType) return '-';
-    const type = this.bloodTypes.find(bt => bt.value === bloodType);
-    return type ? type.label : bloodType;
+  // ===================================================================
+  // NAVIGATION & UI
+  // ===================================================================
+
+  onTabChange(index: number): void {
+    this.activeTabIndex.set(index);
   }
 
-  getAllergiesList(allergies: string): string[] {
-    return allergies.split(/[,،\n]/).map(a => a.trim()).filter(a => a.length > 0);
+  onBackToPatients(): void {
+    this.router.navigate(['/patients']);
   }
 
-  getDiseasesList(diseases: string): string[] {
-    return diseases.split(/[,،\n]/).map(d => d.trim()).filter(d => d.length > 0);
+  // ===================================================================
+  // UTILITY METHODS
+  // ===================================================================
+
+  /**
+   * Get patient age
+   */
+  getPatientAge(): string {
+    const patient = this.patient();
+    if (patient?.dateOfBirth) {
+      return `${calculateAge(patient.dateOfBirth)} سنة`;
+    }
+    return '-';
   }
 
-  getAppointmentStatusText(status: string): string {
-    const statusText: { [key: string]: string } = {
-      'SCHEDULED': 'مجدول',
-      'CONFIRMED': 'مؤكد',
-      'IN_PROGRESS': 'جاري',
-      'COMPLETED': 'مكتمل',
-      'CANCELLED': 'ملغي',
-      'NO_SHOW': 'لم يحضر'
+  /**
+   * Get gender label
+   */
+  getGenderLabel(): string {
+    const patient = this.patient();
+    if (patient?.gender) {
+      return getGenderLabel(patient.gender, 'ar');
+    }
+    return '-';
+  }
+
+  /**
+   * Get blood type label
+   */
+  getBloodTypeLabel(): string {
+    const patient = this.patient();
+    if (patient?.bloodType) {
+      return getBloodTypeLabel(patient.bloodType, 'ar');
+    }
+    return 'غير محدد';
+  }
+
+  /**
+   * Get patient status
+   */
+  getPatientStatus(): { label: string; color: string; icon: string } {
+    const patient = this.patient();
+    if (patient?.isActive) {
+      return {
+        label: 'نشط',
+        color: 'primary',
+        icon: 'check_circle'
+      };
+    }
+    return {
+      label: 'غير نشط',
+      color: 'warn',
+      icon: 'cancel'
     };
-
-    return statusText[status] || status;
   }
 
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('ar-SA', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  /**
+   * Format date
+   */
+  formatDate(dateString: string): string {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ar-SA');
   }
+
+  /**
+   * Format phone number
+   */
+  formatPhone(phone: string): string {
+    if (!phone) return '-';
+    // Add formatting logic if needed
+    return phone;
+  }
+
+  /**
+   * Get initials for avatar
+   */
+  getInitials(): string {
+    const patient = this.patient();
+    if (patient) {
+      const firstInitial = patient.firstName.charAt(0);
+      const lastInitial = patient.lastName.charAt(0);
+      return `${firstInitial}${lastInitial}`.toUpperCase();
+    }
+    return '';
+  }
+
+  /**
+   * Check if user can edit patient
+   */
+  canEditPatient(): boolean {
+    const user = this.currentUser();
+    return !!(user && ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'].includes(user.role));
+  }
+
+  /**
+   * Check if user can delete patient
+   */
+  canDeletePatient(): boolean {
+    const user = this.currentUser();
+    return !!(user && ['ADMIN', 'DOCTOR'].includes(user.role));
+  }
+
+  /**
+   * Check if user can reactivate patient
+   */
+  canReactivatePatient(): boolean {
+    const user = this.currentUser();
+    return !!(user && ['ADMIN'].includes(user.role));
+  }
+
+  /**
+   * Check if user can create appointments
+   */
+  canCreateAppointment(): boolean {
+    const user = this.currentUser();
+    return !!(user && ['ADMIN', 'DOCTOR', 'RECEPTIONIST'].includes(user.role));
+  }
+
+  /**
+   * Check if user can view medical records
+   */
+  canViewMedicalRecords(): boolean {
+    const user = this.currentUser();
+    return !!(user && ['ADMIN', 'DOCTOR'].includes(user.role));
+  }
+
+  /**
+   * Check if user can create invoices
+   */
+  canCreateInvoice(): boolean {
+    const user = this.currentUser();
+    return !!(user && ['ADMIN', 'RECEPTIONIST'].includes(user.role));
+  }
+
+  /**
+   * Get last visit display text
+   */
+  getLastVisitText(): string {
+    const patient = this.patient();
+    if (patient?.lastVisit) {
+      return this.formatDate(patient.lastVisit);
+    }
+    return 'لا توجد زيارات سابقة';
+  }
+
+  /**
+   * Get outstanding balance color
+   */
+  // This method is no longer needed since we use CSS classes instead
+  // getBalanceColor(): string {
+  //   const balance = this.outstandingBalance();
+  //   if (balance > 0) {
+  //     return 'warn';
+  //   }
+  //   return 'primary';
+  // }
 }

@@ -1,4 +1,4 @@
-// ===================================================================
+/* // ===================================================================
 // 2. PATIENT MEDICAL HISTORY COMPONENT
 // src/app/features/medical-records/components/patient-medical-history/patient-medical-history.component.ts
 // ===================================================================
@@ -312,3 +312,4 @@ export class PatientMedicalHistoryComponent implements OnInit {
     return primary ? primary.description : '-';
   }
 }
+ */

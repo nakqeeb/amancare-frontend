@@ -26,7 +26,7 @@ import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.
 // Services & Models
 import { InvoiceService } from '../../services/invoice.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { AuthService } from '../../../../core/services/auth.service';
+import { AuthService, UserRole } from '../../../../core/services/auth.service';
 import {
   Invoice,
   InvoiceSummary,
@@ -463,7 +463,7 @@ export class InvoiceSummaryComponent implements OnInit {
     this.selectedTab.set(index);
   }
 
-  hasPermission(roles: string[]): boolean {
+  hasPermission(roles: UserRole[]): boolean {
     return this.authService.hasRole(roles);
   }
 }

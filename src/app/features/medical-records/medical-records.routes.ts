@@ -6,7 +6,7 @@ import { Routes } from '@angular/router';
 import { RoleGuard } from '../../core/guards/role.guard';
 
 export const MEDICAL_RECORDS_ROUTES: Routes = [
-  {
+ /*  {
     path: '',
     loadComponent: () =>
       import('./components/medical-record-list/medical-record-list.component')
@@ -44,5 +44,5 @@ export const MEDICAL_RECORDS_ROUTES: Routes = [
       import('./components/patient-medical-history/patient-medical-history.component')
         .then(m => m.PatientMedicalHistoryComponent),
     title: 'التاريخ المرضي'
-  }
+  } */
 ];

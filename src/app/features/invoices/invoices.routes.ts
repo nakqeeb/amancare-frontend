@@ -5,7 +5,7 @@ import { Routes } from '@angular/router';
 import { RoleGuard } from '../../core/guards/role.guard';
 
 export const INVOICES_ROUTES: Routes = [
-  {
+  /* {
     path: '',
     loadComponent: () =>
       import('./components/invoice-list/invoice-list.component')
@@ -64,5 +64,5 @@ export const INVOICES_ROUTES: Routes = [
     canActivate: [RoleGuard],
     data: { roles: ['ADMIN', 'SYSTEM_ADMIN'] },
     title: 'ملخص الفواتير'
-  }
+  } */
 ];

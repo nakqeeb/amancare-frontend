@@ -28,11 +28,8 @@ export const routes: Routes = [
   // إدارة المرضى - Patients
   {
     path: 'patients',
-    loadChildren: () => import('./features/patients/patients.routes').then(r => r.PATIENTS_ROUTES),
-    canActivate: [AuthGuard],
-    title: 'إدارة المرضى - نظام أمان كير'
+    loadChildren: () => import('./features/patients/patients.routes').then(r => r.PATIENTS_ROUTES)
   },
-
   // إدارة المواعيد - Appointments
   {
     path: 'appointments',

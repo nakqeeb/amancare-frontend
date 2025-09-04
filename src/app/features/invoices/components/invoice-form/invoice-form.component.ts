@@ -1,4 +1,4 @@
-// ===================================================================
+/* // ===================================================================
 // src/app/features/invoices/components/invoice-form/invoice-form.component.ts
 // ===================================================================
 import { Component, inject, signal, OnInit, computed } from '@angular/core';
@@ -479,3 +479,4 @@ export class InvoiceFormComponent implements OnInit {
     this.router.navigate(['/invoices']);
   }
 }
+ */

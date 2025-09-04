@@ -1,0 +1,422 @@
+// ===================================================================
+// src/app/features/patients/components/patient-search/patient-search.component.scss
+// Patient Search Component Styles
+// ===================================================================
+
+.search-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-bottom: 1.5rem;
+
+  // Header
+  .mat-mdc-card-header {
+    padding-bottom: 1rem;
+
+    .mat-mdc-card-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+
+      mat-icon {
+        color: var(--primary-color);
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+      }
+    }
+
+    .search-summary {
+      margin-top: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-accent);
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      border-left: 3px solid var(--primary-color);
+    }
+  }
+
+  // Form
+  .search-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  // Quick Search Row
+  .quick-search-row {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 300px;
+
+      @media (max-width: 768px) {
+        min-width: unset;
+        width: 100%;
+      }
+    }
+
+    .search-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+
+      @media (max-width: 768px) {
+        width: 100%;
+        justify-content: stretch;
+
+        button {
+          flex: 1;
+        }
+      }
+
+      button {
+        height: 44px;
+        min-width: 100px;
+
+        @media (max-width: 768px) {
+          min-width: unset;
+        }
+      }
+    }
+  }
+
+  // Quick Presets
+  .quick-presets {
+    .preset-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+
+      mat-chip-option {
+        transition: all 0.2s ease;
+        cursor: pointer;
+
+        &:hover {
+          background: var(--primary-color);
+          color: white;
+        }
+
+        mat-icon {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+          margin-right: 0.25rem;
+        }
+      }
+    }
+  }
+
+  // Advanced Panel
+  .advanced-panel {
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    box-shadow: none;
+
+    ::ng-deep .mat-expansion-panel-header {
+      padding: 1rem 1.5rem;
+
+      .mat-expansion-panel-header-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+
+        mat-icon {
+          color: var(--primary-color);
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+
+      .mat-expansion-panel-header-description {
+        color: var(--primary-color);
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+    }
+
+    ::ng-deep .mat-expansion-panel-content {
+      .mat-expansion-panel-body {
+        padding: 0 1.5rem 1.5rem;
+      }
+    }
+  }
+
+  // Advanced Form
+  .advanced-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+
+    .form-row {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+
+      @media (max-width: 768px) {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+      }
+
+      .form-field {
+        flex: 1;
+        min-width: 200px;
+
+        @media (max-width: 768px) {
+          min-width: unset;
+        }
+
+        mat-option {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+
+          mat-icon {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+          }
+        }
+      }
+
+      .status-checkboxes {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-self: center;
+
+        @media (max-width: 768px) {
+          align-self: stretch;
+        }
+
+        mat-checkbox {
+          font-size: 0.9rem;
+        }
+      }
+    }
+
+    .advanced-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-start;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-light);
+
+      @media (max-width: 768px) {
+        flex-direction: column;
+      }
+
+      button {
+        height: 44px;
+        min-width: 140px;
+
+        @media (max-width: 768px) {
+          min-width: unset;
+        }
+      }
+    }
+  }
+
+  // Loading Indicator
+  .loading-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
+    color: var(--text-secondary);
+
+    mat-spinner {
+      ::ng-deep circle {
+        stroke: var(--primary-color);
+      }
+    }
+
+    span {
+      font-size: 0.9rem;
+    }
+  }
+
+  // Results Summary
+  .results-summary {
+    background: var(--bg-accent);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    border-left: 3px solid var(--primary-color);
+
+    .summary-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-weight: 500;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .active-filters {
+      mat-chip-listbox {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+
+        mat-chip-option {
+          font-size: 0.8rem;
+          background: var(--primary-color);
+          color: white;
+          opacity: 0.9;
+          pointer-events: none;
+
+          mat-icon {
+            font-size: 14px;
+            width: 14px;
+            height: 14px;
+            margin-right: 0.25rem;
+          }
+        }
+      }
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 768px) {
+    margin-bottom: 1rem;
+
+    .mat-mdc-card-header,
+    .mat-mdc-card-content {
+      padding: 1rem;
+    }
+
+    .search-form {
+      gap: 1rem;
+    }
+
+    .quick-presets {
+      .preset-chips {
+        mat-chip-option {
+          font-size: 0.8rem;
+          min-height: 32px;
+        }
+      }
+    }
+  }
+
+  // Form Field Customizations
+  ::ng-deep .mat-mdc-form-field {
+    .mat-mdc-text-field-wrapper {
+      border-radius: var(--radius-sm);
+    }
+
+    .mat-mdc-form-field-subscript-wrapper {
+      margin-top: 0.25rem;
+    }
+
+    .mat-mdc-form-field-hint,
+    .mat-mdc-form-field-error {
+      font-size: 0.75rem;
+    }
+
+    // Error state
+    &.mat-form-field-invalid {
+      .mat-mdc-text-field-wrapper {
+        border-color: var(--warn-color);
+      }
+    }
+  }
+
+  // Chip Customizations
+  ::ng-deep .mat-mdc-chip {
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+  }
+
+  // Button Customizations
+  button {
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    mat-icon {
+      margin-right: 0.5rem;
+    }
+  }
+}
+
+// Dark Theme Support
+@media (prefers-color-scheme: dark) {
+  .search-card {
+
+    .results-summary,
+    .mat-mdc-card-header .search-summary {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .advanced-panel {
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .quick-presets {
+      .preset-chips {
+        mat-chip-option {
+          &:hover {
+            background: var(--primary-color);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Print Styles
+@media print {
+  .search-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+
+    .search-actions,
+    .advanced-actions,
+    .quick-presets {
+      display: none;
+    }
+
+    .results-summary {
+      background: none;
+      border: 1px solid #ddd;
+    }
+  }
+}

@@ -1,4 +1,4 @@
-// ===================================================================
+/* // ===================================================================
 // 1. MEDICAL RECORD FORM COMPONENT
 // src/app/features/medical-records/components/medical-record-form/medical-record-form.component.ts
 // ===================================================================
@@ -616,3 +616,4 @@ export class MedicalRecordFormComponent implements OnInit {
     return age;
   }
 }
+ */

@@ -1,7 +1,12 @@
+<!-- ===================================================================
+// src/app/features/patients/components/patient-list/patient-list.component.html
+// Updated Patient List Template - Fixed with @if/@for and corrected errors
+// =================================================================== -->
 <app-header></app-header>
 
 <app-sidebar>
   <div class="patients-container">
+
     <!-- Page Header -->
     <div class="page-header">
       <div class="header-content">
@@ -10,13 +15,39 @@
           إدارة المرضى
         </h1>
         <p class="page-subtitle">عرض وإدارة جميع مرضى العيادة</p>
+
+        <!-- Statistics Summary -->
+        @if (statistics()) {
+          <div class="statistics-summary">
+            <mat-chip-listbox class="stats-chips">
+              <mat-chip-option disabled>
+                <mat-icon>people</mat-icon>
+                إجمالي: {{ statistics()!.totalPatients }}
+              </mat-chip-option>
+              <mat-chip-option disabled>
+                <mat-icon>check_circle</mat-icon>
+                نشط: {{ statistics()!.activePatients }}
+              </mat-chip-option>
+              <mat-chip-option disabled>
+                <mat-icon>new_releases</mat-icon>
+                جديد: {{ statistics()!.newPatientsThisMonth }}
+              </mat-chip-option>
+              @if (statistics()!.patientsWithAppointmentsToday > 0) {
+                <mat-chip-option disabled>
+                  <mat-icon>event</mat-icon>
+                  اليوم: {{ statistics()!.patientsWithAppointmentsToday }}
+                </mat-chip-option>
+              }
+            </mat-chip-listbox>
+          </div>
+        }
       </div>
 
       <div class="header-actions">
         <button
           mat-raised-button
           color="primary"
-          routerLink="/patients/new"
+          (click)="onAddPatient()"
           class="add-button"
         >
           <mat-icon>person_add</mat-icon>
@@ -31,6 +62,15 @@
           <mat-icon>file_download</mat-icon>
           تصدير
         </button>
+
+        <button
+          mat-icon-button
+          (click)="onRefresh()"
+          [disabled]="loading()"
+          matTooltip="تحديث البيانات"
+        >
+          <mat-icon>refresh</mat-icon>
+        </button>
       </div>
     </div>
 
@@ -39,7 +79,8 @@
       <mat-card-content>
         <form [formGroup]="searchForm" class="search-form">
           <div class="search-row">
-            <!-- Search Input -->
+
+            <!-- Main Search Input -->
             <mat-form-field appearance="outline" class="search-field">
               <mat-label>البحث</mat-label>
               <input
@@ -51,34 +92,30 @@
               <mat-icon matSuffix>search</mat-icon>
             </mat-form-field>
 
-            <!-- Gender Filter -->
+            <!-- Quick Filters -->
             <mat-form-field appearance="outline" class="filter-field">
               <mat-label>الجنس</mat-label>
               <mat-select formControlName="gender">
                 <mat-option value="">الكل</mat-option>
-                <mat-option
-                  *ngFor="let gender of genders"
-                  [value]="gender.value"
-                >
-                  {{ gender.label }}
-                </mat-option>
+                @for (gender of genders; track gender.value) {
+                  <mat-option [value]="gender.value">
+                    <mat-icon>{{ gender.value }}</mat-icon>
+                    {{ gender.label }}
+                  </mat-option>
+                }
               </mat-select>
-              <mat-icon matSuffix>person</mat-icon>
             </mat-form-field>
 
-            <!-- Blood Type Filter -->
             <mat-form-field appearance="outline" class="filter-field">
               <mat-label>فصيلة الدم</mat-label>
               <mat-select formControlName="bloodType">
                 <mat-option value="">الكل</mat-option>
-                <mat-option
-                  *ngFor="let bloodType of bloodTypes"
-                  [value]="bloodType.value"
-                >
-                  {{ bloodType.label }}
-                </mat-option>
+                @for (bloodType of bloodTypes; track bloodType.value) {
+                  <mat-option [value]="bloodType.value">
+                    {{ bloodType.label }}
+                  </mat-option>
+                }
               </mat-select>
-              <mat-icon matSuffix>colorize</mat-icon>
             </mat-form-field>
 
             <!-- Age Range -->
@@ -89,323 +126,441 @@
                   matInput
                   type="number"
                   formControlName="ageFrom"
+                  placeholder="0"
                   min="0"
-                  max="120"
+                  max="150"
                 />
               </mat-form-field>
-              <span class="age-separator">إلى</span>
+              <span class="age-separator">-</span>
               <mat-form-field appearance="outline" class="age-field">
-                <mat-label>إلى العمر</mat-label>
+                <mat-label>إلى</mat-label>
                 <input
                   matInput
                   type="number"
                   formControlName="ageTo"
+                  placeholder="150"
                   min="0"
-                  max="120"
+                  max="150"
                 />
               </mat-form-field>
             </div>
 
-            <!-- Active Status -->
-            <mat-checkbox
-              formControlName="showInactive"
-              class="status-checkbox"
-            >
-              إظهار المرضى غير النشطين
-            </mat-checkbox>
-          </div>
+            <!-- Status Checkbox -->
+            <div class="status-checkbox">
+              <mat-checkbox formControlName="showInactive">
+                عرض غير النشطين
+              </mat-checkbox>
+            </div>
 
-          <div class="search-actions">
-            <button
-              mat-raised-button
-              color="primary"
-              type="button"
-              (click)="onSearch()"
-            >
-              <mat-icon>search</mat-icon>
-              بحث
-            </button>
+            <!-- Search Actions -->
+            <div class="search-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                type="button"
+                (click)="onSearch()"
+                [disabled]="loading()"
+              >
+                <mat-icon>search</mat-icon>
+                بحث
+              </button>
 
-            <button mat-button type="button" (click)="onClearSearch()">
-              <mat-icon>clear</mat-icon>
-              مسح
-            </button>
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="onClearSearch()"
+                [disabled]="loading()"
+              >
+                <mat-icon>clear</mat-icon>
+                مسح
+              </button>
 
-            <button mat-button type="button" (click)="toggleAdvancedSearch()">
-              <mat-icon>{{
-                showAdvancedSearch() ? "expand_less" : "expand_more"
-              }}</mat-icon>
-              بحث متقدم
-            </button>
-          </div>
-
-          <!-- Advanced Search Section -->
-          <div class="advanced-search" *ngIf="showAdvancedSearch()">
-            <div class="advanced-row">
-              <mat-form-field appearance="outline" class="filter-field">
-                <mat-label>المدينة</mat-label>
-                <input
-                  matInput
-                  formControlName="city"
-                  placeholder="أدخل اسم المدينة"
-                />
-                <mat-icon matSuffix>location_city</mat-icon>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="filter-field">
-                <mat-label>آخر زيارة من</mat-label>
-                <input matInput type="date" formControlName="lastVisitFrom" />
-                <mat-icon matSuffix>event</mat-icon>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="filter-field">
-                <mat-label>آخر زيارة إلى</mat-label>
-                <input matInput type="date" formControlName="lastVisitTo" />
-                <mat-icon matSuffix>event</mat-icon>
-              </mat-form-field>
+              <button
+                mat-icon-button
+                type="button"
+                (click)="onToggleAdvancedSearch()"
+                [matTooltip]="showAdvancedSearch() ? 'إخفاء البحث المتقدم' : 'إظهار البحث المتقدم'"
+              >
+                <mat-icon>{{ showAdvancedSearch() ? 'expand_less' : 'tune' }}</mat-icon>
+              </button>
             </div>
           </div>
+
+          <!-- Advanced Search Panel -->
+          @if (showAdvancedSearch()) {
+            <div class="advanced-search">
+              <mat-divider></mat-divider>
+              <div class="advanced-row">
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>المدينة</mat-label>
+                  <input
+                    matInput
+                    formControlName="city"
+                    placeholder="اسم المدينة"
+                  />
+                  <mat-icon matSuffix>location_city</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>آخر زيارة من</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="fromDatePicker"
+                    formControlName="lastVisitFrom"
+                    readonly
+                  />
+                  <mat-datepicker-toggle matSuffix [for]="fromDatePicker"></mat-datepicker-toggle>
+                  <mat-datepicker #fromDatePicker></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>آخر زيارة إلى</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="toDatePicker"
+                    formControlName="lastVisitTo"
+                    readonly
+                  />
+                  <mat-datepicker-toggle matSuffix [for]="toDatePicker"></mat-datepicker-toggle>
+                  <mat-datepicker #toDatePicker></mat-datepicker>
+                </mat-form-field>
+              </div>
+            </div>
+          }
         </form>
       </mat-card-content>
     </mat-card>
 
     <!-- Results Summary -->
-    <div
-      class="results-summary"
-      *ngIf="patients().length > 0 || searchPerformed()"
-    >
-      <div class="summary-info">
-        <mat-icon>info</mat-icon>
-        <span>
-          {{ searchPerformed() ? "نتائج البحث: " : "إجمالي المرضى: " }}
-          <strong>{{ totalPatients() }}</strong>
-          {{ searchPerformed() && totalPatients() !== originalTotal() ? ` من أصل ${originalTotal()}` : '' }}
-        </span>
+    @if (!loading()) {
+      <div class="results-summary">
+        <div class="summary-info">
+          <mat-icon [color]="totalPatients() > 0 ? 'primary' : 'warn'">
+            {{ totalPatients() > 0 ? 'check_circle' : 'info' }}
+          </mat-icon>
+          <span>{{ getSearchSummary() }}</span>
+        </div>
+
+        <div class="view-controls">
+          <button
+            mat-icon-button
+            [color]="viewMode() === 'table' ? 'primary' : ''"
+            (click)="onToggleViewMode()"
+            matTooltip="تغيير العرض"
+          >
+            <mat-icon>{{ viewMode() === 'table' ? 'view_module' : 'table_rows' }}</mat-icon>
+          </button>
+        </div>
       </div>
+    }
 
-      <div class="view-options">
-        <button
-          mat-icon-button
-          [class.active]="viewMode() === 'table'"
-          (click)="setViewMode('table')"
-          title="عرض جدولي"
-        >
-          <mat-icon>table_rows</mat-icon>
-        </button>
-        <button
-          mat-icon-button
-          [class.active]="viewMode() === 'cards'"
-          (click)="setViewMode('cards')"
-          title="عرض بطاقات"
-        >
-          <mat-icon>view_module</mat-icon>
-        </button>
+    <!-- Loading Indicator -->
+    @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner></mat-spinner>
+        <p>جاري تحميل بيانات المرضى...</p>
       </div>
-    </div>
+    }
 
-    <!-- Data Table -->
-    <app-data-table
-      #dataTable
-      *ngIf="viewMode() === 'table'"
-      title="قائمة المرضى"
-      [columns]="tableColumns"
-      [actions]="tableActions"
-      [canAdd]="true"
-      [selectable]="true"
-      [showPaginator]="true"
-      [pageSizeOptions]="[10, 25, 50, 100]"
-      emptyMessage="لا توجد مرضى مطابقة لمعايير البحث"
-      (add)="onAddPatient()"
-      (bulkDelete)="onBulkDelete($event)"
-      (export)="onExport($event)"
-      (refresh)="onRefresh()"
-      (rowClick)="onViewPatient($event)"
-      (pageChange)="onPageChange($event)"
-    >
-    </app-data-table>
+    <!-- Table View -->
+    @if (!loading() && viewMode() === 'table') {
+      <div class="table-container">
+        <mat-card class="table-card">
+          <div class="table-wrapper">
+            <table mat-table [dataSource]="patients()" class="patients-table" matSort>
 
-    <!-- Cards View -->
-    <div class="cards-container" *ngIf="viewMode() === 'cards'">
-      <div class="patient-cards">
-        <mat-card
-          *ngFor="let patient of patients(); trackBy: trackByPatient"
-          class="patient-card"
-          [class.inactive]="!patient.isActive"
-          (click)="onViewPatient(patient)"
-        >
-          <mat-card-header>
-            <div
-              mat-card-avatar
-              class="patient-avatar"
-              [class.male]="patient.gender === 'MALE'"
-            >
-              <mat-icon>{{
-                patient.gender === "MALE" ? "face" : "face_3"
-              }}</mat-icon>
-            </div>
-            <mat-card-title>{{ patient.fullName }}</mat-card-title>
-            <mat-card-subtitle>
-              {{ patient.patientNumber }} • {{ getAgeText(patient.age) }}
-            </mat-card-subtitle>
-            <div class="card-actions">
-              <!-- <button
-                mat-icon-button
-                [matMenuTriggerFor]="patientMenu"
-                (click)="$event.stopPropagation(); setSelectedPatient(patient)"
-              >
-                <mat-icon>more_vert</mat-icon>
-              </button> -->
-               <button
-                mat-icon-button
-                [matMenuTriggerFor]="patientMenu"
-                (click)="$event.stopPropagation(); selectedPatient.set(patient)"
-              >
-                <mat-icon>more_vert</mat-icon>
-              </button>
-            </div>
-          </mat-card-header>
+              <!-- Patient Number Column -->
+              <ng-container matColumnDef="patientNumber">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>رقم المريض</th>
+                <td mat-cell *matCellDef="let patient">{{ patient.patientNumber || '-' }}</td>
+              </ng-container>
 
-          <mat-card-content>
-            <div class="patient-info">
-              <div class="info-item">
-                <mat-icon class="info-icon">phone</mat-icon>
-                <span>{{ patient.phone }}</span>
-              </div>
-              <div class="info-item" *ngIf="patient.bloodType">
-                <mat-icon class="info-icon">colorize</mat-icon>
-                <span>{{ getBloodTypeLabel(patient.bloodType) }}</span>
-              </div>
-              <div class="info-item" *ngIf="patient.lastVisit">
-                <mat-icon class="info-icon">event</mat-icon>
-                <span>آخر زيارة: {{ formatDate(patient.lastVisit) }}</span>
-              </div>
-            </div>
+              <!-- Full Name Column -->
+              <ng-container matColumnDef="fullName">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>اسم المريض</th>
+                <td mat-cell *matCellDef="let patient">
+                  <div class="patient-name-cell">
+                    <!-- <div class="patient-avatar" [class]="'avatar-' + patient.gender.toLowerCase()">
+                      {{ patient.firstName.charAt(0) }}{{ patient.lastName.charAt(0) }}
+                    </div> -->
+                    <span>{{ patient.fullName }}</span>
+                  </div>
+                </td>
+              </ng-container>
 
-            <div class="patient-stats">
-              <div class="stat">
-                <span class="stat-value">{{
-                  patient.appointmentsCount || 0
-                }}</span>
-                <span class="stat-label">المواعيد</span>
-              </div>
-              <div class="stat">
-                <span class="stat-value">{{
-                  patient.outstandingBalance || 0
-                }}</span>
-                <span class="stat-label">المستحق</span>
-              </div>
-            </div>
-          </mat-card-content>
+              <!-- Age Column -->
+              <ng-container matColumnDef="age">
+                <th mat-header-cell *matHeaderCellDef>العمر</th>
+                <td mat-cell *matCellDef="let patient">{{ getPatientAge(patient) }} سنة</td>
+              </ng-container>
+
+              <!-- Gender Column -->
+              <ng-container matColumnDef="gender">
+                <th mat-header-cell *matHeaderCellDef>الجنس</th>
+                <td mat-cell *matCellDef="let patient">
+                  <mat-icon class="gender-icon">{{ patient.gender === 'MALE' ? 'person' : 'person_outline' }}</mat-icon>
+                  {{ formatGender(patient.gender) }}
+                </td>
+              </ng-container>
+
+              <!-- Phone Column -->
+              <ng-container matColumnDef="phone">
+                <th mat-header-cell *matHeaderCellDef>رقم الهاتف</th>
+                <td mat-cell *matCellDef="let patient">{{ patient.phone }}</td>
+              </ng-container>
+
+              <!-- Blood Type Column -->
+              <ng-container matColumnDef="bloodType">
+                <th mat-header-cell *matHeaderCellDef>فصيلة الدم</th>
+                <td mat-cell *matCellDef="let patient">
+                  {{ patient.bloodType ? formatBloodType(patient.bloodType) : '-' }}
+                </td>
+              </ng-container>
+
+              <!-- Last Visit Column -->
+              <ng-container matColumnDef="lastVisit">
+                <th mat-header-cell *matHeaderCellDef>آخر زيارة</th>
+                <td mat-cell *matCellDef="let patient">
+                  {{ patient.lastVisit ? formatDate(patient.lastVisit) : '-' }}
+                </td>
+              </ng-container>
+
+              <!-- Status Column -->
+              <ng-container matColumnDef="isActive">
+                <th mat-header-cell *matHeaderCellDef>الحالة</th>
+                <td mat-cell *matCellDef="let patient">
+                  <mat-chip [color]="patient.isActive ? 'primary' : 'warn'">
+                    <mat-icon>{{ patient.isActive ? 'check_circle' : 'cancel' }}</mat-icon>
+                    {{ patient.isActive ? 'نشط' : 'غير نشط' }}
+                  </mat-chip>
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+                <td mat-cell *matCellDef="let patient">
+                  <button
+                    mat-icon-button
+                    color="primary"
+                    (click)="onViewPatient(patient)"
+                    matTooltip="عرض التفاصيل"
+                  >
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+
+                  <button
+                    mat-icon-button
+                    (click)="onEditPatient(patient)"
+                    matTooltip="تعديل"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+
+                  <button
+                    mat-icon-button
+                    [matMenuTriggerFor]="actionMenu"
+                    matTooltip="المزيد"
+                    #menuTrigger="matMenuTrigger"
+                  >
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+
+                  <!-- Action Menu -->
+                  <mat-menu #actionMenu="matMenu">
+                    @if (patient.isActive && canDeletePatients()) {
+                      <button mat-menu-item (click)="onDeletePatient(patient)">
+                        <mat-icon color="warn">delete</mat-icon>
+                        <span>حذف المريض</span>
+                      </button>
+                    }
+
+                    @if (!patient.isActive && canReactivatePatients()) {
+                      <button mat-menu-item (click)="onReactivatePatient(patient)">
+                        <mat-icon color="primary">restore</mat-icon>
+                        <span>إعادة تفعيل</span>
+                      </button>
+                    }
+                  </mat-menu>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="['patientNumber', 'fullName', 'age', 'gender', 'phone', 'bloodType', 'lastVisit', 'isActive', 'actions']"></tr>
+              <tr mat-row *matRowDef="let row; columns: ['patientNumber', 'fullName', 'age', 'gender', 'phone', 'bloodType', 'lastVisit', 'isActive', 'actions'];"></tr>
+            </table>
+          </div>
+
+          <!-- Table Pagination -->
+          @if (totalPatients() > 0) {
+            <mat-paginator
+              [length]="totalPatients()"
+              [pageSize]="pageSize()"
+              [pageIndex]="currentPage()"
+              [pageSizeOptions]="[5, 10, 25, 50]"
+              (page)="onPageChange($event)"
+              showFirstLastButtons
+            ></mat-paginator>
+          }
         </mat-card>
       </div>
+    }
 
-      <!-- Cards Pagination -->
-      <div class="cards-pagination" *ngIf="totalPages() > 1">
+    <!-- Cards View -->
+    @if (!loading() && viewMode() === 'cards') {
+      <div class="cards-container">
+        <div class="cards-grid">
+          @for (patient of patients(); track patient.id) {
+            <mat-card class="patient-card">
+              <mat-card-header>
+                <div mat-card-avatar class="patient-avatar" [class]="'avatar-' + patient.gender.toLowerCase()">
+                  {{ patient.firstName.charAt(0) }}{{ patient.lastName.charAt(0) }}
+                </div>
+                <mat-card-title>{{ patient.fullName }}</mat-card-title>
+                <mat-card-subtitle>{{ patient.patientNumber }}</mat-card-subtitle>
+
+                <!-- Status Badge -->
+                <div class="card-status">
+                  <mat-icon
+                    [color]="patient.isActive ? 'primary' : 'warn'"
+                    [matTooltip]="patient.isActive ? 'نشط' : 'غير نشط'"
+                  >
+                    {{ patient.isActive ? 'check_circle' : 'cancel' }}
+                  </mat-icon>
+                </div>
+              </mat-card-header>
+
+              <mat-card-content>
+                <div class="patient-details">
+                  <div class="detail-row">
+                    <mat-icon>cake</mat-icon>
+                    <span>{{ getPatientAge(patient) }} سنة</span>
+                  </div>
+                  <div class="detail-row">
+                    <mat-icon>{{ patient.gender === 'MALE' ? 'person' : 'person_outline' }}</mat-icon>
+                    <span>{{ formatGender(patient.gender) }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <mat-icon>phone</mat-icon>
+                    <span>{{ patient.phone }}</span>
+                  </div>
+                  @if (patient.bloodType) {
+                    <div class="detail-row">
+                      <mat-icon>colorize</mat-icon>
+                      <span>{{ formatBloodType(patient.bloodType) }}</span>
+                    </div>
+                  }
+                  @if (patient.lastVisit) {
+                    <div class="detail-row">
+                      <mat-icon>event</mat-icon>
+                      <span>آخر زيارة: {{ formatDate(patient.lastVisit) }}</span>
+                    </div>
+                  }
+                </div>
+              </mat-card-content>
+
+              <mat-card-actions align="end">
+                <button
+                  mat-icon-button
+                  color="primary"
+                  (click)="onViewPatient(patient)"
+                  matTooltip="عرض التفاصيل"
+                >
+                  <mat-icon>visibility</mat-icon>
+                </button>
+
+                <button
+                  mat-icon-button
+                  (click)="onEditPatient(patient)"
+                  matTooltip="تعديل"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="cardMenu"
+                  matTooltip="المزيد"
+                  #cardMenuTrigger="matMenuTrigger"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+
+                <!-- Card Menu -->
+                <mat-menu #cardMenu="matMenu">
+                  @if (patient.isActive && canDeletePatients()) {
+                    <button mat-menu-item (click)="onDeletePatient(patient)">
+                      <mat-icon color="warn">delete</mat-icon>
+                      <span>حذف المريض</span>
+                    </button>
+                  }
+
+                  @if (!patient.isActive && canReactivatePatients()) {
+                    <button mat-menu-item (click)="onReactivatePatient(patient)">
+                      <mat-icon color="primary">restore</mat-icon>
+                      <span>إعادة تفعيل</span>
+                    </button>
+                  }
+                </mat-menu>
+              </mat-card-actions>
+            </mat-card>
+          }
+        </div>
+
+        <!-- Cards Pagination -->
+        @if (totalPatients() > 0) {
+          <mat-paginator
+            [length]="totalPatients()"
+            [pageSize]="pageSize()"
+            [pageIndex]="currentPage()"
+            [pageSizeOptions]="[5, 10, 25, 50]"
+            (page)="onPageChange($event)"
+            showFirstLastButtons
+            class="cards-paginator"
+          ></mat-paginator>
+        }
+      </div>
+    }
+
+    <!-- No Results -->
+    @if (!loading() && totalPatients() === 0) {
+      <div class="no-results">
+        <mat-icon>search_off</mat-icon>
+        <h3>{{ searchPerformed() ? 'لم يتم العثور على نتائج' : 'لا توجد مرضى مسجلين' }}</h3>
+        <p>{{ searchPerformed() ? 'حاول تغيير معايير البحث' : 'ابدأ بإضافة مريض جديد' }}</p>
         <button
-          mat-icon-button
-          [disabled]="currentPage() === 0"
-          (click)="goToPage(currentPage() - 1)"
+          mat-raised-button
+          color="primary"
+          (click)="searchPerformed() ? onClearSearch() : onAddPatient()"
         >
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-
-        <span class="pagination-info">
-          صفحة {{ currentPage() + 1 }} من {{ totalPages() }}
-        </span>
-
-        <button
-          mat-icon-button
-          [disabled]="currentPage() >= totalPages() - 1"
-          (click)="goToPage(currentPage() + 1)"
-        >
-          <mat-icon>chevron_left</mat-icon>
+          <mat-icon>{{ searchPerformed() ? 'clear' : 'person_add' }}</mat-icon>
+          {{ searchPerformed() ? 'مسح البحث' : 'إضافة مريض جديد' }}
         </button>
       </div>
-    </div>
-
-    <!-- Loading State -->
-    <div class="loading-container" *ngIf="loading()">
-      <mat-card class="loading-card">
-        <mat-card-content>
-          <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <p>جاري تحميل بيانات المرضى...</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-
-    <!-- Empty State -->
-    <div
-      class="empty-container"
-      *ngIf="!loading() && patients().length === 0 && !searchPerformed()"
-    >
-      <mat-card class="empty-card">
-        <mat-card-content>
-          <div class="empty-content">
-            <mat-icon class="empty-icon">people_outline</mat-icon>
-            <h2>لا يوجد مرضى بعد</h2>
-            <p>ابدأ بإضافة أول مريض للعيادة</p>
-            <button
-              mat-raised-button
-              color="primary"
-              routerLink="/patients/new"
-            >
-              <mat-icon>person_add</mat-icon>
-              إضافة مريض جديد
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
+    }
   </div>
+
+  <!-- Export Menu -->
+  <mat-menu #exportMenu="matMenu">
+    <button mat-menu-item (click)="onExportPatients('excel')">
+      <mat-icon>description</mat-icon>
+      <span>تصدير Excel</span>
+    </button>
+
+    <button mat-menu-item (click)="onExportPatients('pdf')">
+      <mat-icon>picture_as_pdf</mat-icon>
+      <span>تصدير PDF</span>
+    </button>
+
+    <button mat-menu-item (click)="onExportPatients('csv')">
+      <mat-icon>table_chart</mat-icon>
+      <span>تصدير CSV</span>
+    </button>
+
+    <mat-divider></mat-divider>
+
+    <button mat-menu-item (click)="onImportPatients()">
+      <mat-icon>upload_file</mat-icon>
+      <span>استيراد بيانات</span>
+    </button>
+  </mat-menu>
 </app-sidebar>
-
-<!-- Export Menu -->
-<mat-menu #exportMenu="matMenu">
-  <button mat-menu-item (click)="onExport({ format: 'excel' })">
-    <mat-icon>file_download</mat-icon>
-    تصدير إلى Excel
-  </button>
-  <button mat-menu-item (click)="onExport({ format: 'pdf' })">
-    <mat-icon>picture_as_pdf</mat-icon>
-    تصدير إلى PDF
-  </button>
-</mat-menu>
-
-<!-- Patient Actions Menu -->
-<mat-menu #patientMenu="matMenu">
-  <button mat-menu-item (click)="onViewPatient(selectedPatient()!)">
-    <mat-icon>visibility</mat-icon>
-    عرض التفاصيل
-  </button>
-  <button mat-menu-item (click)="onEditPatient(selectedPatient()!)">
-    <mat-icon>edit</mat-icon>
-    تعديل البيانات
-  </button>
-  <button mat-menu-item (click)="onBookAppointment(selectedPatient()!)">
-    <mat-icon>event_available</mat-icon>
-    حجز موعد
-  </button>
-  <button mat-menu-item (click)="onCreateInvoice(selectedPatient()!)">
-    <mat-icon>receipt_long</mat-icon>
-    إنشاء فاتورة
-  </button>
-  <mat-divider></mat-divider>
-  <button
-    mat-menu-item
-    (click)="onDeletePatient(selectedPatient()!)"
-    *ngIf="selectedPatient()?.isActive"
-  >
-    <mat-icon color="warn">delete</mat-icon>
-    <span class="text-warn">حذف المريض</span>
-  </button>
-  <button
-    mat-menu-item
-    (click)="onRestorePatient(selectedPatient()!)"
-    *ngIf="!selectedPatient()?.isActive"
-  >
-    <mat-icon color="primary">restore</mat-icon>
-    <span>إعادة تفعيل</span>
-  </button>
-</mat-menu>

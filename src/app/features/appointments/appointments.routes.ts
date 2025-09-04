@@ -5,7 +5,7 @@
 import { Routes } from '@angular/router';
 
 export const APPOINTMENTS_ROUTES: Routes = [
-  {
+/*   {
     path: '',
     loadComponent: () =>
       import('./components/appointment-list/appointment-list.component')
@@ -39,5 +39,5 @@ export const APPOINTMENTS_ROUTES: Routes = [
       import('./components/appointment-form/appointment-form.component')
         .then(m => m.AppointmentFormComponent),
     title: 'تعديل الموعد'
-  }
+  } */
 ];
