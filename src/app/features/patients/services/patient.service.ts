@@ -33,7 +33,7 @@ export interface Patient {
   allergies?: string;
   chronicDiseases?: string;
   notes?: string;
-  isActive: boolean;
+  active: boolean;
   clinicId: number;
   appointmentsCount?: number;
   lastVisit?: string;
