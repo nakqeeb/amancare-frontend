@@ -1,0 +1,383 @@
+<div class="availability-check-container">
+  <app-header></app-header>
+
+  <app-sidebar>
+    <div class="main-content">
+      <main class="content-area">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="header-content">
+            <h1 class="page-title">
+              <mat-icon>check_circle</mat-icon>
+              فحص التوفر
+            </h1>
+            <p class="page-description">فحص توفر الأطباء في أوقات محددة</p>
+          </div>
+
+          <div class="header-actions">
+            <button mat-button [routerLink]="['/schedules']" class="back-btn">
+              <mat-icon>arrow_back</mat-icon>
+              العودة للقائمة
+            </button>
+          </div>
+        </div>
+
+        <div class="content-grid">
+          <!-- Check Form -->
+          <mat-card class="check-form-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>search</mat-icon>
+                فحص التوفر
+              </mat-card-title>
+              <mat-card-subtitle
+                >حدد الطبيب والوقت المطلوب للفحص</mat-card-subtitle
+              >
+            </mat-card-header>
+
+            <mat-card-content>
+              <form [formGroup]="checkForm" class="availability-form">
+                <!-- Doctor Selection -->
+                <div class="form-section">
+                  <h3 class="section-title">اختيار الطبيب</h3>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>الطبيب</mat-label>
+                    <input
+                      matInput
+                      formControlName="doctorSearch"
+                      placeholder="ابحث عن الطبيب بالاسم أو التخصص..."
+                      [matAutocomplete]="doctorAutocomplete"
+                    />
+                    <mat-icon matSuffix>search</mat-icon>
+
+                    <mat-autocomplete
+                      #doctorAutocomplete="matAutocomplete"
+                      [displayWith]="displayDoctorFn"
+                      (optionSelected)="onDoctorSelected($event)"
+                    >
+                      @for (doctor of filteredDoctors$ | async; track doctor.id)
+                      {
+                      <mat-option [value]="doctor">
+                        <div class="doctor-option">
+                          <div class="doctor-name">{{ doctor.fullName }}</div>
+                          @if (doctor.specialization) {
+                          <div class="doctor-spec">
+                            {{ doctor.specialization }}
+                          </div>
+                          }
+                        </div>
+                      </mat-option>
+                      }
+                    </mat-autocomplete>
+
+                    @if (checkForm.get('doctorId')?.errors?.['required']) {
+                    <mat-error>يرجى اختيار الطبيب</mat-error>
+                    }
+                  </mat-form-field>
+
+                  @if (selectedDoctor()) {
+                  <div class="selected-doctor-preview">
+                    <mat-card class="doctor-preview-card">
+                      <mat-card-content>
+                        <div class="doctor-preview">
+                          <mat-icon class="doctor-icon">person</mat-icon>
+                          <div class="doctor-info">
+                            <h4>{{ selectedDoctor()?.fullName }}</h4>
+                            @if (selectedDoctor()?.specialization) {
+                            <p>{{ selectedDoctor()?.specialization }}</p>
+                            }
+                          </div>
+                        </div>
+                      </mat-card-content>
+                    </mat-card>
+                  </div>
+                  }
+                </div>
+
+                <mat-divider class="section-divider"></mat-divider>
+
+                <!-- Date and Time Selection -->
+                <div class="form-section">
+                  <h3 class="section-title">التاريخ والوقت</h3>
+
+                  <div class="datetime-inputs">
+                    <mat-form-field appearance="outline">
+                      <mat-label>التاريخ</mat-label>
+                      <input
+                        matInput
+                        [matDatepicker]="datePicker"
+                        formControlName="date"
+                        [min]="minDate"
+                        placeholder="اختر التاريخ"
+                      />
+                      <mat-datepicker-toggle
+                        matSuffix
+                        [for]="datePicker"
+                      ></mat-datepicker-toggle>
+                      <mat-datepicker #datePicker></mat-datepicker>
+                      @if (checkForm.get('date')?.errors?.['required']) {
+                      <mat-error>التاريخ مطلوب</mat-error>
+                      }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>الوقت</mat-label>
+                      <input
+                        matInput
+                        type="time"
+                        formControlName="time"
+                        placeholder="اختر الوقت"
+                      />
+                      <mat-icon matSuffix>schedule</mat-icon>
+                      @if (checkForm.get('time')?.errors?.['required']) {
+                      <mat-error>الوقت مطلوب</mat-error>
+                      }
+                    </mat-form-field>
+                  </div>
+
+                  @if (selectedDateTime()) {
+                  <div class="datetime-summary">
+                    <mat-icon>info</mat-icon>
+                    <span>{{ selectedDateTime() }}</span>
+                  </div>
+                  }
+                </div>
+
+                <mat-divider class="section-divider"></mat-divider>
+
+                <!-- Duration -->
+                <div class="form-section">
+                  <h3 class="section-title">مدة الموعد</h3>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>المدة (بالدقائق)</mat-label>
+                    <mat-select formControlName="duration">
+                      <mat-option value="15">15 دقيقة</mat-option>
+                      <mat-option value="30">30 دقيقة</mat-option>
+                      <mat-option value="45">45 دقيقة</mat-option>
+                      <mat-option value="60">60 دقيقة</mat-option>
+                      <mat-option value="90">90 دقيقة</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+              </form>
+            </mat-card-content>
+
+            <mat-card-actions class="form-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="checkAvailability()"
+                [disabled]="checkForm.invalid || scheduleService.loading()"
+              >
+                @if (scheduleService.loading()) {
+                <mat-progress-spinner
+                  diameter="20"
+                  color="primary"
+                ></mat-progress-spinner>
+                } @else {
+                <mat-icon>search</mat-icon>
+                } فحص التوفر
+              </button>
+
+              <button
+                mat-button
+                (click)="checkBulkAvailability()"
+                [disabled]="
+                  !selectedDoctor() ||
+                  !checkForm.get('date')?.value ||
+                  scheduleService.loading()
+                "
+              >
+                <mat-icon>list</mat-icon>
+                جميع الأوقات المتاحة
+              </button>
+            </mat-card-actions>
+          </mat-card>
+
+          <!-- Results -->
+          @if (availabilityResult() || availableTimeSlots().length > 0) {
+          <mat-card class="results-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>assignment</mat-icon>
+                نتائج الفحص
+              </mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content>
+              @if (availabilityResult()) {
+              <!-- Single Time Check Result -->
+              <div class="availability-result">
+                <div class="result-header">
+                  <div class="doctor-info">
+                    <h4>{{ availabilityResult()?.doctorName }}</h4>
+                    <p>
+                      {{
+                        formatDateTime(
+                          availabilityResult()?.date!,
+                          availabilityResult()?.time!
+                        )
+                      }}
+                    </p>
+                  </div>
+
+                  <div class="availability-status">
+                    @if (availabilityResult()?.isAvailable) {
+                    <mat-chip color="primary" selected>
+                      <mat-icon>check_circle</mat-icon>
+                      متاح
+                    </mat-chip>
+                    } @else {
+                    <mat-chip color="warn" selected>
+                      <mat-icon>cancel</mat-icon>
+                      غير متاح
+                    </mat-chip>
+                    }
+                  </div>
+                </div>
+
+                @if (!availabilityResult()?.isAvailable) {
+                <div class="conflict-info">
+                  @if (availabilityResult()?.conflictReason) {
+                  <div class="conflict-reason">
+                    <mat-icon>warning</mat-icon>
+                    <span>{{ availabilityResult()?.conflictReason }}</span>
+                  </div>
+                  } @if (availabilityResult()?.nextAvailableTime) {
+                  <div class="next-available">
+                    <mat-icon>schedule</mat-icon>
+                    <span
+                      >الوقت المتاح التالي:
+                      {{ availabilityResult()?.nextAvailableTime }}</span
+                    >
+                  </div>
+                  }
+                </div>
+                }
+              </div>
+              } @if (availableTimeSlots().length > 0) {
+              <!-- All Available Slots -->
+              <div class="time-slots-section">
+                <h4>جميع الأوقات المتاحة</h4>
+
+                <div class="time-slots-grid">
+                  @for (slot of availableTimeSlots(); track slot) {
+                  <mat-card
+                    class="time-slot-card"
+                    (click)="selectTimeSlot(slot)"
+                  >
+                    <mat-card-content>
+                      <div class="time-slot">
+                        <mat-icon>schedule</mat-icon>
+                        <span class="slot-time">{{ formatTime(slot) }}</span>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                  }
+                </div>
+
+                @if (availableTimeSlots().length === 0) {
+                <div class="no-slots">
+                  <mat-icon>info</mat-icon>
+                  <span>لا توجد أوقات متاحة في التاريخ المحدد</span>
+                </div>
+                }
+              </div>
+              }
+            </mat-card-content>
+          </mat-card>
+          }
+
+          <!-- Available Doctors for Time -->
+          @if (availableDoctorsForTime().length > 0) {
+          <mat-card class="available-doctors-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>group</mat-icon>
+                الأطباء المتاحون
+              </mat-card-title>
+              <mat-card-subtitle
+                >الأطباء المتاحون في الوقت المحدد</mat-card-subtitle
+              >
+            </mat-card-header>
+
+            <mat-card-content>
+              <div class="doctors-list">
+                @for (doctor of availableDoctorsForTime(); track doctor.id) {
+                <mat-expansion-panel class="doctor-panel">
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>
+                      <div class="doctor-title">
+                        <mat-icon>person</mat-icon>
+                        <span>{{ doctor.fullName }}</span>
+                      </div>
+                    </mat-panel-title>
+
+                    <mat-panel-description>
+                      @if (doctor.specialization) {
+                      <span>{{ doctor.specialization }}</span>
+                      }
+                      <mat-chip color="primary" selected>
+                        <mat-icon>check_circle</mat-icon>
+                        متاح
+                      </mat-chip>
+                    </mat-panel-description>
+                  </mat-expansion-panel-header>
+
+                  <div class="doctor-details">
+                    @if (doctor.nextAvailableSlot) {
+                    <div class="detail-item">
+                      <mat-icon>schedule</mat-icon>
+                      <span
+                        >الوقت التالي المتاح:
+                        {{ doctor.nextAvailableSlot }}</span
+                      >
+                    </div>
+                    } @if (doctor.totalScheduledHours) {
+                    <div class="detail-item">
+                      <mat-icon>access_time</mat-icon>
+                      <span
+                        >ساعات العمل الأسبوعية:
+                        {{ doctor.totalScheduledHours }}</span
+                      >
+                    </div>
+                    } @if (doctor.activeSchedules) {
+                    <div class="detail-item">
+                      <mat-icon>calendar_today</mat-icon>
+                      <span>الجداول النشطة: {{ doctor.activeSchedules }}</span>
+                    </div>
+                    }
+
+                    <div class="doctor-actions">
+                      <button
+                        mat-button
+                        color="primary"
+                        [routerLink]="['/schedules/doctor', doctor.id]"
+                      >
+                        <mat-icon>visibility</mat-icon>
+                        عرض الجدولة
+                      </button>
+
+                      <button
+                        mat-button
+                        color="accent"
+                        (click)="checkDoctorAvailability(doctor.id)"
+                      >
+                        <mat-icon>search</mat-icon>
+                        فحص التوفر
+                      </button>
+                    </div>
+                  </div>
+                </mat-expansion-panel>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+          }
+        </div>
+      </main>
+    </div>
+  </app-sidebar>
+</div>

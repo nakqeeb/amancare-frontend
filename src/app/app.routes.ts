@@ -30,6 +30,16 @@ export const routes: Routes = [
     path: 'patients',
     loadChildren: () => import('./features/patients/patients.routes').then(r => r.PATIENTS_ROUTES)
   },
+  // إدارة جداول ومواعيد عمل الأطباء - Schedules
+  {
+    path: 'schedules',
+    loadChildren: () => import('./features/schedules/schedule.routes').then(m => m.SCHEDULE_ROUTES),
+    data: {
+      title: 'جداول الأطباء',
+      breadcrumb: 'الجداول',
+      expectedRoles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+    }
+  },
   // إدارة المواعيد - Appointments
   {
     path: 'appointments',

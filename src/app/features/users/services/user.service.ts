@@ -4,7 +4,7 @@
 // ===================================================================
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap, catchError, throwError } from 'rxjs';
+import { Observable, BehaviorSubject, tap, catchError, throwError, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   User,
@@ -12,7 +12,8 @@ import {
   CreateUserRequest,
   UpdateUserRequest,
   UserFilters,
-  UserStatsDto
+  UserStatsDto,
+  DoctorsResponse
 } from '../models/user.model';
 import { ApiResponse, PageResponse } from '../../../core/models/api-response.model';
 import { NotificationService } from '../../../core/services/notification.service';
@@ -248,7 +249,7 @@ export class UserService {
 
   // Get doctors list (for dropdowns)
   getDoctors(): Observable<User[]> {
-    return this.http.get<User[]>(`${this.apiUrl}/doctors`);
+    return this.http.get<DoctorsResponse>(`${this.apiUrl}/doctors`).pipe(map(res => res.data));
   }
 
   // ===================================================================

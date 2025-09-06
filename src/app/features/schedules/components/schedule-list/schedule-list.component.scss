@@ -1,0 +1,216 @@
+.schedule-list-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.content-area {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-content {
+  .page-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: #1976d2;
+  }
+
+  .page-description {
+    margin: 0;
+    color: #666;
+    font-size: 16px;
+  }
+}
+
+.create-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filters-card {
+  margin-bottom: 24px;
+}
+
+.filters-form {
+  .filters-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .filters-actions {
+    display: flex;
+    gap: 12px;
+  }
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  .stat-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1976d2;
+  }
+
+  .stat-label {
+    font-size: 14px;
+    color: #666;
+    margin-top: 4px;
+  }
+
+  .stat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #1976d2;
+    opacity: 0.7;
+  }
+}
+
+.table-card {
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px;
+    gap: 16px;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px;
+    gap: 16px;
+
+    .empty-icon {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+      color: #ccc;
+    }
+
+    h3 {
+      margin: 0;
+      color: #666;
+    }
+
+    p {
+      margin: 0;
+      color: #999;
+      text-align: center;
+    }
+  }
+}
+
+.schedules-table {
+  width: 100%;
+
+  .doctor-info {
+    .doctor-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .doctor-spec {
+      font-size: 12px;
+      color: #666;
+    }
+  }
+
+  .time-info {
+    .working-time {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .break-time {
+      font-size: 12px;
+      color: #666;
+    }
+  }
+
+  .hours-info {
+    .hours-value {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .slots-info {
+      font-size: 12px;
+      color: #666;
+    }
+  }
+
+  .actions-cell {
+    display: flex;
+    gap: 4px;
+  }
+}
+
+.delete-action {
+  color: #f44336 !important;
+}
+
+@media (max-width: 768px) {
+  .content-area {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .filters-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .stats-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .schedules-table {
+
+    .mat-column-hours,
+    .mat-column-type {
+      display: none;
+    }
+  }
+}

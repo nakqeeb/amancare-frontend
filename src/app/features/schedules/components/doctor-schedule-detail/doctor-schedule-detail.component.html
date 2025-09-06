@@ -1,0 +1,437 @@
+<div class="doctor-schedule-detail-container">
+  <app-header></app-header>
+
+  <app-sidebar>
+    <div class="main-content">
+      <main class="content-area">
+        @if (scheduleService.loading()) {
+        <div class="loading-container">
+          <mat-progress-spinner diameter="50"></mat-progress-spinner>
+          <p>جاري تحميل جدولة الطبيب...</p>
+        </div>
+        } @else {
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="header-content">
+            <h1 class="page-title">
+              <mat-icon>person</mat-icon>
+              جدولة الطبيب
+            </h1>
+            @if (doctorName()) {
+            <p class="doctor-name">{{ doctorName() }}</p>
+            } @if (doctorSpecialization()) {
+            <p class="doctor-spec">{{ doctorSpecialization() }}</p>
+            }
+          </div>
+
+          <div class="header-actions">
+            <button mat-button [routerLink]="['/schedules']" class="back-btn">
+              <mat-icon>arrow_back</mat-icon>
+              العودة للقائمة
+            </button>
+
+            @if (canManageSchedule()) {
+            <button
+              mat-raised-button
+              color="primary"
+              [routerLink]="['/schedules/doctor', doctorId(), 'unavailability']"
+            >
+              <mat-icon>event_busy</mat-icon>
+              إدارة عدم التوفر
+            </button>
+            }
+          </div>
+        </div>
+
+        <!-- Weekly Summary Card -->
+        @if (weeklySummary()) {
+        <mat-card class="summary-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>bar_chart</mat-icon>
+              ملخص الجدولة الأسبوعية
+            </mat-card-title>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <div class="summary-value">
+                  {{ weeklySummary()?.totalDays }}
+                </div>
+                <div class="summary-label">أيام العمل</div>
+              </div>
+
+              <div class="summary-item">
+                <div class="summary-value">
+                  {{ weeklySummary()?.totalHours }}
+                </div>
+                <div class="summary-label">ساعات أسبوعية</div>
+              </div>
+
+              <div class="summary-item">
+                <div class="summary-value">
+                  @if (weeklySummary()?.isFullTime) {
+                  <mat-chip color="primary" selected>دوام كامل</mat-chip>
+                  } @else {
+                  <mat-chip color="accent" selected>دوام جزئي</mat-chip>
+                  }
+                </div>
+                <div class="summary-label">نوع الدوام</div>
+              </div>
+
+              <div class="summary-item">
+                <div class="summary-value">
+                  @if (weeklySummary()?.hasBreaks) {
+                  <mat-icon class="status-icon success">check_circle</mat-icon>
+                  } @else {
+                  <mat-icon class="status-icon">remove_circle</mat-icon>
+                  }
+                </div>
+                <div class="summary-label">فترات استراحة</div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+        }
+
+        <div class="content-tabs">
+          <mat-tab-group animationDuration="300ms">
+            <!-- Weekly Schedule Tab -->
+            <mat-tab label="الجدولة الأسبوعية">
+              <div class="tab-content">
+                @if (doctorSchedules().length === 0) {
+                <div class="empty-state">
+                  <mat-icon class="empty-icon">schedule</mat-icon>
+                  <h3>لا توجد جداول</h3>
+                  <p>لم يتم تحديد جدول عمل لهذا الطبيب.</p>
+                  @if (canManageSchedule()) {
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    [routerLink]="['/schedules/create']"
+                    [queryParams]="{ doctorId: doctorId() }"
+                  >
+                    إنشاء جدولة جديدة
+                  </button>
+                  }
+                </div>
+                } @else {
+                <div class="weekly-schedule">
+                  @for (schedule of sortedSchedules(); track schedule.id) {
+                  <mat-card class="schedule-day-card">
+                    <mat-card-header>
+                      <div class="day-header">
+                        <mat-chip
+                          [color]="getDayColor(schedule.dayOfWeek)"
+                          selected
+                        >
+                          {{ getDayLabel(schedule.dayOfWeek) }}
+                        </mat-chip>
+
+                        <div class="day-status">
+                          @if (schedule.isActive) {
+                          <mat-chip color="primary" selected>
+                            <mat-icon>check_circle</mat-icon>
+                            نشط
+                          </mat-chip>
+                          } @else {
+                          <mat-chip color="warn" selected>
+                            <mat-icon>cancel</mat-icon>
+                            غير نشط
+                          </mat-chip>
+                          }
+                        </div>
+                      </div>
+                    </mat-card-header>
+
+                    <mat-card-content>
+                      <div class="schedule-details">
+                        <div class="time-info">
+                          <div class="working-hours">
+                            <mat-icon>access_time</mat-icon>
+                            <span
+                              >{{ formatTime(schedule.startTime) }} -
+                              {{ formatTime(schedule.endTime) }}</span
+                            >
+                          </div>
+
+                          @if (schedule.breakStartTime && schedule.breakEndTime)
+                          {
+                          <div class="break-time">
+                            <mat-icon>coffee</mat-icon>
+                            <span
+                              >استراحة:
+                              {{ formatTime(schedule.breakStartTime) }} -
+                              {{ formatTime(schedule.breakEndTime) }}</span
+                            >
+                          </div>
+                          }
+
+                          <div class="total-hours">
+                            <mat-icon>schedule</mat-icon>
+                            <span
+                              >{{ schedule.workingHours || 0 }} ساعة عمل</span
+                            >
+                          </div>
+                        </div>
+
+                        <div class="schedule-meta">
+                          <div class="meta-item">
+                            <span class="label">النوع:</span>
+                            <mat-chip
+                              [color]="getTypeColor(schedule.scheduleType)"
+                              selected
+                            >
+                              {{ getTypeLabel(schedule.scheduleType) }}
+                            </mat-chip>
+                          </div>
+
+                          @if (schedule.effectiveDate) {
+                          <div class="meta-item">
+                            <span class="label">من تاريخ:</span>
+                            <span class="value">{{
+                              schedule.effectiveDate | date : "mediumDate"
+                            }}</span>
+                          </div>
+                          } @if (schedule.endDate) {
+                          <div class="meta-item">
+                            <span class="label">إلى تاريخ:</span>
+                            <span class="value">{{
+                              schedule.endDate | date : "mediumDate"
+                            }}</span>
+                          </div>
+                          } @if (schedule.notes) {
+                          <div class="meta-item notes">
+                            <span class="label">ملاحظات:</span>
+                            <span class="value">{{ schedule.notes }}</span>
+                          </div>
+                          }
+                        </div>
+                      </div>
+                    </mat-card-content>
+
+                    @if (canManageSchedule()) {
+                    <mat-card-actions>
+                      <button
+                        mat-button
+                        color="primary"
+                        [routerLink]="['/schedules/edit', schedule.id]"
+                      >
+                        <mat-icon>edit</mat-icon>
+                        تعديل
+                      </button>
+
+                      <button
+                        mat-button
+                        color="warn"
+                        (click)="deleteSchedule(schedule)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                        حذف
+                      </button>
+                    </mat-card-actions>
+                    }
+                  </mat-card>
+                  }
+                </div>
+                }
+              </div>
+            </mat-tab>
+
+            <!-- Unavailability Tab -->
+            <mat-tab label="أوقات عدم التوفر">
+              <div class="tab-content">
+                <div class="tab-header">
+                  <h3>فترات عدم التوفر</h3>
+                  @if (canManageSchedule()) {
+                  <button
+                    mat-raised-button
+                    color="accent"
+                    [routerLink]="[
+                      '/schedules/doctor',
+                      doctorId(),
+                      'unavailability',
+                      'create'
+                    ]"
+                  >
+                    <mat-icon>add</mat-icon>
+                    إضافة فترة عدم توفر
+                  </button>
+                  }
+                </div>
+
+                @if (unavailabilities().length === 0) {
+                <div class="empty-state">
+                  <mat-icon class="empty-icon">event_busy</mat-icon>
+                  <h3>لا توجد فترات عدم توفر</h3>
+                  <p>لم يتم تحديد أي فترات عدم توفر لهذا الطبيب.</p>
+                </div>
+                } @else {
+                <div class="unavailability-list">
+                  @for (unavailability of sortedUnavailabilities(); track
+                  unavailability.id) {
+                  <mat-expansion-panel class="unavailability-panel">
+                    <mat-expansion-panel-header>
+                      <mat-panel-title>
+                        <div class="unavailability-title">
+                          <mat-chip
+                            [color]="
+                              getUnavailabilityTypeColor(
+                                unavailability.unavailabilityType
+                              )
+                            "
+                            selected
+                          >
+                            {{
+                              getUnavailabilityTypeLabel(
+                                unavailability.unavailabilityType
+                              )
+                            }}
+                          </mat-chip>
+                          <span class="unavailability-reason">{{
+                            unavailability.reason
+                          }}</span>
+                        </div>
+                      </mat-panel-title>
+
+                      <mat-panel-description>
+                        <div class="unavailability-period">
+                          {{ unavailability.startDate | date : "mediumDate" }}
+                          @if (unavailability.endDate !==
+                          unavailability.startDate) { -
+                          {{ unavailability.endDate | date : "mediumDate" }}
+                          }
+                        </div>
+                      </mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    <div class="unavailability-details">
+                      <div class="detail-row">
+                        <mat-icon>date_range</mat-icon>
+                        <div class="detail-content">
+                          <span class="detail-label">الفترة:</span>
+                          <span class="detail-value">
+                            {{ unavailability.startDate | date : "fullDate" }}
+                            @if (unavailability.endDate !==
+                            unavailability.startDate) { إلى
+                            {{ unavailability.endDate | date : "fullDate" }}
+                            }
+                          </span>
+                        </div>
+                      </div>
+
+                      @if (!unavailability.isAllDay && unavailability.startTime
+                      && unavailability.endTime) {
+                      <div class="detail-row">
+                        <mat-icon>access_time</mat-icon>
+                        <div class="detail-content">
+                          <span class="detail-label">الوقت:</span>
+                          <span class="detail-value">
+                            {{ formatTime(unavailability.startTime) }} -
+                            {{ formatTime(unavailability.endTime) }}
+                          </span>
+                        </div>
+                      </div>
+                      } @else {
+                      <div class="detail-row">
+                        <mat-icon>all_day</mat-icon>
+                        <div class="detail-content">
+                          <span class="detail-label">النوع:</span>
+                          <span class="detail-value">طوال اليوم</span>
+                        </div>
+                      </div>
+                      } @if (unavailability.notes) {
+                      <div class="detail-row">
+                        <mat-icon>note</mat-icon>
+                        <div class="detail-content">
+                          <span class="detail-label">ملاحظات:</span>
+                          <span class="detail-value">{{
+                            unavailability.notes
+                          }}</span>
+                        </div>
+                      </div>
+                      } @if (canManageSchedule()) {
+                      <div class="unavailability-actions">
+                        <button
+                          mat-button
+                          color="primary"
+                          [routerLink]="[
+                            '/schedules/unavailability/edit',
+                            unavailability.id
+                          ]"
+                        >
+                          <mat-icon>edit</mat-icon>
+                          تعديل
+                        </button>
+
+                        <button
+                          mat-button
+                          color="warn"
+                          (click)="deleteUnavailability(unavailability)"
+                        >
+                          <mat-icon>delete</mat-icon>
+                          حذف
+                        </button>
+                      </div>
+                      }
+                    </div>
+                  </mat-expansion-panel>
+                  }
+                </div>
+                }
+              </div>
+            </mat-tab>
+
+            <!-- Time Slots Tab -->
+            <mat-tab label="الأوقات المتاحة">
+              <div class="tab-content">
+                <div class="tab-header">
+                  <h3>الأوقات المتاحة للحجز</h3>
+                  <div class="date-selector">
+                    <mat-form-field appearance="outline">
+                      <mat-label>التاريخ</mat-label>
+                      <input
+                        matInput
+                        [matDatepicker]="datePicker"
+                        [(ngModel)]="selectedDate"
+                        (dateChange)="onDateChange()"
+                      />
+                      <mat-datepicker-toggle
+                        matSuffix
+                        [for]="datePicker"
+                      ></mat-datepicker-toggle>
+                      <mat-datepicker #datePicker></mat-datepicker>
+                    </mat-form-field>
+                  </div>
+                </div>
+
+                @if (availableTimeSlots().length === 0) {
+                <div class="empty-state">
+                  <mat-icon class="empty-icon">access_time</mat-icon>
+                  <h3>لا توجد أوقات متاحة</h3>
+                  <p>لا توجد أوقات متاحة في التاريخ المحدد.</p>
+                </div>
+                } @else {
+                <div class="time-slots-grid">
+                  @for (slot of availableTimeSlots(); track slot) {
+                  <mat-card class="time-slot-card">
+                    <mat-card-content>
+                      <div class="time-slot">
+                        <mat-icon>schedule</mat-icon>
+                        <span class="slot-time">{{ formatTime(slot) }}</span>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                  }
+                </div>
+                }
+              </div>
+            </mat-tab>
+          </mat-tab-group>
+        </div>
+        }
+      </main>
+    </div>
+  </app-sidebar>
+</div>

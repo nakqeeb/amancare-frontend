@@ -1,0 +1,361 @@
+<div class="unavailability-form-container">
+  <app-header></app-header>
+
+  <app-sidebar>
+    <div class="main-content">
+      <main class="content-area">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="header-content">
+            <h1 class="page-title">
+              <mat-icon>event_busy</mat-icon>
+              {{
+                isEditMode()
+                  ? "تعديل فترة عدم التوفر"
+                  : "إضافة فترة عدم توفر جديدة"
+              }}
+            </h1>
+            <p class="page-description">
+              {{
+                isEditMode()
+                  ? "تعديل فترة عدم توفر للطبيب"
+                  : "إضافة فترة عدم توفر جديدة للطبيب"
+              }}
+            </p>
+          </div>
+
+          <div class="header-actions">
+            <button mat-button (click)="goBack()" class="back-btn">
+              <mat-icon>arrow_back</mat-icon>
+              العودة
+            </button>
+          </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="form-container">
+          <mat-card>
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>info</mat-icon>
+                بيانات فترة عدم التوفر
+              </mat-card-title>
+              <mat-card-subtitle
+                >أدخل تفاصيل الفترة التي سيكون فيها الطبيب غير
+                متاح</mat-card-subtitle
+              >
+            </mat-card-header>
+
+            <mat-card-content>
+              <form
+                [formGroup]="unavailabilityForm"
+                class="unavailability-form"
+              >
+                <!-- Doctor Selection -->
+                @if (!preselectedDoctorId()) {
+                <div class="form-section">
+                  <h3 class="section-title">
+                    <mat-icon>person</mat-icon>
+                    اختيار الطبيب
+                  </h3>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>الطبيب</mat-label>
+                    <input
+                      matInput
+                      formControlName="doctorSearch"
+                      placeholder="ابحث عن الطبيب بالاسم أو التخصص..."
+                      [matAutocomplete]="doctorAutocomplete"
+                    />
+                    <mat-icon matSuffix>search</mat-icon>
+
+                    <mat-autocomplete
+                      #doctorAutocomplete="matAutocomplete"
+                      [displayWith]="displayDoctorFn"
+                      (optionSelected)="onDoctorSelected($event)"
+                    >
+                      @for (doctor of filteredDoctors$ | async; track doctor.id)
+                      {
+                      <mat-option [value]="doctor">
+                        <div class="doctor-option">
+                          <div class="doctor-name">{{ doctor.fullName }}</div>
+                          @if (doctor.specialization) {
+                          <div class="doctor-spec">
+                            {{ doctor.specialization }}
+                          </div>
+                          }
+                        </div>
+                      </mat-option>
+                      }
+                    </mat-autocomplete>
+
+                    @if
+                    (unavailabilityForm.get('doctorId')?.errors?.['required']) {
+                    <mat-error>يرجى اختيار الطبيب</mat-error>
+                    }
+                  </mat-form-field>
+
+                  @if (selectedDoctor()) {
+                  <div class="selected-doctor-preview">
+                    <mat-card class="doctor-preview-card">
+                      <mat-card-content>
+                        <div class="doctor-preview">
+                          <mat-icon class="doctor-icon">person</mat-icon>
+                          <div class="doctor-info">
+                            <h4>{{ selectedDoctor()?.fullName }}</h4>
+                            @if (selectedDoctor()?.specialization) {
+                            <p>{{ selectedDoctor()?.specialization }}</p>
+                            }
+                          </div>
+                        </div>
+                      </mat-card-content>
+                    </mat-card>
+                  </div>
+                  }
+                </div>
+
+                <mat-divider class="section-divider"></mat-divider>
+                } @else {
+                <!-- Preselected Doctor Display -->
+                <div class="form-section">
+                  <h3 class="section-title">
+                    <mat-icon>person</mat-icon>
+                    الطبيب المحدد
+                  </h3>
+
+                  @if (selectedDoctor()) {
+                  <div class="selected-doctor-info">
+                    <div class="doctor-card">
+                      <mat-icon class="doctor-icon">person</mat-icon>
+                      <div class="doctor-details">
+                        <h3>{{ selectedDoctor()?.fullName }}</h3>
+                        @if (selectedDoctor()?.specialization) {
+                        <p>{{ selectedDoctor()?.specialization }}</p>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  }
+                </div>
+
+                <mat-divider class="section-divider"></mat-divider>
+                }
+
+                <!-- Date Range -->
+                <div class="form-section">
+                  <h3 class="section-title">
+                    <mat-icon>date_range</mat-icon>
+                    الفترة الزمنية
+                  </h3>
+
+                  <div class="date-inputs">
+                    <mat-form-field appearance="outline">
+                      <mat-label>تاريخ البداية</mat-label>
+                      <input
+                        matInput
+                        [matDatepicker]="startDatePicker"
+                        formControlName="startDate"
+                        placeholder="اختر تاريخ البداية"
+                        [min]="minDate"
+                      />
+                      <mat-datepicker-toggle
+                        matSuffix
+                        [for]="startDatePicker"
+                      ></mat-datepicker-toggle>
+                      <mat-datepicker #startDatePicker></mat-datepicker>
+                      @if
+                      (unavailabilityForm.get('startDate')?.errors?.['required'])
+                      {
+                      <mat-error>تاريخ البداية مطلوب</mat-error>
+                      }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>تاريخ النهاية</mat-label>
+                      <input
+                        matInput
+                        [matDatepicker]="endDatePicker"
+                        formControlName="endDate"
+                        placeholder="اختر تاريخ النهاية"
+                        [min]="
+                          unavailabilityForm.get('startDate')?.value || minDate
+                        "
+                      />
+                      <mat-datepicker-toggle
+                        matSuffix
+                        [for]="endDatePicker"
+                      ></mat-datepicker-toggle>
+                      <mat-datepicker #endDatePicker></mat-datepicker>
+                      @if
+                      (unavailabilityForm.get('endDate')?.errors?.['required'])
+                      {
+                      <mat-error>تاريخ النهاية مطلوب</mat-error>
+                      }
+                    </mat-form-field>
+                  </div>
+
+                  @if (selectedPeriodDuration() > 0) {
+                  <div class="period-summary">
+                    <mat-icon>info</mat-icon>
+                    <span>مدة الفترة: {{ selectedPeriodDuration() }} يوم</span>
+                  </div>
+                  }
+                </div>
+
+                <mat-divider class="section-divider"></mat-divider>
+
+                <!-- Time Settings -->
+                <div class="form-section">
+                  <h3 class="section-title">
+                    <mat-icon>schedule</mat-icon>
+                    إعدادات الوقت
+                  </h3>
+
+                  <div class="time-settings">
+                    <mat-checkbox
+                      formControlName="isAllDay"
+                      color="primary"
+                      class="all-day-checkbox"
+                    >
+                      طوال اليوم
+                    </mat-checkbox>
+
+                    @if (!unavailabilityForm.get('isAllDay')?.value) {
+                    <div class="time-inputs">
+                      <mat-form-field appearance="outline">
+                        <mat-label>وقت البداية</mat-label>
+                        <input
+                          matInput
+                          type="time"
+                          formControlName="startTime"
+                        />
+                        <mat-icon matSuffix>schedule</mat-icon>
+                        @if
+                        (unavailabilityForm.get('startTime')?.errors?.['required'])
+                        {
+                        <mat-error>وقت البداية مطلوب</mat-error>
+                        }
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>وقت النهاية</mat-label>
+                        <input matInput type="time" formControlName="endTime" />
+                        <mat-icon matSuffix>schedule</mat-icon>
+                        @if
+                        (unavailabilityForm.get('endTime')?.errors?.['required'])
+                        {
+                        <mat-error>وقت النهاية مطلوب</mat-error>
+                        }
+                      </mat-form-field>
+                    </div>
+
+                    @if (selectedTimeDuration() > 0) {
+                    <div class="time-summary">
+                      <mat-icon>access_time</mat-icon>
+                      <span
+                        >مدة عدم التوفر: {{ selectedTimeDuration() }} ساعة</span
+                      >
+                    </div>
+                    } }
+                  </div>
+                </div>
+
+                <mat-divider class="section-divider"></mat-divider>
+
+                <!-- Unavailability Details -->
+                <div class="form-section">
+                  <h3 class="section-title">
+                    <mat-icon>category</mat-icon>
+                    تفاصيل عدم التوفر
+                  </h3>
+
+                  <div class="details-inputs">
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>نوع عدم التوفر</mat-label>
+                      <mat-select formControlName="unavailabilityType">
+                        @for (type of unavailabilityTypes; track type.value) {
+                        <mat-option [value]="type.value">
+                          {{ type.label }}
+                        </mat-option>
+                        }
+                      </mat-select>
+                      <mat-icon matSuffix>category</mat-icon>
+                      @if
+                      (unavailabilityForm.get('unavailabilityType')?.errors?.['required'])
+                      {
+                      <mat-error>نوع عدم التوفر مطلوب</mat-error>
+                      }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>السبب</mat-label>
+                      <input
+                        matInput
+                        formControlName="reason"
+                        placeholder="أدخل سبب عدم التوفر..."
+                        maxlength="200"
+                      />
+                      <mat-icon matSuffix>text_fields</mat-icon>
+                      @if
+                      (unavailabilityForm.get('reason')?.errors?.['required']) {
+                      <mat-error>السبب مطلوب</mat-error>
+                      } @if
+                      (unavailabilityForm.get('reason')?.errors?.['maxlength'])
+                      {
+                      <mat-error>السبب يجب أن يكون أقل من 200 حرف</mat-error>
+                      }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>ملاحظات إضافية (اختياري)</mat-label>
+                      <textarea
+                        matInput
+                        formControlName="notes"
+                        rows="4"
+                        placeholder="أدخل أي ملاحظات إضافية..."
+                        maxlength="500"
+                      ></textarea>
+                      <mat-icon matSuffix>note</mat-icon>
+                      @if
+                      (unavailabilityForm.get('notes')?.errors?.['maxlength']) {
+                      <mat-error
+                        >الملاحظات يجب أن تكون أقل من 500 حرف</mat-error
+                      >
+                      }
+                    </mat-form-field>
+                  </div>
+                </div>
+              </form>
+            </mat-card-content>
+
+            <mat-card-actions class="form-actions">
+              <button mat-button (click)="goBack()">
+                <mat-icon>cancel</mat-icon>
+                إلغاء
+              </button>
+
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="saveUnavailability()"
+                [disabled]="
+                  unavailabilityForm.invalid || scheduleService.loading()
+                "
+              >
+                @if (scheduleService.loading()) {
+                <mat-progress-spinner
+                  diameter="20"
+                  color="primary"
+                ></mat-progress-spinner>
+                } @else {
+                <mat-icon>save</mat-icon>
+                }
+                {{ isEditMode() ? "حفظ التعديلات" : "حفظ فترة عدم التوفر" }}
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+      </main>
+    </div>
+  </app-sidebar>
+</div>

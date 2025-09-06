@@ -80,6 +80,48 @@ export class SidebarComponent implements OnInit, OnDestroy {
         route: '/patients',
         badge: 5
       },
+      // ===================================================================
+      // SCHEDULES MENU - New Addition
+      // ===================================================================
+      {
+        title: 'جداول الأطباء',
+        icon: 'schedule',
+        route: '/schedules',
+        roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
+        badge: 5,
+        children: [
+          {
+            title: 'عرض الجداول',
+            icon: 'view_list',
+            route: '/schedules',
+            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'التقويم',
+            icon: 'calendar_month',
+            route: '/schedules/calendar',
+            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'فحص التوفر',
+            icon: 'check_circle',
+            route: '/schedules/availability',
+            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'إنشاء جدولة',
+            icon: 'add_circle',
+            route: '/schedules/create',
+            roles: ['ADMIN', 'DOCTOR']
+          },
+          {
+            title: 'إدارة عدم التوفر',
+            icon: 'event_busy',
+            route: '/schedules/unavailability/create',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
+          }
+        ]
+      },
       {
         title: 'المواعيد',
         icon: 'event',

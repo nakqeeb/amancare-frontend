@@ -36,6 +36,12 @@ export interface User {
   updatedBy?: string;
 }
 
+export interface DoctorsResponse {
+  message: string;
+  success: boolean;
+  timestamp: string;
+  data: User[]
+}
 // User roles enum matching your backend
 export enum UserRole {
   SYSTEM_ADMIN = 'SYSTEM_ADMIN',
