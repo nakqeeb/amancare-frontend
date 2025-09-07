@@ -33,6 +33,14 @@ export const APPOINTMENT_ROUTES: Routes = [
         data: { roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] }
       },
       {
+        path: 'today',
+        loadComponent: () =>
+          import('./components/appointment-today/appointment-today.component')
+            .then(m => m.AppointmentTodayComponent),
+        canActivate: [RoleGuard],
+        data: { roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] }
+      },
+      {
         path: ':id',
         loadComponent: () =>
           import('./components/appointment-details/appointment-details.component')
@@ -47,7 +55,7 @@ export const APPOINTMENT_ROUTES: Routes = [
             .then(m => m.AppointmentFormComponent),
         canActivate: [RoleGuard],
         data: { roles: ['ADMIN', 'DOCTOR', 'RECEPTIONIST'] }
-      }
+      },
     ]
   }
 ];

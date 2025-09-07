@@ -30,6 +30,88 @@
     <!-- Stats Cards -->
     <div class="dashboard-section">
       <app-stats-cards [loading]="loading()"></app-stats-cards>
+      <mat-card class="today-appointments-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>today</mat-icon>
+            مواعيد اليوم
+          </mat-card-title>
+          <div class="card-actions">
+            <button
+              mat-icon-button
+              (click)="refreshTodayAppointments()"
+              matTooltip="تحديث"
+            >
+              <mat-icon>refresh</mat-icon>
+            </button>
+            <button
+              mat-button
+              color="primary"
+              (click)="navigateToAllTodayAppointments()"
+            >
+              عرض الكل
+            </button>
+          </div>
+        </mat-card-header>
+
+        <mat-card-content>
+          @if (loadingAppointments()) {
+          <div class="loading-container">
+            <mat-spinner diameter="30"></mat-spinner>
+          </div>
+          } @else if (todayAppointments().length === 0) {
+          <div class="empty-appointments">
+            <mat-icon class="empty-icon">event_busy</mat-icon>
+            <p>لا توجد مواعيد لليوم</p>
+          </div>
+          } @else {
+          <div class="appointments-list">
+            @for (appointment of todayAppointments().slice(0, 5); track
+            appointment.id) {
+            <div
+              class="appointment-item"
+              [class]="'status-' + (appointment.status | lowercase)"
+            >
+              <div class="appointment-time">
+                <mat-icon>schedule</mat-icon>
+                <span>{{ appointment.appointmentTime }}</span>
+              </div>
+
+              <div class="appointment-details">
+                <h4 class="patient-name">{{ appointment.patientName }}</h4>
+                <p class="appointment-type">
+                  {{ typeLabels[appointment.appointmentType] }}
+                </p>
+              </div>
+
+              <div class="appointment-doctor">
+                <span>د. {{ appointment.doctorName }}</span>
+              </div>
+
+              <div class="appointment-status">
+                <mat-chip
+                  [class]="'status-' + appointment.status.toLowerCase()"
+                >
+                  {{ statusLabels[appointment.status] }}
+                </mat-chip>
+              </div>
+
+              <button
+                mat-icon-button
+                (click)="navigateToAppointment(appointment.id)"
+              >
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+            } @if (todayAppointments().length > 5) {
+            <div class="more-appointments">
+              <span>و {{ todayAppointments().length - 5 }} موعد آخر...</span>
+            </div>
+            }
+          </div>
+          }
+        </mat-card-content>
+      </mat-card>
     </div>
 
     <!-- Main Content Grid -->

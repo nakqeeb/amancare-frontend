@@ -3,7 +3,7 @@
 // ===================================================================
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -26,6 +26,10 @@ import { ChartsOverviewComponent } from '../charts-overview/charts-overview.comp
 import { AuthService } from '../../../../core/services/auth.service';
 import { MatDividerModule } from '@angular/material/divider';
 import { DashboardService } from '../../services/dashboard.service';
+import { AppointmentService } from '../../../appointments/services/appointment.service';
+import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_TYPE_LABELS, AppointmentSummaryResponse } from '../../../appointments/models/appointment.model';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatChipsModule } from '@angular/material/chips';
 
 @Component({
   selector: 'app-main-dashboard',
@@ -41,6 +45,8 @@ import { DashboardService } from '../../services/dashboard.service';
     MatProgressBarModule,
     MatTabsModule,
     MatDividerModule,
+    MatProgressSpinnerModule,
+    MatChipsModule,
     HeaderComponent,
     SidebarComponent,
     StatsCardsComponent,
@@ -56,6 +62,17 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private dashboardService = inject(DashboardService);
 
+  private readonly appointmentService = inject(AppointmentService);
+  private router = inject(Router);
+
+  // Add these signals
+  todayAppointments = signal<AppointmentSummaryResponse[]>([]);
+  loadingAppointments = signal(false);
+
+  // Labels
+  statusLabels = APPOINTMENT_STATUS_LABELS;
+  typeLabels = APPOINTMENT_TYPE_LABELS;
+
   // Signals
   currentUser = this.authService.currentUser;
   loading = signal(false);
@@ -67,7 +84,8 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadDashboardData();
     this.startClock();
-    this.loadTodaysAppointments();
+    // this.loadTodaysAppointments();
+    this.loadTodayAppointments();
   }
 
   ngOnDestroy(): void {
@@ -101,48 +119,48 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
     }));
   }
 
-  private loadTodaysAppointments(): void {
-    // Mock data for today's appointments
-    const mockAppointments = [
-      {
-        id: 1,
-        time: '09:00',
-        patientName: 'أحمد محمد علي',
-        type: 'استشارة',
-        status: 'CONFIRMED'
-      },
-      {
-        id: 2,
-        time: '10:30',
-        patientName: 'فاطمة أحمد',
-        type: 'متابعة',
-        status: 'SCHEDULED'
-      },
-      {
-        id: 3,
-        time: '11:00',
-        patientName: 'محمد حسن',
-        type: 'فحص دوري',
-        status: 'IN_PROGRESS'
-      },
-      {
-        id: 4,
-        time: '14:00',
-        patientName: 'سارة علي',
-        type: 'استشارة',
-        status: 'SCHEDULED'
-      },
-      {
-        id: 5,
-        time: '15:30',
-        patientName: 'عبدالله محمد',
-        type: 'متابعة',
-        status: 'CONFIRMED'
-      }
-    ];
+  // private loadTodaysAppointments(): void {
+  //   // Mock data for today's appointments
+  //   const mockAppointments = [
+  //     {
+  //       id: 1,
+  //       time: '09:00',
+  //       patientName: 'أحمد محمد علي',
+  //       type: 'استشارة',
+  //       status: 'CONFIRMED'
+  //     },
+  //     {
+  //       id: 2,
+  //       time: '10:30',
+  //       patientName: 'فاطمة أحمد',
+  //       type: 'متابعة',
+  //       status: 'SCHEDULED'
+  //     },
+  //     {
+  //       id: 3,
+  //       time: '11:00',
+  //       patientName: 'محمد حسن',
+  //       type: 'فحص دوري',
+  //       status: 'IN_PROGRESS'
+  //     },
+  //     {
+  //       id: 4,
+  //       time: '14:00',
+  //       patientName: 'سارة علي',
+  //       type: 'استشارة',
+  //       status: 'SCHEDULED'
+  //     },
+  //     {
+  //       id: 5,
+  //       time: '15:30',
+  //       patientName: 'عبدالله محمد',
+  //       type: 'متابعة',
+  //       status: 'CONFIRMED'
+  //     }
+  //   ];
 
-    this.todaysAppointments.set(mockAppointments);
-  }
+  //   this.todaysAppointments.set(mockAppointments);
+  // }
 
   getCurrentDate(): string {
     return new Date().toLocaleDateString('ar-SA', {
@@ -176,5 +194,31 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
     };
 
     return statusText[status] || status;
+  }
+
+  private loadTodayAppointments(): void {
+    this.loadingAppointments.set(true);
+    this.appointmentService.getTodayAppointments().subscribe({
+      next: (appointments) => {
+        this.todayAppointments.set(appointments);
+        this.loadingAppointments.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading today appointments:', error);
+        this.loadingAppointments.set(false);
+      }
+    });
+  }
+
+  refreshTodayAppointments(): void {
+    this.loadTodayAppointments();
+  }
+
+  navigateToAppointment(appointmentId: number): void {
+    this.router.navigate(['/appointments', appointmentId]);
+  }
+
+  navigateToAllTodayAppointments(): void {
+    this.router.navigate(['/appointments/today']);
   }
 }
