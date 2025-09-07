@@ -1,0 +1,49 @@
+<!-- src/app/shared/components/confirm-dialog/confirm-dialog.component.html -->
+<div class="confirm-dialog">
+  <mat-dialog-content>
+    <div class="dialog-header">
+      <mat-icon [class]="'dialog-icon ' + getIconColor()">
+        {{ getIcon() }}
+      </mat-icon>
+      <h2 class="dialog-title">{{ data.title }}</h2>
+    </div>
+
+    <div class="dialog-message">
+      <p>{{ data.message }}</p>
+    </div>
+
+    @if (data.showReasonInput) {
+    <div class="reason-input-section">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ data.reasonLabel }}</mat-label>
+        <textarea
+          matInput
+          [(ngModel)]="reason"
+          [placeholder]="data.reasonPlaceholder!"
+          rows="3"
+          [required]="data.reasonRequired!"
+        ></textarea>
+        @if (data.reasonRequired) {
+        <mat-hint>هذا الحقل مطلوب</mat-hint>
+        }
+      </mat-form-field>
+    </div>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()">
+      <mat-icon>close</mat-icon>
+      {{ data.cancelText }}
+    </button>
+    <button
+      mat-raised-button
+      [color]="data.type === 'danger' ? 'warn' : 'primary'"
+      (click)="onConfirm()"
+      [disabled]="data.showReasonInput && data.reasonRequired && !reason.trim()"
+    >
+      <mat-icon>check</mat-icon>
+      {{ data.confirmText }}
+    </button>
+  </mat-dialog-actions>
+</div>

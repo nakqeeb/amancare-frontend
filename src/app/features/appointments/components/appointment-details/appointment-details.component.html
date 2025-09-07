@@ -1,0 +1,281 @@
+<!-- src/app/features/appointments/components/appointment-details/appointment-details.component.html -->
+<div class="appointment-details-container">
+  <app-header></app-header>
+
+  <app-sidebar>
+    <div class="main-content">
+      <div class="content-area">
+        @if (loading()) {
+        <div class="loading-container">
+          <mat-spinner></mat-spinner>
+        </div>
+        } @else if (appointment()) {
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="header-content">
+            <button
+              mat-icon-button
+              routerLink="/appointments"
+              class="back-button"
+            >
+              <mat-icon>arrow_back</mat-icon>
+            </button>
+            <div>
+              <h1 class="page-title">تفاصيل الموعد</h1>
+              <p class="page-description">موعد #{{ appointment()!.id }}</p>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            @if (appointment()!.status !== 'CANCELLED' && appointment()!.status
+            !== 'COMPLETED') {
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="editAppointment()"
+            >
+              <mat-icon>edit</mat-icon>
+              تعديل
+            </button>
+            }
+            <button mat-button (click)="printAppointment()">
+              <mat-icon>print</mat-icon>
+              طباعة
+            </button>
+          </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="details-grid">
+          <!-- Appointment Information Card -->
+          <mat-card class="info-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>event</mat-icon>
+                معلومات الموعد
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-section">
+                <div class="info-row">
+                  <span class="info-label">الحالة:</span>
+                  <mat-chip [color]="getStatusColor(appointment()!.status)">
+                    {{ statusLabels[appointment()!.status] }}
+                  </mat-chip>
+                </div>
+
+                <div class="info-row">
+                  <span class="info-label">النوع:</span>
+                  <span>{{ typeLabels[appointment()!.appointmentType] }}</span>
+                </div>
+
+                <div class="info-row">
+                  <span class="info-label">التاريخ:</span>
+                  <span>{{ appointment()!.appointmentDate }}</span>
+                </div>
+
+                <div class="info-row">
+                  <span class="info-label">الوقت:</span>
+                  <span>{{ appointment()!.appointmentTime }}</span>
+                </div>
+
+                <div class="info-row">
+                  <span class="info-label">المدة:</span>
+                  <span>{{ appointment()!.durationMinutes }} دقيقة</span>
+                </div>
+
+                @if (appointment()!.chiefComplaint) {
+                <mat-divider></mat-divider>
+                <div class="info-row full-width">
+                  <span class="info-label">الشكوى الرئيسية:</span>
+                  <p>{{ appointment()!.chiefComplaint }}</p>
+                </div>
+                } @if (appointment()!.notes) {
+                <div class="info-row full-width">
+                  <span class="info-label">ملاحظات:</span>
+                  <p>{{ appointment()!.notes }}</p>
+                </div>
+                } @if (appointment()!.cancellationReason) {
+                <mat-divider></mat-divider>
+                <div class="info-row full-width danger">
+                  <span class="info-label">سبب الإلغاء:</span>
+                  <p>{{ appointment()!.cancellationReason }}</p>
+                </div>
+                }
+              </div>
+            </mat-card-content>
+
+            <!-- Action Buttons -->
+            @if (appointment()!.status !== 'CANCELLED' && appointment()!.status
+            !== 'COMPLETED') {
+            <mat-card-actions>
+              @switch (appointment()!.status) { @case ('SCHEDULED') {
+              <button
+                mat-raised-button
+                color="accent"
+                (click)="confirmAppointment()"
+              >
+                <mat-icon>check_circle</mat-icon>
+                تأكيد الموعد
+              </button>
+              } @case ('CONFIRMED') {
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="startAppointment()"
+              >
+                <mat-icon>play_arrow</mat-icon>
+                بدء الموعد
+              </button>
+              } @case ('IN_PROGRESS') {
+              <button
+                mat-raised-button
+                color="success"
+                (click)="completeAppointment()"
+              >
+                <mat-icon>done_all</mat-icon>
+                إكمال الموعد
+              </button>
+              } }
+
+              <button mat-button color="warn" (click)="cancelAppointment()">
+                <mat-icon>cancel</mat-icon>
+                إلغاء الموعد
+              </button>
+            </mat-card-actions>
+            }
+          </mat-card>
+
+          <!-- Patient Information Card -->
+          <mat-card class="patient-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>person</mat-icon>
+                معلومات المريض
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-section">
+                <div class="info-row">
+                  <span class="info-label">الاسم:</span>
+                  <span>{{ appointment()!.patientName }}</span>
+                </div>
+
+                <div class="info-row">
+                  <span class="info-label">رقم المريض:</span>
+                  <span>{{ appointment()!.patientNumber }}</span>
+                </div>
+
+                @if (appointment()!.patientPhone) {
+                <div class="info-row">
+                  <span class="info-label">الهاتف:</span>
+                  <span dir="ltr">{{ appointment()!.patientPhone }}</span>
+                </div>
+                }
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <!-- Patient History -->
+              <div class="history-section">
+                <h4>المواعيد القادمة</h4>
+                @if (loadingHistory()) {
+                <mat-spinner diameter="30"></mat-spinner>
+                } @else if (patientHistory().length > 0) {
+                <mat-list>
+                  @for (apt of patientHistory(); track apt.id) {
+                  <mat-list-item>
+                    <mat-icon matListItemIcon>event</mat-icon>
+                    <div matListItemTitle>
+                      {{ apt.appointmentDate }} - {{ apt.appointmentTime }}
+                    </div>
+                    <div matListItemLine>
+                      {{ getTypeLabel(apt.appointmentType) }}
+                    </div>
+                  </mat-list-item>
+                  }
+                </mat-list>
+                } @else {
+                <p class="no-history">لا توجد مواعيد قادمة</p>
+                }
+              </div>
+            </mat-card-content>
+            <mat-card-actions>
+              <button mat-button (click)="navigateToPatient()">
+                <mat-icon>visibility</mat-icon>
+                عرض ملف المريض
+              </button>
+            </mat-card-actions>
+          </mat-card>
+
+          <!-- Doctor Information Card -->
+          <mat-card class="doctor-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>medical_services</mat-icon>
+                معلومات الطبيب
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-section">
+                <div class="info-row">
+                  <span class="info-label">الاسم:</span>
+                  <span>{{ appointment()!.doctorName }}</span>
+                </div>
+
+                @if (appointment()!.doctorSpecialization) {
+                <div class="info-row">
+                  <span class="info-label">التخصص:</span>
+                  <span>{{ appointment()!.doctorSpecialization }}</span>
+                </div>
+                }
+              </div>
+            </mat-card-content>
+            <mat-card-actions>
+              <button mat-button (click)="navigateToDoctor()">
+                <mat-icon>visibility</mat-icon>
+                عرض ملف الطبيب
+              </button>
+            </mat-card-actions>
+          </mat-card>
+
+          <!-- Metadata Card -->
+          <mat-card class="metadata-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>info</mat-icon>
+                معلومات إضافية
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-section">
+                <div class="info-row">
+                  <span class="info-label">تاريخ الإنشاء:</span>
+                  <span>{{ appointment()!.createdAt }}</span>
+                </div>
+
+                @if (appointment()!.createdByName) {
+                <div class="info-row">
+                  <span class="info-label">تم الإنشاء بواسطة:</span>
+                  <span>{{ appointment()!.createdByName }}</span>
+                </div>
+                } @if (appointment()!.updatedAt) {
+                <div class="info-row">
+                  <span class="info-label">آخر تحديث:</span>
+                  <span>{{ appointment()!.updatedAt }}</span>
+                </div>
+                } @if (appointment()!.updatedByName) {
+                <div class="info-row">
+                  <span class="info-label">تم التحديث بواسطة:</span>
+                  <span>{{ appointment()!.updatedByName }}</span>
+                </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+        }
+      </div>
+    </div>
+  </app-sidebar>
+</div>

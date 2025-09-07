@@ -1,0 +1,150 @@
+<!-- src/app/features/appointments/components/appointment-calendar/appointment-calendar.component.html -->
+<div class="appointment-calendar-container">
+  <app-header></app-header>
+
+  <app-sidebar>
+    <div class="main-content">
+      <div class="content-area">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="header-content">
+            <h1 class="page-title">
+              <mat-icon>calendar_today</mat-icon>
+              تقويم المواعيد
+            </h1>
+            <p class="page-description">عرض المواعيد في التقويم</p>
+          </div>
+
+          <div class="header-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              routerLink="/appointments/new"
+            >
+              <mat-icon>add</mat-icon>
+              موعد جديد
+            </button>
+          </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+          <mat-card class="stat-card today">
+            <mat-card-content>
+              <div class="stat-content">
+                <mat-icon>today</mat-icon>
+                <div class="stat-info">
+                  <h3>{{ todayCount() }}</h3>
+                  <p>مواعيد اليوم</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card week">
+            <mat-card-content>
+              <div class="stat-content">
+                <mat-icon>date_range</mat-icon>
+                <div class="stat-info">
+                  <h3>{{ weekCount() }}</h3>
+                  <p>هذا الأسبوع</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card month">
+            <mat-card-content>
+              <div class="stat-content">
+                <mat-icon>calendar_month</mat-icon>
+                <div class="stat-info">
+                  <h3>{{ monthCount() }}</h3>
+                  <p>هذا الشهر</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <!-- Filter Section -->
+        <mat-card class="filter-card">
+          <mat-card-content>
+            <div class="filter-section">
+              <mat-form-field appearance="outline">
+                <mat-label>تصفية حسب الطبيب</mat-label>
+                <mat-select
+                  [(value)]="selectedDoctor"
+                  (selectionChange)="onDoctorChange()"
+                >
+                  <mat-option [value]="null">جميع الأطباء</mat-option>
+                  @for (doctor of doctors(); track doctor.id) {
+                  <mat-option [value]="doctor.id">
+                    {{ doctor.fullName }}
+                  </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <div class="view-buttons">
+                <button mat-button (click)="changeView('dayGridMonth')">
+                  <mat-icon>calendar_view_month</mat-icon>
+                  شهر
+                </button>
+                <button mat-button (click)="changeView('timeGridWeek')">
+                  <mat-icon>view_week</mat-icon>
+                  أسبوع
+                </button>
+                <button mat-button (click)="changeView('timeGridDay')">
+                  <mat-icon>view_day</mat-icon>
+                  يوم
+                </button>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Calendar -->
+        <mat-card class="calendar-card">
+          <mat-card-content>
+            @if (loading()) {
+            <div class="loading-container">
+              <mat-spinner></mat-spinner>
+              <p>جاري تحميل المواعيد...</p>
+            </div>
+            } @else {
+            <full-calendar [options]="calendarOptions()"></full-calendar>
+            }
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Legend -->
+        <mat-card class="legend-card">
+          <mat-card-content>
+            <div class="legend">
+              <div class="legend-item">
+                <span class="legend-color scheduled"></span>
+                <span>مجدول</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color confirmed"></span>
+                <span>مؤكد</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color in-progress"></span>
+                <span>جاري</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color completed"></span>
+                <span>مكتمل</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color cancelled"></span>
+                <span>ملغي</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </app-sidebar>
+</div>

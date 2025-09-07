@@ -47,8 +47,8 @@ export const appConfig: ApplicationConfig = {
     }),
 
     // Locale & Date
-    { provide: LOCALE_ID, useValue: 'ar-SA' },
-    { provide: MAT_DATE_LOCALE, useValue: 'ar-SA' },
+    // { provide: LOCALE_ID, useValue: 'ar-SA' },
+    // { provide: MAT_DATE_LOCALE, useValue: 'ar-SA' },
 
     // Material Form Field defaults
     {

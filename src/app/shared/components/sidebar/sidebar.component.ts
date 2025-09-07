@@ -75,6 +75,39 @@ export class SidebarComponent implements OnInit, OnDestroy {
         route: '/dashboard'
       },
       {
+        title: 'المواعيد',
+        icon: 'event',
+        expanded: false,
+        roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
+        route: '',
+        children: [
+          {
+            title: 'جميع المواعيد',
+            icon: 'list',
+            route: '/appointments',
+            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'موعد جديد',
+            icon: 'add_circle',
+            route: '/appointments/new',
+            roles: ['ADMIN', 'DOCTOR', 'RECEPTIONIST']
+          },
+          {
+            title: 'التقويم',
+            icon: 'calendar_today',
+            route: '/appointments/calendar',
+            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'مواعيد اليوم',
+            icon: 'today',
+            route: '/appointments/today',
+            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          }
+        ],
+      },
+      {
         title: 'إدارة المرضى',
         icon: 'people',
         route: '/patients',
@@ -122,12 +155,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
           }
         ]
       },
-      {
-        title: 'المواعيد',
-        icon: 'event',
-        route: '/appointments',
-        badge: 12
-      },
+      // {
+      //   title: 'المواعيد',
+      //   icon: 'event',
+      //   route: '/appointments',
+      //   badge: 12
+      // },
       {
         title: 'السجلات الطبية',
         icon: 'folder_shared',

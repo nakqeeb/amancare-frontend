@@ -330,3 +330,141 @@ body {
     justify-content: center;
   }
 }
+
+
+
+// ======================
+// styles to fix transparent dropdown backgrounds
+// START
+// Mat-Select dropdown panel
+.mat-mdc-select-panel {
+  background-color: white !important;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2),
+              0 4px 5px 0 rgba(0, 0, 0, 0.14),
+              0 1px 10px 0 rgba(0, 0, 0, 0.12) !important;
+}
+
+// Mat-Select options
+.mat-mdc-option {
+  background-color: white !important;
+
+  &:hover:not(.mat-mdc-option-disabled) {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+
+  &.mat-mdc-option-active {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+
+  &.mdc-list-item--selected {
+    background-color: rgba(25, 118, 210, 0.12) !important;
+  }
+}
+
+// Mat-Autocomplete panel
+.mat-mdc-autocomplete-panel {
+  background-color: white !important;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2),
+              0 4px 5px 0 rgba(0, 0, 0, 0.14),
+              0 1px 10px 0 rgba(0, 0, 0, 0.12) !important;
+
+  .mat-mdc-option {
+    background-color: white !important;
+  }
+}
+
+// Mat-Menu panel
+.mat-mdc-menu-panel {
+  background-color: white !important;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2),
+              0 4px 5px 0 rgba(0, 0, 0, 0.14),
+              0 1px 10px 0 rgba(0, 0, 0, 0.12) !important;
+}
+
+.mat-mdc-menu-content {
+  background-color: white !important;
+}
+
+.mat-mdc-menu-item {
+  background-color: transparent !important;
+
+  &:hover:not([disabled]) {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+}
+
+// Date picker calendar
+.mat-datepicker-content {
+  background-color: white !important;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2),
+              0 4px 5px 0 rgba(0, 0, 0, 0.14),
+              0 1px 10px 0 rgba(0, 0, 0, 0.12) !important;
+}
+
+.mat-calendar {
+  background-color: white !important;
+}
+
+// Dialog panels
+.mat-mdc-dialog-container {
+  background-color: white !important;
+}
+
+// For older Material versions (if you're using them)
+.mat-select-panel {
+  background-color: white !important;
+}
+
+.mat-option {
+  background-color: white !important;
+
+  &:hover:not(.mat-option-disabled) {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+}
+
+.mat-autocomplete-panel {
+  background-color: white !important;
+}
+
+.mat-menu-panel {
+  background-color: white !important;
+}
+// Fix for any custom dropdowns
+.dropdown-panel,
+.custom-select-panel {
+  background-color: white !important;
+}
+
+// Additional fix for Material 15+ if needed
+.mdc-menu-surface {
+  background-color: white !important;
+}
+
+.mdc-list {
+  background-color: transparent !important; // Let parent handle background
+}
+
+// Ensure proper contrast for dark themes (if you support theme switching)
+.dark-theme {
+  .mat-mdc-select-panel,
+  .mat-mdc-autocomplete-panel,
+  .mat-mdc-menu-panel,
+  .mat-datepicker-content,
+  .mat-mdc-dialog-container {
+    background-color: #424242 !important;
+  }
+
+  .mat-mdc-option {
+    background-color: #424242 !important;
+
+    &:hover:not(.mat-mdc-option-disabled) {
+      background-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    &.mdc-list-item--selected {
+      background-color: rgba(255, 255, 255, 0.12) !important;
+    }
+  }
+}
+// END

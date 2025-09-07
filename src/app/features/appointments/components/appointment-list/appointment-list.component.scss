@@ -1,0 +1,149 @@
+// src/app/features/appointments/components/appointment-list/appointment-list.component.scss
+.appointment-list-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.content-area {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  .header-content {
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 8px 0;
+      font-size: 28px;
+      font-weight: 600;
+      color: #333;
+
+      mat-icon {
+        color: #1976d2;
+      }
+    }
+
+    .page-description {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 12px;
+  }
+}
+
+.filters-card {
+  margin-bottom: 24px;
+
+  .filter-form {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+
+    mat-form-field {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    button {
+      height: 56px;
+    }
+  }
+}
+
+.table-card {
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+
+    mat-icon {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+      color: #ccc;
+      margin-bottom: 16px;
+    }
+
+    h3 {
+      margin: 0 0 8px 0;
+      color: #666;
+    }
+
+    p {
+      margin: 0 0 24px 0;
+      color: #999;
+    }
+  }
+
+  .appointments-table {
+    width: 100%;
+
+    .patient-info,
+    .doctor-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .patient-number,
+      .specialization {
+        font-size: 12px;
+        color: #666;
+      }
+    }
+
+    .datetime-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      mat-icon {
+        color: #666;
+      }
+
+      .time {
+        font-size: 12px;
+        color: #666;
+      }
+    }
+
+    .danger-action {
+      color: #f44336;
+    }
+  }
+}
+
+mat-chip {
+  font-size: 12px;
+}

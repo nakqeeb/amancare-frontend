@@ -43,7 +43,7 @@ export const routes: Routes = [
   // إدارة المواعيد - Appointments
   {
     path: 'appointments',
-    loadChildren: () => import('./features/appointments/appointments.routes').then(r => r.APPOINTMENTS_ROUTES),
+    loadChildren: () => import('./features/appointments/appointments.routes').then(r => r.APPOINTMENT_ROUTES),
     canActivate: [AuthGuard],
     title: 'إدارة المواعيد - نظام أمان كير'
   },

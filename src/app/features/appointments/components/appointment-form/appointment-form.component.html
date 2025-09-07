@@ -1,0 +1,317 @@
+<!-- src/app/features/appointments/components/appointment-form/appointment-form.component.html -->
+<div class="appointment-form-container">
+  <app-header></app-header>
+
+  <app-sidebar>
+    <div class="main-content">
+      <div class="content-area">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="header-content">
+            <button
+              mat-icon-button
+              routerLink="/appointments"
+              class="back-button"
+            >
+              <mat-icon>arrow_back</mat-icon>
+            </button>
+            <div>
+              <h1 class="page-title">
+                <mat-icon>{{ isEditMode() ? "edit" : "add_circle" }}</mat-icon>
+                {{ isEditMode() ? "تعديل الموعد" : "موعد جديد" }}
+              </h1>
+              <p class="page-description">
+                {{
+                  isEditMode()
+                    ? "تعديل بيانات الموعد الحالي"
+                    : "إنشاء موعد جديد للمريض"
+                }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Card -->
+        <mat-card class="form-card">
+          <mat-card-content>
+            @if (loading()) {
+            <div class="loading-container">
+              <mat-spinner></mat-spinner>
+              <p>جاري التحميل...</p>
+            </div>
+            } @else {
+            <form [formGroup]="appointmentForm" (ngSubmit)="onSubmit()">
+              <!-- Patient Section -->
+              @if (!isEditMode()) {
+              <div class="form-section">
+                <h3 class="section-title">
+                  <mat-icon>person</mat-icon>
+                  معلومات المريض
+                </h3>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>البحث عن المريض</mat-label>
+                  <input
+                    matInput
+                    formControlName="patientSearch"
+                    [matAutocomplete]="auto"
+                    placeholder="ابحث بالاسم أو رقم المريض"
+                  />
+                  <mat-icon matSuffix>search</mat-icon>
+                  <mat-autocomplete
+                    #auto="matAutocomplete"
+                    [displayWith]="displayPatient"
+                    (optionSelected)="onPatientSelected($event)"
+                  >
+                    @for (patient of filteredPatients$ | async; track
+                    patient.id) {
+                    <mat-option [value]="patient">
+                      <div class="patient-option">
+                        <strong
+                          >{{ patient.fullName }}</strong
+                        >
+                        <span class="patient-number">{{
+                          patient.patientNumber
+                        }}</span>
+                        @if (patient.phone) {
+                        <span class="patient-phone">{{ patient.phone }}</span>
+                        }
+                      </div>
+                    </mat-option>
+                    }
+                  </mat-autocomplete>
+                  <mat-error
+                    *ngIf="
+                      appointmentForm.get('patientId')?.hasError('required')
+                    "
+                  >
+                    يجب اختيار المريض
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <mat-divider></mat-divider>
+              }
+
+              <!-- Doctor Section -->
+              <div class="form-section">
+                <h3 class="section-title">
+                  <mat-icon>medical_services</mat-icon>
+                  معلومات الطبيب
+                </h3>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>الطبيب المعالج</mat-label>
+                  <mat-select
+                    formControlName="doctorId"
+                    [disabled]="isEditMode()"
+                  >
+                    <mat-option [value]="null">-- اختر الطبيب --</mat-option>
+                    @for (doctor of doctors(); track doctor.id) {
+                    <mat-option [value]="doctor.id">
+                      <div class="doctor-option">
+                        <span class="doctor-name">{{ doctor.fullName }}</span>
+                        @if (doctor.specialization) {
+                        <span class="doctor-spec">{{
+                          doctor.specialization
+                        }}</span>
+                        }
+                      </div>
+                    </mat-option>
+                    }
+                  </mat-select>
+                  <mat-icon matPrefix>person</mat-icon>
+                  <mat-error
+                    *ngIf="
+                      appointmentForm.get('doctorId')?.hasError('required')
+                    "
+                  >
+                    يجب اختيار الطبيب
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <!-- Appointment Details Section -->
+              <div class="form-section">
+                <h3 class="section-title">
+                  <mat-icon>event</mat-icon>
+                  تفاصيل الموعد
+                </h3>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>تاريخ الموعد</mat-label>
+                    <input
+                      matInput
+                      [matDatepicker]="picker"
+                      formControlName="appointmentDate"
+                      [min]="minDate"
+                    />
+                    <mat-datepicker-toggle
+                      matSuffix
+                      [for]="picker"
+                    ></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <mat-error
+                      *ngIf="
+                        appointmentForm
+                          .get('appointmentDate')
+                          ?.hasError('required')
+                      "
+                    >
+                      يجب تحديد تاريخ الموعد
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>وقت الموعد</mat-label>
+                    <mat-select formControlName="appointmentTime">
+                      <mat-option [value]="null">-- اختر الوقت --</mat-option>
+                      @for (slot of availableTimeSlots(); track slot) {
+                      <mat-option [value]="slot">
+                        <mat-icon>schedule</mat-icon>
+                        {{ slot }}
+                      </mat-option>
+                      }
+                    </mat-select>
+                    <mat-error
+                      *ngIf="
+                        appointmentForm
+                          .get('appointmentTime')
+                          ?.hasError('required')
+                      "
+                    >
+                      يجب تحديد وقت الموعد
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline">
+                    <mat-label>نوع الموعد</mat-label>
+                    <mat-select formControlName="appointmentType">
+                      @for (type of appointmentTypes; track type) {
+                      <mat-option [value]="type">
+                        {{ typeLabels[type] }}
+                      </mat-option>
+                      }
+                    </mat-select>
+                    <mat-icon matPrefix>category</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>مدة الموعد (بالدقائق)</mat-label>
+                    <mat-select formControlName="durationMinutes">
+                      @for (duration of durationOptions; track duration) {
+                      <mat-option [value]="duration">
+                        {{ duration }} دقيقة
+                      </mat-option>
+                      }
+                    </mat-select>
+                    <mat-icon matPrefix>timer</mat-icon>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <!-- Medical Information Section -->
+              <div class="form-section">
+                <h3 class="section-title">
+                  <mat-icon>description</mat-icon>
+                  المعلومات الطبية
+                </h3>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>الشكوى الرئيسية</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="chiefComplaint"
+                    rows="3"
+                    placeholder="اكتب الشكوى الرئيسية للمريض..."
+                  ></textarea>
+                  <mat-icon matPrefix>medical_information</mat-icon>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>ملاحظات إضافية</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="notes"
+                    rows="3"
+                    placeholder="أي ملاحظات إضافية..."
+                  ></textarea>
+                  <mat-icon matPrefix>note</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <!-- Form Actions -->
+              <mat-card-actions>
+                <button
+                  mat-raised-button
+                  color="primary"
+                  type="submit"
+                  [disabled]="appointmentForm.invalid || loading()"
+                >
+                  <mat-icon>{{ isEditMode() ? "save" : "add" }}</mat-icon>
+                  {{ isEditMode() ? "حفظ التغييرات" : "إنشاء الموعد" }}
+                </button>
+
+                <button mat-button type="button" (click)="onCancel()">
+                  <mat-icon>cancel</mat-icon>
+                  إلغاء
+                </button>
+              </mat-card-actions>
+            </form>
+            }
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Info Cards -->
+        <div class="info-cards">
+          <!-- Appointment Tips -->
+          <mat-card class="tips-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>lightbulb</mat-icon>
+                نصائح لحجز المواعيد
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <ul>
+                <li>تأكد من توفر الطبيب في الوقت المحدد</li>
+                <li>احرص على تسجيل الشكوى الرئيسية بدقة</li>
+                <li>حدد مدة الموعد بناءً على نوع الاستشارة</li>
+                <li>تأكد من بيانات المريض قبل الحفظ</li>
+              </ul>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Working Hours -->
+          <mat-card class="hours-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>schedule</mat-icon>
+                ساعات العمل
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="working-hours">
+                <div class="hour-item">
+                  <span class="day">السبت - الخميس</span>
+                  <span class="time">8:00 ص - 6:00 م</span>
+                </div>
+                <div class="hour-item">
+                  <span class="day">الجمعة</span>
+                  <span class="time">مغلق</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+  </app-sidebar>
+</div>
