@@ -108,10 +108,32 @@ export class SidebarComponent implements OnInit, OnDestroy {
         ],
       },
       {
-        title: 'إدارة المرضى',
+        title: 'المرضى',
         icon: 'people',
-        route: '/patients',
-        badge: 5
+        expanded: false,
+        roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
+        route: '',
+        badge: 5,
+        children: [
+          {
+            title: 'قائمة المرضى',
+            icon: 'list',
+            route: '/patients',
+            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'البحث المتقدم',
+            icon: 'person_search',
+            route: '/patients/search',
+            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'إضافة مريض',
+            icon: 'person_add',
+            route: '/patients/new',
+            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          }
+        ]
       },
       // ===================================================================
       // SCHEDULES MENU - New Addition

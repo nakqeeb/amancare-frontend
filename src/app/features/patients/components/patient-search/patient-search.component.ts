@@ -31,6 +31,8 @@ import {
   GENDER_OPTIONS
 } from '../../models/patient.model';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { SidebarComponent } from "../../../../shared/components/sidebar/sidebar.component";
 
 export interface SearchResult {
   criteria: PatientSearchCriteria;
@@ -56,7 +58,9 @@ export interface SearchResult {
     MatProgressSpinnerModule,
     MatAutocompleteModule,
     MatChipsModule,
-    MatTooltipModule
+    MatTooltipModule,
+    HeaderComponent,
+    SidebarComponent
 ],
   templateUrl: './patient-search.component.html',
   styleUrl: './patient-search.component.scss'
