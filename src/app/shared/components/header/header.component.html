@@ -35,14 +35,17 @@
       </button>
 
       <!-- Theme Toggle -->
-      <button
+      <!-- <button
         mat-icon-button
         (click)="toggleTheme()"
         class="action-button"
         [title]="isDarkTheme() ? 'الوضع الفاتح' : 'الوضع الداكن'"
       >
         <mat-icon>{{ isDarkTheme() ? "light_mode" : "dark_mode" }}</mat-icon>
-      </button>
+      </button> -->
+
+      <app-theme-toggle></app-theme-toggle>
+      <!-- <app-theme-toggle-simple></app-theme-toggle-simple> -->
 
       <!-- User Menu -->
       <button

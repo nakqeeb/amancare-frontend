@@ -1,0 +1,70 @@
+<!-- Simple toggle button -->
+<button
+  mat-icon-button
+  class="theme-toggle-button"
+  [matTooltip]="getTooltip()"
+  (click)="handleClick()"
+  [class.dark-active]="isDark()"
+>
+  <mat-icon class="theme-icon">{{ getIcon() }}</mat-icon>
+</button>
+
+<!-- Advanced menu with options (optional - can be enabled with showMenu input) -->
+<button
+  *ngIf="showMenu()"
+  mat-icon-button
+  class="theme-menu-button"
+  [matMenuTriggerFor]="themeMenu"
+  [matTooltip]="'إعدادات المظهر'"
+>
+  <mat-icon>{{ getIcon() }}</mat-icon>
+</button>
+
+<mat-menu #themeMenu="matMenu" class="theme-menu">
+  <div class="theme-menu-header">
+    <mat-icon>palette</mat-icon>
+    <span>اختر المظهر</span>
+  </div>
+  <mat-divider></mat-divider>
+
+  <button
+    mat-menu-item
+    (click)="setTheme('light')"
+    [class.active]="currentPreference() === 'light'"
+  >
+    <mat-icon>light_mode</mat-icon>
+    <span>المظهر الفاتح</span>
+    <mat-icon *ngIf="currentPreference() === 'light'" class="check-icon"
+      >check</mat-icon
+    >
+  </button>
+
+  <button
+    mat-menu-item
+    (click)="setTheme('dark')"
+    [class.active]="currentPreference() === 'dark'"
+  >
+    <mat-icon>dark_mode</mat-icon>
+    <span>المظهر الداكن</span>
+    <mat-icon *ngIf="currentPreference() === 'dark'" class="check-icon"
+      >check</mat-icon
+    >
+  </button>
+
+  <button
+    mat-menu-item
+    (click)="setTheme('auto')"
+    [class.active]="currentPreference() === 'auto'"
+  >
+    <mat-icon>brightness_auto</mat-icon>
+    <span>تلقائي (حسب النظام)</span>
+    <mat-icon *ngIf="currentPreference() === 'auto'" class="check-icon"
+      >check</mat-icon
+    >
+  </button>
+
+  <mat-divider></mat-divider>
+  <div class="theme-menu-footer">
+    <small>النظام الحالي: {{ getSystemTheme() }}</small>
+  </div>
+</mat-menu>
