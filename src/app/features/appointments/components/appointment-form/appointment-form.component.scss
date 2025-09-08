@@ -15,7 +15,7 @@
   flex: 1;
   padding: 24px;
   overflow-y: auto;
-  background-color: #f5f5f5;
+  background-color: var(--bg-light);
 }
 
 .page-header {
@@ -29,7 +29,7 @@
     gap: 16px;
 
     .back-button {
-      color: #666;
+      color: var(--text-secondary);
 
       &:hover {
         background-color: rgba(0, 0, 0, 0.04);
@@ -43,16 +43,16 @@
       margin: 0;
       font-size: 24px;
       font-weight: 600;
-      color: #333;
+      color: var(--text-primary);
 
       mat-icon {
-        color: #1976d2;
+        color: var(--primary-color);
       }
     }
 
     .page-description {
       margin: 0;
-      color: #666;
+      color: var(--text-secondary);
       font-size: 14px;
     }
   }
@@ -71,7 +71,7 @@
     gap: 16px;
 
     p {
-      color: #666;
+      color: var(--text-secondary);
       font-size: 16px;
     }
   }
@@ -87,7 +87,7 @@
     margin: 0 0 20px 0;
     font-size: 18px;
     font-weight: 500;
-    color: #1976d2;
+    color: var(--primary-color);
 
     mat-icon {
       font-size: 24px;
@@ -132,13 +132,13 @@ mat-divider {
 
   .patient-number {
     font-size: 12px;
-    color: #666;
+    color: var(--text-secondary);
     margin-right: 8px;
   }
 
   .patient-phone {
     font-size: 12px;
-    color: #999;
+    color: var(--text-muted);
   }
 }
 
@@ -154,7 +154,7 @@ mat-divider {
 
   .doctor-spec {
     font-size: 12px;
-    color: #666;
+    color: var(--text-secondary);
     margin-left: auto;
   }
 }
@@ -164,7 +164,7 @@ mat-card-actions {
   gap: 12px;
   justify-content: flex-end;
   padding: 24px;
-  background-color: #f9f9f9;
+  background-color: var(--bg-light);
   margin: 24px -24px -24px;
 
   button {
@@ -197,10 +197,10 @@ mat-card-actions {
       gap: 8px;
       font-size: 16px;
       font-weight: 500;
-      color: #333;
+      color: var(--text-primary);
 
       mat-icon {
-        color: #1976d2;
+        color: var(--primary-color);
       }
     }
   }
@@ -212,7 +212,7 @@ mat-card-actions {
 
       li {
         margin-bottom: 8px;
-        color: #666;
+        color: var(--text-secondary);
         font-size: 14px;
         line-height: 1.5;
       }
@@ -230,16 +230,16 @@ mat-card-actions {
     justify-content: space-between;
     align-items: center;
     padding: 12px;
-    background-color: #f9f9f9;
+    background-color: var(--bg-light);
     border-radius: 8px;
 
     .day {
       font-weight: 500;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .time {
-      color: #1976d2;
+      color: var(--primary-color);
       font-weight: 600;
     }
   }
@@ -263,14 +263,14 @@ mat-form-field {
   .mat-form-field-flex {
     &:hover {
       .mat-form-field-outline {
-        color: #1976d2;
+        color: var(--primary-color);
       }
     }
   }
 
   &.mat-focused {
     .mat-form-field-outline {
-      color: #1976d2 !important;
+      color: var(--primary-color) !important;
     }
   }
 }
@@ -280,7 +280,7 @@ mat-option {
   &.time-slot-option {
     mat-icon {
       margin-inline-end: 8px;
-      color: #666;
+      color: var(--text-secondary);
     }
   }
 }

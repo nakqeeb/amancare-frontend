@@ -14,7 +14,7 @@
   flex: 1;
   padding: 24px;
   overflow-y: auto;
-  background-color: #f5f5f5;
+  background-color: var(--bg-light);
 }
 
 .page-header {
@@ -32,12 +32,12 @@
     margin: 0 0 8px 0;
     font-size: 28px;
     font-weight: 600;
-    color: #1976d2;
+    color: var(--primary-color);
   }
 
   .page-description {
     margin: 0;
-    color: #666;
+    color: var(--text-secondary);
     font-size: 16px;
   }
 }
@@ -59,9 +59,9 @@
       border: 2px solid #ddd;
 
       &.active {
-        background-color: #1976d2;
-        color: white;
-        border-color: #1976d2;
+        background-color: var(--primary-color);
+        color: var(--bg-primary);
+        border-color: var(--primary-color);
       }
     }
   }
@@ -81,12 +81,12 @@
   }
 
   .today-btn {
-    border: 1px solid #1976d2;
-    color: #1976d2;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
 
     &:hover {
-      background-color: #1976d2;
-      color: white;
+      background-color: var(--primary-color);
+      color: var(--bg-primary);
     }
   }
 
@@ -95,7 +95,7 @@
 
     h2 {
       margin: 0;
-      color: #1976d2;
+      color: var(--primary-color);
       font-weight: 600;
     }
   }
@@ -109,7 +109,7 @@
       align-items: center;
       gap: 4px;
       font-size: 12px;
-      color: #666;
+      color: var(--text-secondary);
 
       .legend-color {
         width: 12px;
@@ -125,7 +125,7 @@
         }
 
         &.is-today {
-          background-color: #1976d2;
+          background-color: var(--primary-color);
         }
       }
     }
@@ -153,7 +153,7 @@
       padding: 12px 8px;
       text-align: center;
       font-weight: 600;
-      color: #666;
+      color: var(--text-secondary);
       font-size: 14px;
     }
   }
@@ -192,7 +192,7 @@
 
       &.today {
         background-color: #e3f2fd;
-        border: 2px solid #1976d2;
+        border: 2px solid var(--primary-color);
       }
 
       &.past {
@@ -228,7 +228,7 @@
 
           .more-indicator {
             font-size: 10px;
-            color: #666;
+            color: var(--text-secondary);
             font-weight: 600;
           }
         }
@@ -264,11 +264,11 @@
             padding: 2px 4px;
             border-radius: 2px;
             background-color: rgba(0, 0, 0, 0.1);
-            color: #333;
+            color: var(--text-primary);
 
             &.doctors {
               background-color: rgba(25, 118, 210, 0.1);
-              color: #1976d2;
+              color: var(--primary-color);
             }
 
             &.slots {

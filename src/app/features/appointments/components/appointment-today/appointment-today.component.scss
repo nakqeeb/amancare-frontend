@@ -15,7 +15,7 @@
   flex: 1;
   padding: 24px;
   overflow-y: auto;
-  background-color: #f5f5f5;
+  background-color: var(--bg-light);
 }
 
 .page-header {
@@ -32,16 +32,16 @@
       margin: 0 0 8px 0;
       font-size: 28px;
       font-weight: 600;
-      color: #333;
+      color: var(--text-primary);
 
       mat-icon {
-        color: #1976d2;
+        color: var(--primary-color);
       }
     }
 
     .page-description {
       margin: 0;
-      color: #666;
+      color: var(--text-secondary);
       font-size: 16px;
     }
   }
@@ -52,7 +52,7 @@
     gap: 16px;
 
     .last-refresh {
-      color: #999;
+      color: var(--text-muted);
       font-size: 14px;
     }
   }
@@ -94,7 +94,7 @@
 
         p {
           margin: 0;
-          color: #666;
+          color: var(--text-secondary);
           font-size: 14px;
         }
       }
@@ -154,9 +154,10 @@
 
   .appointment-card {
     padding: 16px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
-    background: white;
+    background: var(--bg-primary)
+;
     cursor: pointer;
     transition: all 0.3s ease;
 
@@ -167,7 +168,8 @@
 
     &.in-progress {
       border-left: 4px solid #FF9800;
-      background: linear-gradient(to right, #fff3e0, white);
+      background: linear-gradient(to right, #fff3e0, var(--bg-primary)
+);
     }
 
     &.confirmed {
@@ -191,7 +193,7 @@
 
       .time {
         font-weight: 600;
-        color: #1976d2;
+        color: var(--primary-color);
         font-size: 16px;
       }
     }
@@ -200,22 +202,22 @@
       margin: 0 0 8px 0;
       font-size: 16px;
       font-weight: 500;
-      color: #333;
+      color: var(--text-primary);
     }
 
     p {
       margin: 0 0 8px 0;
-      color: #666;
+      color: var(--text-secondary);
       font-size: 14px;
     }
 
     .type {
       display: inline-block;
       padding: 4px 8px;
-      background: #f5f5f5;
+      background: var(--bg-light);
       border-radius: 4px;
       font-size: 12px;
-      color: #666;
+      color: var(--text-secondary);
     }
 
     .appointment-footer {
@@ -236,7 +238,7 @@
   gap: 16px;
 
   p {
-    color: #666;
+    color: var(--text-secondary);
   }
 }
 
@@ -258,11 +260,11 @@
 
   h3 {
     margin: 0 0 8px 0;
-    color: #666;
+    color: var(--text-secondary);
   }
 
   p {
     margin: 0 0 24px 0;
-    color: #999;
+    color: var(--text-muted);
   }
 }

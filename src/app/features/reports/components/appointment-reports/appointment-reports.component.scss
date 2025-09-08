@@ -7,7 +7,7 @@
 // ===================================================================
 .appointment-reports-container {
   padding: 24px;
-  background-color: #f5f5f5;
+  background-color: var(--bg-secondary);
   min-height: calc(100vh - 64px);
 
   @media (max-width: 768px) {
@@ -23,7 +23,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 32px;
-  background: white;
+  background: var(--bg-primary);;
   padding: 24px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -31,7 +31,7 @@
   h1 {
     font-size: 1.75rem;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
     margin: 0;
     display: flex;
     align-items: center;
@@ -64,7 +64,7 @@
 // FILTERS SECTION
 // ===================================================================
 .filters-card {
-  background: white;
+  background: var(--bg-primary);;
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 32px;
@@ -73,7 +73,7 @@
   .filters-title {
     font-size: 1.2rem;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
     margin: 0 0 20px 0;
     display: flex;
     align-items: center;
@@ -111,7 +111,7 @@
   .section-title {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
     margin: 0 0 24px 0;
     display: flex;
     align-items: center;
@@ -196,7 +196,7 @@
   .overview-value {
     font-size: 2.2rem;
     font-weight: 700;
-    color: #333;
+    color: var(--text-primary);
     margin: 0 0 8px 0;
   }
 
@@ -241,7 +241,7 @@
 
   .mat-mdc-tab-group {
     .mat-mdc-tab-header {
-      background: #f8f9fa;
+      background: var(--bg-light);
       border-radius: 12px 12px 0 0;
     }
   }
@@ -282,7 +282,7 @@
     mat-card-title {
       font-size: 1.1rem;
       font-weight: 600;
-      color: #333;
+      color: var(--text-primary);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -303,7 +303,7 @@
   h3 {
     font-size: 1.3rem;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
     margin: 0 0 24px 0;
     display: flex;
     align-items: center;
@@ -321,18 +321,18 @@
 
 .doctor-performance-table {
   width: 100%;
-  background: white;
+  background: var(--bg-primary);;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
   mat-header-cell {
     font-weight: 600;
-    color: #333;
-    background-color: #f8f9fa;
+    color: var(--text-primary);
+    background-color: var(--bg-light);
   }
 
   mat-cell {
-    color: #555;
+    color: var(--text-secondary);
 
     &.mat-column-rate {
       font-weight: 600;
@@ -375,7 +375,7 @@
     justify-content: space-between;
     padding: 12px 16px;
     margin: 8px 0;
-    background: #f8f9fa;
+    background: var(--bg-light);
     border-radius: 8px;
     border-left: 4px solid #e0e0e0;
     transition: all 0.3s ease;
@@ -397,12 +397,12 @@
 
     .time-label {
       font-weight: 500;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .appointment-count {
       font-weight: 600;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .percentage {
@@ -421,7 +421,7 @@
   align-items: center;
   justify-content: center;
   padding: 48px 24px;
-  background: white;
+  background: var(--bg-primary);;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
@@ -527,7 +527,7 @@
 // ===================================================================
 @media print {
   .appointment-reports-container {
-    background: white;
+    background: var(--bg-primary);;
     padding: 0;
   }
 
