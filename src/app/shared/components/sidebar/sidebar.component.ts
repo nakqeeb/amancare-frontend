@@ -78,14 +78,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
         title: 'المواعيد',
         icon: 'event',
         expanded: false,
-        roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
+        roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
         route: '',
         children: [
           {
             title: 'جميع المواعيد',
             icon: 'list',
             route: '/appointments',
-            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
           },
           {
             title: 'موعد جديد',
@@ -97,13 +97,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
             title: 'التقويم',
             icon: 'calendar_today',
             route: '/appointments/calendar',
-            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
           },
           {
             title: 'مواعيد اليوم',
             icon: 'today',
             route: '/appointments/today',
-            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
           }
         ],
       },
@@ -111,7 +111,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         title: 'المرضى',
         icon: 'people',
         expanded: false,
-        roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
+        roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
         route: '',
         badge: 5,
         children: [
@@ -119,13 +119,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
             title: 'قائمة المرضى',
             icon: 'list',
             route: '/patients',
-            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
           },
           {
             title: 'البحث المتقدم',
             icon: 'person_search',
             route: '/patients/search',
-            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
           },
           {
             title: 'إضافة مريض',
@@ -142,20 +142,20 @@ export class SidebarComponent implements OnInit, OnDestroy {
         title: 'جداول الأطباء',
         icon: 'schedule',
         route: '/schedules',
-        roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
+        roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
         badge: 5,
         children: [
           {
             title: 'عرض الجداول',
             icon: 'view_list',
             route: '/schedules',
-            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
           },
           {
             title: 'التقويم',
             icon: 'calendar_month',
             route: '/schedules/calendar',
-            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
           },
           {
             title: 'فحص التوفر',

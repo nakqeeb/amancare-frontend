@@ -465,6 +465,36 @@
   }
 }
 
+// Danger Menu Items
+.danger-menu-item {
+  color: #f44336 !important;
+
+  &:hover {
+    background-color: #ffebee !important;
+  }
+
+  mat-icon {
+    color: #f44336 !important;
+  }
+}
+
+.permanent-delete-menu-item {
+  background-color: #ffebee;
+
+  &:hover {
+    background-color: #ffcdd2 !important;
+  }
+
+  .danger-icon {
+    color: #d32f2f !important;
+  }
+
+  .danger-text {
+    color: #d32f2f;
+    font-weight: 500;
+  }
+}
+
 // Dark Theme Support
 @media (prefers-color-scheme: dark) {
   .patient-details-container {

@@ -457,13 +457,35 @@
         <span>إعادة تفعيل المريض</span>
       </button>
 
-      <button
+      <!-- <button
         mat-menu-item
         *ngIf="canDeletePatient() && patient()!.isActive"
         (click)="onDeletePatient()"
       >
         <mat-icon color="warn">delete</mat-icon>
         <span>حذف المريض</span>
+      </button> -->
+
+      <!-- Soft Delete -->
+      <button
+        mat-menu-item
+        *ngIf="canDeletePatient() && patient()!.isActive"
+        (click)="onDeletePatient()"
+        class="danger-menu-item"
+      >
+        <mat-icon color="warn">delete</mat-icon>
+        <span>إلغاء التفعيل</span>
+      </button>
+
+      <!-- Permanent Delete - SYSTEM_ADMIN Only -->
+      <button
+        mat-menu-item
+        *ngIf="canPermanentlyDelete()"
+        (click)="onPermanentlyDeletePatient()"
+        class="permanent-delete-menu-item"
+      >
+        <mat-icon class="danger-icon">delete_forever</mat-icon>
+        <span class="danger-text">حذف نهائي (لا يمكن التراجع)</span>
       </button>
     </mat-menu>
   </div>

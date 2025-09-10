@@ -4,12 +4,14 @@
 // ===================================================================
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
-import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { tap, catchError, map, finalize } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ApiResponse, PageResponse } from '../../../core/models/api-response.model';
+import { UserRole } from '../../users/models/user.model';
+import { AuthService } from '../../../core/services/auth.service';
 
 // ===================================================================
 // INTERFACES & MODELS - Matching Spring Boot DTOs
@@ -116,6 +118,33 @@ export interface PatientPageResponse extends PageResponse<Patient> {
   patients: Patient[]
 }
 
+// Permanent Delete Response Interface
+export interface PermanentDeleteResponse {
+  patientId: number;
+  patientNumber: string;
+  patientName: string;
+  deletedAt: string;
+  deletedByUserId: number;
+  recordsDeleted: {
+    appointments: number;
+    medicalRecords: number;
+    invoices: number;
+  };
+  confirmationMessage: string;
+}
+
+// Deletion Preview Interface
+export interface DeletionPreview {
+  canDelete: boolean;
+  blockers?: string[];
+  dataToDelete?: {
+    appointments: number;
+    medicalRecords: number;
+    invoices: number;
+    documents: number;
+  };
+}
+
 export type Gender = 'MALE' | 'FEMALE';
 
 export type BloodType =
@@ -134,6 +163,7 @@ export type BloodType =
 export class PatientService {
   private http = inject(HttpClient);
   private notificationService = inject(NotificationService);
+  private authService = inject(AuthService);
   private readonly apiUrl = `${environment.apiUrl}/patients`;
 
   // ===================================================================
@@ -381,6 +411,120 @@ export class PatientService {
         return throwError(() => error);
       })
     );
+  }
+
+  /**
+  * PERMANENTLY DELETE PATIENT (SYSTEM_ADMIN ONLY)
+  * WARNING: This action cannot be undone
+  */
+  permanentlyDeletePatient(
+    id: number,
+    confirmationCode: string
+  ): Observable<ApiResponse<PermanentDeleteResponse>> {
+    this.loading.set(true);
+
+    // Add confirmation code as query parameter
+    const params = new HttpParams().set('confirmationCode', confirmationCode);
+
+    return this.http.delete<ApiResponse<PermanentDeleteResponse>>(
+      `${this.apiUrl}/${id}/permanent`,
+      { params }
+    ).pipe(
+      tap(response => {
+        if (response.success) {
+          // Remove from local state completely
+          const currentPatients = this.patients().filter(p => p.id !== id);
+          this.patients.set(currentPatients);
+          this.patientsSubject.next(currentPatients);
+
+          // Clear selected patient if it was the deleted one
+          if (this.selectedPatient()?.id === id) {
+            this.selectedPatient.set(null);
+          }
+
+          // Log this critical action
+          console.warn('PERMANENT DELETE: Patient permanently deleted', {
+            patientId: id,
+            response: response.data
+          });
+
+          // Show detailed notification
+          const data = response.data!;
+          const message = `تم حذف المريض "${data.patientName}" نهائياً.
+            تم حذف ${data.recordsDeleted.appointments} موعد،
+            ${data.recordsDeleted.medicalRecords} سجل طبي،
+            ${data.recordsDeleted.invoices} فاتورة.`;
+
+          this.notificationService.warning(message);
+        }
+        this.loading.set(false);
+      }),
+      catchError(error => {
+        this.loading.set(false);
+
+        // Handle specific error cases
+        if (error.status === 409) {
+          this.notificationService.error(
+            error.error?.message || 'لا يمكن حذف المريض - يحتوي على بيانات مرتبطة نشطة',
+          );
+        } else if (error.status === 403) {
+          this.notificationService.error('غير مصرح - هذا الإجراء مخصص لمدير النظام فقط');
+        } else if (error.status === 400) {
+          this.notificationService.error(error.error?.message || 'رمز التأكيد غير صحيح');
+        } else {
+          this.handleError('خطأ في حذف المريض نهائياً', error);
+        }
+
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Get deletion preview for a patient
+   * Shows what will be deleted and any blockers
+   */
+  getPatientDeletionPreview(id: number): Observable<ApiResponse<DeletionPreview>> {
+    // Mock implementation - replace with actual API call when available
+    return of({
+      success: true,
+      message: 'Deletion preview loaded',
+      data: {
+        canDelete: true,
+        blockers: [],
+        dataToDelete: {
+          appointments: Math.floor(Math.random() * 10),
+          medicalRecords: Math.floor(Math.random() * 20),
+          invoices: Math.floor(Math.random() * 5),
+          documents: Math.floor(Math.random() * 15)
+        }
+      },
+    }).pipe(
+      tap((response: any) => {
+        console.log('Deletion preview:', response.data);
+      }),
+      catchError(error => {
+        console.error('Error getting deletion preview:', error);
+        // Return a default response on error
+        return of({
+          success: true,
+          message: 'Preview unavailable',
+          data: {
+            canDelete: true,
+            blockers: [],
+            dataToDelete: undefined
+          }
+        });
+      })
+    );
+  }
+
+  /**
+   * Check if current user can permanently delete patients
+   */
+  canPermanentlyDeletePatient(): boolean {
+    const currentUser = this.authService.currentUser();
+    return currentUser?.role === UserRole.SYSTEM_ADMIN;
   }
 
   /**

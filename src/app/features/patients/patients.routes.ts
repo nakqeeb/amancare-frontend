@@ -18,7 +18,7 @@ export const PATIENTS_ROUTES: Routes = [
         title: 'قائمة المرضى - نظام أمان كير',
         data: {
           breadcrumb: 'المرضى',
-          roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
+          roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
           pageTitle: 'إدارة المرضى',
           pageSubtitle: 'عرض وإدارة جميع مرضى العيادة'
         },
@@ -44,7 +44,7 @@ export const PATIENTS_ROUTES: Routes = [
         title: 'البحث عن المرضى - نظام أمان كير',
         data: {
           breadcrumb: 'البحث عن المرضى',
-          roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
+          roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
           pageTitle: 'البحث المتقدم',
           pageSubtitle: 'البحث عن المرضى باستخدام فلاتر متقدمة'
         },
@@ -57,7 +57,7 @@ export const PATIENTS_ROUTES: Routes = [
         title: 'تفاصيل المريض - نظام أمان كير',
         data: {
           breadcrumb: 'تفاصيل المريض',
-          roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
+          roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
           pageTitle: 'ملف المريض',
           pageSubtitle: 'عرض تفاصيل المريض الكاملة'
         },
@@ -113,7 +113,7 @@ export const PATIENTS_ROUTES: Routes = [
         title: 'فواتير المريض - نظام أمان كير',
         data: {
           breadcrumb: 'فواتير المريض',
-          roles: ['ADMIN', 'RECEPTIONIST'],
+          roles: ['SYSTEM_ADMIN', 'ADMIN', 'RECEPTIONIST'],
           pageTitle: 'فواتير المريض',
           pageSubtitle: 'عرض جميع فواتير المريض'
         },

@@ -2,7 +2,7 @@
 // src/app/features/patients/components/patient-details/patient-details.component.ts
 // Patient Profile/Details Component with Spring Boot Integration
 // ===================================================================
-import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -33,6 +33,8 @@ import {
   getBloodTypeLabel,
   getGenderLabel
 } from '../../models/patient.model';
+import { UserRole } from '../../../users/models/user.model';
+import { PermanentDeleteDialogComponent, PermanentDeleteDialogData } from '../permanent-delete-dialog/permanent-delete-dialog.component';
 
 // Related services (if available)
 // import { AppointmentService } from '../../../appointments/services/appointment.service';
@@ -123,6 +125,12 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
       component: 'invoices'
     }
   ];
+
+  canPermanentlyDelete = computed(() => {
+    const user = this.currentUser();
+    const patient = this.patient();
+    return !!(user && user.role === UserRole.SYSTEM_ADMIN && !patient?.isActive);
+  });
 
   // ===================================================================
   // LIFECYCLE HOOKS
@@ -275,6 +283,86 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
           });
       }
     });
+  }
+
+  /**
+   * Permanently delete patient (SYSTEM_ADMIN only)
+   */
+  onPermanentlyDeletePatient(): void {
+    const patient = this.patient();
+    if (!patient) return;
+
+    // First, get deletion preview to show what will be deleted
+    this.loading.set(true);
+    this.patientService.getPatientDeletionPreview(patient.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.loading.set(false);
+
+          if (!response.data?.canDelete && response.data?.blockers?.length) {
+            // Show blockers if patient cannot be deleted
+            this.dialog.open(ConfirmationDialogComponent, {
+              width: '500px',
+              data: {
+                title: 'لا يمكن حذف المريض',
+                message: `لا يمكن حذف المريض نهائياً للأسباب التالية:\n${response.data.blockers.join('\n')}`,
+                confirmText: 'حسناً',
+                hideCancel: true,
+                type: 'error'
+              }
+            });
+            return;
+          }
+
+          // Open permanent delete dialog
+          this.openPermanentDeleteDialog(patient, response.data?.dataToDelete);
+        },
+        error: (error) => {
+          this.loading.set(false);
+          // If preview fails, still allow opening the dialog
+          this.openPermanentDeleteDialog(patient);
+        }
+      });
+  }
+
+  private openPermanentDeleteDialog(patient: Patient, dataToDelete?: any): void {
+    const dialogData: PermanentDeleteDialogData = {
+      patient: patient,
+      dataToDelete: dataToDelete
+    };
+
+    const dialogRef = this.dialog.open(PermanentDeleteDialogComponent, {
+      width: '650px',
+      disableClose: true,
+      data: dialogData
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.confirmed && result?.confirmationCode) {
+        this.performPermanentDelete(patient.id, result.confirmationCode);
+      }
+    });
+  }
+
+  private performPermanentDelete(patientId: number, confirmationCode: string): void {
+    this.loading.set(true);
+
+    this.patientService.permanentlyDeletePatient(patientId, confirmationCode)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.loading.set(false);
+            // Navigate to patients list after successful deletion
+            this.router.navigate(['/patients']);
+          }
+        },
+        error: (error) => {
+          this.loading.set(false);
+          // Error handling is done in the service
+        }
+      });
   }
 
   onCreateAppointment(): void {

@@ -5,7 +5,7 @@ export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
   data?: T;
-  timestamp: string;
+  timestamp?: string;
 }
 
 export interface PageResponse<T> {
