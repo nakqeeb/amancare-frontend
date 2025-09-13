@@ -51,7 +51,7 @@ export const SCHEDULE_ROUTES: Routes = [
         data: {
           title: 'إنشاء جدولة جديدة',
           breadcrumb: 'إنشاء جدولة',
-          expectedRoles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR']
+          roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR']
         }
       },
 
@@ -63,7 +63,7 @@ export const SCHEDULE_ROUTES: Routes = [
         data: {
           title: 'تعديل الجدولة',
           breadcrumb: 'تعديل',
-          expectedRoles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR']
+          roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR']
         }
       },
 
@@ -103,7 +103,7 @@ export const SCHEDULE_ROUTES: Routes = [
                 data: {
                   title: 'إضافة فترة عدم توفر',
                   breadcrumb: 'إضافة عدم توفر',
-                  expectedRoles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR']
+                  roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR']
                 }
               },
 
@@ -115,7 +115,7 @@ export const SCHEDULE_ROUTES: Routes = [
                 data: {
                   title: 'تعديل فترة عدم التوفر',
                   breadcrumb: 'تعديل عدم التوفر',
-                  expectedRoles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR']
+                  roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR']
                 }
               }
             ]
@@ -135,7 +135,7 @@ export const SCHEDULE_ROUTES: Routes = [
             data: {
               title: 'إضافة فترة عدم توفر',
               breadcrumb: 'إضافة عدم توفر',
-              expectedRoles: ['ADMIN', 'SYSTEM_ADMIN']
+              roles: ['ADMIN', 'SYSTEM_ADMIN']
             }
           },
 
@@ -147,7 +147,7 @@ export const SCHEDULE_ROUTES: Routes = [
             data: {
               title: 'تعديل فترة عدم التوفر',
               breadcrumb: 'تعديل عدم التوفر',
-              expectedRoles: ['ADMIN', 'SYSTEM_ADMIN']
+              roles: ['ADMIN', 'SYSTEM_ADMIN']
             }
           }
         ]

@@ -115,11 +115,15 @@ export class AppointmentService {
   }
 
   // 3. Get Today's Appointments
-  getTodayAppointments(): Observable<AppointmentSummaryResponse[]> {
-    this.loading.set(true);
-    this.error.set(null);
+  getTodayAppointments(clinicId?: number): Observable<AppointmentSummaryResponse[]> {
+    const today = new Date().toISOString().split('T')[0];
+    let params = new HttpParams().set('date', today);
 
-    return this.http.get<ApiResponse<AppointmentSummaryResponse[]>>(`${this.apiUrl}/today`).pipe(
+    if (clinicId) {
+      params = params.set('clinicId', clinicId.toString());
+    }
+
+    return this.http.get<ApiResponse<AppointmentSummaryResponse[]>>(`${this.apiUrl}/today`, { params }).pipe(
       tap(response => {
         if (response.success && response.data) {
           this.todayAppointments.set(response.data);

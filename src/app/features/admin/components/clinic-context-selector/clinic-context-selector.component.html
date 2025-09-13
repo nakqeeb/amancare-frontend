@@ -1,0 +1,152 @@
+<app-header />
+<app-sidebar>
+  <div class="clinic-context-container">
+    <mat-card class="context-card">
+      <mat-card-header>
+        <mat-icon class="header-icon">business</mat-icon>
+        <mat-card-title>تحديد سياق العيادة</mat-card-title>
+        <mat-card-subtitle>
+          كمسؤول نظام، يجب عليك تحديد العيادة التي تريد العمل معها
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-divider></mat-divider>
+
+      <mat-card-content>
+        <!-- Current Context Display -->
+        @if (currentContext()) {
+        <div class="current-context">
+          <h3>السياق الحالي</h3>
+          <mat-chip-set>
+            <mat-chip highlighted color="primary">
+              <mat-icon>location_city</mat-icon>
+              {{ currentContext()!.clinicName }}
+            </mat-chip>
+            <mat-chip>
+              <mat-icon>access_time</mat-icon>
+              {{ getElapsedTime() }}
+            </mat-chip>
+          </mat-chip-set>
+          <p class="reason-text">
+            <strong>السبب:</strong> {{ currentContext()!.reason }}
+          </p>
+          <button mat-button color="warn" (click)="clearContext()">
+            <mat-icon>clear</mat-icon>
+            إلغاء السياق الحالي
+          </button>
+        </div>
+        <mat-divider></mat-divider>
+        }
+
+        <!-- Context Selection Form -->
+        <form
+          [formGroup]="contextForm"
+          (ngSubmit)="onSubmit()"
+          class="context-form"
+        >
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>اختر العيادة</mat-label>
+            <mat-select formControlName="clinicId" required>
+              @for (clinic of clinics(); track clinic.id) {
+              <mat-option [value]="clinic.id">
+                <div class="clinic-option">
+                  <span class="clinic-name">{{ clinic.name }}</span>
+                  <span class="clinic-code">({{ clinic.email }})</span>
+                  @if (clinic.activePatients) {
+                  <mat-chip size="small" class="stats-chip">
+                    {{ clinic.activePatients }} مريض
+                  </mat-chip>
+                  }
+                </div>
+              </mat-option>
+              }
+            </mat-select>
+            <mat-error
+              *ngIf="contextForm.get('clinicId')?.hasError('required')"
+            >
+              يجب اختيار عيادة
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>سبب التصرف نيابة عن العيادة</mat-label>
+            <textarea
+              matInput
+              formControlName="reason"
+              rows="4"
+              placeholder="مثال: دعم فني لحل مشكلة في النظام، مساعدة في إدخال البيانات، طلب من إدارة العيادة..."
+              required
+            >
+            </textarea>
+            <mat-hint align="end">
+              {{ contextForm.get("reason")?.value?.length || 0 }} / 500
+            </mat-hint>
+            <mat-error *ngIf="contextForm.get('reason')?.hasError('required')">
+              يجب إدخال سبب التصرف
+            </mat-error>
+            <mat-error *ngIf="contextForm.get('reason')?.hasError('minlength')">
+              السبب يجب أن يكون 10 أحرف على الأقل
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Predefined Reasons -->
+          <div class="predefined-reasons">
+            <mat-chip-set>
+              @for (reason of predefinedReasons; track reason) {
+              <mat-chip (click)="selectPredefinedReason(reason)">
+                {{ reason }}
+              </mat-chip>
+              }
+            </mat-chip-set>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="form-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              type="submit"
+              [disabled]="!contextForm.valid || loading()"
+            >
+              @if (loading()) {
+              <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+              <mat-icon>check</mat-icon>
+              تعيين السياق }
+            </button>
+
+            <button mat-button type="button" (click)="cancel()">إلغاء</button>
+          </div>
+        </form>
+
+        <!-- Recent History -->
+        @if (recentHistory().length > 0) {
+        <div class="history-section">
+          <h3>السجل الأخير</h3>
+          <div class="history-list">
+            @for (entry of recentHistory(); track $index) {
+            <div class="history-entry">
+              <mat-icon>history</mat-icon>
+              <div class="entry-details">
+                <span class="clinic-name">{{ entry.clinicName }}</span>
+                <span class="entry-reason">{{ entry.reason }}</span>
+                <span class="entry-time">{{
+                  formatDate(entry.startTime)
+                }}</span>
+              </div>
+              <button
+                mat-icon-button
+                (click)="reuseContext(entry)"
+                matTooltip="استخدام هذا السياق"
+              >
+                <mat-icon>replay</mat-icon>
+              </button>
+            </div>
+            }
+          </div>
+        </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+</app-sidebar>

@@ -3,6 +3,10 @@
 <app-sidebar>
   <div class="dashboard-container">
     <!-- Welcome Header -->
+
+    <div class="context-indicator">
+      <app-system-admin-context-indicator />
+    </div>
     <div class="dashboard-header">
       <div class="welcome-section">
         <h1 class="welcome-title">
@@ -19,6 +23,10 @@
         <div class="current-date">
           <mat-icon>event</mat-icon>
           <span>{{ getCurrentDate() }}</span>
+        </div>
+        <div class="current-date">
+          <mat-icon>event</mat-icon>
+          <span>الموافق {{ getCurrentGregorianDate() }}</span>
         </div>
         <div class="current-time">
           <mat-icon>access_time</mat-icon>

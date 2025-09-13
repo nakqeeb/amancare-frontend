@@ -17,6 +17,33 @@ export const routes: Routes = [
     title: 'تسجيل الدخول - نظام أمان كير'
   },
 
+  // System Admin specific routes
+  {
+    path: 'admin',
+    canActivate: [RoleGuard],
+    data: { roles: ['SYSTEM_ADMIN'] },
+    children: [
+      {
+        path: 'select-clinic-context',
+        loadComponent: () =>
+          import('./features/admin/components/clinic-context-selector/clinic-context-selector.component')
+            .then(m => m.ClinicContextSelectorComponent)
+      },
+      // {
+      //   path: 'system-logs',
+      //   loadComponent: () =>
+      //     import('./features/admin/components/system-logs/system-logs.component')
+      //       .then(m => m.SystemLogsComponent)
+      // },
+      // {
+      //   path: 'audit-trail',
+      //   loadComponent: () =>
+      //     import('./features/admin/components/audit-trail/audit-trail.component')
+      //       .then(m => m.AuditTrailComponent)
+      // }
+    ]
+  },
+
   // لوحة التحكم - Dashboard
   {
     path: 'dashboard',
@@ -37,7 +64,7 @@ export const routes: Routes = [
     data: {
       title: 'جداول الأطباء',
       breadcrumb: 'الجداول',
-      expectedRoles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+      roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
     }
   },
   // إدارة المواعيد - Appointments
@@ -53,7 +80,7 @@ export const routes: Routes = [
     path: 'medical-records',
     loadChildren: () => import('./features/medical-records/medical-records.routes').then(r => r.MEDICAL_RECORDS_ROUTES),
     canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['DOCTOR', 'NURSE', 'ADMIN'] },
+    data: { roles: ['SYSTEM_ADMIN', 'DOCTOR', 'NURSE', 'ADMIN'] },
     title: 'السجلات الطبية - نظام أمان كير'
   },
 

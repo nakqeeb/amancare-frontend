@@ -138,13 +138,13 @@ export class ClinicListComponent implements OnInit {
 
   private loadClinics(): void {
     const filters = this.buildFilters();
-    this.clinicService.getClinics(
-      this.currentPage(),
-      this.pageSize(),
-      filters
-    ).subscribe(response => {
-      this.totalElements.set(response.totalElements);
-    });
+  //   this.clinicService.getClinics(
+  //     this.currentPage(),
+  //     this.pageSize(),
+  //     filters
+  //   ).subscribe(response => {
+  //     this.totalElements.set(response.totalElements);
+  //   });
   }
 
   private loadStats(): void {

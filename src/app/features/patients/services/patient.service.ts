@@ -12,6 +12,7 @@ import { NotificationService } from '../../../core/services/notification.service
 import { ApiResponse, PageResponse } from '../../../core/models/api-response.model';
 import { UserRole } from '../../users/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { SystemAdminService } from '../../../core/services/system-admin.service';
 
 // ===================================================================
 // INTERFACES & MODELS - Matching Spring Boot DTOs
@@ -46,6 +47,7 @@ export interface Patient {
 }
 
 export interface CreatePatientRequest {
+  clinicId?: number;
   firstName: string;
   lastName: string;
   dateOfBirth: string;
@@ -164,6 +166,7 @@ export class PatientService {
   private http = inject(HttpClient);
   private notificationService = inject(NotificationService);
   private authService = inject(AuthService);
+  private systemAdminService = inject(SystemAdminService);
   private readonly apiUrl = `${environment.apiUrl}/patients`;
 
   // ===================================================================
@@ -196,11 +199,20 @@ export class PatientService {
   ): Observable<ApiResponse<PatientPageResponse>> {
     this.loading.set(true);
 
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString())
       .set('sortBy', sortBy)
       .set('sortDirection', sortDirection);
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
 
     return this.http.get<ApiResponse<PatientPageResponse>>(`${this.apiUrl}`, { params }).pipe(
       tap(response => {
@@ -229,9 +241,18 @@ export class PatientService {
   ): Observable<ApiResponse<PatientPageResponse>> {
     this.loading.set(true);
 
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
 
     // Add search criteria to params
     if (criteria.searchTerm) {
@@ -260,7 +281,18 @@ export class PatientService {
   getPatientById(id: number): Observable<ApiResponse<Patient>> {
     this.loading.set(true);
 
-    return this.http.get<ApiResponse<Patient>>(`${this.apiUrl}/${id}`).pipe(
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
+    let params = new HttpParams();
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
+
+    return this.http.get<ApiResponse<Patient>>(`${this.apiUrl}/${id}`, { params }).pipe(
       tap(response => {
         if (response.success) {
           this.selectedPatient.set(response.data!);
@@ -281,7 +313,18 @@ export class PatientService {
   getPatientByNumber(patientNumber: string): Observable<ApiResponse<Patient>> {
     this.loading.set(true);
 
-    return this.http.get<ApiResponse<Patient>>(`${this.apiUrl}/number/${patientNumber}`).pipe(
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
+    let params = new HttpParams();
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
+
+    return this.http.get<ApiResponse<Patient>>(`${this.apiUrl}/number/${patientNumber}`, { params }).pipe(
       tap(response => {
         if (response.success) {
           this.selectedPatient.set(response.data!);
@@ -300,6 +343,19 @@ export class PatientService {
    * 5. POST /patients - Create new patient
    */
   createPatient(request: CreatePatientRequest): Observable<ApiResponse<Patient>> {
+    // Validate SYSTEM_ADMIN context for write operations
+    const currentUser = this.authService.currentUser();
+    if (currentUser?.role === 'SYSTEM_ADMIN') {
+      if (!this.systemAdminService.canPerformWriteOperation()) {
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل إنشاء مريض جديد'));
+      }
+
+      // Add clinic ID from context if not provided
+      const actingClinicId = this.systemAdminService.getActingClinicId();
+      if (actingClinicId && !request.clinicId) {
+        request.clinicId = actingClinicId;
+      }
+    }
     this.loading.set(true);
 
     return this.http.post<ApiResponse<Patient>>(`${this.apiUrl}`, request).pipe(

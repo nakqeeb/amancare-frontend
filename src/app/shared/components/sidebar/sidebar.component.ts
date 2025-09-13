@@ -75,6 +75,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
         route: '/dashboard'
       },
       {
+        title: 'تحديد سياق العيادة',
+        icon: 'business',
+        route: '/admin/select-clinic-context',
+        roles: ['SYSTEM_ADMIN']
+      },
+      {
         title: 'المواعيد',
         icon: 'event',
         expanded: false,

@@ -21,6 +21,7 @@ import { loadingInterceptor } from './core/interceptors/loading.interceptor';
 
 // Environment
 import { environment } from '../environments/environment';
+import { systemAdminInterceptor } from './core/interceptors/system-admin.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -33,8 +34,11 @@ export const appConfig: ApplicationConfig = {
     // HTTP Client مع Interceptors
     provideHttpClient(
       withFetch(),
+      // HTTP Client with Interceptors
+      // Order matters: auth -> system-admin -> error -> loading
       withInterceptors([
         authInterceptor,
+        systemAdminInterceptor,
         errorInterceptor,
         loadingInterceptor
       ])

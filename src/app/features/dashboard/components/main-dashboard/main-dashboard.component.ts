@@ -30,6 +30,8 @@ import { AppointmentService } from '../../../appointments/services/appointment.s
 import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_TYPE_LABELS, AppointmentSummaryResponse } from '../../../appointments/models/appointment.model';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
+import { SystemAdminContextIndicatorComponent } from "../../../../shared/components/system-admin-context-indicator/system-admin-context-indicator.component";
+import { SystemAdminService } from '../../../../core/services/system-admin.service';
 
 @Component({
   selector: 'app-main-dashboard',
@@ -52,8 +54,9 @@ import { MatChipsModule } from '@angular/material/chips';
     StatsCardsComponent,
     RecentActivitiesComponent,
     QuickActionsComponent,
-    ChartsOverviewComponent
-  ],
+    ChartsOverviewComponent,
+    SystemAdminContextIndicatorComponent
+],
   templateUrl: './main-dashboard.component.html',
   styleUrl: './main-dashboard.component.scss'
 })
@@ -61,6 +64,7 @@ import { MatChipsModule } from '@angular/material/chips';
 export class MainDashboardComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private dashboardService = inject(DashboardService);
+  private systemAdminService = inject(SystemAdminService);
 
   private readonly appointmentService = inject(AppointmentService);
   private router = inject(Router);
@@ -171,6 +175,13 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  getCurrentGregorianDate(): string {
+    return new Date().toLocaleDateString('ar', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
   getRoleDisplayName(role?: string): string {
     const roleNames: { [key: string]: string } = {
       'SYSTEM_ADMIN': 'مدير النظام',
@@ -198,7 +209,11 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
 
   private loadTodayAppointments(): void {
     this.loadingAppointments.set(true);
-    this.appointmentService.getTodayAppointments().subscribe({
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+    this.appointmentService.getTodayAppointments(clinicId!).subscribe({
       next: (appointments) => {
         this.todayAppointments.set(appointments);
         this.loadingAppointments.set(false);
