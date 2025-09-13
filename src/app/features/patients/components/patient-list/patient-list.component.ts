@@ -214,12 +214,12 @@ export class PatientListComponent implements OnInit {
       searchTerm: [''],
       gender: [''],
       bloodType: [''],
-      ageFrom: [''],
-      ageTo: [''],
+      // ageFrom: [''],
+      // ageTo: [''],
       showInactive: [false],
-      city: [''],
-      lastVisitFrom: [''],
-      lastVisitTo: ['']
+      // city: [''],
+      // lastVisitFrom: [''],
+      // lastVisitTo: ['']
     });
 
     // Watch for search form changes
@@ -311,12 +311,12 @@ export class PatientListComponent implements OnInit {
       searchTerm: formValue.searchTerm?.trim() || undefined,
       gender: formValue.gender || undefined,
       bloodType: formValue.bloodType || undefined,
-      ageFrom: formValue.ageFrom || undefined,
-      ageTo: formValue.ageTo || undefined,
-      isActive: formValue.showInactive ? undefined : true,
-      city: formValue.city?.trim() || undefined,
-      lastVisitFrom: formValue.lastVisitFrom || undefined,
-      lastVisitTo: formValue.lastVisitTo || undefined,
+      // ageFrom: formValue.ageFrom || undefined,
+      // ageTo: formValue.ageTo || undefined,
+      isActive: formValue.showInactive ? false : true,
+      // city: formValue.city?.trim() || undefined,
+      // lastVisitFrom: formValue.lastVisitFrom || undefined,
+      // lastVisitTo: formValue.lastVisitTo || undefined,
     };
   }
 
@@ -369,12 +369,12 @@ export class PatientListComponent implements OnInit {
       searchTerm: '',
       gender: '',
       bloodType: '',
-      ageFrom: '',
-      ageTo: '',
+      // ageFrom: '',
+      // ageTo: '',
       showInactive: false,
-      city: '',
-      lastVisitFrom: '',
-      lastVisitTo: ''
+      // city: '',
+      // lastVisitFrom: '',
+      // lastVisitTo: ''
     });
     this.currentPage.set(0);
     this.loadPatients();

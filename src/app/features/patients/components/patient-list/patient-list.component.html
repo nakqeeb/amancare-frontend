@@ -32,7 +32,7 @@
                 <mat-icon>new_releases</mat-icon>
                 جديد: {{ statistics()!.newPatientsThisMonth }}
               </mat-chip-option>
-              @if (statistics()!.patientsWithAppointmentsToday > 0) {
+              @if (statistics()!.patientsWithAppointmentsToday! > 0) {
                 <mat-chip-option disabled>
                   <mat-icon>event</mat-icon>
                   اليوم: {{ statistics()!.patientsWithAppointmentsToday }}
@@ -99,7 +99,7 @@
                 <mat-option value="">الكل</mat-option>
                 @for (gender of genders; track gender.value) {
                   <mat-option [value]="gender.value">
-                    <mat-icon>{{ gender.value }}</mat-icon>
+                    <mat-icon>{{ gender.value === 'MALE' ? 'male' : 'female' }}</mat-icon>
                     {{ gender.label }}
                   </mat-option>
                 }
@@ -119,7 +119,7 @@
             </mat-form-field>
 
             <!-- Age Range -->
-            <div class="age-range-group">
+            <!-- <div class="age-range-group">
               <mat-form-field appearance="outline" class="age-field">
                 <mat-label>من العمر</mat-label>
                 <input
@@ -143,12 +143,12 @@
                   max="150"
                 />
               </mat-form-field>
-            </div>
+            </div> -->
 
             <!-- Status Checkbox -->
             <div class="status-checkbox">
-              <mat-checkbox formControlName="showInactive">
-                عرض غير النشطين
+              <mat-checkbox #isChecked formControlName="showInactive">
+                عرض غير النشطين فقط
               </mat-checkbox>
             </div>
 

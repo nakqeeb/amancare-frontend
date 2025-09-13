@@ -13,147 +13,7 @@ import { ApiResponse, PageResponse } from '../../../core/models/api-response.mod
 import { UserRole } from '../../users/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { SystemAdminService } from '../../../core/services/system-admin.service';
-
-// ===================================================================
-// INTERFACES & MODELS - Matching Spring Boot DTOs
-// ===================================================================
-
-export interface Patient {
-  id: number;
-  patientNumber: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  dateOfBirth: string;
-  age?: number;
-  gender: Gender;
-  phone: string;
-  email?: string;
-  address?: string;
-  emergencyContactName?: string;
-  emergencyContactPhone?: string;
-  bloodType?: BloodType;
-  allergies?: string;
-  chronicDiseases?: string;
-  notes?: string;
-  isActive: boolean;
-  clinicId: number;
-  appointmentsCount?: number;
-  lastVisit?: string;
-  totalInvoices?: number;
-  outstandingBalance?: number;
-  createdAt: string;
-  updatedAt?: string;
-}
-
-export interface CreatePatientRequest {
-  clinicId?: number;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  gender: Gender;
-  phone: string;
-  email?: string;
-  address?: string;
-  emergencyContactName?: string;
-  emergencyContactPhone?: string;
-  bloodType?: BloodType;
-  allergies?: string;
-  chronicDiseases?: string;
-  notes?: string;
-}
-
-export interface UpdatePatientRequest {
-  firstName?: string;
-  lastName?: string;
-  dateOfBirth?: string;
-  gender?: Gender;
-  phone?: string;
-  email?: string;
-  address?: string;
-  emergencyContactName?: string;
-  emergencyContactPhone?: string;
-  bloodType?: BloodType;
-  allergies?: string;
-  chronicDiseases?: string;
-  notes?: string;
-}
-
-export interface PatientSearchCriteria {
-  searchTerm?: string;
-  gender?: Gender;
-  bloodType?: BloodType;
-  ageFrom?: number;
-  ageTo?: number;
-  isActive?: boolean;
-  city?: string;
-  lastVisitFrom?: string;
-  lastVisitTo?: string;
-}
-
-export interface PatientStatistics {
-  totalPatients: number;
-  activePatients: number;
-  inactivePatients: number;
-  newPatientsThisMonth: number;
-  malePatients: number;
-  femalePatients: number;
-  averageAge: number;
-  patientsWithAppointmentsToday: number;
-  patientsWithPendingInvoices: number;
-  totalOutstandingBalance: number;
-}
-
-export interface PatientSummaryResponse {
-  id: number;
-  patientNumber: string;
-  fullName: string;
-  phone: string;
-  appointmentTime?: string;
-  appointmentType?: string;
-  doctorName?: string;
-  status?: string;
-}
-
-export interface PatientPageResponse extends PageResponse<Patient> {
-  // Additional fields specific to patient pagination if needed
-  patients: Patient[]
-}
-
-// Permanent Delete Response Interface
-export interface PermanentDeleteResponse {
-  patientId: number;
-  patientNumber: string;
-  patientName: string;
-  deletedAt: string;
-  deletedByUserId: number;
-  recordsDeleted: {
-    appointments: number;
-    medicalRecords: number;
-    invoices: number;
-  };
-  confirmationMessage: string;
-}
-
-// Deletion Preview Interface
-export interface DeletionPreview {
-  canDelete: boolean;
-  blockers?: string[];
-  dataToDelete?: {
-    appointments: number;
-    medicalRecords: number;
-    invoices: number;
-    documents: number;
-  };
-}
-
-export type Gender = 'MALE' | 'FEMALE';
-
-export type BloodType =
-  'A_POSITIVE' | 'A_NEGATIVE' |
-  'B_POSITIVE' | 'B_NEGATIVE' |
-  'AB_POSITIVE' | 'AB_NEGATIVE' |
-  'O_POSITIVE' | 'O_NEGATIVE';
+import { Patient, PatientStatistics, PatientSummaryResponse, PatientSearchCriteria, PatientPageResponse, CreatePatientRequest, UpdatePatientRequest, PermanentDeleteResponse, DeletionPreview, BloodType, Gender } from '../models/patient.model';
 
 // ===================================================================
 // PATIENT SERVICE
@@ -179,6 +39,7 @@ export class PatientService {
   loading = signal(false);
   statistics = signal<PatientStatistics | null>(null);
   todayPatients = signal<PatientSummaryResponse[]>([]);
+  searchCriteria = signal<PatientSearchCriteria | null>(null);
 
   // BehaviorSubject for compatibility with existing code
   private patientsSubject = new BehaviorSubject<Patient[]>([]);
@@ -234,7 +95,7 @@ export class PatientService {
   /**
    * 2. GET /patients/search - Search patients
    */
-  searchPatients(
+  /* searchPatients(
     criteria: PatientSearchCriteria,
     page: number = 0,
     size: number = 10
@@ -264,6 +125,70 @@ export class PatientService {
         if (response.success) {
           this.patients.set(response.data!.patients);
           this.patientsSubject.next(response.data!.patients);
+        }
+        this.loading.set(false);
+      }),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('خطأ في البحث عن المرضى', error);
+        return throwError(() => error);
+      })
+    );
+  } */
+
+  /**
+ * 2. Enhanced GET /patients/search - With gender, bloodType, and isActive filters
+ * البحث المحسن مع فلاتر الجنس وفصيلة الدم والحالة
+ */
+  searchPatients(
+    criteria: PatientSearchCriteria,
+    page: number = 0,
+    size: number = 10
+  ): Observable<ApiResponse<PatientPageResponse>> {
+    this.loading.set(true);
+    this.searchCriteria.set(criteria);
+
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    // Add search term if provided
+    if (criteria.searchTerm && criteria.searchTerm.trim()) {
+      params = params.set('q', criteria.searchTerm.trim());
+    }
+
+    // Add gender filter if provided
+    if (criteria.gender) {
+      params = params.set('gender', criteria.gender);
+    }
+
+    // Add blood type filter if provided
+    // Note: Backend now accepts both O+ and O_POSITIVE formats
+    if (criteria.bloodType) {
+      params = params.set('bloodType', criteria.bloodType);
+    }
+
+    // Add active status filter if provided
+    if (criteria.isActive !== undefined && criteria.isActive !== null) {
+      params = params.set('isActive', criteria.isActive.toString());
+    }
+
+    // Log the search parameters for debugging
+    console.log('Search parameters:', {
+      searchTerm: criteria.searchTerm,
+      gender: criteria.gender,
+      bloodType: criteria.bloodType,
+      isActive: criteria.isActive,
+      page,
+      size
+    });
+
+    return this.http.get<ApiResponse<PatientPageResponse>>(`${this.apiUrl}/search`, { params }).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.patients.set(response.data.patients);
+          this.patientsSubject.next(response.data.patients);
+          console.log(`Found ${response.data.totalElements} patients matching criteria`);
         }
         this.loading.set(false);
       }),

@@ -3,6 +3,8 @@
 // Complete Patient Models Matching Spring Boot DTOs
 // ===================================================================
 
+import { PageResponse } from "../../../core/models/api-response.model";
+
 // ===================================================================
 // MAIN PATIENT INTERFACE - Matches Spring Boot PatientResponse
 // ===================================================================
@@ -46,6 +48,7 @@ export interface Patient {
  * CreatePatientRequest - Matches Spring Boot CreatePatientRequest
  */
 export interface CreatePatientRequest {
+  clinicId?: number;
   firstName: string;
   lastName: string;
   dateOfBirth: string;
@@ -87,13 +90,30 @@ export interface UpdatePatientRequest {
 /**
  * PatientSearchCriteria - For search functionality
  */
+// export interface PatientSearchCriteria {
+//   searchTerm?: string;
+//   gender?: Gender;
+//   bloodType?: BloodType;
+//   ageFrom?: number;
+//   ageTo?: number;
+//   isActive?: boolean;
+//   city?: string;
+//   lastVisitFrom?: string;
+//   lastVisitTo?: string;
+// }
+/**
+ * PatientSearchCriteria - Enhanced search functionality
+ * Now includes gender, bloodType, and isActive filters
+ */
 export interface PatientSearchCriteria {
-  searchTerm?: string;
-  gender?: Gender;
-  bloodType?: BloodType;
+  searchTerm?: string;      // Text search (name, phone, patient number)
+  gender?: Gender;           // Filter by gender
+  bloodType?: BloodType;     // Filter by blood type
+  isActive?: boolean;        // Filter by active status
+
+  // Future expansion (not yet implemented in backend)
   ageFrom?: number;
   ageTo?: number;
-  isActive?: boolean;
   city?: string;
   lastVisitFrom?: string;
   lastVisitTo?: string;
@@ -113,10 +133,10 @@ export interface PatientStatistics {
   newPatientsThisMonth: number;
   malePatients: number;
   femalePatients: number;
-  averageAge: number;
-  patientsWithAppointmentsToday: number;
-  patientsWithPendingInvoices: number;
-  totalOutstandingBalance: number;
+  averageAge?: number;
+  patientsWithAppointmentsToday?: number;
+  patientsWithPendingInvoices?: number;
+  totalOutstandingBalance?: number;
 }
 
 /**
@@ -126,7 +146,12 @@ export interface PatientSummaryResponse {
   id: number;
   patientNumber: string;
   fullName: string;
+  age?: number;
+  gender?: Gender;              // Added for enhanced search results
   phone: string;
+  bloodType?: BloodType;        // Added for enhanced search results
+  lastVisit?: string;
+  isActive?: boolean;           // Added for enhanced search results
   appointmentTime?: string;
   appointmentType?: string;
   doctorName?: string;
@@ -136,15 +161,46 @@ export interface PatientSummaryResponse {
 /**
  * PatientPageResponse - Extends PageResponse for patients
  */
-export interface PatientPageResponse {
-  patients: Patient[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
-  first: boolean;
-  last: boolean;
-  empty: boolean;
+// export interface PatientPageResponse {
+//   patients: Patient[];
+//   totalElements: number;
+//   totalPages: number;
+//   size: number;
+//   number: number;
+//   first: boolean;
+//   last: boolean;
+//   empty: boolean;
+// }
+export interface PatientPageResponse extends PageResponse<Patient> {
+  // Additional fields specific to patient pagination if needed
+  patients: Patient[]
+}
+
+// Permanent Delete Response Interface
+export interface PermanentDeleteResponse {
+  patientId: number;
+  patientNumber: string;
+  patientName: string;
+  deletedAt: string;
+  deletedByUserId: number;
+  recordsDeleted: {
+    appointments: number;
+    medicalRecords: number;
+    invoices: number;
+  };
+  confirmationMessage: string;
+}
+
+// Deletion Preview Interface
+export interface DeletionPreview {
+  canDelete: boolean;
+  blockers?: string[];
+  dataToDelete?: {
+    appointments: number;
+    medicalRecords: number;
+    invoices: number;
+    documents: number;
+  };
 }
 
 // ===================================================================
@@ -153,21 +209,41 @@ export interface PatientPageResponse {
 
 /**
  * Gender enum - Matches Spring Boot Gender enum
+ * Backend accepts: MALE, FEMALE, M, F, ذكر, أنثى
  */
 export type Gender = 'MALE' | 'FEMALE';
 
-/**
- * BloodType enum - Matches Spring Boot BloodType enum
- */
+
+// export type BloodType =
+//   'A_POSITIVE' | 'A_NEGATIVE' |
+//   'B_POSITIVE' | 'B_NEGATIVE' |
+//   'AB_POSITIVE' | 'AB_NEGATIVE' |
+//   'O_POSITIVE' | 'O_NEGATIVE';
 export type BloodType =
-  | 'A_POSITIVE'
-  | 'A_NEGATIVE'
-  | 'B_POSITIVE'
-  | 'B_NEGATIVE'
-  | 'AB_POSITIVE'
-  | 'AB_NEGATIVE'
-  | 'O_POSITIVE'
-  | 'O_NEGATIVE';
+  // Symbol format (preferred for UI)
+  | 'O+' | 'O-'
+  | 'A+' | 'A-'
+  | 'B+' | 'B-'
+  | 'AB+' | 'AB-'
+  // Enum format (for backward compatibility)
+  | 'O_POSITIVE' | 'O_NEGATIVE'
+  | 'A_POSITIVE' | 'A_NEGATIVE'
+  | 'B_POSITIVE' | 'B_NEGATIVE'
+  | 'AB_POSITIVE' | 'AB_NEGATIVE';
+
+  /**
+ * Blood type options for dropdowns
+ */
+// export const BLOOD_TYPE_OPTIONS: { value: BloodType; label: string; symbol: string }[] = [
+//   { value: 'O+', label: 'O موجب', symbol: 'O+' },
+//   { value: 'O-', label: 'O سالب', symbol: 'O-' },
+//   { value: 'A+', label: 'A موجب', symbol: 'A+' },
+//   { value: 'A-', label: 'A سالب', symbol: 'A-' },
+//   { value: 'B+', label: 'B موجب', symbol: 'B+' },
+//   { value: 'B-', label: 'B سالب', symbol: 'B-' },
+//   { value: 'AB+', label: 'AB موجب', symbol: 'AB+' },
+//   { value: 'AB-', label: 'AB سالب', symbol: 'AB-' }
+// ];
 
 // ===================================================================
 // UTILITY INTERFACES
