@@ -37,6 +37,7 @@ export interface Appointment {
 }
 
 export interface CreateAppointmentRequest {
+  clinicId?: number;
   patientId: number;
   doctorId: number;
   appointmentDate: string;

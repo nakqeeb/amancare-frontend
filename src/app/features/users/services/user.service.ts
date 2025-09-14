@@ -17,6 +17,8 @@ import {
 } from '../models/user.model';
 import { ApiResponse, PageResponse } from '../../../core/models/api-response.model';
 import { NotificationService } from '../../../core/services/notification.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { SystemAdminService } from '../../../core/services/system-admin.service';
 
 @Injectable({
   providedIn: 'root'
@@ -24,6 +26,8 @@ import { NotificationService } from '../../../core/services/notification.service
 export class UserService {
   private http = inject(HttpClient);
   private notificationService = inject(NotificationService);
+  private authService = inject(AuthService);
+  private systemAdminService = inject(SystemAdminService);
 
   private apiUrl = `${environment.apiUrl}/users`;
 
@@ -249,7 +253,16 @@ export class UserService {
 
   // Get doctors list (for dropdowns)
   getDoctors(): Observable<User[]> {
-    return this.http.get<DoctorsResponse>(`${this.apiUrl}/doctors`).pipe(map(res => res.data));
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+    let params = new HttpParams();
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId.toString());
+    }
+    return this.http.get<DoctorsResponse>(`${this.apiUrl}/doctors`, { params }).pipe(map(res => res.data));
   }
 
   // ===================================================================

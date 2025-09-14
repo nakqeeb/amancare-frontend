@@ -209,11 +209,7 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
 
   private loadTodayAppointments(): void {
     this.loadingAppointments.set(true);
-    let clinicId = null;
-    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
-      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
-    }
-    this.appointmentService.getTodayAppointments(clinicId!).subscribe({
+    this.appointmentService.getTodayAppointments().subscribe({
       next: (appointments) => {
         this.todayAppointments.set(appointments);
         this.loadingAppointments.set(false);

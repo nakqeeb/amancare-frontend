@@ -17,6 +17,8 @@ import {
   AppointmentStatus,
   AppointmentType
 } from '../models/appointment.model';
+import { AuthService } from '../../../core/services/auth.service';
+import { SystemAdminService } from '../../../core/services/system-admin.service';
 
 @Injectable({
   providedIn: 'root'
@@ -24,6 +26,8 @@ import {
 export class AppointmentService {
   private readonly http = inject(HttpClient);
   private readonly notificationService = inject(NotificationService);
+  private readonly authService = inject(AuthService);
+  private readonly systemAdminService = inject(SystemAdminService);
   private readonly apiUrl = `${environment.apiUrl}/appointments`;
 
   // State management with signals
@@ -49,6 +53,20 @@ export class AppointmentService {
   createAppointment(request: CreateAppointmentRequest): Observable<AppointmentResponse> {
     this.loading.set(true);
     this.error.set(null);
+
+    // Validate SYSTEM_ADMIN context for write operations
+    const currentUser = this.authService.currentUser();
+    if (currentUser?.role === 'SYSTEM_ADMIN') {
+      if (!this.systemAdminService.canPerformWriteOperation()) {
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل إنشاء مريض جديد'));
+      }
+
+      // Add clinic ID from context if not provided
+      const actingClinicId = this.systemAdminService.getActingClinicId();
+      if (actingClinicId && !request.clinicId) {
+        request.clinicId = actingClinicId;
+      }
+    }
 
     return this.http.post<ApiResponse<AppointmentResponse>>(this.apiUrl, request).pipe(
       tap(response => {
@@ -83,11 +101,21 @@ export class AppointmentService {
     this.loading.set(true);
     this.error.set(null);
 
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString())
       .set('sortBy', sortBy)
       .set('sortDirection', sortDirection);
+
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId.toString());
+    }
 
     if (date) params = params.set('date', date);
     if (doctorId) params = params.set('doctorId', doctorId.toString());
@@ -115,9 +143,14 @@ export class AppointmentService {
   }
 
   // 3. Get Today's Appointments
-  getTodayAppointments(clinicId?: number): Observable<AppointmentSummaryResponse[]> {
+  getTodayAppointments(): Observable<AppointmentSummaryResponse[]> {
     const today = new Date().toISOString().split('T')[0];
     let params = new HttpParams().set('date', today);
+
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
 
     if (clinicId) {
       params = params.set('clinicId', clinicId.toString());
