@@ -22,7 +22,7 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: 
     '/auth/register-clinic',
     '/auth/refresh',
     '/auth/forgot-password',
-    '/auth/validate-reset-token',
+    '/auth/validate',
     '/auth/reset-password'
   ];
 

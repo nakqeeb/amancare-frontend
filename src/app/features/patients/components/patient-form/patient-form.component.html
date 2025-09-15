@@ -227,7 +227,7 @@
                       <input
                         matInput
                         formControlName="phone"
-                        placeholder="05xxxxxxxx"
+                        placeholder="7xxxxxxxx"
                         type="tel"
                         required
                       />
@@ -236,6 +236,13 @@
                         *ngIf="hasError('phone', 'required', contactInfoGroup)"
                       >
                         رقم الهاتف مطلوب
+                      </mat-error>
+                      <mat-error
+                        *ngIf="
+                          hasError('phone', 'invalidPhone', contactInfoGroup)
+                        "
+                      >
+                        يرجى إدخال رقم هاتف يمني صحيح
                       </mat-error>
                       <mat-error
                         *ngIf="hasError('phone', 'pattern', contactInfoGroup)"
@@ -324,7 +331,7 @@
                       <input
                         matInput
                         formControlName="emergencyContactPhone"
-                        placeholder="05xxxxxxxx"
+                        placeholder="7xxxxxxxx"
                         type="tel"
                       />
                       <mat-icon matSuffix>emergency</mat-icon>

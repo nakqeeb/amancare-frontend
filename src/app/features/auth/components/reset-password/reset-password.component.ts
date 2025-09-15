@@ -142,7 +142,15 @@ export class ResetPasswordComponent implements OnInit {
       { label: 'قوية جداً', color: 'primary' }
     ];
 
-    return { score, ...levels[score] || levels[0] };
+    // return { score, ...levels[score] || levels[0] };
+    // Make sure we don't exceed the array bounds
+    const levelIndex = Math.min(score, levels.length - 1);
+
+    return {
+      score,
+      label: levels[levelIndex].label,
+      color: levels[levelIndex].color
+    };
   }
 
   hasPasswordMismatch(): boolean {

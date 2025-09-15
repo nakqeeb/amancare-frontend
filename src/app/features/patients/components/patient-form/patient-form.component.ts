@@ -5,7 +5,7 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -38,6 +38,18 @@ import {
   PATIENT_CONSTANTS,
   calculateAge
 } from '../../models/patient.model';
+
+function phoneValidator(control: AbstractControl): ValidationErrors | null {
+  const phone = control.value;
+  if (!phone) return null;
+
+  // يقبل:
+  // 1. محلي: 7x أو 71 أو 73 أو 70 + 7 أرقام
+  // 2. دولي: +967 أو 00967 ثم (7x أو 71 أو 73 أو 70) + 7 أرقام
+  const phoneRegex = /^(?:((78|77|71|73|70)\d{7})|((\+967|00967)(78|77|71|73|70)\d{7}))$/;
+
+  return phoneRegex.test(phone) ? null : { invalidPhone: true };
+}
 
 @Component({
   selector: 'app-patient-form',
@@ -142,7 +154,7 @@ export class PatientFormComponent implements OnInit, OnDestroy {
     this.contactInfoGroup = this.fb.group({
       phone: ['', [
         Validators.required,
-        Validators.pattern(PATIENT_CONSTANTS.PHONE_PATTERN)
+        /* Validators.pattern(PATIENT_CONSTANTS.PHONE_PATTERN) */ phoneValidator
       ]],
       email: ['', [
         Validators.email,
@@ -152,10 +164,10 @@ export class PatientFormComponent implements OnInit, OnDestroy {
         Validators.maxLength(PATIENT_CONSTANTS.MAX_ADDRESS_LENGTH)
       ]],
       emergencyContactName: ['', [
-        Validators.maxLength(PATIENT_CONSTANTS.MAX_NAME_LENGTH)
+        Validators.maxLength(PATIENT_CONSTANTS.MAX_NAME_LENGTH),
       ]],
       emergencyContactPhone: ['', [
-        Validators.pattern(PATIENT_CONSTANTS.PHONE_PATTERN)
+        /* Validators.pattern(PATIENT_CONSTANTS.PHONE_PATTERN) */ phoneValidator
       ]]
     });
 
@@ -261,6 +273,7 @@ export class PatientFormComponent implements OnInit, OnDestroy {
 
   onSubmit(): void {
     if (this.patientForm.invalid) {
+      console.log(this.patientForm);
       this.markFormGroupTouched(this.patientForm);
       this.notificationService.error('يرجى تصحيح الأخطاء في النموذج');
       return;

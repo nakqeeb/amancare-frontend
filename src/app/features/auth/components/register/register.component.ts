@@ -125,7 +125,7 @@ export class RegisterComponent implements OnInit {
   private initializeForms(): void {
     this.clinicForm = this.fb.group({
       clinicName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
-      clinicDescription: ['', [Validators.maxLength(500)]],
+      clinicDescription: ['', [Validators.required, Validators.maxLength(500)]],
       clinicAddress: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(200)]],
       clinicPhone: ['', [Validators.required, phoneValidator]],
       clinicEmail: ['', [Validators.required, Validators.email]]
