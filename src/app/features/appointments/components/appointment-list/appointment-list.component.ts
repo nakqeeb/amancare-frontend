@@ -1,5 +1,5 @@
 // src/app/features/appointments/components/appointment-list/appointment-list.component.ts
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -68,7 +68,7 @@ import { MatDividerModule } from '@angular/material/divider';
   templateUrl: './appointment-list.component.html',
   styleUrl: './appointment-list.component.scss'
 })
-export class AppointmentListComponent implements OnInit {
+export class AppointmentListComponent implements OnInit, OnDestroy {
   appointmentStatus = AppointmentStatus;
   readonly appointmentService = inject(AppointmentService);
   private readonly userService = inject(UserService);
@@ -79,7 +79,7 @@ export class AppointmentListComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   // Component state
-  appointments = this.appointmentService.appointments();
+  appointments = this.appointmentService.appointments;  // FIXED: Keep signal reference
   loading = this.appointmentService.loading;
   currentPage = this.appointmentService.currentPage;
   pageSize = this.appointmentService.pageSize;
@@ -122,6 +122,11 @@ export class AppointmentListComponent implements OnInit {
     this.loadDoctors();
     this.setupFilterSubscription();
   }
+
+  ngOnDestroy(): void {
+    this.appointmentService.clearAppointments();
+  }
+
 
   private setupFilterSubscription(): void {
     this.filterForm.valueChanges.subscribe(() => {

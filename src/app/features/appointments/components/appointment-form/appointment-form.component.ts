@@ -1,5 +1,5 @@
 // src/app/features/appointments/components/appointment-form/appointment-form.component.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -11,7 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatAutocompleteModule, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
 import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
@@ -32,6 +32,7 @@ import {
   APPOINTMENT_TYPE_LABELS
 } from '../../models/appointment.model';
 import { MatDividerModule } from '@angular/material/divider';
+import { Patient } from '../../../patients/models/patient.model';
 
 @Component({
   selector: 'app-appointment-form',
@@ -71,6 +72,7 @@ export class AppointmentFormComponent implements OnInit {
   appointmentId = signal<number | null>(null);
   loading = signal(false);
   patients = signal<any[]>([]);
+  patient = signal<Patient | null>(null);
   doctors = signal<any[]>([]);
   availableTimeSlots = signal<string[]>([]);
 
@@ -87,6 +89,9 @@ export class AppointmentFormComponent implements OnInit {
 
   // Min date for appointment
   minDate = new Date();
+
+
+  @ViewChild(MatAutocompleteTrigger) autocompleteTrigger!: MatAutocompleteTrigger;
 
   constructor() {
     this.appointmentForm = this.fb.group({
@@ -108,6 +113,7 @@ export class AppointmentFormComponent implements OnInit {
     this.loadDoctors();
     this.setupPatientAutocomplete();
     this.setupDateChangeListener();
+    this.loadPatientById();
   }
 
   private checkEditMode(): void {
@@ -119,13 +125,17 @@ export class AppointmentFormComponent implements OnInit {
     }
   }
 
+  onFocus() {
+    this.autocompleteTrigger.openPanel();
+  }
+
   private loadAppointment(id: number): void {
     this.loading.set(true);
     this.appointmentService.getAppointmentById(id).subscribe({
       next: (appointment) => {
         this.appointmentForm.patchValue({
-          patientId: appointment.patientId,
-          doctorId: appointment.doctorId,
+          patientId: appointment.patient.id,
+          doctorId: appointment.doctor.id,
           appointmentDate: new Date(appointment.appointmentDate),
           appointmentTime: appointment.appointmentTime,
           durationMinutes: appointment.durationMinutes,
@@ -135,7 +145,7 @@ export class AppointmentFormComponent implements OnInit {
         });
 
         // Set patient search field
-        const patient = this.patients().find(p => p.id === appointment.patientId);
+        const patient = this.patients().find(p => p.id === appointment.patient.id);
         if (patient) {
           this.appointmentForm.patchValue({
             patientSearch: `${patient.firstName} ${patient.lastName} - ${patient.patientNumber}`
@@ -163,6 +173,27 @@ export class AppointmentFormComponent implements OnInit {
         console.error('Error loading patients:', error);
       }
     });
+  }
+
+  private loadPatientById(): void {
+    const id = this.route.snapshot.queryParamMap.get('patientId');
+    if (id) {
+      this.patientService.getPatientById(+id).subscribe({
+        next: (response) => {
+          console.log('loadPatientById: ', response.data);
+          this.patient.set(response.data!);
+          this.appointmentForm.patchValue({
+            patientId: response.data!.id,
+            patientSearch: response.data!.fullName
+          });
+
+        },
+        error: (error) => {
+          console.error('Error loading patients:', error);
+        }
+      });
+    }
+
   }
 
   private loadDoctors(): void {

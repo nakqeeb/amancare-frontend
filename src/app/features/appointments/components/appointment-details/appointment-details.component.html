@@ -158,18 +158,18 @@
               <div class="info-section">
                 <div class="info-row">
                   <span class="info-label">الاسم:</span>
-                  <span>{{ appointment()!.patientName }}</span>
+                  <span>{{ appointment()!.patient.fullName }}</span>
                 </div>
 
                 <div class="info-row">
                   <span class="info-label">رقم المريض:</span>
-                  <span>{{ appointment()!.patientNumber }}</span>
+                  <span>{{ appointment()!.patient.patientNumber }}</span>
                 </div>
 
-                @if (appointment()!.patientPhone) {
+                @if (appointment()!.patient.phone) {
                 <div class="info-row">
                   <span class="info-label">الهاتف:</span>
-                  <span dir="ltr">{{ appointment()!.patientPhone }}</span>
+                  <span dir="ltr">{{ appointment()!.patient.phone }}</span>
                 </div>
                 }
               </div>
@@ -220,13 +220,13 @@
               <div class="info-section">
                 <div class="info-row">
                   <span class="info-label">الاسم:</span>
-                  <span>{{ appointment()!.doctorName }}</span>
+                  <span>{{ appointment()!.doctor.fullName }}</span>
                 </div>
 
-                @if (appointment()!.doctorSpecialization) {
+                @if (appointment()!.doctor.specialization) {
                 <div class="info-row">
                   <span class="info-label">التخصص:</span>
-                  <span>{{ appointment()!.doctorSpecialization }}</span>
+                  <span>{{ appointment()!.doctor.specialization }}</span>
                 </div>
                 }
               </div>
@@ -254,22 +254,23 @@
                   <span>{{ appointment()!.createdAt }}</span>
                 </div>
 
-                @if (appointment()!.createdByName) {
+                @if (appointment()!.createdBy) {
                 <div class="info-row">
                   <span class="info-label">تم الإنشاء بواسطة:</span>
-                  <span>{{ appointment()!.createdByName }}</span>
+                  <span>{{ appointment()!.createdBy }}</span>
                 </div>
                 } @if (appointment()!.updatedAt) {
                 <div class="info-row">
                   <span class="info-label">آخر تحديث:</span>
                   <span>{{ appointment()!.updatedAt }}</span>
                 </div>
-                } @if (appointment()!.updatedByName) {
+                }
+                <!-- @if (appointment()!.updatedByName) {
                 <div class="info-row">
                   <span class="info-label">تم التحديث بواسطة:</span>
                   <span>{{ appointment()!.updatedByName }}</span>
                 </div>
-                }
+                } -->
               </div>
             </mat-card-content>
           </mat-card>

@@ -10,7 +10,8 @@ import {
   FormGroup,
   Validators,
   ReactiveFormsModule,
-  AbstractControl
+  AbstractControl,
+  ValidationErrors
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -47,10 +48,15 @@ function emailValidator(control: AbstractControl) {
   return emailRegex.test(email) ? null : { invalidEmail: true };
 }
 
-function phoneValidator(control: AbstractControl) {
+function phoneValidator(control: AbstractControl): ValidationErrors | null {
   const phone = control.value;
   if (!phone) return null;
-  const phoneRegex = /^(\+966|0)?[5][0-9]{8}$/;
+
+  // يقبل:
+  // 1. محلي: 7x أو 71 أو 73 أو 70 + 7 أرقام
+  // 2. دولي: +967 أو 00967 ثم (7x أو 71 أو 73 أو 70) + 7 أرقام
+  const phoneRegex = /^(?:((78|77|71|73|70)\d{7})|((\+967|00967)(78|77|71|73|70)\d{7}))$/;
+
   return phoneRegex.test(phone) ? null : { invalidPhone: true };
 }
 
@@ -427,18 +433,18 @@ export class UserFormComponent implements OnInit {
   }
 
   // Check email availability
-  async checkEmailAvailability(): Promise<void> {
-    const email = this.basicInfoForm.get('email')?.value;
-    if (!email) return;
+  // async checkEmailAvailability(): Promise<void> {
+  //   const email = this.basicInfoForm.get('email')?.value;
+  //   if (!email) return;
 
-    this.userService.checkEmailExists(email).subscribe({
-      next: (exists) => {
-        if (exists && !this.isEditMode()) {
-          this.basicInfoForm.get('email')?.setErrors({ emailTaken: true });
-        }
-      }
-    });
-  }
+  //   this.userService.checkEmailExists(email).subscribe({
+  //     next: (exists) => {
+  //       if (exists && !this.isEditMode()) {
+  //         this.basicInfoForm.get('email')?.setErrors({ emailTaken: true });
+  //       }
+  //     }
+  //   });
+  // }
 
   // Generate random password
   generatePassword(): void {
@@ -546,11 +552,11 @@ export class UserFormComponent implements OnInit {
   }
 
   getRoleLabel(): string {
-  const roleValue = this.professionalForm.get('role')?.value;
-  if (!roleValue) {
-    return 'لم يتم تحديد الدور';
+    const roleValue = this.professionalForm.get('role')?.value;
+    if (!roleValue) {
+      return 'لم يتم تحديد الدور';
+    }
+    const roleOption = this.roleOptions.find(r => r.value === roleValue);
+    return roleOption ? roleOption.label : 'لم يتم تحديد الدور';
   }
-  const roleOption = this.roleOptions.find(r => r.value === roleValue);
-  return roleOption ? roleOption.label : 'لم يتم تحديد الدور';
-}
 }

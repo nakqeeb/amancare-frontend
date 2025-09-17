@@ -164,7 +164,7 @@ export class AppointmentCalendarComponent implements OnInit {
 
       return {
         id: appointment.id.toString(),
-        title: `${appointment.patientName} - ${appointment.doctorName}`,
+        title: `${appointment.patient.fullName} - ${appointment.doctor.fullName}`,
         start,
         end,
         color: this.getEventColor(appointment.status),

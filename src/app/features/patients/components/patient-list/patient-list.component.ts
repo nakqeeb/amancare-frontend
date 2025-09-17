@@ -40,6 +40,7 @@ import {
 } from '../../models/patient.model';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatTableModule } from '@angular/material/table';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 @Component({
   selector: 'app-patient-list',
@@ -65,6 +66,7 @@ import { MatTableModule } from '@angular/material/table';
     MatSlideToggleModule,
     MatDatepickerModule,
     MatTableModule,
+    MatProgressBarModule,
     HeaderComponent,
     SidebarComponent
   ],
@@ -564,17 +566,126 @@ export class PatientListComponent implements OnInit {
   }
 
   /**
-   * Get search results summary
+   * Format number with Arabic numerals
+   */
+  formatNumber(value: number | undefined): string {
+    if (value === undefined || value === null) return '0';
+    return Math.round(value).toLocaleString('ar-SA');
+  }
+
+  /**
+   * Format percentage with one decimal place
+   */
+  formatPercentage(value: number | undefined): string {
+    if (value === undefined || value === null) return '0';
+    return Number(value.toFixed(1)).toLocaleString('ar-SA');
+  }
+
+  /**
+   * Format currency in SAR
+   */
+  formatCurrency(value: number | undefined): string {
+    if (value === undefined || value === null) return '0 ريال';
+    return new Intl.NumberFormat('ar-SA', {
+      style: 'currency',
+      currency: 'YER',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(value);
+  }
+
+  /**
+   * Get blood types for dropdown
+   * This method already exists but verify it returns the correct format
+   */
+  getBloodTypes(): { value: string; label: string }[] {
+    return this.patientService.getBloodTypes();
+  }
+
+  /**
+   * Toggle advanced search visibility
+   */
+  toggleAdvancedSearch(): void {
+    this.showAdvancedSearch.update(value => !value);
+  }
+
+  /**
+   * Clear search term
+   */
+  clearSearch(): void {
+    this.searchForm.get('searchTerm')?.setValue('');
+    this.onSearch();
+  }
+
+  /**
+   * Reset all search filters
+   */
+  resetSearch(): void {
+    this.searchForm.reset({
+      searchTerm: '',
+      gender: '',
+      bloodType: '',
+      showInactive: false
+    });
+    this.searchPerformed.set(false);
+    this.loadPatients();
+  }
+
+  /**
+   * Get search results summary with statistics
    */
   getSearchSummary(): string {
     const total = this.totalPatients();
     const hasFilters = this.searchPerformed();
+    const stats = this.statistics();
 
     if (hasFilters) {
-      return `تم العثور على ${total} مريض`;
+      return `تم العثور على ${this.formatNumber(total)} مريض من أصل ${this.formatNumber(stats?.totalPatients || 0)}`;
     }
-    return `إجمالي المرضى: ${total}`;
+    return `إجمالي المرضى: ${this.formatNumber(total)}`;
   }
+
+  /**
+   * Calculate gender percentage
+   */
+  getGenderPercentage(gender: 'male' | 'female'): number {
+    const stats = this.statistics();
+    if (!stats || stats.totalPatients === 0) return 0;
+
+    const count = gender === 'male' ? stats.malePatients : stats.femalePatients;
+    return (count / stats.totalPatients) * 100;
+  }
+
+  /**
+   * Get statistics tooltip
+   */
+  getStatisticsTooltip(): string {
+    const stats = this.statistics();
+    if (!stats) return '';
+
+    return `
+      المرضى النشطون: ${stats.activePatients} (${this.formatPercentage(stats.activePercentage)}%)
+      المرضى غير النشطين: ${stats.inactivePatients} (${this.formatPercentage(stats.inactivePercentage)}%)
+      نسبة الذكور إلى الإناث: ${this.formatPercentage(stats.genderRatio || 0)}
+      متوسط العمر: ${this.formatNumber(stats.averageAge)} سنة
+    `.trim();
+  }
+
+  /**
+   * Check if statistics are fully loaded
+   */
+  hasCompleteStatistics(): boolean {
+    const stats = this.statistics();
+    return stats !== null && stats.totalPatients > 0;
+  }
+
+  /**
+   * Refresh statistics
+   */
+  refreshStatistics(): void {
+    this.loadStatistics();
+  }
+
 
   /**
    * Check if user can delete patients

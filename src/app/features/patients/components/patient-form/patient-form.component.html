@@ -1,6 +1,6 @@
 <!-- ===================================================================
 // src/app/features/patients/components/patient-form/patient-form.component.html
-// Patient Form Template
+// Patient Form Template - Fixed Navigation Issue
 // =================================================================== -->
 <app-header></app-header>
 
@@ -199,7 +199,8 @@
                 </div>
 
                 <div class="step-actions">
-                  <button mat-raised-button matStepperNext color="primary">
+                  <!-- FIXED: Added type="button" to prevent form submission -->
+                  <button mat-raised-button matStepperNext color="primary" type="button">
                     <mat-icon>navigate_next</mat-icon>
                     التالي
                   </button>
@@ -351,11 +352,13 @@
                 </div>
 
                 <div class="step-actions">
-                  <button mat-stroked-button matStepperPrevious>
+                  <!-- FIXED: Added type="button" to prevent form submission -->
+                  <button mat-stroked-button matStepperPrevious type="button">
                     <mat-icon>navigate_before</mat-icon>
                     السابق
                   </button>
-                  <button mat-raised-button matStepperNext color="primary">
+                  <!-- FIXED: Added type="button" to prevent form submission -->
+                  <button mat-raised-button matStepperNext color="primary" type="button">
                     <mat-icon>navigate_next</mat-icon>
                     التالي
                   </button>
@@ -468,11 +471,13 @@
                 </div>
 
                 <div class="step-actions">
-                  <button mat-stroked-button matStepperPrevious>
+                  <!-- FIXED: Added type="button" to prevent form submission -->
+                  <button mat-stroked-button matStepperPrevious type="button">
                     <mat-icon>navigate_before</mat-icon>
                     السابق
                   </button>
-                  <button mat-raised-button matStepperNext color="primary">
+                  <!-- FIXED: Added type="button" to prevent form submission -->
+                  <button mat-raised-button matStepperNext color="primary" type="button">
                     <mat-icon>navigate_next</mat-icon>
                     مراجعة البيانات
                   </button>
@@ -645,6 +650,7 @@
                 </div>
 
                 <div class="step-actions final-actions">
+                  <!-- FIXED: Already has type="button" -->
                   <button mat-stroked-button matStepperPrevious type="button">
                     <mat-icon>navigate_before</mat-icon>
                     السابق
@@ -660,6 +666,7 @@
                     إعادة تعيين
                   </button>
 
+                  <!-- Only this button should submit the form -->
                   <button
                     mat-raised-button
                     color="primary"

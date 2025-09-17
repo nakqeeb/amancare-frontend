@@ -49,6 +49,7 @@ export interface CreateAppointmentRequest {
 }
 
 export interface UpdateAppointmentRequest {
+  clinicId?: number;
   appointmentDate?: string;
   appointmentTime?: string;
   durationMinutes?: number;
@@ -57,27 +58,54 @@ export interface UpdateAppointmentRequest {
   notes?: string;
 }
 
+// export interface AppointmentResponse {
+//   id: number;
+//   patientId: number;
+//   patientName: string;
+//   patientNumber: string;
+//   patientPhone?: string;
+//   doctorId: number;
+//   doctorName: string;
+//   doctorSpecialization?: string;
+//   appointmentDate: string;
+//   appointmentTime: string;
+//   durationMinutes: number;
+//   appointmentType: AppointmentType;
+//   status: AppointmentStatus;
+//   chiefComplaint?: string;
+//   notes?: string;
+//   cancellationReason?: string;
+//   createdAt: string;
+//   updatedAt?: string;
+//   createdByName?: string;
+//   updatedByName?: string;
+// }
+
 export interface AppointmentResponse {
   id: number;
-  patientId: number;
-  patientName: string;
-  patientNumber: string;
-  patientPhone?: string;
-  doctorId: number;
-  doctorName: string;
-  doctorSpecialization?: string;
-  appointmentDate: string;
-  appointmentTime: string;
+  patient: {
+    id: number;
+    patientNumber: string;
+    fullName: string;
+    phone: string;
+    age: number;
+  };
+  doctor: {
+    id: number;
+    fullName: string;
+    specialization: string;
+  };
+  appointmentDate: string;       // YYYY-MM-DD
+  appointmentTime: string;       // HH:mm:ss
   durationMinutes: number;
   appointmentType: AppointmentType;
   status: AppointmentStatus;
-  chiefComplaint?: string;
-  notes?: string;
+  chiefComplaint: string;
+  notes: string;
+  createdAt: string;             // ISO datetime
+  updatedAt: string;             // ISO datetime
+  createdBy: string;
   cancellationReason?: string;
-  createdAt: string;
-  updatedAt?: string;
-  createdByName?: string;
-  updatedByName?: string;
 }
 
 export interface AppointmentSummaryResponse {
@@ -88,6 +116,32 @@ export interface AppointmentSummaryResponse {
   appointmentTime: string;
   status: AppointmentStatus;
   appointmentType: AppointmentType;
+}
+
+export interface AppointmentDetailsResponse {
+  id: number;
+  patient: {
+    id: number;
+    patientNumber: string;
+    fullName: string;
+    phone: string;
+    age: number;
+  };
+  doctor: {
+    id: number;
+    fullName: string;
+    specialization: string;
+  };
+  appointmentDate: string;      // YYYY-MM-DD
+  appointmentTime: string;      // HH:mm:ss
+  durationMinutes: number;
+  appointmentType: AppointmentType;
+  status: AppointmentStatus;
+  chiefComplaint: string;
+  notes: string;
+  createdAt: string;            // ISO datetime
+  updatedAt: string;            // ISO datetime
+  createdBy: string;
 }
 
 export interface AppointmentPageResponse {

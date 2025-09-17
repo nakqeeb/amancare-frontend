@@ -49,7 +49,7 @@
                   معلومات المريض
                 </h3>
 
-                <mat-form-field appearance="outline" class="full-width">
+                <!-- <mat-form-field appearance="outline" class="full-width">
                   <mat-label>البحث عن المريض</mat-label>
                   <input
                     matInput
@@ -80,6 +80,55 @@
                     </mat-option>
                     }
                   </mat-autocomplete>
+                  <mat-error
+                    *ngIf="
+                      appointmentForm.get('patientId')?.hasError('required')
+                    "
+                  >
+                    يجب اختيار المريض
+                  </mat-error>
+                </mat-form-field> -->
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>المريض</mat-label>
+
+                  @if (patient()) {
+                  <!-- عرض المريض المثبت -->
+                  <input matInput [value]="patient()!.fullName" disabled />
+                  <mat-icon matSuffix>person</mat-icon>
+                  } @else {
+                  <!-- البحث عن مريض -->
+                  <input
+                    matInput
+                    formControlName="patientSearch"
+                    [matAutocomplete]="auto"
+                    (focus)="onFocus()"
+                    placeholder="ابحث بالاسم أو رقم المريض"
+                  />
+                  <mat-icon matSuffix>search</mat-icon>
+
+                  <mat-autocomplete
+                    #auto="matAutocomplete"
+                    [displayWith]="displayPatient"
+                    (optionSelected)="onPatientSelected($event)"
+                  >
+                    @for (patient of filteredPatients$ | async; track
+                    patient.id) {
+                    <mat-option [value]="patient">
+                      <div class="patient-option">
+                        <strong>{{ patient.fullName }}</strong>
+                        <span class="patient-number">{{
+                          patient.patientNumber
+                        }}</span>
+                        @if (patient.phone) {
+                        <span class="patient-phone">{{ patient.phone }}</span>
+                        }
+                      </div>
+                    </mat-option>
+                    }
+                  </mat-autocomplete>
+                  }
+
                   <mat-error
                     *ngIf="
                       appointmentForm.get('patientId')?.hasError('required')

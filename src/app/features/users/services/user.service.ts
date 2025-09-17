@@ -275,9 +275,9 @@ export class UserService {
   }
 
   // Check if email exists
-  checkEmailExists(email: string): Observable<boolean> {
+  /* checkEmailExists(email: string): Observable<boolean> {
     return this.http.get<boolean>(`${this.apiUrl}/check/email/${email}`);
-  }
+  } */
 
   // Refresh users list
   private refreshUsers(): void {

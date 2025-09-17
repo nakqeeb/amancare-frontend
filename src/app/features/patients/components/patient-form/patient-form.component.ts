@@ -138,12 +138,12 @@ export class PatientFormComponent implements OnInit, OnDestroy {
       firstName: ['', [
         Validators.required,
         Validators.maxLength(PATIENT_CONSTANTS.MAX_NAME_LENGTH),
-        Validators.pattern(/^[a-zA-Zأ-ي\s]+$/)
+        Validators.pattern(/^[a-zA-Zأ-يء\s]+$/)
       ]],
       lastName: ['', [
         Validators.required,
         Validators.maxLength(PATIENT_CONSTANTS.MAX_NAME_LENGTH),
-        Validators.pattern(/^[a-zA-Zأ-ي\s]+$/)
+        Validators.pattern(/^[a-zA-Zأ-يء\s]+$/)
       ]],
       dateOfBirth: ['', Validators.required],
       gender: ['', Validators.required],

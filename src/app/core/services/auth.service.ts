@@ -6,7 +6,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
-import { catchError, tap, map } from 'rxjs/operators';
+import { catchError, tap, map, switchMap } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
 import { StorageService } from './storage.service';
@@ -157,21 +157,32 @@ export class AuthService {
    */
   login(credentials: LoginRequest): Observable<LoginResponse> {
     return this.http.post<ApiResponse<JwtAuthenticationResponse>>(`${this.apiUrl}/login`, credentials).pipe(
-      map(response => {
+      switchMap(response => {
         if (!response.success) {
           throw new Error(response.message);
         }
-        // Combine JWT response with user data for frontend
-        const loginResponse: LoginResponse = {
-          ...response.data,
-          user: this.currentUser() || {} as User // Will be fetched after login
-        };
-        return loginResponse;
-      }),
-      tap(response => {
-        this.handleLoginSuccess(response);
-        // Fetch current user data after successful login
-        this.getCurrentUser().subscribe();
+
+        // خزّن التوكينات
+        this.setToken(response.data.accessToken);
+        this.setRefreshToken(response.data.refreshToken);
+
+        // بعدها جيب المستخدم
+        return this.getCurrentUser().pipe(
+          map(user => {
+            const loginResponse: LoginResponse = {
+              ...response.data,
+              user
+            };
+
+            // هنا صار loginResponse كامل وفيه user
+            this.storageService.setItem(environment.userKey, user);
+            this.setAuthState(user);
+            this.notificationService.success(`مرحباً ${user.fullName}`);
+            this.router.navigate(['/dashboard']);
+
+            return loginResponse;
+          })
+        );
       }),
       catchError(error => {
         this.handleLoginError(error);
@@ -586,18 +597,6 @@ export class AuthService {
   /**
    * معالجة نجاح تسجيل الدخول
    */
-  private handleLoginSuccess(response: LoginResponse): void {
-    this.setToken(response.accessToken);
-    this.setRefreshToken(response.refreshToken);
-
-    if (response.user) {
-      this.storageService.setItem(environment.userKey, response.user);
-      this.setAuthState(response.user);
-      this.notificationService.success(`مرحباً ${response.user.fullName}`);
-    }
-
-    this.router.navigate(['/dashboard']);
-  }
 
   /**
    * معالجة فشل تسجيل الدخول

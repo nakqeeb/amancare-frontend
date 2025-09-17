@@ -16,26 +16,30 @@
         </h1>
         <p class="page-subtitle">عرض وإدارة جميع مرضى العيادة</p>
 
-        <!-- Statistics Summary -->
+        <!-- Quick Statistics Summary (Chips) -->
         @if (statistics()) {
           <div class="statistics-summary">
             <mat-chip-listbox class="stats-chips">
               <mat-chip-option disabled>
                 <mat-icon>people</mat-icon>
-                إجمالي: {{ statistics()!.totalPatients }}
+                إجمالي: {{ formatNumber(statistics()!.totalPatients) }}
               </mat-chip-option>
               <mat-chip-option disabled>
                 <mat-icon>check_circle</mat-icon>
-                نشط: {{ statistics()!.activePatients }}
+                نشط: {{ formatNumber(statistics()!.activePatients) }}
+              </mat-chip-option>
+              <mat-chip-option disabled class="warn-chip">
+                <mat-icon>cancel</mat-icon>
+                غير نشط: {{ formatNumber(statistics()!.inactivePatients) }}
               </mat-chip-option>
               <mat-chip-option disabled>
                 <mat-icon>new_releases</mat-icon>
-                جديد: {{ statistics()!.newPatientsThisMonth }}
+                جديد: {{ formatNumber(statistics()!.newPatientsThisMonth) }}
               </mat-chip-option>
-              @if (statistics()!.patientsWithAppointmentsToday! > 0) {
-                <mat-chip-option disabled>
+              @if (statistics()!.patientsWithAppointmentsToday && statistics()!.patientsWithAppointmentsToday! > 0) {
+                <mat-chip-option disabled class="accent-chip">
                   <mat-icon>event</mat-icon>
-                  اليوم: {{ statistics()!.patientsWithAppointmentsToday }}
+                  مواعيد اليوم: {{ formatNumber(statistics()!.patientsWithAppointmentsToday) }}
                 </mat-chip-option>
               }
             </mat-chip-listbox>
@@ -43,222 +47,246 @@
         }
       </div>
 
+      <!-- Action Buttons -->
       <div class="header-actions">
-        <button
-          mat-raised-button
-          color="primary"
-          (click)="onAddPatient()"
-          class="add-button"
-        >
+        <button mat-raised-button color="primary" (click)="onAddPatient()">
           <mat-icon>person_add</mat-icon>
           إضافة مريض جديد
-        </button>
-
-        <button
-          mat-stroked-button
-          [matMenuTriggerFor]="exportMenu"
-          class="export-button"
-        >
-          <mat-icon>file_download</mat-icon>
-          تصدير
-        </button>
-
-        <button
-          mat-icon-button
-          (click)="onRefresh()"
-          [disabled]="loading()"
-          matTooltip="تحديث البيانات"
-        >
-          <mat-icon>refresh</mat-icon>
         </button>
       </div>
     </div>
 
-    <!-- Search & Filter Section -->
+    <!-- Comprehensive Statistics Cards Section -->
+    @if (statistics()) {
+      <div class="statistics-cards-section">
+        <div class="stats-grid">
+
+          <!-- Total Patients Card -->
+          <mat-card class="stat-card total-card">
+            <mat-card-content>
+              <div class="stat-icon-wrapper">
+                <mat-icon class="stat-icon">groups</mat-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ formatNumber(statistics()!.totalPatients) }}</div>
+                <div class="stat-label">إجمالي المرضى</div>
+                <div class="stat-detail">
+                  <span class="active">{{ formatNumber(statistics()!.activePatients) }} نشط</span>
+                  <span class="separator">•</span>
+                  <span class="inactive">{{ formatNumber(statistics()!.inactivePatients) }} غير نشط</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Active Percentage Card -->
+          <mat-card class="stat-card active-card">
+            <mat-card-content>
+              <div class="stat-icon-wrapper">
+                <mat-icon class="stat-icon">trending_up</mat-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ formatPercentage(statistics()!.activePercentage) }}%</div>
+                <div class="stat-label">نسبة النشطين</div>
+                <mat-progress-bar
+                  mode="determinate"
+                  [value]="statistics()!.activePercentage || 0"
+                  class="stat-progress">
+                </mat-progress-bar>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Gender Distribution Card -->
+          <mat-card class="stat-card gender-card">
+            <mat-card-content>
+              <div class="stat-icon-wrapper">
+                <mat-icon class="stat-icon">wc</mat-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">
+                  <span class="male-count">{{ formatNumber(statistics()!.malePatients) }}</span>
+                  <span class="separator">/</span>
+                  <span class="female-count">{{ formatNumber(statistics()!.femalePatients) }}</span>
+                </div>
+                <div class="stat-label">ذكور / إناث</div>
+                @if (statistics()!.totalPatients > 0) {
+                  <div class="gender-bar">
+                    <div class="male-bar"
+                         [style.width.%]="(statistics()!.malePatients / statistics()!.totalPatients) * 100"
+                         [matTooltip]="'ذكور: ' + formatPercentage((statistics()!.malePatients / statistics()!.totalPatients) * 100) + '%'">
+                    </div>
+                    <div class="female-bar"
+                         [style.width.%]="(statistics()!.femalePatients / statistics()!.totalPatients) * 100"
+                         [matTooltip]="'إناث: ' + formatPercentage((statistics()!.femalePatients / statistics()!.totalPatients) * 100) + '%'">
+                    </div>
+                  </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Average Age Card -->
+          @if (statistics()!.averageAge && statistics()!.averageAge! > 0) {
+            <mat-card class="stat-card age-card">
+              <mat-card-content>
+                <div class="stat-icon-wrapper">
+                  <mat-icon class="stat-icon">cake</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ formatNumber(statistics()!.averageAge) }}</div>
+                  <div class="stat-label">متوسط العمر</div>
+                  <div class="stat-detail">سنة</div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+
+          <!-- New Patients This Month -->
+          <mat-card class="stat-card new-card">
+            <mat-card-content>
+              <div class="stat-icon-wrapper">
+                <mat-icon class="stat-icon">person_add</mat-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ formatNumber(statistics()!.newPatientsThisMonth) }}</div>
+                <div class="stat-label">مرضى جدد</div>
+                <div class="stat-detail">خلال 30 يوم</div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Today's Appointments -->
+          @if (statistics()!.patientsWithAppointmentsToday !== undefined) {
+            <mat-card class="stat-card appointments-card">
+              <mat-card-content>
+                <div class="stat-icon-wrapper">
+                  <mat-icon class="stat-icon">event_available</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ formatNumber(statistics()!.patientsWithAppointmentsToday) }}</div>
+                  <div class="stat-label">مواعيد اليوم</div>
+                  <div class="stat-detail">مريض</div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+
+          <!-- Pending Invoices -->
+          @if (statistics()!.patientsWithPendingInvoices !== undefined) {
+            <mat-card class="stat-card invoices-card">
+              <mat-card-content>
+                <div class="stat-icon-wrapper">
+                  <mat-icon class="stat-icon">receipt_long</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ formatNumber(statistics()!.patientsWithPendingInvoices) }}</div>
+                  <div class="stat-label">فواتير معلقة</div>
+                  <div class="stat-detail">مريض</div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+
+          <!-- Outstanding Balance -->
+          @if (statistics()!.totalOutstandingBalance !== undefined && statistics()!.totalOutstandingBalance! > 0) {
+            <mat-card class="stat-card balance-card">
+              <mat-card-content>
+                <div class="stat-icon-wrapper">
+                  <mat-icon class="stat-icon">account_balance</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ formatCurrency(statistics()!.totalOutstandingBalance) }}</div>
+                  <div class="stat-label">المبلغ المستحق</div>
+                  <div class="stat-detail">إجمالي المديونية</div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+
+        </div>
+      </div>
+    }
+
+    <!-- Search and Filter Section -->
     <mat-card class="search-card">
       <mat-card-content>
         <form [formGroup]="searchForm" class="search-form">
-          <div class="search-row">
+          <!-- Quick Search -->
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>البحث عن مريض</mat-label>
+            <input matInput
+                   formControlName="searchTerm"
+                   placeholder="الاسم، رقم الهاتف، رقم المريض...">
+            <mat-icon matPrefix>search</mat-icon>
+            @if (searchForm.get('searchTerm')?.value) {
+              <button mat-icon-button matSuffix (click)="clearSearch()">
+                <mat-icon>clear</mat-icon>
+              </button>
+            }
+          </mat-form-field>
 
-            <!-- Main Search Input -->
-            <mat-form-field appearance="outline" class="search-field">
-              <mat-label>البحث</mat-label>
-              <input
-                matInput
-                formControlName="searchTerm"
-                placeholder="البحث بالاسم، رقم المريض، أو الهاتف..."
-                (keyup.enter)="onSearch()"
-              />
-              <mat-icon matSuffix>search</mat-icon>
-            </mat-form-field>
+          <!-- Advanced Filters Toggle -->
+          <button mat-stroked-button
+                  type="button"
+                  (click)="toggleAdvancedSearch()"
+                  class="advanced-toggle">
+            <mat-icon>{{ showAdvancedSearch() ? 'expand_less' : 'expand_more' }}</mat-icon>
+            {{ showAdvancedSearch() ? 'إخفاء' : 'إظهار' }} الفلاتر المتقدمة
+          </button>
 
-            <!-- Quick Filters -->
-            <mat-form-field appearance="outline" class="filter-field">
-              <mat-label>الجنس</mat-label>
-              <mat-select formControlName="gender">
-                <mat-option value="">الكل</mat-option>
-                @for (gender of genders; track gender.value) {
-                  <mat-option [value]="gender.value">
-                    <mat-icon>{{ gender.value === 'MALE' ? 'male' : 'female' }}</mat-icon>
-                    {{ gender.label }}
-                  </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="filter-field">
-              <mat-label>فصيلة الدم</mat-label>
-              <mat-select formControlName="bloodType">
-                <mat-option value="">الكل</mat-option>
-                @for (bloodType of bloodTypes; track bloodType.value) {
-                  <mat-option [value]="bloodType.value">
-                    {{ bloodType.label }}
-                  </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            <!-- Age Range -->
-            <!-- <div class="age-range-group">
-              <mat-form-field appearance="outline" class="age-field">
-                <mat-label>من العمر</mat-label>
-                <input
-                  matInput
-                  type="number"
-                  formControlName="ageFrom"
-                  placeholder="0"
-                  min="0"
-                  max="150"
-                />
+          <!-- Advanced Filters -->
+          @if (showAdvancedSearch()) {
+            <div class="advanced-filters">
+              <!-- Gender Filter -->
+              <mat-form-field appearance="outline">
+                <mat-label>الجنس</mat-label>
+                <mat-select formControlName="gender">
+                  <mat-option value="">الكل</mat-option>
+                  <mat-option value="MALE">ذكر</mat-option>
+                  <mat-option value="FEMALE">أنثى</mat-option>
+                </mat-select>
               </mat-form-field>
-              <span class="age-separator">-</span>
-              <mat-form-field appearance="outline" class="age-field">
-                <mat-label>إلى</mat-label>
-                <input
-                  matInput
-                  type="number"
-                  formControlName="ageTo"
-                  placeholder="150"
-                  min="0"
-                  max="150"
-                />
-              </mat-form-field>
-            </div> -->
 
-            <!-- Status Checkbox -->
-            <div class="status-checkbox">
-              <mat-checkbox #isChecked formControlName="showInactive">
-                عرض غير النشطين فقط
+              <!-- Blood Type Filter -->
+              <mat-form-field appearance="outline">
+                <mat-label>فصيلة الدم</mat-label>
+                <mat-select formControlName="bloodType">
+                  <mat-option value="">الكل</mat-option>
+                  @for (bloodType of getBloodTypes(); track bloodType.value) {
+                    <mat-option [value]="bloodType.value">{{ bloodType.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <!-- Status Filter -->
+              <mat-checkbox formControlName="showInactive" class="status-checkbox">
+                عرض المرضى غير النشطين
               </mat-checkbox>
             </div>
-
-            <!-- Search Actions -->
-            <div class="search-actions">
-              <button
-                mat-raised-button
-                color="primary"
-                type="button"
-                (click)="onSearch()"
-                [disabled]="loading()"
-              >
-                <mat-icon>search</mat-icon>
-                بحث
-              </button>
-
-              <button
-                mat-stroked-button
-                type="button"
-                (click)="onClearSearch()"
-                [disabled]="loading()"
-              >
-                <mat-icon>clear</mat-icon>
-                مسح
-              </button>
-
-              <button
-                mat-icon-button
-                type="button"
-                (click)="onToggleAdvancedSearch()"
-                [matTooltip]="showAdvancedSearch() ? 'إخفاء البحث المتقدم' : 'إظهار البحث المتقدم'"
-              >
-                <mat-icon>{{ showAdvancedSearch() ? 'expand_less' : 'tune' }}</mat-icon>
-              </button>
-            </div>
-          </div>
-
-          <!-- Advanced Search Panel -->
-          @if (showAdvancedSearch()) {
-            <div class="advanced-search">
-              <mat-divider></mat-divider>
-              <div class="advanced-row">
-                <mat-form-field appearance="outline" class="filter-field">
-                  <mat-label>المدينة</mat-label>
-                  <input
-                    matInput
-                    formControlName="city"
-                    placeholder="اسم المدينة"
-                  />
-                  <mat-icon matSuffix>location_city</mat-icon>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="filter-field">
-                  <mat-label>آخر زيارة من</mat-label>
-                  <input
-                    matInput
-                    [matDatepicker]="fromDatePicker"
-                    formControlName="lastVisitFrom"
-                    readonly
-                  />
-                  <mat-datepicker-toggle matSuffix [for]="fromDatePicker"></mat-datepicker-toggle>
-                  <mat-datepicker #fromDatePicker></mat-datepicker>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="filter-field">
-                  <mat-label>آخر زيارة إلى</mat-label>
-                  <input
-                    matInput
-                    [matDatepicker]="toDatePicker"
-                    formControlName="lastVisitTo"
-                    readonly
-                  />
-                  <mat-datepicker-toggle matSuffix [for]="toDatePicker"></mat-datepicker-toggle>
-                  <mat-datepicker #toDatePicker></mat-datepicker>
-                </mat-form-field>
-              </div>
-            </div>
           }
+
+          <!-- Search Actions -->
+          <div class="search-actions">
+            <button mat-raised-button color="primary" type="button" (click)="onSearch()">
+              <mat-icon>search</mat-icon>
+              بحث
+            </button>
+            <button mat-button type="button" (click)="resetSearch()">
+              إعادة تعيين
+            </button>
+          </div>
         </form>
       </mat-card-content>
     </mat-card>
 
     <!-- Results Summary -->
-    @if (!loading()) {
+    @if (searchPerformed() || totalPatients() > 0) {
       <div class="results-summary">
-        <div class="summary-info">
-          <mat-icon [color]="totalPatients() > 0 ? 'primary' : 'warn'">
-            {{ totalPatients() > 0 ? 'check_circle' : 'info' }}
-          </mat-icon>
-          <span>{{ getSearchSummary() }}</span>
-        </div>
-
-        <div class="view-controls">
-          <button
-            mat-icon-button
-            [color]="viewMode() === 'table' ? 'primary' : ''"
-            (click)="onToggleViewMode()"
-            matTooltip="تغيير العرض"
-          >
-            <mat-icon>{{ viewMode() === 'table' ? 'view_module' : 'table_rows' }}</mat-icon>
-          </button>
-        </div>
-      </div>
-    }
-
-    <!-- Loading Indicator -->
-    @if (loading()) {
-      <div class="loading-container">
-        <mat-spinner></mat-spinner>
-        <p>جاري تحميل بيانات المرضى...</p>
+        <span class="results-text">{{ getSearchSummary() }}</span>
+        @if (loading()) {
+          <mat-spinner diameter="20"></mat-spinner>
+        }
       </div>
     }
 

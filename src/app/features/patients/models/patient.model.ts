@@ -68,6 +68,7 @@ export interface CreatePatientRequest {
  * UpdatePatientRequest - Matches Spring Boot UpdatePatientRequest
  */
 export interface UpdatePatientRequest {
+  clinicId?: number;
   firstName?: string;
   lastName?: string;
   dateOfBirth?: string;
@@ -127,18 +128,27 @@ export interface PatientSearchCriteria {
  * PatientStatistics - Matches Spring Boot PatientStatistics
  */
 export interface PatientStatistics {
-  totalPatients: number;
-  activePatients: number;
-  inactivePatients: number;
-  newPatientsThisMonth: number;
-  malePatients: number;
-  femalePatients: number;
-  averageAge?: number;
-  patientsWithAppointmentsToday?: number;
-  patientsWithPendingInvoices?: number;
-  totalOutstandingBalance?: number;
-}
+  // Core counts
+  totalPatients: number;           // All patients (active + inactive)
+  activePatients: number;          // Only active patients
+  inactivePatients: number;        // Only inactive patients
+  newPatientsThisMonth: number;    // Created in last 30 days
 
+  // Demographics
+  malePatients: number;            // Male patients count
+  femalePatients: number;          // Female patients count
+  averageAge?: number;             // Average age of all patients
+
+  // Activity metrics
+  patientsWithAppointmentsToday?: number;  // Patients with appointments today
+  patientsWithPendingInvoices?: number;    // Patients with unpaid invoices
+  totalOutstandingBalance?: number;        // Total unpaid amount
+
+  // Calculated percentages (returned by backend)
+  genderRatio?: number;            // Male/Female ratio
+  activePercentage?: number;       // Percentage of active patients
+  inactivePercentage?: number;     // Percentage of inactive patients
+}
 /**
  * PatientSummaryResponse - Matches Spring Boot PatientSummaryResponse
  */
@@ -231,9 +241,9 @@ export type BloodType =
   | 'B_POSITIVE' | 'B_NEGATIVE'
   | 'AB_POSITIVE' | 'AB_NEGATIVE';
 
-  /**
- * Blood type options for dropdowns
- */
+/**
+* Blood type options for dropdowns
+*/
 // export const BLOOD_TYPE_OPTIONS: { value: BloodType; label: string; symbol: string }[] = [
 //   { value: 'O+', label: 'O موجب', symbol: 'O+' },
 //   { value: 'O-', label: 'O سالب', symbol: 'O-' },

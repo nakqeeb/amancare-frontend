@@ -19,6 +19,7 @@ import {
 } from '../models/appointment.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { SystemAdminService } from '../../../core/services/system-admin.service';
+import { ActivityService } from '../../../core/services/activity.service';
 
 @Injectable({
   providedIn: 'root'
@@ -28,6 +29,8 @@ export class AppointmentService {
   private readonly notificationService = inject(NotificationService);
   private readonly authService = inject(AuthService);
   private readonly systemAdminService = inject(SystemAdminService);
+  private activityService = inject(ActivityService);
+
   private readonly apiUrl = `${environment.apiUrl}/appointments`;
 
   // State management with signals
@@ -176,11 +179,20 @@ export class AppointmentService {
   getAppointmentById(id: number): Observable<AppointmentResponse> {
     this.loading.set(true);
     this.error.set(null);
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
 
-    return this.http.get<ApiResponse<AppointmentResponse>>(`${this.apiUrl}/${id}`).pipe(
+    let params = new HttpParams();
+    if (clinicId) {
+      params = params.set('clinicId', clinicId.toString());
+    }
+    return this.http.get<ApiResponse<AppointmentResponse>>(`${this.apiUrl}/${id}`, { params }).pipe(
       tap(response => {
         if (response.success && response.data) {
           this.selectedAppointment.set(response.data);
+          console.log(this.selectedAppointment());
         }
         this.loading.set(false);
       }),
@@ -236,8 +248,20 @@ export class AppointmentService {
     this.loading.set(true);
     this.error.set(null);
 
+    console.log(patientId);
+
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
+    let params = new HttpParams();
+    if (clinicId) {
+      params = params.set('clinicId', clinicId.toString());
+    }
+
     return this.http.get<ApiResponse<AppointmentSummaryResponse[]>>(
-      `${this.apiUrl}/patient/${patientId}/upcoming`
+      `${this.apiUrl}/patient/${patientId}/upcoming`, { params }
     ).pipe(
       tap(response => {
         if (response.success && response.data) {
@@ -307,6 +331,20 @@ export class AppointmentService {
     this.loading.set(true);
     this.error.set(null);
 
+    // Validate SYSTEM_ADMIN context for write operations
+    const currentUser = this.authService.currentUser();
+    if (currentUser?.role === 'SYSTEM_ADMIN') {
+      if (!this.systemAdminService.canPerformWriteOperation()) {
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل إنشاء مريض جديد'));
+      }
+
+      // Add clinic ID from context if not provided
+      const actingClinicId = this.systemAdminService.getActingClinicId();
+      if (actingClinicId && !request.clinicId) {
+        request.clinicId = actingClinicId;
+      }
+    }
+
     return this.http.put<ApiResponse<AppointmentResponse>>(`${this.apiUrl}/${id}`, request).pipe(
       tap(response => {
         if (response.success && response.data) {
@@ -355,6 +393,22 @@ export class AppointmentService {
             this.appointments.set([...appointments]);
             this.appointmentsSubject.next(appointments);
           }
+          switch (status) {
+            case AppointmentStatus.SCHEDULED:
+              return this.activityService.logAppointmentScheduled(id, response.data.patient.fullName, response.data.appointmentDate);
+            case AppointmentStatus.CONFIRMED:
+              return this.activityService.logAppointmentConfirmed(id, response.data.patient.fullName);
+            case AppointmentStatus.IN_PROGRESS:
+              return this.activityService.logAppointmentInProgress(id, response.data.patient.fullName);
+            case AppointmentStatus.COMPLETED:
+              return this.activityService.logAppointmentCompleted(id, response.data.patient.fullName);
+            case AppointmentStatus.CANCELLED:
+              return this.activityService.logAppointmentCancelled(id, response.data.patient.fullName);
+            case AppointmentStatus.NO_SHOW:
+              return this.activityService.logAppointmentNoShow(id, response.data.patient.fullName);
+            default:
+              return 'غير معروف';
+          }
         }
         this.loading.set(false);
       }),
@@ -372,6 +426,11 @@ export class AppointmentService {
     this.loading.set(true);
     this.error.set(null);
 
+    let deletedAppointment: AppointmentResponse;
+    this.getAppointmentById(id).subscribe(response => {
+      deletedAppointment = response!;
+    });
+
     let params = new HttpParams();
     if (reason) params = params.set('reason', reason);
 
@@ -388,6 +447,7 @@ export class AppointmentService {
             this.appointments.set([...appointments]);
             this.appointmentsSubject.next(appointments);
           }
+          this.activityService.logAppointmentCancelled(id, deletedAppointment.patient.fullName);
         }
         this.loading.set(false);
       }),

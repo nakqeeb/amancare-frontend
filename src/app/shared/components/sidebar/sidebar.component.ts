@@ -141,6 +141,34 @@ export class SidebarComponent implements OnInit, OnDestroy {
           }
         ]
       },
+       {
+        title: 'المستخدمين',
+        icon: 'people',
+        expanded: false,
+        roles: ['SYSTEM_ADMIN', 'ADMIN'],
+        route: '',
+        badge: 5,
+        children: [
+          {
+            title: 'قائمة المستخدمين',
+            icon: 'list',
+            route: '/users',
+            roles: ['SYSTEM_ADMIN', 'ADMIN']
+          },
+          {
+            title: 'إضافة مستخدم',
+            icon: 'person_add',
+            route: '/users/new',
+            roles: ['SYSTEM_ADMIN', 'ADMIN']
+          },
+          {
+            title: 'الأدوار',
+            icon: 'add_moderator',
+            route: '/users/roles',
+            roles: ['SYSTEM_ADMIN', 'ADMIN']
+          }
+        ]
+      },
       // ===================================================================
       // SCHEDULES MENU - New Addition
       // ===================================================================

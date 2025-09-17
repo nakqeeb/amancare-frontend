@@ -10,10 +10,11 @@ import { tap, catchError, map, finalize } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ApiResponse, PageResponse } from '../../../core/models/api-response.model';
-import { UserRole } from '../../users/models/user.model';
+import { User, UserRole } from '../../users/models/user.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { SystemAdminService } from '../../../core/services/system-admin.service';
 import { Patient, PatientStatistics, PatientSummaryResponse, PatientSearchCriteria, PatientPageResponse, CreatePatientRequest, UpdatePatientRequest, PermanentDeleteResponse, DeletionPreview, BloodType, Gender } from '../models/patient.model';
+import { ActivityService } from '../../../core/services/activity.service';
 
 // ===================================================================
 // PATIENT SERVICE
@@ -27,6 +28,8 @@ export class PatientService {
   private notificationService = inject(NotificationService);
   private authService = inject(AuthService);
   private systemAdminService = inject(SystemAdminService);
+  private activityService = inject(ActivityService);
+
   private readonly apiUrl = `${environment.apiUrl}/patients`;
 
   // ===================================================================
@@ -147,10 +150,17 @@ export class PatientService {
   ): Observable<ApiResponse<PatientPageResponse>> {
     this.loading.set(true);
     this.searchCriteria.set(criteria);
-
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
 
     // Add search term if provided
     if (criteria.searchTerm && criteria.searchTerm.trim()) {
@@ -293,6 +303,10 @@ export class PatientService {
 
           this.selectedPatient.set(response.data!);
           this.notificationService.success('تم إنشاء المريض بنجاح');
+          this.activityService.logPatientCreated(
+            response.data!.id,
+            response.data!.fullName
+          );
         }
         this.loading.set(false);
       }),
@@ -310,6 +324,20 @@ export class PatientService {
   updatePatient(id: number, request: UpdatePatientRequest): Observable<ApiResponse<Patient>> {
     this.loading.set(true);
 
+    // Validate SYSTEM_ADMIN context for write operations
+    const currentUser = this.authService.currentUser();
+    if (currentUser?.role === 'SYSTEM_ADMIN') {
+      if (!this.systemAdminService.canPerformWriteOperation()) {
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل تحديث المريض'));
+      }
+
+      // Add clinic ID from context if not provided
+      const actingClinicId = this.systemAdminService.getActingClinicId();
+      if (actingClinicId && !request.clinicId) {
+        request.clinicId = actingClinicId;
+      }
+    }
+
     return this.http.put<ApiResponse<Patient>>(`${this.apiUrl}/${id}`, request).pipe(
       tap(response => {
         if (response.success) {
@@ -324,6 +352,10 @@ export class PatientService {
 
           this.selectedPatient.set(response.data!);
           this.notificationService.success('تم تحديث بيانات المريض بنجاح');
+          this.activityService.logPatientUpdated(
+            response.data!.id,
+            response.data!.fullName
+          );
         }
         this.loading.set(false);
       }),
@@ -341,6 +373,11 @@ export class PatientService {
   deletePatient(id: number): Observable<ApiResponse<void>> {
     this.loading.set(true);
 
+    let deletedPatient: Patient;
+    this.getPatientById(id).subscribe(response => {
+      deletedPatient = response.data!;
+    });
+
     return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`).pipe(
       tap(response => {
         if (response.success) {
@@ -350,6 +387,7 @@ export class PatientService {
           this.patientsSubject.next(currentPatients);
 
           this.notificationService.success('تم حذف المريض بنجاح');
+          this.activityService.logPatientDeleted(deletedPatient.id, deletedPatient.fullName);
         }
         this.loading.set(false);
       }),
@@ -367,7 +405,17 @@ export class PatientService {
   reactivatePatient(id: number): Observable<ApiResponse<Patient>> {
     this.loading.set(true);
 
-    return this.http.post<ApiResponse<Patient>>(`${this.apiUrl}/${id}/reactivate`, {}).pipe(
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+    let params = new HttpParams();
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
+
+    return this.http.post<ApiResponse<Patient>>(`${this.apiUrl}/${id}/reactivate`, { params }).pipe(
       tap(response => {
         if (response.success) {
           // Update local state
@@ -383,6 +431,10 @@ export class PatientService {
 
           this.selectedPatient.set(response.data!);
           this.notificationService.success('تم إعادة تفعيل المريض بنجاح');
+          this.activityService.logPatientUpdated(
+            response.data!.id,
+            response.data!.firstName
+          );
         }
         this.loading.set(false);
       }),
@@ -437,6 +489,11 @@ export class PatientService {
             ${data.recordsDeleted.invoices} فاتورة.`;
 
           this.notificationService.warning(message);
+
+          this.activityService.logPatientDeleted(
+            response.data!.patientId,
+            response.data!.patientName
+          );
         }
         this.loading.set(false);
       }),
@@ -514,7 +571,18 @@ export class PatientService {
   getPatientStatistics(): Observable<ApiResponse<PatientStatistics>> {
     this.loading.set(true);
 
-    return this.http.get<ApiResponse<PatientStatistics>>(`${this.apiUrl}/statistics`).pipe(
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
+    let params = new HttpParams();
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
+
+    return this.http.get<ApiResponse<PatientStatistics>>(`${this.apiUrl}/statistics`, { params }).pipe(
       tap(response => {
         if (response.success) {
           this.statistics.set(response.data!);

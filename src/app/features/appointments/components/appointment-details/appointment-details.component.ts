@@ -85,7 +85,7 @@ export class AppointmentDetailsComponent implements OnInit {
     this.appointmentService.getAppointmentById(id).subscribe({
       next: (appointment) => {
         this.appointment.set(appointment);
-        this.loadPatientHistory(appointment.patientId);
+        this.loadPatientHistory(appointment.patient.id);
         this.loading.set(false);
       },
       error: (error) => {
@@ -194,13 +194,13 @@ export class AppointmentDetailsComponent implements OnInit {
 
   navigateToPatient(): void {
     if (this.appointment()) {
-      this.router.navigate(['/patients', this.appointment()!.patientId]);
+      this.router.navigate(['/patients', this.appointment()!.patient.id]);
     }
   }
 
   navigateToDoctor(): void {
     if (this.appointment()) {
-      this.router.navigate(['/users', this.appointment()!.doctorId]);
+      this.router.navigate(['/users', this.appointment()!.doctor.id]);
     }
   }
 }

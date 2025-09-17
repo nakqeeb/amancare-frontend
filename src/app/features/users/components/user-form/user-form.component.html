@@ -132,12 +132,18 @@
                   <div class="form-row">
                     <mat-form-field class="form-field">
                       <mat-label>البريد الإلكتروني</mat-label>
-                      <input
+                      <!-- <input
                         matInput
                         type="email"
                         formControlName="email"
                         placeholder="example@example.com"
                         (blur)="checkEmailAvailability()"
+                      /> -->
+                      <input
+                        matInput
+                        type="email"
+                        formControlName="email"
+                        placeholder="example@example.com"
                       />
                       <mat-icon matSuffix>email</mat-icon>
                       <mat-error>{{
