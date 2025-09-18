@@ -1,10 +1,11 @@
-// ===================================================================
 // src/app/features/patients/components/patient-details/patient-details.component.ts
-// Patient Profile/Details Component with Spring Boot Integration
-// ===================================================================
-import { Component, inject, signal, OnInit, OnDestroy, computed } from '@angular/core';
+
+import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
+
+// Angular Material Modules
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,40 +14,34 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
-import { Subject, takeUntil, forkJoin } from 'rxjs';
+import { MatTableModule } from '@angular/material/table';
 
 // Shared Components
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.component';
-import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import {
+  DeleteConfirmationDialogComponent,
+  DeleteDialogData
+} from '../../../../shared/components/delete-confirmation-dialog/delete-confirmation-dialog.component';
 
-// Services & Models
+// Services
 import { PatientService } from '../../services/patient.service';
+import { AppointmentService } from '../../../appointments/services/appointment.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
+
+// Models
+import { calculateAge, getBloodTypeLabel, getGenderLabel, Patient } from '../../models/patient.model';
 import {
-  Patient,
-  calculateAge,
-  getBloodTypeLabel,
-  getGenderLabel
-} from '../../models/patient.model';
-import { UserRole } from '../../../users/models/user.model';
-import { PermanentDeleteDialogComponent, PermanentDeleteDialogData } from '../permanent-delete-dialog/permanent-delete-dialog.component';
-
-// Related services (if available)
-// import { AppointmentService } from '../../../appointments/services/appointment.service';
-// import { MedicalRecordService } from '../../../medical-records/services/medical-record.service';
-// import { InvoiceService } from '../../../invoices/services/invoice.service';
-
-interface PatientTab {
-  label: string;
-  icon: string;
-  component?: string;
-  count?: number;
-}
+  AppointmentSummaryResponse,
+  AppointmentStatus,
+  AppointmentType,
+  APPOINTMENT_STATUS_LABELS,
+  APPOINTMENT_TYPE_LABELS
+} from '../../../appointments/models/appointment.model';
 
 @Component({
   selector: 'app-patient-details',
@@ -65,6 +60,7 @@ interface PatientTab {
     MatDialogModule,
     MatTooltipModule,
     MatBadgeModule,
+    MatTableModule,
     HeaderComponent,
     SidebarComponent
   ],
@@ -73,15 +69,16 @@ interface PatientTab {
 })
 export class PatientDetailsComponent implements OnInit, OnDestroy {
   // Services
-  private patientService = inject(PatientService);
-  private notificationService = inject(NotificationService);
-  private authService = inject(AuthService);
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
-  private dialog = inject(MatDialog);
+  private readonly patientService = inject(PatientService);
+  private readonly appointmentService = inject(AppointmentService);
+  private readonly notificationService = inject(NotificationService);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly dialog = inject(MatDialog);
 
-  // Destroy subject
-  private destroy$ = new Subject<void>();
+  // Destroy subject for cleanup
+  private readonly destroy$ = new Subject<void>();
 
   // ===================================================================
   // STATE MANAGEMENT
@@ -89,338 +86,176 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
 
   // UI State
   loading = signal(false);
+  loadingAppointments = signal(false);
   patientId = signal<number | null>(null);
   patient = signal<Patient | null>(null);
   activeTabIndex = signal(0);
 
   // Data signals
-  appointmentsCount = signal(0);
+  upcomingAppointments = signal<AppointmentSummaryResponse[]>([]);
+  appointmentsCount = computed(() => this.upcomingAppointments().length);
   medicalRecordsCount = signal(0);
   invoicesCount = signal(0);
   outstandingBalance = signal(0);
 
-  // User permissions
+  // Table configuration
+  appointmentsDisplayedColumns = ['appointmentDate', 'appointmentTime', 'doctor', 'type', 'status', 'actions'];
+
+  // Labels
+  appointmentStatusLabels = APPOINTMENT_STATUS_LABELS;
+  appointmentTypeLabels = APPOINTMENT_TYPE_LABELS;
+
+  // Current user
   currentUser = this.authService.currentUser;
 
-  // Tab configuration
-  tabs: PatientTab[] = [
-    {
-      label: 'معلومات عامة',
-      icon: 'person',
-      component: 'overview'
-    },
-    {
-      label: 'المواعيد',
-      icon: 'event',
-      component: 'appointments'
-    },
-    {
-      label: 'السجلات الطبية',
-      icon: 'local_hospital',
-      component: 'medical-records'
-    },
-    {
-      label: 'الفواتير',
-      icon: 'receipt',
-      component: 'invoices'
-    }
-  ];
+  // ===================================================================
+  // COMPUTED PERMISSIONS
+  // ===================================================================
 
   canPermanentlyDelete = computed(() => {
     const user = this.currentUser();
     const patient = this.patient();
-    return !!(user && user.role === UserRole.SYSTEM_ADMIN && !patient?.isActive);
+    return !!user && !!patient && user.role === 'SYSTEM_ADMIN' && !patient.active;
   });
+
+  canReactivatePatient = computed(() => {
+    const user = this.currentUser();
+    const patient = this.patient();
+    return !!user && !!patient && (user.role === 'ADMIN' || user.role === 'SYSTEM_ADMIN') && !patient.active;
+  });
+
+  canViewMedicalRecords = computed(() => {
+    const user = this.currentUser();
+    return user?.role === 'SYSTEM_ADMIN' || user?.role === 'ADMIN' || user?.role === 'DOCTOR';
+  });
+
+  canCreateInvoice = computed(() => {
+    const user = this.currentUser();
+    return user?.role === 'SYSTEM_ADMIN' || user?.role === 'ADMIN' || user?.role === 'RECEPTIONIST';
+  });
+
+  canCreateAppointment(): boolean {
+    const user = this.currentUser();
+    return !!(user && ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'RECEPTIONIST'].includes(user.role));
+  }
+
+  canDeletePatient(): boolean {
+    const user = this.currentUser();
+    return !!(user && ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR'].includes(user.role));
+  }
+
+  canEditPatient(): boolean {
+    const user = this.currentUser();
+    return !!(user && ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'].includes(user.role));
+  }
 
   // ===================================================================
   // LIFECYCLE HOOKS
   // ===================================================================
 
   ngOnInit(): void {
-    this.checkPatientId();
-    this.loadPatientData();
+    // Load patient from route params
+    this.route.params
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        const id = +params['id'];
+        if (id) {
+          this.patientId.set(id);
+          this.loadPatientDetails(id);
+        }
+      });
+
+    // Handle tab navigation
+    this.route.queryParams
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(queryParams => {
+        const tab = queryParams['tab'];
+        if (tab) {
+          const tabIndex = ['overview', 'appointments', 'medical-records', 'invoices'].indexOf(tab);
+          if (tabIndex !== -1) {
+            this.activeTabIndex.set(tabIndex);
+            if (tabIndex === 1) {
+              this.loadUpcomingAppointments();
+            }
+          }
+        }
+      });
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    this.patientService.clearSelectedPatient();
   }
 
   // ===================================================================
   // DATA LOADING
   // ===================================================================
 
-  private checkPatientId(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.patientId.set(+id);
-    } else {
-      this.router.navigate(['/patients']);
-    }
-  }
-
-  private loadPatientData(): void {
-    const id = this.patientId();
-    if (!id) return;
+  private loadPatientDetails(patientId: number): void {
+    if (this.loading()) return;
 
     this.loading.set(true);
-
-    this.patientService.getPatientById(id)
+    this.patientService.getPatientById(patientId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          if (response.success) {
-            this.patient.set(response.data!);
-            this.updateTabCounts(response.data!);
-          } else {
-            this.notificationService.error('المريض غير موجود');
-            this.router.navigate(['/patients']);
-          }
+          const patient = response.data!;
+          this.patient.set(patient);
           this.loading.set(false);
+
+          // Load appointments if on that tab
+          if (this.activeTabIndex() === 1) {
+            this.loadUpcomingAppointments();
+          }
         },
         error: (error) => {
-          this.loading.set(false);
+          console.error('Error loading patient:', error);
           this.notificationService.error('فشل في تحميل بيانات المريض');
+          this.loading.set(false);
           this.router.navigate(['/patients']);
         }
       });
   }
 
-  private updateTabCounts(patient: Patient): void {
-    // Update tab counts from patient data
-    this.appointmentsCount.set(patient.appointmentsCount || 0);
-    this.invoicesCount.set(patient.totalInvoices || 0);
-    this.outstandingBalance.set(patient.outstandingBalance || 0);
-
-    // Update tabs with counts
-    this.tabs = this.tabs.map(tab => {
-      switch (tab.component) {
-        case 'appointments':
-          return { ...tab, count: this.appointmentsCount() };
-        case 'invoices':
-          return { ...tab, count: this.invoicesCount() };
-        default:
-          return tab;
-      }
-    });
-  }
-
-  // ===================================================================
-  // PATIENT ACTIONS
-  // ===================================================================
-
-  onEditPatient(): void {
+  private loadUpcomingAppointments(): void {
     const patientId = this.patientId();
-    if (patientId) {
-      this.router.navigate(['/patients', patientId, 'edit']);
-    }
-  }
+    if (!patientId || this.loadingAppointments()) return;
 
-  onDeletePatient(): void {
-    const patient = this.patient();
-    if (!patient) return;
-
-    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
-      width: '400px',
-      data: {
-        title: 'تأكيد الحذف',
-        message: `هل أنت متأكد من حذف المريض "${patient.fullName}"؟ سيتم إلغاء تفعيل المريض فقط.`,
-        confirmText: 'حذف',
-        cancelText: 'إلغاء',
-        type: 'warn'
-      }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.patientService.deletePatient(patient.id)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: (response) => {
-              if (response.success) {
-                this.notificationService.success('تم حذف المريض بنجاح');
-                this.router.navigate(['/patients']);
-              }
-            },
-            error: (error) => {
-              this.notificationService.error('فشل في حذف المريض');
-            }
-          });
-      }
-    });
-  }
-
-  onReactivatePatient(): void {
-    const patient = this.patient();
-    if (!patient) return;
-
-    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
-      width: '400px',
-      data: {
-        title: 'تأكيد إعادة التفعيل',
-        message: `هل أنت متأكد من إعادة تفعيل المريض "${patient.fullName}"؟`,
-        confirmText: 'إعادة تفعيل',
-        cancelText: 'إلغاء',
-        type: 'primary'
-      }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.patientService.reactivatePatient(patient.id)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: (response) => {
-              if (response.success) {
-                this.patient.set(response.data!);
-                this.notificationService.success('تم إعادة تفعيل المريض بنجاح');
-              }
-            },
-            error: (error) => {
-              this.notificationService.error('فشل في إعادة تفعيل المريض');
-            }
-          });
-      }
-    });
-  }
-
-  /**
-   * Permanently delete patient (SYSTEM_ADMIN only)
-   */
-  onPermanentlyDeletePatient(): void {
-    const patient = this.patient();
-    if (!patient) return;
-
-    // First, get deletion preview to show what will be deleted
-    this.loading.set(true);
-    this.patientService.getPatientDeletionPreview(patient.id)
+    this.loadingAppointments.set(true);
+    this.appointmentService.getPatientUpcomingAppointments(patientId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response) => {
-          this.loading.set(false);
-
-          if (!response.data?.canDelete && response.data?.blockers?.length) {
-            // Show blockers if patient cannot be deleted
-            this.dialog.open(ConfirmationDialogComponent, {
-              width: '500px',
-              data: {
-                title: 'لا يمكن حذف المريض',
-                message: `لا يمكن حذف المريض نهائياً للأسباب التالية:\n${response.data.blockers.join('\n')}`,
-                confirmText: 'حسناً',
-                hideCancel: true,
-                type: 'error'
-              }
+        next: (appointments) => {
+          const now = new Date();
+          const futureAppointments = appointments
+            .filter(appointment => {
+              const appointmentDateTime = new Date(`${appointment.appointmentDate}T${appointment.appointmentTime}`);
+              return appointmentDateTime > now;
+            })
+            .sort((a, b) => {
+              const dateA = new Date(`${a.appointmentDate}T${a.appointmentTime}`);
+              const dateB = new Date(`${b.appointmentDate}T${b.appointmentTime}`);
+              return dateA.getTime() - dateB.getTime();
             });
-            return;
-          }
 
-          // Open permanent delete dialog
-          this.openPermanentDeleteDialog(patient, response.data?.dataToDelete);
+          this.upcomingAppointments.set(futureAppointments);
+          this.loadingAppointments.set(false);
         },
         error: (error) => {
-          this.loading.set(false);
-          // If preview fails, still allow opening the dialog
-          this.openPermanentDeleteDialog(patient);
+          console.error('Error loading appointments:', error);
+          if (error.status !== 404) {
+            this.notificationService.error('فشل في تحميل المواعيد');
+          }
+          this.upcomingAppointments.set([]);
+          this.loadingAppointments.set(false);
         }
       });
   }
 
-  private openPermanentDeleteDialog(patient: Patient, dataToDelete?: any): void {
-    const dialogData: PermanentDeleteDialogData = {
-      patient: patient,
-      dataToDelete: dataToDelete
-    };
-
-    const dialogRef = this.dialog.open(PermanentDeleteDialogComponent, {
-      width: '650px',
-      disableClose: true,
-      data: dialogData
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result?.confirmed && result?.confirmationCode) {
-        this.performPermanentDelete(patient.id, result.confirmationCode);
-      }
-    });
-  }
-
-  private performPermanentDelete(patientId: number, confirmationCode: string): void {
-    this.loading.set(true);
-
-    this.patientService.permanentlyDeletePatient(patientId, confirmationCode)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.loading.set(false);
-            // Navigate to patients list after successful deletion
-            this.router.navigate(['/patients']);
-          }
-        },
-        error: (error) => {
-          this.loading.set(false);
-          // Error handling is done in the service
-        }
-      });
-  }
-
-  onCreateAppointment(): void {
-    const patientId = this.patientId();
-    if (patientId) {
-      this.router.navigate(['/appointments/new'], {
-        queryParams: { patientId }
-      });
-    }
-  }
-
-  onViewMedicalHistory(): void {
-    const patientId = this.patientId();
-    if (patientId) {
-      this.router.navigate(['/medical-records'], {
-        queryParams: { patientId }
-      });
-    }
-  }
-
-  onCreateInvoice(): void {
-    const patientId = this.patientId();
-    if (patientId) {
-      this.router.navigate(['/invoices/new'], {
-        queryParams: { patientId }
-      });
-    }
-  }
-
-  onPrintPatientCard(): void {
-    // TODO: Implement patient card printing
-    this.notificationService.info('طباعة بطاقة المريض قريباً...');
-  }
-
-  onExportPatientData(): void {
-    // TODO: Implement patient data export
-    this.notificationService.info('تصدير بيانات المريض قريباً...');
-  }
-
   // ===================================================================
-  // NAVIGATION & UI
+  // UI HELPERS
   // ===================================================================
 
-  onTabChange(index: number): void {
-    this.activeTabIndex.set(index);
-  }
-
-  onBackToPatients(): void {
-    this.router.navigate(['/patients']);
-  }
-
-  // ===================================================================
-  // UTILITY METHODS
-  // ===================================================================
-
-  /**
-   * Get patient age
-   */
   getPatientAge(): string {
     const patient = this.patient();
     if (patient?.dateOfBirth) {
@@ -429,146 +264,278 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
     return '-';
   }
 
-  /**
-   * Get gender label
-   */
   getGenderLabel(): string {
     const patient = this.patient();
-    if (patient?.gender) {
-      return getGenderLabel(patient.gender, 'ar');
-    }
-    return '-';
+    return patient?.gender ? getGenderLabel(patient.gender, 'ar') : '-';
   }
 
-  /**
-   * Get blood type label
-   */
   getBloodTypeLabel(): string {
     const patient = this.patient();
-    if (patient?.bloodType) {
-      return getBloodTypeLabel(patient.bloodType, 'ar');
-    }
-    return 'غير محدد';
+    return patient?.bloodType ? getBloodTypeLabel(patient.bloodType, 'ar') : 'غير محدد';
   }
 
-  /**
-   * Get patient status
-   */
   getPatientStatus(): { label: string; color: string; icon: string } {
     const patient = this.patient();
-    if (patient?.isActive) {
-      return {
-        label: 'نشط',
-        color: 'primary',
-        icon: 'check_circle'
-      };
-    }
-    return {
-      label: 'غير نشط',
-      color: 'warn',
-      icon: 'cancel'
-    };
+    return patient?.active
+      ? { label: 'نشط', color: 'primary', icon: 'check_circle' }
+      : { label: 'غير نشط', color: 'warn', icon: 'cancel' };
   }
 
-  /**
-   * Format date
-   */
-  formatDate(dateString: string): string {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ar-SA');
-  }
-
-  /**
-   * Format phone number
-   */
-  formatPhone(phone: string): string {
-    if (!phone) return '-';
-    // Add formatting logic if needed
-    return phone;
-  }
-
-  /**
-   * Get initials for avatar
-   */
   getInitials(): string {
     const patient = this.patient();
     if (patient) {
-      const firstInitial = patient.firstName.charAt(0);
-      const lastInitial = patient.lastName.charAt(0);
-      return `${firstInitial}${lastInitial}`.toUpperCase();
+      return `${patient.firstName.charAt(0)}${patient.lastName.charAt(0)}`.toUpperCase();
     }
     return '';
   }
 
-  /**
-   * Check if user can edit patient
-   */
-  canEditPatient(): boolean {
-    const user = this.currentUser();
-    return !!(user && ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'].includes(user.role));
+  formatDate(dateString: string): string {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('ar-SA');
   }
 
-  /**
-   * Check if user can delete patient
-   */
-  canDeletePatient(): boolean {
-    const user = this.currentUser();
-    return !!(user && ['ADMIN', 'DOCTOR'].includes(user.role));
+  formatPhone(phone: string): string {
+    return phone || '-';
   }
 
-  /**
-   * Check if user can reactivate patient
-   */
-  canReactivatePatient(): boolean {
-    const user = this.currentUser();
-    return !!(user && ['ADMIN'].includes(user.role));
-  }
-
-  /**
-   * Check if user can create appointments
-   */
-  canCreateAppointment(): boolean {
-    const user = this.currentUser();
-    return !!(user && ['ADMIN', 'DOCTOR', 'RECEPTIONIST'].includes(user.role));
-  }
-
-  /**
-   * Check if user can view medical records
-   */
-  canViewMedicalRecords(): boolean {
-    const user = this.currentUser();
-    return !!(user && ['ADMIN', 'DOCTOR'].includes(user.role));
-  }
-
-  /**
-   * Check if user can create invoices
-   */
-  canCreateInvoice(): boolean {
-    const user = this.currentUser();
-    return !!(user && ['ADMIN', 'RECEPTIONIST'].includes(user.role));
-  }
-
-  /**
-   * Get last visit display text
-   */
   getLastVisitText(): string {
     const patient = this.patient();
-    if (patient?.lastVisit) {
-      return this.formatDate(patient.lastVisit);
-    }
-    return 'لا توجد زيارات سابقة';
+    return patient?.lastVisit ? this.formatDate(patient.lastVisit) : 'لا توجد زيارات سابقة';
   }
 
-  /**
-   * Get outstanding balance color
-   */
-  // This method is no longer needed since we use CSS classes instead
-  // getBalanceColor(): string {
-  //   const balance = this.outstandingBalance();
-  //   if (balance > 0) {
-  //     return 'warn';
-  //   }
-  //   return 'primary';
-  // }
+  formatAppointmentDate(date: string): string {
+    const appointmentDate = new Date(date);
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    };
+    return appointmentDate.toLocaleDateString('ar-SA', options);
+  }
+
+  formatAppointmentTime(time: string): string {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const period = hour >= 12 ? 'م' : 'ص';
+    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+    return `${displayHour}:${minutes} ${period}`;
+  }
+
+  getAppointmentTypeLabel(type: AppointmentType): string {
+    return this.appointmentTypeLabels[type] || type;
+  }
+
+  getAppointmentStatusLabel(status: AppointmentStatus): string {
+    return this.appointmentStatusLabels[status] || status;
+  }
+
+  getAppointmentStatusColor(status: AppointmentStatus): 'primary' | 'accent' | 'warn' | undefined {
+    switch (status) {
+      case AppointmentStatus.SCHEDULED:
+        return 'primary';
+      case AppointmentStatus.CONFIRMED:
+      case AppointmentStatus.COMPLETED:
+        return 'accent';
+      case AppointmentStatus.IN_PROGRESS:
+      case AppointmentStatus.CANCELLED:
+      case AppointmentStatus.NO_SHOW:
+        return 'warn';
+      default:
+        return undefined;
+    }
+  }
+
+  // ===================================================================
+  // ACTIONS
+  // ===================================================================
+
+  onBackToPatients(): void {
+    this.router.navigate(['/patients']);
+  }
+
+  onEditPatient(): void {
+    const patientId = this.patientId();
+    if (patientId) {
+      this.router.navigate(['/patients/edit', patientId]);
+    }
+  }
+
+  onReactivatePatient(): void {
+    const patient = this.patient();
+    if (!patient) return;
+
+    const confirmMessage = `هل أنت متأكد من إعادة تفعيل المريض ${patient.firstName} ${patient.lastName}؟`;
+
+    if (confirm(confirmMessage)) {
+      this.loading.set(true);
+      this.patientService.reactivatePatient(patient.id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response) => {
+            if (response.data) {
+              this.patient.set(response.data);
+              this.notificationService.success('تم تفعيل المريض بنجاح');
+            }
+            this.loading.set(false);
+          },
+          error: (error) => {
+            console.error('Error reactivating patient:', error);
+            this.notificationService.error('فشل في تفعيل المريض');
+            this.loading.set(false);
+          }
+        });
+    }
+  }
+
+  onDeletePatient(permanent: boolean = false): void {
+    const patient = this.patient();
+    if (!patient) return;
+
+    // Prepare dialog data
+    const dialogData: DeleteDialogData = {
+      type: permanent ? 'permanent' : 'soft',
+      patientName: `${patient.firstName} ${patient.lastName}`,
+      patientNumber: patient.patientNumber,
+      stats: permanent ? {
+        medicalRecords: this.medicalRecordsCount() || 16, // Use actual count or default
+        appointments: this.appointmentsCount() || 8,
+        documents: 4, // TODO: Get actual count
+        invoices: this.invoicesCount() || 4
+      } : undefined
+    };
+
+    // Open dialog
+    const dialogRef = this.dialog.open(DeleteConfirmationDialogComponent, {
+      width: '600px',
+      data: dialogData,
+      disableClose: true,
+      panelClass: 'delete-dialog-container'
+    });
+
+    // Handle dialog result
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.performDelete(patient.id, permanent);
+      }
+    });
+  }
+
+  private performDelete(patientId: number, permanent: boolean): void {
+    this.loading.set(true);
+
+    if (permanent) {
+      this.patientService.permanentlyDeletePatient(patientId, 'DELETE-CONFIRM')
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.notificationService.success('تم حذف المريض نهائياً');
+            this.router.navigate(['/patients']);
+          },
+          error: (error) => {
+            console.error('Error permanently deleting patient:', error);
+            this.notificationService.error('فشل في حذف المريض نهائياً');
+            this.loading.set(false);
+          }
+        });
+    } else {
+      this.patientService.deletePatient(patientId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.notificationService.success('تم حذف المريض بنجاح');
+            this.router.navigate(['/patients']);
+          },
+          error: (error) => {
+            console.error('Error deleting patient:', error);
+            this.notificationService.error('فشل في حذف المريض');
+            this.loading.set(false);
+          }
+        });
+    }
+  }
+
+  onCreateAppointment(): void {
+    const patientId = this.patientId();
+    if (patientId) {
+      this.router.navigate(['/appointments/new'], { queryParams: { patientId } });
+    }
+  }
+
+  onNewAppointment(): void {
+    this.onCreateAppointment();
+  }
+
+  onViewMedicalHistory(): void {
+    const patientId = this.patientId();
+    if (patientId) {
+      this.router.navigate(['/medical-records'], { queryParams: { patientId } });
+    }
+  }
+
+  onCreateInvoice(): void {
+    const patientId = this.patientId();
+    if (patientId) {
+      this.router.navigate(['/invoices/new'], { queryParams: { patientId } });
+    }
+  }
+
+  onPrintPatientCard(): void {
+    this.notificationService.info('طباعة بطاقة المريض - قيد التطوير');
+  }
+
+  onExportPatientData(): void {
+    this.notificationService.info('تصدير بيانات المريض قريباً...');
+  }
+
+  onViewAppointment(appointmentId: number): void {
+    this.router.navigate(['/appointments', appointmentId]);
+  }
+
+  onRescheduleAppointment(appointmentId: number): void {
+    this.router.navigate(['/appointments/edit', appointmentId]);
+  }
+
+  onCancelAppointment(appointment: AppointmentSummaryResponse): void {
+    const confirmMessage = `هل أنت متأكد من إلغاء موعد يوم ${this.formatAppointmentDate(appointment.appointmentDate)} الساعة ${this.formatAppointmentTime(appointment.appointmentTime)}؟`;
+
+    if (confirm(confirmMessage)) {
+      this.loadingAppointments.set(true);
+      this.appointmentService.cancelAppointment(appointment.id, 'إلغاء من قبل المريض')
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.notificationService.success('تم إلغاء الموعد بنجاح');
+            this.loadUpcomingAppointments();
+          },
+          error: (error) => {
+            console.error('Error canceling appointment:', error);
+            this.notificationService.error('فشل في إلغاء الموعد');
+            this.loadingAppointments.set(false);
+          }
+        });
+    }
+  }
+
+  onTabChange(index: number): void {
+    this.activeTabIndex.set(index);
+    const tabs = ['overview', 'appointments', 'medical-records', 'invoices'];
+    const tab = tabs[index];
+
+    // Update URL
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab },
+      queryParamsHandling: 'merge'
+    });
+
+    // Load data for specific tabs
+    if (tab === 'appointments' && this.upcomingAppointments().length === 0 && !this.loadingAppointments()) {
+      this.loadUpcomingAppointments();
+    }
+  }
+
+  refreshAppointments(): void {
+    this.loadUpcomingAppointments();
+  }
 }

@@ -374,7 +374,7 @@
             </div>
           </mat-tab>
 
-          <!-- Appointments Tab -->
+         <!-- Appointments Tab -->
           <mat-tab>
             <ng-template mat-tab-label>
               <mat-icon>event</mat-icon>
@@ -385,13 +385,128 @@
             </ng-template>
 
             <div class="tab-content">
-              <div class="coming-soon">
-                <mat-icon>event</mat-icon>
-                <h3>قريباً: عرض المواعيد</h3>
-                <p>ستتمكن هنا من عرض جميع المواعيد الخاصة بالمريض</p>
-              </div>
+              <mat-card class="appointments-card">
+                <mat-card-header>
+                  <mat-card-title>
+                    <mat-icon>event</mat-icon>
+                    المواعيد القادمة
+                  </mat-card-title>
+                  <button mat-icon-button (click)="refreshAppointments()" matTooltip="تحديث">
+                    <mat-icon>refresh</mat-icon>
+                  </button>
+                </mat-card-header>
+
+                <mat-card-content>
+                  <!-- Loading State -->
+                  <div *ngIf="loadingAppointments()" class="loading-state">
+                    <mat-spinner diameter="40"></mat-spinner>
+                    <p>جاري تحميل المواعيد...</p>
+                  </div>
+
+                  <!-- No Appointments State -->
+                  <div *ngIf="!loadingAppointments() && upcomingAppointments().length === 0" class="empty-state">
+                    <mat-icon>event_busy</mat-icon>
+                    <h3>لا توجد مواعيد قادمة</h3>
+                    <p>لا يوجد مواعيد مجدولة لهذا المريض</p>
+                    <button mat-raised-button color="primary" (click)="onNewAppointment()">
+                      <mat-icon>add</mat-icon>
+                      حجز موعد جديد
+                    </button>
+                  </div>
+
+                  <!-- Appointments Table -->
+                  <div *ngIf="!loadingAppointments() && upcomingAppointments().length > 0" class="appointments-table-container">
+                    <table mat-table [dataSource]="upcomingAppointments()" class="appointments-table">
+
+                      <!-- Date Column -->
+                      <ng-container matColumnDef="appointmentDate">
+                        <th mat-header-cell *matHeaderCellDef>التاريخ</th>
+                        <td mat-cell *matCellDef="let appointment">
+                          {{ formatAppointmentDate(appointment.appointmentDate) }}
+                        </td>
+                      </ng-container>
+
+                      <!-- Time Column -->
+                      <ng-container matColumnDef="appointmentTime">
+                        <th mat-header-cell *matHeaderCellDef>الوقت</th>
+                        <td mat-cell *matCellDef="let appointment">
+                          {{ formatAppointmentTime(appointment.appointmentTime) }}
+                        </td>
+                      </ng-container>
+
+                      <!-- Doctor Column -->
+                      <ng-container matColumnDef="doctor">
+                        <th mat-header-cell *matHeaderCellDef>الطبيب</th>
+                        <td mat-cell *matCellDef="let appointment">
+                          {{ appointment.doctorName }}
+                        </td>
+                      </ng-container>
+
+                      <!-- Type Column -->
+                      <ng-container matColumnDef="type">
+                        <th mat-header-cell *matHeaderCellDef>النوع</th>
+                        <td mat-cell *matCellDef="let appointment">
+                          <mat-chip>
+                            {{ getAppointmentTypeLabel(appointment.appointmentType) }}
+                          </mat-chip>
+                        </td>
+                      </ng-container>
+
+                      <!-- Status Column -->
+                      <ng-container matColumnDef="status">
+                        <th mat-header-cell *matHeaderCellDef>الحالة</th>
+                        <td mat-cell *matCellDef="let appointment">
+                          <mat-chip [color]="getAppointmentStatusColor(appointment.status)">
+                            {{ getAppointmentStatusLabel(appointment.status) }}
+                          </mat-chip>
+                        </td>
+                      </ng-container>
+
+                      <!-- Actions Column -->
+                      <ng-container matColumnDef="actions">
+                        <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+                        <td mat-cell *matCellDef="let appointment">
+                          <button mat-icon-button
+                                  [matMenuTriggerFor]="appointmentMenu"
+                                  matTooltip="خيارات">
+                            <mat-icon>more_vert</mat-icon>
+                          </button>
+                          <mat-menu #appointmentMenu="matMenu">
+                            <button mat-menu-item (click)="onViewAppointment(appointment.id)">
+                              <mat-icon>visibility</mat-icon>
+                              <span>عرض التفاصيل</span>
+                            </button>
+                            <button mat-menu-item (click)="onRescheduleAppointment(appointment.id)">
+                              <mat-icon>schedule</mat-icon>
+                              <span>إعادة جدولة</span>
+                            </button>
+                            <button mat-menu-item
+                                    (click)="onCancelAppointment(appointment)"
+                                    class="cancel-button">
+                              <mat-icon>cancel</mat-icon>
+                              <span>إلغاء الموعد</span>
+                            </button>
+                          </mat-menu>
+                        </td>
+                      </ng-container>
+
+                      <tr mat-header-row *matHeaderRowDef="appointmentsDisplayedColumns"></tr>
+                      <tr mat-row *matRowDef="let row; columns: appointmentsDisplayedColumns;"></tr>
+                    </table>
+
+                    <!-- Add New Appointment Button -->
+                    <div class="table-footer">
+                      <button mat-raised-button color="primary" (click)="onNewAppointment()">
+                        <mat-icon>add</mat-icon>
+                        حجز موعد جديد
+                      </button>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
             </div>
           </mat-tab>
+
 
           <!-- Medical Records Tab -->
           <mat-tab>
@@ -450,7 +565,7 @@
 
       <button
         mat-menu-item
-        *ngIf="canReactivatePatient() && !patient()!.isActive"
+        *ngIf="canReactivatePatient() && !patient()!.active"
         (click)="onReactivatePatient()"
       >
         <mat-icon color="primary">restore</mat-icon>
@@ -469,7 +584,7 @@
       <!-- Soft Delete -->
       <button
         mat-menu-item
-        *ngIf="canDeletePatient() && patient()!.isActive"
+        *ngIf="canDeletePatient() && patient()!.active"
         (click)="onDeletePatient()"
         class="danger-menu-item"
       >
@@ -481,7 +596,7 @@
       <button
         mat-menu-item
         *ngIf="canPermanentlyDelete()"
-        (click)="onPermanentlyDeletePatient()"
+        (click)="onDeletePatient(true)"
         class="permanent-delete-menu-item"
       >
         <mat-icon class="danger-icon">delete_forever</mat-icon>

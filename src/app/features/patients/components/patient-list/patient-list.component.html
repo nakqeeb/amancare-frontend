@@ -449,10 +449,10 @@
                 <!-- Status Badge -->
                 <div class="card-status">
                   <mat-icon
-                    [color]="patient.isActive ? 'primary' : 'warn'"
-                    [matTooltip]="patient.isActive ? 'نشط' : 'غير نشط'"
+                    [color]="patient.active ? 'primary' : 'warn'"
+                    [matTooltip]="patient.active ? 'نشط' : 'غير نشط'"
                   >
-                    {{ patient.isActive ? 'check_circle' : 'cancel' }}
+                    {{ patient.active ? 'check_circle' : 'cancel' }}
                   </mat-icon>
                 </div>
               </mat-card-header>
@@ -515,14 +515,14 @@
 
                 <!-- Card Menu -->
                 <mat-menu #cardMenu="matMenu">
-                  @if (patient.isActive && canDeletePatients()) {
+                  @if (patient.active && canDeletePatients()) {
                     <button mat-menu-item (click)="onDeletePatient(patient)">
                       <mat-icon color="warn">delete</mat-icon>
                       <span>حذف المريض</span>
                     </button>
                   }
 
-                  @if (!patient.isActive && canReactivatePatients()) {
+                  @if (!patient.active && canReactivatePatients()) {
                     <button mat-menu-item (click)="onReactivatePatient(patient)">
                       <mat-icon color="primary">restore</mat-icon>
                       <span>إعادة تفعيل</span>

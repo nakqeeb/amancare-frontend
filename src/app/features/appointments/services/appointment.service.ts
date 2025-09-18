@@ -248,8 +248,6 @@ export class AppointmentService {
     this.loading.set(true);
     this.error.set(null);
 
-    console.log(patientId);
-
     let clinicId = null;
     if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
       clinicId = this.systemAdminService.actingClinicContext()?.clinicId;

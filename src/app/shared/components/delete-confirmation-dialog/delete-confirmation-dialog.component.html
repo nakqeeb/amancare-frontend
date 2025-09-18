@@ -1,0 +1,191 @@
+<div class="delete-dialog" [class.permanent-mode]="data.type === 'permanent'">
+  <!-- Animated Background Pattern -->
+  <div class="dialog-pattern"></div>
+
+  <!-- Header -->
+  <div class="dialog-header" [class.danger]="data.type === 'permanent'">
+    <div class="header-icon-wrapper">
+      <div class="icon-pulse"></div>
+      <mat-icon>{{
+        data.type === "permanent" ? "warning" : "delete_outline"
+      }}</mat-icon>
+    </div>
+    <div class="header-content">
+      <h2 mat-dialog-title>
+        {{
+          data.type === "permanent"
+            ? "تحذير: حذف نهائي للمريض"
+            : "تأكيد حذف المريض"
+        }}
+      </h2>
+      <p class="header-subtitle">
+        {{
+          data.type === "permanent"
+            ? "هذا الإجراء لا يمكن التراجع عنه"
+            : "يمكن استرجاع البيانات لاحقاً"
+        }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <mat-dialog-content>
+    <!-- Patient Info Card -->
+    <div class="patient-info-card">
+      <div class="patient-avatar">
+        <span>{{ getPatientInitials() }}</span>
+      </div>
+      <div class="patient-details">
+        <h3>{{ data.patientName }}</h3>
+        <p>
+          رقم المريض:
+          <span class="patient-number">{{ data.patientNumber }}</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Stats Section for permanent delete -->
+    <div class="stats-section" *ngIf="data.type === 'permanent' && data.stats">
+      <h4 class="stats-title">
+        <mat-icon>analytics</mat-icon>
+        البيانات التي سيتم حذفها نهائياً
+      </h4>
+      <div class="stats-grid">
+        <div class="stat-card medical">
+          <div class="stat-icon">
+            <mat-icon>medical_services</mat-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-number">{{ data.stats.medicalRecords }}</span>
+            <span class="stat-label">سجل طبي</span>
+          </div>
+        </div>
+        <div class="stat-card appointments">
+          <div class="stat-icon">
+            <mat-icon>event</mat-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-number">{{ data.stats.appointments }}</span>
+            <span class="stat-label">موعد</span>
+          </div>
+        </div>
+        <div class="stat-card documents">
+          <div class="stat-icon">
+            <mat-icon>description</mat-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-number">{{ data.stats.documents }}</span>
+            <span class="stat-label">مستند</span>
+          </div>
+        </div>
+        <div class="stat-card invoices">
+          <div class="stat-icon">
+            <mat-icon>receipt_long</mat-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-number">{{ data.stats.invoices }}</span>
+            <span class="stat-label">فاتورة</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Soft Delete Content -->
+    <div class="soft-delete-content" *ngIf="data.type === 'soft'">
+      <div class="info-message">
+        <div class="info-icon">
+          <mat-icon>info</mat-icon>
+        </div>
+        <div class="info-content">
+          <p>سيتم نقل المريض إلى قائمة المرضى المحذوفين / غير النشطين</p>
+          <p class="info-note">
+            يمكن استرجاع البيانات في أي وقت من قائمة المرضى المحذوفين / غير النشطين
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Permanent Delete Content -->
+    <div class="permanent-delete-content" *ngIf="data.type === 'permanent'">
+      <div class="warning-banner">
+        <mat-icon>error_outline</mat-icon>
+        <span>للمتابعة، يجب تأكيد جميع الخطوات التالية:</span>
+      </div>
+
+      <div class="confirmation-steps">
+        <div class="step-item" [class.checked]="confirmations.understand">
+          <mat-checkbox [(ngModel)]="confirmations.understand" color="warn">
+            <span class="step-text">
+              أفهم أن هذا الإجراء سيحذف
+              <strong>جميع بيانات المريض نهائياً</strong>
+            </span>
+          </mat-checkbox>
+        </div>
+
+        <div class="step-item" [class.checked]="confirmations.backup">
+          <mat-checkbox [(ngModel)]="confirmations.backup" color="warn">
+            <span class="step-text">
+              أؤكد أنني قمت <strong>بأخذ نسخة احتياطية</strong> من البيانات
+              المهمة
+            </span>
+          </mat-checkbox>
+        </div>
+
+        <div class="step-item" [class.checked]="confirmations.permission">
+          <mat-checkbox [(ngModel)]="confirmations.permission" color="warn">
+            <span class="step-text">
+              لدي <strong>الصلاحية والموافقة اللازمة</strong> لحذف هذه البيانات
+            </span>
+          </mat-checkbox>
+        </div>
+      </div>
+
+      <div
+        class="confirmation-input-wrapper"
+        [class.visible]="allChecked()"
+        *ngIf="data.type === 'permanent'"
+      >
+        <mat-form-field appearance="outline" class="confirmation-input">
+          <mat-label>اكتب DELETE-CONFIRM للمتابعة</mat-label>
+          <input
+            matInput
+            [(ngModel)]="confirmText"
+            placeholder="DELETE-CONFIRM"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <mat-icon matPrefix>lock</mat-icon>
+          <mat-hint>يجب كتابة الكود بالأحرف الكبيرة كما هو موضح</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <div class="audit-warning">
+        <mat-icon>history</mat-icon>
+        <p>
+          <strong>تنبيه:</strong> سيتم تسجيل هذا الإجراء في سجل النظام مع معرف
+          المستخدم والوقت والتاريخ
+        </p>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <!-- Actions -->
+  <mat-dialog-actions>
+    <button mat-stroked-button (click)="onCancel()" class="cancel-button">
+      <mat-icon>close</mat-icon>
+      إلغاء
+    </button>
+    <button
+      mat-raised-button
+      [class.danger-button]="data.type === 'permanent'"
+      [disabled]="!canConfirm()"
+      (click)="onConfirm()"
+      class="confirm-button"
+    >
+      <mat-icon>{{
+        data.type === "permanent" ? "delete_forever" : "delete"
+      }}</mat-icon>
+      {{ data.type === "permanent" ? "حذف نهائي" : "تأكيد الحذف" }}
+    </button>
+  </mat-dialog-actions>
+</div>
