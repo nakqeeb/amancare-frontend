@@ -228,9 +228,9 @@ export class UserFormComponent implements OnInit {
   private loadUserData(userId: number): void {
     this.loading.set(true);
 
-    this.userService.getUserById(userId).subscribe({
-      next: (user) => {
-        this.populateForm(user);
+    this.userService.getClinicUserById(userId).subscribe({
+      next: (response) => {
+        this.populateForm(response.data!);
         this.loading.set(false);
       },
       error: (error) => {
@@ -248,7 +248,6 @@ export class UserFormComponent implements OnInit {
       lastName: user.lastName,
       email: user.email,
       phone: user.phone || '',
-      profilePicture: user.profilePicture || ''
     });
 
     // Credentials
@@ -263,11 +262,10 @@ export class UserFormComponent implements OnInit {
     this.professionalForm.patchValue({
       role: user.role,
       specialization: user.specialization || '',
-      licenseNumber: user.licenseNumber || '',
       notes: ''
     });
 
-    this.setDefaultPermissions(user.role);
+    this.setDefaultPermissions(user.role!);
   }
 
   private setDefaultPermissions(role: UserRole): void {
@@ -419,18 +417,18 @@ export class UserFormComponent implements OnInit {
   }
 
   // Check username availability
-  async checkUsernameAvailability(): Promise<void> {
-    const username = this.credentialsForm.get('username')?.value;
-    if (!username || username.length < 3) return;
+  // async checkUsernameAvailability(): Promise<void> {
+  //   const username = this.credentialsForm.get('username')?.value;
+  //   if (!username || username.length < 3) return;
 
-    this.userService.checkUsernameExists(username).subscribe({
-      next: (exists) => {
-        if (exists && !this.isEditMode()) {
-          this.credentialsForm.get('username')?.setErrors({ usernameTaken: true });
-        }
-      }
-    });
-  }
+  //   this.userService.checkUsernameExists(username).subscribe({
+  //     next: (exists) => {
+  //       if (exists && !this.isEditMode()) {
+  //         this.credentialsForm.get('username')?.setErrors({ usernameTaken: true });
+  //       }
+  //     }
+  //   });
+  // }
 
   // Check email availability
   // async checkEmailAvailability(): Promise<void> {

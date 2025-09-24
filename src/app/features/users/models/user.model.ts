@@ -4,36 +4,54 @@
 // ===================================================================
 
 // Main User interface matching your backend User entity
+// export interface User {
+//   id?: number;
+//   username: string;
+//   email: string;
+//   firstName: string;
+//   lastName: string;
+//   fullName?: string; // Computed field: firstName + lastName
+//   phone?: string;
+//   profilePicture?: string;
+
+//   // Role and permissions
+//   role: UserRole;
+//   isActive: boolean;
+
+//   // Clinic association
+//   clinicId?: number;
+//   clinicName?: string;
+
+//   // Professional information (for doctors)
+//   specialization?: string;
+//   licenseNumber?: string;
+
+//   // Timestamps
+//   createdAt?: string;
+//   updatedAt?: string;
+//   lastLoginAt?: string;
+
+//   // Audit fields
+//   createdBy?: string;
+//   updatedBy?: string;
+// }
+
 export interface User {
-  id?: number;
+  id: number;
   username: string;
   email: string;
   firstName: string;
   lastName: string;
-  fullName?: string; // Computed field: firstName + lastName
+  fullName: string;
   phone?: string;
-  profilePicture?: string;
-
-  // Role and permissions
   role: UserRole;
-  isActive: boolean;
-
-  // Clinic association
-  clinicId?: number;
-  clinicName?: string;
-
-  // Professional information (for doctors)
   specialization?: string;
-  licenseNumber?: string;
-
-  // Timestamps
-  createdAt?: string;
+  isActive: boolean;
+  clinicId: number;
+  clinicName: string;
+  createdAt: string;
   updatedAt?: string;
   lastLoginAt?: string;
-
-  // Audit fields
-  createdBy?: string;
-  updatedBy?: string;
 }
 
 export interface DoctorsResponse {

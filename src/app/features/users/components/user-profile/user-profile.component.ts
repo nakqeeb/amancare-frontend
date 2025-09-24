@@ -204,9 +204,9 @@ export class UserProfileComponent implements OnInit {
     this.userId.set(userId);
     this.loading.set(true);
 
-    this.userService.getUserById(userId).subscribe({
-      next: (user) => {
-        this.user.set(user);
+    this.userService.getClinicUserById(userId).subscribe({
+      next: (res) => {
+        this.user.set(res.data!);
         this.loading.set(false);
       },
       error: (error) => {
@@ -272,19 +272,19 @@ export class UserProfileComponent implements OnInit {
       }
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result && user.id) {
-        const operation = user.isActive ?
-          this.userService.deactivateUser(user.id) :
-          this.userService.activateUser(user.id);
+    // dialogRef.afterClosed().subscribe(result => {
+    //   if (result && user.id) {
+    //     const operation = user.isActive ?
+    //       this.userService.deactivateUser(user.id) :
+    //       this.userService.activateUser(user.id);
 
-        operation.subscribe({
-          next: (updatedUser) => {
-            this.user.set(updatedUser);
-          }
-        });
-      }
-    });
+    //     operation.subscribe({
+    //       next: (updatedUser) => {
+    //         this.user.set(updatedUser);
+    //       }
+    //     });
+    //   }
+    // });
   }
 
   onSendNotification(): void {

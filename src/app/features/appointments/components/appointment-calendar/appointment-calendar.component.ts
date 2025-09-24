@@ -117,8 +117,8 @@ export class AppointmentCalendarComponent implements OnInit {
 
   private loadDoctors(): void {
     this.userService.getDoctors().subscribe({
-      next: (doctors) => {
-        this.doctors.set(doctors);
+      next: (res) => {
+        this.doctors.set(res.data!);
       },
       error: (error) => {
         console.error('Error loading doctors:', error);

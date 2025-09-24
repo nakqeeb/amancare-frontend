@@ -137,8 +137,8 @@ export class AvailabilityCheckComponent implements OnInit {
 
   private loadDoctors(): void {
     this.userService.getDoctors().subscribe({
-      next: (doctors) => {
-        const doctorList = doctors.map(d => ({
+      next: (res) => {
+        const doctorList = res.data!.map(d => ({
           id: d.id as number,
           fullName: d.fullName as string,
           specialization: d.specialization

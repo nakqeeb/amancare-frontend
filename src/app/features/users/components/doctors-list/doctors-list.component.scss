@@ -1,6 +1,6 @@
 /* ===================================================================
-   src/app/features/users/components/user-list/user-list.component.scss - UPDATED
-   Enhanced Styles with Spring Boot Integration
+   src/app/features/users/components/doctors-list/doctors-list.component.scss
+   Styles for Doctors List Component
    =================================================================== */
 
 /* ===================================================================
@@ -25,7 +25,6 @@
   padding: 24px;
   overflow-y: auto;
   background-color: var(--surface-color, #ffffff);
-  position: relative;
 
   &.rtl {
     direction: rtl;
@@ -86,39 +85,25 @@
 }
 
 /* ===================================================================
-   ENHANCED STATISTICS CARDS
+   STATISTICS OVERVIEW
    =================================================================== */
 
-.stats-cards {
+.stats-overview {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
   margin-bottom: 24px;
 
   .stat-card {
-    border-radius: 16px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    }
+    border-radius: 12px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 
     &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     }
 
-    &.primary {
+    &.total {
       background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
       color: white;
 
@@ -128,7 +113,7 @@
       }
     }
 
-    &.success {
+    &.active {
       background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
       color: white;
 
@@ -138,8 +123,8 @@
       }
     }
 
-    &.warning {
-      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    &.inactive {
+      background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
       color: white;
 
       .stat-icon {
@@ -148,8 +133,8 @@
       }
     }
 
-    &.accent {
-      background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
+    &.specializations {
+      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
       color: white;
 
       .stat-icon {
@@ -161,13 +146,13 @@
     .stat-content {
       display: flex;
       align-items: center;
-      padding: 24px;
-      gap: 20px;
+      padding: 20px;
+      gap: 16px;
 
       .stat-icon {
-        width: 56px;
-        height: 56px;
-        font-size: 56px;
+        width: 48px;
+        height: 48px;
+        font-size: 48px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -181,16 +166,15 @@
         flex-direction: column;
 
         .stat-number {
-          font-size: 2.5rem;
+          font-size: 2rem;
           font-weight: 700;
           line-height: 1;
           margin-bottom: 4px;
         }
 
         .stat-label {
-          font-size: 1rem;
+          font-size: 0.875rem;
           opacity: 0.9;
-          font-weight: 500;
         }
       }
     }
@@ -198,134 +182,13 @@
 }
 
 /* ===================================================================
-   LOADING AND ERROR STATES
+   CONTENT CONTAINER
    =================================================================== */
 
-.loading-container {
+.content-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 64px;
-
-  p {
-    margin-top: 16px;
-    font-size: 1rem;
-    color: var(--text-secondary, #666);
-  }
-}
-
-.error-card {
-  margin-bottom: 24px;
-  border-radius: 12px;
-
-  .error-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 32px;
-
-    mat-icon {
-      font-size: 3rem;
-      width: 3rem;
-      height: 3rem;
-      margin-bottom: 16px;
-    }
-
-    p {
-      margin: 0 0 24px 0;
-      font-size: 1.125rem;
-    }
-  }
-}
-
-/* ===================================================================
-   TABS STYLING
-   =================================================================== */
-
-.mat-tab-group {
-  background: transparent;
-
-  .mat-tab-header {
-    border-bottom: 2px solid #e0e0e0;
-
-    .mat-tab-label {
-      font-weight: 500;
-      font-size: 1rem;
-      min-width: 140px;
-
-      &.mat-tab-label-active {
-        color: var(--primary-color, #1976d2);
-      }
-    }
-  }
-
-  .mat-tab-body-wrapper {
-    padding-top: 24px;
-  }
-}
-
-.tab-content {
-  min-height: 400px;
-}
-
-/* ===================================================================
-   QUICK NAVIGATION CARDS
-   =================================================================== */
-
-.quick-nav-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-
-  .nav-card {
-    cursor: pointer;
-    border-radius: 12px;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-      border-color: var(--primary-color, #1976d2);
-    }
-
-    .nav-content {
-      display: flex;
-      align-items: center;
-      padding: 20px;
-      gap: 20px;
-
-      mat-icon {
-        width: 48px;
-        height: 48px;
-        font-size: 48px;
-        color: var(--primary-color, #1976d2);
-        background: rgba(25, 118, 210, 0.1);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .nav-info {
-        h3 {
-          margin: 0 0 8px 0;
-          font-size: 1.25rem;
-          font-weight: 600;
-          color: var(--text-primary, #212121);
-        }
-
-        p {
-          margin: 0;
-          font-size: 0.875rem;
-          color: var(--text-secondary, #666);
-        }
-      }
-    }
-  }
+  gap: 24px;
 }
 
 /* ===================================================================
@@ -333,16 +196,13 @@
    =================================================================== */
 
 .controls-card {
-  margin-bottom: 24px;
-  border-radius: 12px;
-
   .controls-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
 
-    .view-controls {
+    .view-toggle {
       display: flex;
       gap: 8px;
 
@@ -401,16 +261,46 @@
 }
 
 /* ===================================================================
+   SPECIALIZATIONS FILTER
+   =================================================================== */
+
+.specializations-filter {
+  h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--text-primary, #212121);
+  }
+
+  .specialization-chips {
+    .mat-chip-set {
+      gap: 8px;
+    }
+
+    mat-chip {
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background-color: rgba(25, 118, 210, 0.1);
+      }
+
+      &[selected="true"] {
+        background-color: var(--primary-color, #1976d2);
+        color: white;
+      }
+    }
+  }
+}
+
+/* ===================================================================
    BULK ACTIONS
    =================================================================== */
 
 .bulk-actions {
-  margin-bottom: 24px;
-
   .bulk-actions-card {
     background: linear-gradient(90deg, #e3f2fd 0%, #f3e5f5 100%);
     border-left: 4px solid var(--primary-color, #1976d2);
-    border-radius: 8px;
 
     .bulk-content {
       display: flex;
@@ -440,15 +330,15 @@
 }
 
 /* ===================================================================
-   USERS TABLE VIEW
+   TABLE VIEW
    =================================================================== */
 
-.users-table-view {
+.table-view {
   .table-card {
     border-radius: 12px;
 
     .table-container {
-      .users-table {
+      .doctors-table {
         width: 100%;
         background: #ffffff;
 
@@ -463,7 +353,7 @@
 
         // Row Styles
         .mat-row {
-          &.user-row {
+          &.doctor-row {
             cursor: pointer;
             transition: background-color 0.2s;
 
@@ -482,45 +372,71 @@
           border-bottom: 1px solid #e0e0e0;
           padding: 16px 12px;
 
-          // User Information Cell
-          &.user-cell {
-            .user-info {
+          // Doctor Information Cell
+          &.doctor-cell {
+            .doctor-info {
               display: flex;
               align-items: center;
               gap: 12px;
 
-              .user-avatar {
-                .avatar-icon {
-                  width: 40px;
-                  height: 40px;
-                  font-size: 40px;
-                  background: linear-gradient(135deg, var(--primary-color, #1976d2), var(--accent-color, #ff4081));
+              .doctor-avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #4caf50, #2e7d32);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                .avatar-text {
                   color: white;
-                  border-radius: 50%;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
+                  font-weight: 600;
+                  font-size: 0.875rem;
                 }
               }
 
-              .user-details {
-                .user-name {
+              .doctor-details {
+                .doctor-name {
                   font-weight: 500;
                   color: var(--text-primary, #212121);
                   margin-bottom: 4px;
                 }
 
-                .user-email {
-                  font-size: 0.875rem;
-                  color: var(--text-secondary, #666);
-                  margin-bottom: 2px;
-                }
-
-                .user-username {
+                .doctor-username {
                   font-size: 0.75rem;
                   color: var(--text-secondary, #999);
                   font-family: monospace;
                 }
+              }
+            }
+          }
+
+          // Contact Information Cell
+          .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+
+            .contact-item {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+
+              button {
+                width: 32px;
+                height: 32px;
+                line-height: 32px;
+
+                mat-icon {
+                  font-size: 16px;
+                  width: 16px;
+                  height: 16px;
+                }
+              }
+
+              .contact-text {
+                font-size: 0.875rem;
+                color: var(--text-primary, #212121);
               }
             }
           }
@@ -538,8 +454,8 @@
             }
           }
 
-          // Date Cell
-          .date-cell {
+          // Clinic Name
+          .clinic-name {
             font-size: 0.875rem;
             color: var(--text-secondary, #666);
           }
@@ -581,22 +497,21 @@
 }
 
 /* ===================================================================
-   USERS CARDS VIEW
+   CARDS VIEW
    =================================================================== */
 
-.users-cards-view {
-  .users-grid {
+.cards-view {
+  .doctors-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 24px;
 
-    .user-card {
+    .doctor-card {
       height: 100%;
       display: flex;
       flex-direction: column;
       border-radius: 16px;
       transition: all 0.3s ease;
-      cursor: pointer;
       border: 1px solid #e0e0e0;
 
       &:hover {
@@ -613,18 +528,19 @@
       mat-card-header {
         padding: 20px 20px 16px 20px;
 
-        .user-avatar-large {
+        .doctor-avatar-large {
           width: 56px;
           height: 56px;
           border-radius: 50%;
-          background: linear-gradient(135deg, var(--primary-color, #1976d2), var(--accent-color, #ff4081));
+          background: linear-gradient(135deg, #4caf50, #2e7d32);
           display: flex;
           align-items: center;
           justify-content: center;
 
-          mat-icon {
+          span {
             color: white;
-            font-size: 32px;
+            font-weight: 600;
+            font-size: 1.125rem;
           }
         }
 
@@ -692,78 +608,6 @@
 }
 
 /* ===================================================================
-   REDIRECT CARDS (for specialized views)
-   =================================================================== */
-
-.redirect-card {
-  mat-card {
-    border-radius: 16px;
-    border: 2px dashed #e0e0e0;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-
-    .redirect-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 48px;
-
-      .redirect-icon {
-        width: 80px;
-        height: 80px;
-        font-size: 80px;
-        color: var(--primary-color, #1976d2);
-        margin-bottom: 24px;
-        opacity: 0.7;
-      }
-
-      .redirect-info {
-        h2 {
-          margin: 0 0 16px 0;
-          font-size: 1.5rem;
-          font-weight: 600;
-          color: var(--text-primary, #212121);
-        }
-
-        p {
-          margin: 0 0 32px 0;
-          font-size: 1rem;
-          color: var(--text-secondary, #666);
-          max-width: 400px;
-        }
-
-        button {
-          mat-icon {
-            margin-left: 8px;
-          }
-        }
-      }
-    }
-  }
-}
-
-/* ===================================================================
-   QUICK ACTIONS FAB
-   =================================================================== */
-
-.quick-actions-fab {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 1000;
-
-  .mat-fab {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-
-    &:hover {
-      transform: scale(1.1);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-    }
-  }
-}
-
-/* ===================================================================
    CHIPS AND BADGES
    =================================================================== */
 
@@ -779,6 +623,48 @@
 }
 
 /* ===================================================================
+   LOADING AND ERROR STATES
+   =================================================================== */
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px;
+
+  p {
+    margin-top: 16px;
+    font-size: 1rem;
+    color: var(--text-secondary, #666);
+  }
+}
+
+.error-card {
+  margin-bottom: 24px;
+
+  .error-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 32px;
+
+    mat-icon {
+      font-size: 3rem;
+      width: 3rem;
+      height: 3rem;
+      margin-bottom: 16px;
+    }
+
+    p {
+      margin: 0 0 24px 0;
+      font-size: 1.125rem;
+    }
+  }
+}
+
+/* ===================================================================
    ANIMATIONS
    =================================================================== */
 
@@ -788,6 +674,7 @@
     max-height: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     max-height: 1000px;
@@ -799,43 +686,17 @@
   animation: expandCollapse 0.3s ease-out;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.stat-card,
-.nav-card,
-.user-card {
-  animation: fadeInUp 0.6s ease-out;
-}
-
-.stat-card:nth-child(1) { animation-delay: 0.1s; }
-.stat-card:nth-child(2) { animation-delay: 0.2s; }
-.stat-card:nth-child(3) { animation-delay: 0.3s; }
-.stat-card:nth-child(4) { animation-delay: 0.4s; }
-
 /* ===================================================================
    RESPONSIVE DESIGN
    =================================================================== */
 
 @media (max-width: 1200px) {
-  .stats-cards {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  .stats-overview {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
 
-  .quick-nav-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .users-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+  .doctors-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
   }
 }
 
@@ -860,8 +721,8 @@
     }
   }
 
-  .stats-cards {
-    grid-template-columns: repeat(2, 1fr);
+  .stats-overview {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 16px;
 
     .stat-card {
@@ -869,18 +730,14 @@
         padding: 16px;
 
         .stat-icon {
-          width: 40px;
-          height: 40px;
-          font-size: 40px;
+          width: 36px;
+          height: 36px;
+          font-size: 36px;
         }
 
         .stat-info {
           .stat-number {
-            font-size: 1.8rem;
-          }
-
-          .stat-label {
-            font-size: 0.875rem;
+            font-size: 1.5rem;
           }
         }
       }
@@ -893,7 +750,7 @@
       gap: 16px;
       align-items: stretch;
 
-      .view-controls {
+      .view-toggle {
         justify-content: center;
       }
     }
@@ -920,24 +777,19 @@
   .table-container {
     overflow-x: auto;
 
-    .users-table {
+    .doctors-table {
       min-width: 800px;
     }
   }
 
-  .users-grid {
+  .doctors-grid {
     grid-template-columns: 1fr !important;
-  }
-
-  .quick-actions-fab {
-    bottom: 16px;
-    right: 16px;
   }
 }
 
 @media (max-width: 480px) {
-  .stats-cards {
-    grid-template-columns: 1fr;
+  .stats-overview {
+    grid-template-columns: 1fr 1fr;
 
     .stat-card {
       .stat-content {
@@ -945,14 +797,14 @@
         gap: 12px;
 
         .stat-icon {
-          width: 36px;
-          height: 36px;
-          font-size: 36px;
+          width: 32px;
+          height: 32px;
+          font-size: 32px;
         }
 
         .stat-info {
           .stat-number {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
           }
 
           .stat-label {
@@ -963,26 +815,16 @@
     }
   }
 
-  .redirect-card {
-    mat-card {
-      .redirect-content {
-        padding: 32px 16px;
+  .specializations-filter {
+    .specialization-chips {
+      .mat-chip-set {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
 
-        .redirect-icon {
-          width: 60px;
-          height: 60px;
-          font-size: 60px;
-        }
-
-        .redirect-info {
-          h2 {
-            font-size: 1.25rem;
-          }
-
-          p {
-            font-size: 0.875rem;
-          }
-        }
+      mat-chip {
+        font-size: 0.75rem;
+        min-height: 24px;
       }
     }
   }
@@ -998,8 +840,14 @@
     color: #ffffff;
   }
 
-  .nav-card,
-  .user-card {
+  .stat-card {
+    &:not(.total):not(.active):not(.inactive):not(.specializations) {
+      background: linear-gradient(135deg, #424242 0%, #303030 100%);
+      border-color: #616161;
+    }
+  }
+
+  .doctor-card {
     background-color: #424242;
     border-color: #616161;
 
@@ -1008,7 +856,7 @@
     }
   }
 
-  .users-table {
+  .doctors-table {
     background: #424242;
 
     .mat-header-cell {
@@ -1027,13 +875,6 @@
       color: #ffffff;
     }
   }
-
-  .redirect-card {
-    mat-card {
-      background: linear-gradient(135deg, #424242 0%, #303030 100%);
-      border-color: #616161;
-    }
-  }
 }
 
 /* ===================================================================
@@ -1041,25 +882,21 @@
    =================================================================== */
 
 // Focus styles
-.users-table {
+.doctors-table {
   .mat-row:focus {
     outline: 2px solid var(--primary-color, #1976d2);
     outline-offset: -2px;
   }
 }
 
-.user-card:focus,
-.nav-card:focus,
-.stat-card:focus {
+.doctor-card:focus {
   outline: 2px solid var(--primary-color, #1976d2);
   outline-offset: 2px;
 }
 
 // High contrast support
 @media (prefers-contrast: high) {
-  .user-card,
-  .nav-card,
-  .stat-card {
+  .doctor-card {
     border-width: 2px;
     border-color: #000000;
   }
@@ -1071,11 +908,9 @@
 
 // Reduced motion support
 @media (prefers-reduced-motion: reduce) {
-  .stat-card,
-  .nav-card,
-  .user-card,
-  .quick-actions-fab .mat-fab {
-    animation: none;
+
+  .doctor-card,
+  .stat-card {
     transition: none;
   }
 

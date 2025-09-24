@@ -1,6 +1,6 @@
 // ===================================================================
-// src/app/features/users/components/user-list/user-list.component.ts - UPDATED
-// Enhanced with Spring Boot Integration while maintaining backward compatibility
+// src/app/features/users/components/clinic-users/clinic-users.component.ts
+// New Standalone Component for Clinic Users Management
 // ===================================================================
 import { Component, inject, signal, OnInit, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -20,10 +20,13 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { MatSortModule, MatSort } from '@angular/material/sort';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatBadgeModule } from '@angular/material/badge';
 import { SelectionModel } from '@angular/cdk/collections';
 
 // Shared Components
@@ -31,15 +34,15 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.component';
 import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
-// Services & Models - Updated imports
+// Services & Models
 import { UserService, ClinicUserStats } from '../../services/user.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { SystemAdminService } from '../../../../core/services/system-admin.service';
-import { User, UserRole, UserFilters } from '../../models/user.model';
+import { User, UserRole } from '../../models/user.model';
 
 @Component({
-  selector: 'app-user-list',
+  selector: 'app-clinic-users',
   standalone: true,
   imports: [
     CommonModule,
@@ -61,13 +64,15 @@ import { User, UserRole, UserFilters } from '../../models/user.model';
     MatTableModule,
     MatPaginatorModule,
     MatSortModule,
+    MatSlideToggleModule,
+    MatBadgeModule,
     HeaderComponent,
     SidebarComponent
   ],
-  templateUrl: './user-list.component.html',
-  styleUrls: ['./user-list.component.scss']
+  templateUrl: './clinic-users.component.html',
+  styleUrls: ['./clinic-users.component.scss']
 })
-export class UserListComponent implements OnInit {
+export class ClinicUsersComponent implements OnInit {
 
   // ===================================================================
   // DEPENDENCY INJECTION
@@ -78,6 +83,7 @@ export class UserListComponent implements OnInit {
   private systemAdminService = inject(SystemAdminService);
   private router = inject(Router);
   private dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
 
   // ===================================================================
@@ -87,26 +93,21 @@ export class UserListComponent implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
 
   // ===================================================================
-  // COMPONENT STATE - Enhanced with new Spring Boot data
+  // COMPONENT STATE - SIGNALS
   // ===================================================================
-
-  // Loading and error states
-  loading = computed(() => this.userService.loading());
-  error = computed(() => this.userService.error());
-
-  // Data signals - integrated with new backend
-  clinicUsers = computed(() => this.userService.clinicUsers());
-  doctors = computed(() => this.userService.doctors());
-  clinicStats = computed(() => this.userService.clinicUserStats());
-  selectedUser = computed(() => this.userService.selectedUser());
-
-  // Legacy users signal for backward compatibility
-  users = signal<User[]>([]);
-
-  // UI state
+  loading = signal(false);
+  error = signal<string | null>(null);
   selectedTab = signal(0);
-  viewMode = signal<'table' | 'cards'>('table');
+
+  // Data signals
+  clinicUsers = signal<User[]>([]);
+  doctors = signal<User[]>([]);
+  clinicStats = signal<ClinicUserStats | null>(null);
+  selectedUser = signal<User | null>(null);
+
+  // UI state signals
   showFilters = signal(false);
+  viewMode = signal<'table' | 'grid'>('table');
 
   // ===================================================================
   // COMPUTED PROPERTIES
@@ -118,67 +119,66 @@ export class UserListComponent implements OnInit {
     return role === 'SYSTEM_ADMIN' || role === 'ADMIN';
   });
 
-  // Convert clinic users to legacy User format for backward compatibility
-  legacyUsers = computed(() => {
-    return this.clinicUsers().map(clinicUser => ({
-      id: clinicUser.id,
-      username: clinicUser.username,
-      email: clinicUser.email,
-      firstName: clinicUser.firstName,
-      lastName: clinicUser.lastName,
-      fullName: clinicUser.fullName,
-      phone: clinicUser.phone,
-      role: clinicUser.role,
-      specialization: clinicUser.specialization,
-      isActive: clinicUser.isActive,
-      clinicId: clinicUser.clinicId,
-      clinicName: clinicUser.clinicName,
-      createdAt: clinicUser.createdAt,
-      updatedAt: clinicUser.updatedAt,
-      lastLoginAt: clinicUser.lastLoginAt
-    } as User));
-  });
-
-  // Filter functionality
+  // Filter computed values
   filteredUsers = computed(() => {
-    const searchTerm = this.filtersForm.get('search')?.value?.toLowerCase() || '';
-    const roleFilter = this.filtersForm.get('role')?.value;
-    const statusFilter = this.filtersForm.get('isActive')?.value;
+    let users = this.clinicUsers();
+    const filters = this.filtersForm.value;
 
-    let filtered = this.clinicUsers();
-
-    if (searchTerm) {
-      filtered = filtered.filter(user =>
-        user.fullName.toLowerCase().includes(searchTerm) ||
-        user.email.toLowerCase().includes(searchTerm) ||
-        user.username.toLowerCase().includes(searchTerm)
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      users = users.filter(user =>
+        user.fullName.toLowerCase().includes(searchLower) ||
+        user.email.toLowerCase().includes(searchLower) ||
+        user.username.toLowerCase().includes(searchLower)
       );
     }
 
-    if (roleFilter && roleFilter !== 'all') {
-      filtered = filtered.filter(user => user.role === roleFilter);
+    if (filters.role && filters.role !== 'all') {
+      users = users.filter(user => user.role === filters.role);
     }
 
-    if (statusFilter !== null && statusFilter !== undefined) {
-      filtered = filtered.filter(user => user.isActive === statusFilter);
+    if (filters.activeOnly !== undefined) {
+      users = users.filter(user => user.isActive === filters.activeOnly);
     }
 
-    return filtered;
+    return users;
   });
 
-  // Statistics
-  totalUsers = computed(() => this.clinicUsers().length);
-  activeUsers = computed(() => this.clinicUsers().filter(u => u.isActive).length);
-  inactiveUsers = computed(() => this.clinicUsers().filter(u => !u.isActive).length);
-  totalDoctors = computed(() => this.doctors().length);
+  // Statistics computed values
+  activeUsersCount = computed(() =>
+    this.clinicUsers().filter(user => user.isActive).length
+  );
+
+  inactiveUsersCount = computed(() =>
+    this.clinicUsers().filter(user => !user.isActive).length
+  );
+
+  roleDistribution = computed(() => {
+    const users = this.clinicUsers();
+    const roles = {
+      ADMIN: 0,
+      DOCTOR: 0,
+      NURSE: 0,
+      RECEPTIONIST: 0
+    };
+
+    users.forEach(user => {
+      if (roles.hasOwnProperty(user.role)) {
+        roles[user.role as keyof typeof roles]++;
+      }
+    });
+
+    return roles;
+  });
 
   // ===================================================================
-  // FORMS AND TABLE SETUP
+  // FORMS
   // ===================================================================
   filtersForm: FormGroup;
-  dataSource = new MatTableDataSource<User>([]);
-  selection = new SelectionModel<User>(true, []);
 
+  // ===================================================================
+  // TABLE CONFIGURATION
+  // ===================================================================
   displayedColumns: string[] = [
     'select',
     'user',
@@ -188,6 +188,9 @@ export class UserListComponent implements OnInit {
     'lastLogin',
     'actions'
   ];
+
+  dataSource = new MatTableDataSource<User>([]);
+  selection = new SelectionModel<User>(true, []);
 
   // Role options for filtering
   roleOptions = [
@@ -203,7 +206,7 @@ export class UserListComponent implements OnInit {
     this.filtersForm = this.fb.group({
       search: [''],
       role: ['all'],
-      isActive: [true],
+      activeOnly: [true],
       specialization: ['']
     });
   }
@@ -214,63 +217,62 @@ export class UserListComponent implements OnInit {
   ngOnInit(): void {
     this.initializeComponent();
     this.setupFormSubscriptions();
-    this.loadAllData();
+    this.loadData();
   }
 
   ngAfterViewInit(): void {
-    this.setupTable();
+    this.dataSource.paginator = this.paginator;
+    this.dataSource.sort = this.sort;
+
+    // Custom filter predicate
+    this.dataSource.filterPredicate = (data: User, filter: string) => {
+      return data.fullName.toLowerCase().includes(filter.toLowerCase()) ||
+             data.email.toLowerCase().includes(filter.toLowerCase()) ||
+             data.username.toLowerCase().includes(filter.toLowerCase());
+    };
   }
 
   // ===================================================================
   // INITIALIZATION
   // ===================================================================
   private initializeComponent(): void {
-    // Subscribe to service data changes
-    this.userService.clinicUsers$.subscribe(clinicUsers => {
-      this.dataSource.data = clinicUsers;
-      // Update legacy users signal for backward compatibility
-      const legacyUsers = clinicUsers.map(cu => this.convertToLegacyUser(cu));
-      this.users.set(legacyUsers);
+    // Set up reactive data binding
+    this.userService.clinicUsers$.subscribe(users => {
+      this.clinicUsers.set(users);
+      this.dataSource.data = users;
+    });
+
+    this.userService.doctors$.subscribe(doctors => {
+      this.doctors.set(doctors);
     });
   }
 
   private setupFormSubscriptions(): void {
     // React to filter changes
-    this.filtersForm.valueChanges.subscribe(() => {
-      this.applyFilters();
+    this.filtersForm.valueChanges.subscribe(filters => {
+      this.applyFilters(filters);
     });
   }
 
-  private setupTable(): void {
-    if (this.paginator) {
-      this.dataSource.paginator = this.paginator;
-    }
-    if (this.sort) {
-      this.dataSource.sort = this.sort;
-    }
-
-    // Custom filter predicate
-    this.dataSource.filterPredicate = (data: User, filter: string) => {
-      const searchTerm = filter.toLowerCase();
-      return data.fullName.toLowerCase().includes(searchTerm) ||
-             data.email.toLowerCase().includes(searchTerm) ||
-             data.username.toLowerCase().includes(searchTerm);
-    };
-  }
-
   // ===================================================================
-  // DATA LOADING - Enhanced with new Spring Boot endpoints
+  // DATA LOADING
   // ===================================================================
-  async loadAllData(): Promise<void> {
+  async loadData(): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+
     try {
-      // Load all data concurrently using new endpoints
+      // Load all data concurrently
       await Promise.all([
         this.loadClinicUsers(),
         this.loadDoctors(),
-        this.loadUserStats()
+        this.loadClinicStats()
       ]);
-    } catch (error) {
-      console.error('Error loading user data:', error);
+    } catch (error: any) {
+      console.error('Error loading clinic users data:', error);
+      this.error.set('خطأ في تحميل بيانات المستخدمين');
+    } finally {
+      this.loading.set(false);
     }
   }
 
@@ -278,11 +280,17 @@ export class UserListComponent implements OnInit {
     const filters = this.filtersForm.value;
     return new Promise((resolve, reject) => {
       this.userService.getClinicUsers(
-        undefined, // clinicId handled by service
+        undefined, // clinicId will be handled by service
         filters.role !== 'all' ? filters.role : undefined,
-        filters.isActive
+        filters.activeOnly
       ).subscribe({
-        next: (response) => resolve(),
+        next: (response) => {
+          if (response.success) {
+            resolve();
+          } else {
+            reject(new Error(response.message));
+          }
+        },
         error: (error) => reject(error)
       });
     });
@@ -291,74 +299,46 @@ export class UserListComponent implements OnInit {
   private async loadDoctors(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.userService.getDoctors().subscribe({
-        next: (response) => resolve(),
+        next: (response) => {
+          if (response.success) {
+            resolve();
+          } else {
+            reject(new Error(response.message));
+          }
+        },
         error: (error) => reject(error)
       });
     });
   }
 
-  private async loadUserStats(): Promise<void> {
+  private async loadClinicStats(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.userService.getClinicUserStats().subscribe({
-        next: (response) => resolve(),
+        next: (response) => {
+          if (response.success && response.data) {
+            this.clinicStats.set(response.data);
+            resolve();
+          } else {
+            reject(new Error(response.message));
+          }
+        },
         error: (error) => reject(error)
       });
     });
   }
 
   // ===================================================================
-  // USER ACTIONS - Enhanced with new backend integration
+  // FILTERING & SEARCH
   // ===================================================================
-
-  viewUser(user: User): void {
-    this.router.navigate(['/users/profile', user.id]);
-  }
-
-  editUser(user: User): void {
-    this.router.navigate(['/users/edit', user.id]);
-  }
-
-  async toggleUserStatus(user: User): Promise<void> {
-    const action = user.isActive ? 'تعطيل' : 'تفعيل';
-    const message = `هل أنت متأكد من ${action} المستخدم ${user.fullName}؟`;
-
-    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
-      data: {
-        title: `${action} المستخدم`,
-        message: message,
-        confirmText: action,
-        cancelText: 'إلغاء'
-      }
-    });
-
-    const confirmed = await dialogRef.afterClosed().toPromise();
-    if (confirmed) {
-      this.userService.toggleUserStatus(user.id, !user.isActive).subscribe({
-        next: () => {
-          // Data will be updated automatically via service subscription
-        },
-        error: (error) => {
-          console.error('Error toggling user status:', error);
-        }
-      });
-    }
-  }
-
-  // ===================================================================
-  // FILTERING AND SEARCH
-  // ===================================================================
-
-  applyFilters(): void {
-    const filters = this.filtersForm.value;
-
-    // Apply text search to table
+  applyFilters(filters: any): void {
+    // Apply text search
     if (filters.search) {
       this.dataSource.filter = filters.search.trim().toLowerCase();
     } else {
       this.dataSource.filter = '';
     }
 
-    // Reload data with new filters
+    // Re-load data with new filters
     this.loadClinicUsers();
   }
 
@@ -366,7 +346,7 @@ export class UserListComponent implements OnInit {
     this.filtersForm.reset({
       search: '',
       role: 'all',
-      isActive: true,
+      activeOnly: true,
       specialization: ''
     });
   }
@@ -376,9 +356,49 @@ export class UserListComponent implements OnInit {
   }
 
   // ===================================================================
-  // TABLE SELECTION - Enhanced
+  // USER ACTIONS
   // ===================================================================
+  viewUser(user: User): void {
+    this.selectedUser.set(user);
+    this.router.navigate(['/users/profile', user.id]);
+  }
 
+  editUser(user: User): void {
+    this.router.navigate(['/users/edit', user.id]);
+  }
+
+  async toggleUserStatus(user: User): Promise<void> {
+    const action = user.isActive ? 'تعطيل' : 'تفعيل';
+    const confirmMessage = `هل أنت متأكد من ${action} المستخدم ${user.fullName}؟`;
+
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      data: {
+        title: `${action} المستخدم`,
+        message: confirmMessage,
+        confirmText: action,
+        cancelText: 'إلغاء'
+      }
+    });
+
+    const confirmed = await dialogRef.afterClosed().toPromise();
+    if (confirmed) {
+      this.userService.toggleUserStatus(user.id, !user.isActive).subscribe({
+        next: (response) => {
+          if (response.success) {
+            // Data will be updated via service subscription
+            this.notificationService.success(`تم ${action} المستخدم بنجاح`);
+          }
+        },
+        error: (error) => {
+          console.error('Error toggling user status:', error);
+        }
+      });
+    }
+  }
+
+  // ===================================================================
+  // TABLE SELECTION
+  // ===================================================================
   isAllSelected(): boolean {
     const numSelected = this.selection.selected.length;
     const numRows = this.dataSource.data.length;
@@ -401,18 +421,9 @@ export class UserListComponent implements OnInit {
   }
 
   // ===================================================================
-  // BULK OPERATIONS - New functionality
+  // BULK OPERATIONS
   // ===================================================================
-
-  async bulkActivateUsers(): Promise<void> {
-    await this.bulkToggleStatus(true);
-  }
-
-  async bulkDeactivateUsers(): Promise<void> {
-    await this.bulkToggleStatus(false);
-  }
-
-  private async bulkToggleStatus(activate: boolean): Promise<void> {
+  async bulkToggleStatus(activate: boolean): Promise<void> {
     const selectedUsers = this.selection.selected;
     if (selectedUsers.length === 0) {
       this.notificationService.warning('يرجى تحديد مستخدمين أولاً');
@@ -420,12 +431,12 @@ export class UserListComponent implements OnInit {
     }
 
     const action = activate ? 'تفعيل' : 'تعطيل';
-    const message = `هل أنت متأكد من ${action} ${selectedUsers.length} مستخدم؟`;
+    const confirmMessage = `هل أنت متأكد من ${action} ${selectedUsers.length} مستخدم؟`;
 
     const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
       data: {
         title: `${action} متعدد`,
-        message: message,
+        message: confirmMessage,
         confirmText: action,
         cancelText: 'إلغاء'
       }
@@ -433,6 +444,8 @@ export class UserListComponent implements OnInit {
 
     const confirmed = await dialogRef.afterClosed().toPromise();
     if (confirmed) {
+      this.loading.set(true);
+
       const promises = selectedUsers.map(user =>
         this.userService.toggleUserStatus(user.id, activate).toPromise()
       );
@@ -441,17 +454,19 @@ export class UserListComponent implements OnInit {
         await Promise.all(promises);
         this.notificationService.success(`تم ${action} المستخدمين بنجاح`);
         this.selection.clear();
+        await this.loadData();
       } catch (error) {
         console.error('Error in bulk operation:', error);
         this.notificationService.error('حدث خطأ في العملية');
+      } finally {
+        this.loading.set(false);
       }
     }
   }
 
   // ===================================================================
-  // UTILITY METHODS - Enhanced with new data
+  // UI UTILITY METHODS
   // ===================================================================
-
   getRoleDisplayName(role: UserRole): string {
     return this.userService.getRoleDisplayName(role);
   }
@@ -487,108 +502,24 @@ export class UserListComponent implements OnInit {
   }
 
   // ===================================================================
-  // BACKWARD COMPATIBILITY METHODS
+  // NAVIGATION
   // ===================================================================
-
-  /**
-   * Convert User to legacy User format for backward compatibility
-   */
-  private convertToLegacyUser(clinicUser: User): User {
-    return {
-      id: clinicUser.id,
-      username: clinicUser.username,
-      email: clinicUser.email,
-      firstName: clinicUser.firstName,
-      lastName: clinicUser.lastName,
-      fullName: clinicUser.fullName,
-      phone: clinicUser.phone,
-      role: clinicUser.role,
-      specialization: clinicUser.specialization,
-      isActive: clinicUser.isActive,
-      clinicId: clinicUser.clinicId,
-      clinicName: clinicUser.clinicName,
-      createdAt: clinicUser.createdAt,
-      updatedAt: clinicUser.updatedAt,
-      lastLoginAt: clinicUser.lastLoginAt
-    };
-  }
-
-  /**
-   * Legacy method - use loadClinicUsers instead
-   * @deprecated
-   */
-  loadUsers(): void {
-    this.loadClinicUsers();
-  }
-
-  /**
-   * Legacy method - maintained for compatibility
-   * @deprecated Use filteredUsers computed property instead
-   */
-  getFilteredUsers(): User[] {
-    return this.legacyUsers().filter(user => {
-      const filters = this.filtersForm.value;
-      let matches = true;
-
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        matches = matches && (
-          user.fullName?.toLowerCase().includes(searchTerm) ||
-          user.email?.toLowerCase().includes(searchTerm) ||
-          user.username?.toLowerCase().includes(searchTerm)
-        );
-      }
-
-      if (filters.role && filters.role !== 'all') {
-        matches = matches && user.role === filters.role;
-      }
-
-      if (filters.isActive !== null && filters.isActive !== undefined) {
-        matches = matches && user.isActive === filters.isActive;
-      }
-
-      return matches;
-    });
-  }
-
-  // ===================================================================
-  // NAVIGATION AND REFRESH
-  // ===================================================================
-
-  navigateToCreateUser(): void {
+  navigateToUserForm(): void {
     this.router.navigate(['/users/create']);
   }
 
+  navigateToUserProfile(userId: number): void {
+    this.router.navigate(['/users/profile', userId]);
+  }
+
+  // ===================================================================
+  // REFRESH & CLEANUP
+  // ===================================================================
   async refresh(): Promise<void> {
-    await this.loadAllData();
+    await this.loadData();
   }
 
-  // ===================================================================
-  // TAB FUNCTIONALITY
-  // ===================================================================
-
-  onTabChange(index: number): void {
-    this.selectedTab.set(index);
-
-    // Load specific data based on tab
-    switch (index) {
-      case 0: // All Users
-        this.loadClinicUsers();
-        break;
-      case 1: // Doctors Only
-        this.loadDoctors();
-        break;
-      case 2: // Statistics
-        this.loadUserStats();
-        break;
-    }
-  }
-
-  // ===================================================================
-  // CLEANUP
-  // ===================================================================
-
-  ngOnDestroy(): void {
+  onDestroy(): void {
     this.userService.clearState();
     this.selection.clear();
   }

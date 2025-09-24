@@ -1,6 +1,6 @@
 // ===================================================================
-// src/app/features/users/components/user-list/user-list.component.ts - UPDATED
-// Enhanced with Spring Boot Integration while maintaining backward compatibility
+// src/app/features/users/components/doctors-list/doctors-list.component.ts
+// Specialized Component for Doctors Management using /users/doctors endpoint
 // ===================================================================
 import { Component, inject, signal, OnInit, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -14,7 +14,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
@@ -24,6 +23,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { MatSortModule, MatSort } from '@angular/material/sort';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatListModule } from '@angular/material/list';
 import { SelectionModel } from '@angular/cdk/collections';
 
 // Shared Components
@@ -31,15 +32,15 @@ import { HeaderComponent } from '../../../../shared/components/header/header.com
 import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.component';
 import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
-// Services & Models - Updated imports
-import { UserService, ClinicUserStats } from '../../services/user.service';
+// Services & Models
+import { UserService } from '../../services/user.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { SystemAdminService } from '../../../../core/services/system-admin.service';
-import { User, UserRole, UserFilters } from '../../models/user.model';
+import { User, UserRole } from '../../models/user.model';
 
 @Component({
-  selector: 'app-user-list',
+  selector: 'app-doctors-list',
   standalone: true,
   imports: [
     CommonModule,
@@ -51,7 +52,6 @@ import { User, UserRole, UserFilters } from '../../models/user.model';
     MatInputModule,
     MatSelectModule,
     MatProgressSpinnerModule,
-    MatTabsModule,
     MatChipsModule,
     MatMenuModule,
     MatDividerModule,
@@ -61,13 +61,15 @@ import { User, UserRole, UserFilters } from '../../models/user.model';
     MatTableModule,
     MatPaginatorModule,
     MatSortModule,
+    MatBadgeModule,
+    MatListModule,
     HeaderComponent,
     SidebarComponent
   ],
-  templateUrl: './user-list.component.html',
-  styleUrls: ['./user-list.component.scss']
+  templateUrl: './doctors-list.component.html',
+  styleUrls: ['./doctors-list.component.scss']
 })
-export class UserListComponent implements OnInit {
+export class DoctorsListComponent implements OnInit {
 
   // ===================================================================
   // DEPENDENCY INJECTION
@@ -87,24 +89,16 @@ export class UserListComponent implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
 
   // ===================================================================
-  // COMPONENT STATE - Enhanced with new Spring Boot data
+  // COMPONENT STATE
   // ===================================================================
-
-  // Loading and error states
   loading = computed(() => this.userService.loading());
   error = computed(() => this.userService.error());
 
-  // Data signals - integrated with new backend
-  clinicUsers = computed(() => this.userService.clinicUsers());
+  // Data signals
   doctors = computed(() => this.userService.doctors());
-  clinicStats = computed(() => this.userService.clinicUserStats());
-  selectedUser = computed(() => this.userService.selectedUser());
-
-  // Legacy users signal for backward compatibility
-  users = signal<User[]>([]);
+  selectedDoctor = signal<User | null>(null);
 
   // UI state
-  selectedTab = signal(0);
   viewMode = signal<'table' | 'cards'>('table');
   showFilters = signal(false);
 
@@ -113,64 +107,53 @@ export class UserListComponent implements OnInit {
   // ===================================================================
   currentUser = computed(() => this.authService.currentUser());
   isSystemAdmin = computed(() => this.currentUser()?.role === 'SYSTEM_ADMIN');
-  canManageUsers = computed(() => {
+  canManageDoctors = computed(() => {
     const role = this.currentUser()?.role;
     return role === 'SYSTEM_ADMIN' || role === 'ADMIN';
   });
 
-  // Convert clinic users to legacy User format for backward compatibility
-  legacyUsers = computed(() => {
-    return this.clinicUsers().map(clinicUser => ({
-      id: clinicUser.id,
-      username: clinicUser.username,
-      email: clinicUser.email,
-      firstName: clinicUser.firstName,
-      lastName: clinicUser.lastName,
-      fullName: clinicUser.fullName,
-      phone: clinicUser.phone,
-      role: clinicUser.role,
-      specialization: clinicUser.specialization,
-      isActive: clinicUser.isActive,
-      clinicId: clinicUser.clinicId,
-      clinicName: clinicUser.clinicName,
-      createdAt: clinicUser.createdAt,
-      updatedAt: clinicUser.updatedAt,
-      lastLoginAt: clinicUser.lastLoginAt
-    } as User));
-  });
-
   // Filter functionality
-  filteredUsers = computed(() => {
+  filteredDoctors = computed(() => {
     const searchTerm = this.filtersForm.get('search')?.value?.toLowerCase() || '';
-    const roleFilter = this.filtersForm.get('role')?.value;
+    const specializationFilter = this.filtersForm.get('specialization')?.value;
     const statusFilter = this.filtersForm.get('isActive')?.value;
 
-    let filtered = this.clinicUsers();
+    let filtered = this.doctors();
 
     if (searchTerm) {
-      filtered = filtered.filter(user =>
-        user.fullName.toLowerCase().includes(searchTerm) ||
-        user.email.toLowerCase().includes(searchTerm) ||
-        user.username.toLowerCase().includes(searchTerm)
+      filtered = filtered.filter(doctor =>
+        doctor.fullName.toLowerCase().includes(searchTerm) ||
+        doctor.email?.toLowerCase().includes(searchTerm) ||
+        doctor.username.toLowerCase().includes(searchTerm) ||
+        doctor.specialization?.toLowerCase().includes(searchTerm)
       );
     }
 
-    if (roleFilter && roleFilter !== 'all') {
-      filtered = filtered.filter(user => user.role === roleFilter);
+    if (specializationFilter) {
+      filtered = filtered.filter(doctor =>
+        doctor.specialization?.toLowerCase().includes(specializationFilter.toLowerCase())
+      );
     }
 
     if (statusFilter !== null && statusFilter !== undefined) {
-      filtered = filtered.filter(user => user.isActive === statusFilter);
+      filtered = filtered.filter(doctor => doctor.isActive === statusFilter);
     }
 
     return filtered;
   });
 
   // Statistics
-  totalUsers = computed(() => this.clinicUsers().length);
-  activeUsers = computed(() => this.clinicUsers().filter(u => u.isActive).length);
-  inactiveUsers = computed(() => this.clinicUsers().filter(u => !u.isActive).length);
   totalDoctors = computed(() => this.doctors().length);
+  activeDoctors = computed(() => this.doctors().filter(d => d.isActive).length);
+  inactiveDoctors = computed(() => this.doctors().filter(d => !d.isActive).length);
+
+  // Get unique specializations for filtering
+  specializations = computed(() => {
+    const specs = this.doctors()
+      .map(doctor => doctor.specialization)
+      .filter((spec): spec is string => !!spec);
+    return [...new Set(specs)].sort();
+  });
 
   // ===================================================================
   // FORMS AND TABLE SETUP
@@ -181,30 +164,20 @@ export class UserListComponent implements OnInit {
 
   displayedColumns: string[] = [
     'select',
-    'user',
-    'role',
+    'doctor',
     'specialization',
+    'contact',
     'status',
-    'lastLogin',
+    'clinic',
     'actions'
-  ];
-
-  // Role options for filtering
-  roleOptions = [
-    { value: 'all', label: 'جميع الأدوار', icon: 'group' },
-    { value: UserRole.ADMIN, label: 'مدير العيادة', icon: 'manage_accounts' },
-    { value: UserRole.DOCTOR, label: 'طبيب', icon: 'medical_services' },
-    { value: UserRole.NURSE, label: 'ممرض/ممرضة', icon: 'health_and_safety' },
-    { value: UserRole.RECEPTIONIST, label: 'موظف استقبال', icon: 'support_agent' }
   ];
 
   constructor() {
     // Initialize filters form
     this.filtersForm = this.fb.group({
       search: [''],
-      role: ['all'],
-      isActive: [true],
-      specialization: ['']
+      specialization: [''],
+      isActive: [true]
     });
   }
 
@@ -214,7 +187,7 @@ export class UserListComponent implements OnInit {
   ngOnInit(): void {
     this.initializeComponent();
     this.setupFormSubscriptions();
-    this.loadAllData();
+    this.loadDoctors();
   }
 
   ngAfterViewInit(): void {
@@ -226,11 +199,8 @@ export class UserListComponent implements OnInit {
   // ===================================================================
   private initializeComponent(): void {
     // Subscribe to service data changes
-    this.userService.clinicUsers$.subscribe(clinicUsers => {
-      this.dataSource.data = clinicUsers;
-      // Update legacy users signal for backward compatibility
-      const legacyUsers = clinicUsers.map(cu => this.convertToLegacyUser(cu));
-      this.users.set(legacyUsers);
+    this.userService.doctors$.subscribe(doctors => {
+      this.dataSource.data = doctors;
     });
   }
 
@@ -253,78 +223,54 @@ export class UserListComponent implements OnInit {
     this.dataSource.filterPredicate = (data: User, filter: string) => {
       const searchTerm = filter.toLowerCase();
       return data.fullName.toLowerCase().includes(searchTerm) ||
-             data.email.toLowerCase().includes(searchTerm) ||
-             data.username.toLowerCase().includes(searchTerm);
+        (data.email?.toLowerCase().includes(searchTerm) || false) ||
+        data.username.toLowerCase().includes(searchTerm) ||
+        (data.specialization?.toLowerCase().includes(searchTerm) || false);
     };
   }
 
   // ===================================================================
-  // DATA LOADING - Enhanced with new Spring Boot endpoints
+  // DATA LOADING
   // ===================================================================
-  async loadAllData(): Promise<void> {
+  async loadDoctors(): Promise<void> {
     try {
-      // Load all data concurrently using new endpoints
-      await Promise.all([
-        this.loadClinicUsers(),
-        this.loadDoctors(),
-        this.loadUserStats()
-      ]);
+      await new Promise<void>((resolve, reject) => {
+        this.userService.getDoctors().subscribe({
+          next: (response) => {
+            if (response.success) {
+              resolve();
+            } else {
+              reject(new Error(response.message));
+            }
+          },
+          error: (error) => reject(error)
+        });
+      });
     } catch (error) {
-      console.error('Error loading user data:', error);
+      console.error('Error loading doctors:', error);
+      this.notificationService.error('خطأ في تحميل قائمة الأطباء');
     }
   }
 
-  private async loadClinicUsers(): Promise<void> {
-    const filters = this.filtersForm.value;
-    return new Promise((resolve, reject) => {
-      this.userService.getClinicUsers(
-        undefined, // clinicId handled by service
-        filters.role !== 'all' ? filters.role : undefined,
-        filters.isActive
-      ).subscribe({
-        next: (response) => resolve(),
-        error: (error) => reject(error)
-      });
-    });
-  }
-
-  private async loadDoctors(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.userService.getDoctors().subscribe({
-        next: (response) => resolve(),
-        error: (error) => reject(error)
-      });
-    });
-  }
-
-  private async loadUserStats(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.userService.getClinicUserStats().subscribe({
-        next: (response) => resolve(),
-        error: (error) => reject(error)
-      });
-    });
-  }
-
   // ===================================================================
-  // USER ACTIONS - Enhanced with new backend integration
+  // DOCTOR ACTIONS
   // ===================================================================
-
-  viewUser(user: User): void {
-    this.router.navigate(['/users/profile', user.id]);
+  viewDoctor(doctor: User): void {
+    this.selectedDoctor.set(doctor);
+    this.router.navigate(['/users/profile', doctor.id]);
   }
 
-  editUser(user: User): void {
-    this.router.navigate(['/users/edit', user.id]);
+  editDoctor(doctor: User): void {
+    this.router.navigate(['/users/edit', doctor.id]);
   }
 
-  async toggleUserStatus(user: User): Promise<void> {
-    const action = user.isActive ? 'تعطيل' : 'تفعيل';
-    const message = `هل أنت متأكد من ${action} المستخدم ${user.fullName}؟`;
+  async toggleDoctorStatus(doctor: User): Promise<void> {
+    const action = doctor.isActive ? 'تعطيل' : 'تفعيل';
+    const message = `هل أنت متأكد من ${action} الطبيب ${doctor.fullName}؟`;
 
     const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
       data: {
-        title: `${action} المستخدم`,
+        title: `${action} الطبيب`,
         message: message,
         confirmText: action,
         cancelText: 'إلغاء'
@@ -333,21 +279,31 @@ export class UserListComponent implements OnInit {
 
     const confirmed = await dialogRef.afterClosed().toPromise();
     if (confirmed) {
-      this.userService.toggleUserStatus(user.id, !user.isActive).subscribe({
+      this.userService.toggleUserStatus(doctor.id, !doctor.isActive).subscribe({
         next: () => {
           // Data will be updated automatically via service subscription
+          this.notificationService.success(`تم ${action} الطبيب بنجاح`);
         },
         error: (error) => {
-          console.error('Error toggling user status:', error);
+          console.error('Error toggling doctor status:', error);
         }
       });
+    }
+  }
+
+  contactDoctor(doctor: User, method: 'email' | 'phone'): void {
+    if (method === 'email' && doctor.email) {
+      window.open(`mailto:${doctor.email}`, '_blank');
+    } else if (method === 'phone' && doctor.phone) {
+      window.open(`tel:${doctor.phone}`, '_blank');
+    } else {
+      this.notificationService.warning('معلومات الاتصال غير متوفرة');
     }
   }
 
   // ===================================================================
   // FILTERING AND SEARCH
   // ===================================================================
-
   applyFilters(): void {
     const filters = this.filtersForm.value;
 
@@ -357,17 +313,13 @@ export class UserListComponent implements OnInit {
     } else {
       this.dataSource.filter = '';
     }
-
-    // Reload data with new filters
-    this.loadClinicUsers();
   }
 
   clearFilters(): void {
     this.filtersForm.reset({
       search: '',
-      role: 'all',
-      isActive: true,
-      specialization: ''
+      specialization: '',
+      isActive: true
     });
   }
 
@@ -375,10 +327,13 @@ export class UserListComponent implements OnInit {
     this.showFilters.set(!this.showFilters());
   }
 
-  // ===================================================================
-  // TABLE SELECTION - Enhanced
-  // ===================================================================
+  filterBySpecialization(specialization: string): void {
+    this.filtersForm.patchValue({ specialization });
+  }
 
+  // ===================================================================
+  // TABLE SELECTION
+  // ===================================================================
   isAllSelected(): boolean {
     const numSelected = this.selection.selected.length;
     const numRows = this.dataSource.data.length;
@@ -401,26 +356,17 @@ export class UserListComponent implements OnInit {
   }
 
   // ===================================================================
-  // BULK OPERATIONS - New functionality
+  // BULK OPERATIONS
   // ===================================================================
-
-  async bulkActivateUsers(): Promise<void> {
-    await this.bulkToggleStatus(true);
-  }
-
-  async bulkDeactivateUsers(): Promise<void> {
-    await this.bulkToggleStatus(false);
-  }
-
-  private async bulkToggleStatus(activate: boolean): Promise<void> {
-    const selectedUsers = this.selection.selected;
-    if (selectedUsers.length === 0) {
-      this.notificationService.warning('يرجى تحديد مستخدمين أولاً');
+  async bulkToggleStatus(activate: boolean): Promise<void> {
+    const selectedDoctors = this.selection.selected;
+    if (selectedDoctors.length === 0) {
+      this.notificationService.warning('يرجى تحديد أطباء أولاً');
       return;
     }
 
     const action = activate ? 'تفعيل' : 'تعطيل';
-    const message = `هل أنت متأكد من ${action} ${selectedUsers.length} مستخدم؟`;
+    const message = `هل أنت متأكد من ${action} ${selectedDoctors.length} طبيب؟`;
 
     const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
       data: {
@@ -433,14 +379,15 @@ export class UserListComponent implements OnInit {
 
     const confirmed = await dialogRef.afterClosed().toPromise();
     if (confirmed) {
-      const promises = selectedUsers.map(user =>
-        this.userService.toggleUserStatus(user.id, activate).toPromise()
+      const promises = selectedDoctors.map(doctor =>
+        this.userService.toggleUserStatus(doctor.id, activate).toPromise()
       );
 
       try {
         await Promise.all(promises);
-        this.notificationService.success(`تم ${action} المستخدمين بنجاح`);
+        this.notificationService.success(`تم ${action} الأطباء بنجاح`);
         this.selection.clear();
+        await this.loadDoctors();
       } catch (error) {
         console.error('Error in bulk operation:', error);
         this.notificationService.error('حدث خطأ في العملية');
@@ -449,21 +396,15 @@ export class UserListComponent implements OnInit {
   }
 
   // ===================================================================
-  // UTILITY METHODS - Enhanced with new data
+  // VIEW MODE MANAGEMENT
   // ===================================================================
-
-  getRoleDisplayName(role: UserRole): string {
-    return this.userService.getRoleDisplayName(role);
+  switchViewMode(mode: 'table' | 'cards'): void {
+    this.viewMode.set(mode);
   }
 
-  getRoleIcon(role: UserRole): string {
-    return this.userService.getRoleIcon(role);
-  }
-
-  getRoleColor(role: UserRole): string {
-    return this.userService.getRoleColor(role);
-  }
-
+  // ===================================================================
+  // UTILITY METHODS
+  // ===================================================================
   getStatusColor(isActive: boolean): string {
     return isActive ? 'primary' : 'warn';
   }
@@ -476,120 +417,103 @@ export class UserListComponent implements OnInit {
     return isActive ? 'check_circle' : 'cancel';
   }
 
-  formatDate(dateString: string): string {
-    if (!dateString) return 'غير محدد';
-    return new Date(dateString).toLocaleDateString('ar-SA');
+  getDoctorInitials(doctor: User): string {
+    const firstInitial = doctor.firstName?.charAt(0) || '';
+    const lastInitial = doctor.lastName?.charAt(0) || '';
+    return (firstInitial + lastInitial).toUpperCase();
   }
 
-  formatDateTime(dateString: string): string {
-    if (!dateString) return 'لم يسجل دخول';
-    return new Date(dateString).toLocaleString('ar-SA');
+  getSpecializationColor(specialization?: string): string {
+    if (!specialization) return 'primary';
+
+    // Generate consistent color based on specialization
+    const colors = ['primary', 'accent', 'warn'];
+    const hash = specialization.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    return colors[Math.abs(hash) % colors.length];
+  }
+
+  formatPhoneNumber(phone?: string): string {
+    if (!phone) return '';
+    // Simple phone formatting - adjust based on your locale
+    return phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+  }
+
+  getDoctorsCountBySpec(spec: string): number {
+    return this.doctors().filter(d => d.specialization === spec).length;
+  }
+  // ===================================================================
+  // EXPORT FUNCTIONALITY
+  // ===================================================================
+  exportDoctors(): void {
+    const doctors = this.filteredDoctors();
+
+    if (doctors.length === 0) {
+      this.notificationService.warning('لا توجد بيانات للتصدير');
+      return;
+    }
+
+    const exportData = doctors.map(doctor => ({
+      name: doctor.fullName,
+      username: doctor.username,
+      email: doctor.email || '',
+      phone: doctor.phone || '',
+      specialization: doctor.specialization || '',
+      status: doctor.isActive ? 'نشط' : 'معطل',
+      clinic: doctor.clinicName
+    }));
+
+    // Convert to CSV
+    const headers = ['الاسم', 'اسم المستخدم', 'البريد الإلكتروني', 'الهاتف', 'التخصص', 'الحالة', 'العيادة'];
+    const csvContent = [
+      headers.join(','),
+      ...exportData.map(row => Object.values(row).join(','))
+    ].join('\n');
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `doctors-list-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    this.notificationService.success('تم تصدير قائمة الأطباء بنجاح');
   }
 
   // ===================================================================
-  // BACKWARD COMPATIBILITY METHODS
+  // NAVIGATION
   // ===================================================================
-
-  /**
-   * Convert User to legacy User format for backward compatibility
-   */
-  private convertToLegacyUser(clinicUser: User): User {
-    return {
-      id: clinicUser.id,
-      username: clinicUser.username,
-      email: clinicUser.email,
-      firstName: clinicUser.firstName,
-      lastName: clinicUser.lastName,
-      fullName: clinicUser.fullName,
-      phone: clinicUser.phone,
-      role: clinicUser.role,
-      specialization: clinicUser.specialization,
-      isActive: clinicUser.isActive,
-      clinicId: clinicUser.clinicId,
-      clinicName: clinicUser.clinicName,
-      createdAt: clinicUser.createdAt,
-      updatedAt: clinicUser.updatedAt,
-      lastLoginAt: clinicUser.lastLoginAt
-    };
+  navigateToCreateDoctor(): void {
+    this.router.navigate(['/users/create'], {
+      queryParams: { role: 'DOCTOR' }
+    });
   }
 
-  /**
-   * Legacy method - use loadClinicUsers instead
-   * @deprecated
-   */
-  loadUsers(): void {
-    this.loadClinicUsers();
+  navigateToDoctorSchedule(doctorId: number): void {
+    this.router.navigate(['/schedules/doctor', doctorId]);
   }
 
-  /**
-   * Legacy method - maintained for compatibility
-   * @deprecated Use filteredUsers computed property instead
-   */
-  getFilteredUsers(): User[] {
-    return this.legacyUsers().filter(user => {
-      const filters = this.filtersForm.value;
-      let matches = true;
-
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        matches = matches && (
-          user.fullName?.toLowerCase().includes(searchTerm) ||
-          user.email?.toLowerCase().includes(searchTerm) ||
-          user.username?.toLowerCase().includes(searchTerm)
-        );
-      }
-
-      if (filters.role && filters.role !== 'all') {
-        matches = matches && user.role === filters.role;
-      }
-
-      if (filters.isActive !== null && filters.isActive !== undefined) {
-        matches = matches && user.isActive === filters.isActive;
-      }
-
-      return matches;
+  navigateToDoctorAppointments(doctorId: number): void {
+    this.router.navigate(['/appointments'], {
+      queryParams: { doctorId }
     });
   }
 
   // ===================================================================
-  // NAVIGATION AND REFRESH
+  // REFRESH AND CLEANUP
   // ===================================================================
-
-  navigateToCreateUser(): void {
-    this.router.navigate(['/users/create']);
-  }
-
   async refresh(): Promise<void> {
-    await this.loadAllData();
+    await this.loadDoctors();
   }
-
-  // ===================================================================
-  // TAB FUNCTIONALITY
-  // ===================================================================
-
-  onTabChange(index: number): void {
-    this.selectedTab.set(index);
-
-    // Load specific data based on tab
-    switch (index) {
-      case 0: // All Users
-        this.loadClinicUsers();
-        break;
-      case 1: // Doctors Only
-        this.loadDoctors();
-        break;
-      case 2: // Statistics
-        this.loadUserStats();
-        break;
-    }
-  }
-
-  // ===================================================================
-  // CLEANUP
-  // ===================================================================
 
   ngOnDestroy(): void {
-    this.userService.clearState();
     this.selection.clear();
+    this.selectedDoctor.set(null);
   }
 }

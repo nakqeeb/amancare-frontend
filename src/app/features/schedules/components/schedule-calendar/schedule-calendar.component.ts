@@ -181,9 +181,9 @@ export class ScheduleCalendarComponent implements OnInit {
 
   private loadDoctors(): void {
     this.userService.getDoctors().subscribe({
-      next: (doctors) => {
+      next: (res) => {
         // Filter out doctors without id or fullName, and provide defaults if needed
-        const validDoctors = doctors
+        const validDoctors = res.data!
           .filter(d => d.id !== undefined && d.fullName !== undefined)
           .map(d => ({
             id: d.id as number, // Assert that it's not undefined

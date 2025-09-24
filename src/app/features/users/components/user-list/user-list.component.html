@@ -1,361 +1,624 @@
 <!-- ===================================================================
-     User List Component Template
-     src/app/features/users/components/user-list/user-list.component.html
+     src/app/features/users/components/user-list/user-list.component.html - UPDATED
+     Enhanced Template with Spring Boot Integration
      =================================================================== -->
 
-<app-header></app-header>
+<div class="layout-container">
+  <!-- Header Component -->
+  <app-header />
 
-<app-sidebar>
-  <div class="users-container">
-    <!-- Page Header -->
-    <div class="page-header">
-      <div class="header-content">
-        <div class="title-section">
-          <h1 class="page-title">
-            <mat-icon>people</mat-icon>
-            إدارة المستخدمين
-          </h1>
-          <p class="page-subtitle">إدارة حسابات الموظفين والأطباء في النظام</p>
-        </div>
+  <!-- Main Layout with Sidebar -->
+  <app-sidebar>
+  <div class="layout-content">
 
-        <div class="header-actions">
-          <button mat-raised-button color="primary" (click)="onNewUser()">
-            <mat-icon>person_add</mat-icon>
-            إضافة مستخدم جديد
-          </button>
-        </div>
-      </div>
-    </div>
+    <!-- Main Content Area -->
+    <main class="main-content" [class.rtl]="true">
 
-    <!-- Statistics Cards -->
-    <div class="stats-section">
-      <div class="stats-grid">
-        <mat-card class="stat-card total">
-          <mat-card-content>
-            <div class="stat-icon">
+      <!-- ===================================================================
+           PAGE HEADER SECTION
+           =================================================================== -->
+      <div class="page-header">
+        <div class="header-content">
+          <div class="title-section">
+            <h1 class="page-title">
               <mat-icon>people</mat-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-number">{{ userStats()?.totalUsers || 0 }}</div>
-              <div class="stat-label">إجمالي المستخدمين</div>
-            </div>
-          </mat-card-content>
-        </mat-card>
+              إدارة المستخدمين
+            </h1>
+            <p class="page-subtitle">عرض وإدارة جميع مستخدمي النظام</p>
+          </div>
 
-        <mat-card class="stat-card active">
-          <mat-card-content>
-            <div class="stat-icon">
-              <mat-icon>check_circle</mat-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-number">{{ activeUsersCount() }}</div>
-              <div class="stat-label">المستخدمين النشطين</div>
-            </div>
-          </mat-card-content>
-        </mat-card>
+          <!-- Action Buttons -->
+          <div class="header-actions">
+            <button mat-stroked-button (click)="refresh()" [disabled]="loading()">
+              <mat-icon>refresh</mat-icon>
+              تحديث
+            </button>
 
-        <mat-card class="stat-card doctors">
-          <mat-card-content>
-            <div class="stat-icon">
-              <mat-icon>local_hospital</mat-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-number">{{ doctorsCount() }}</div>
-              <div class="stat-label">الأطباء</div>
-            </div>
-          </mat-card-content>
-        </mat-card>
+            <button mat-stroked-button routerLink="/users/statistics">
+              <mat-icon>analytics</mat-icon>
+              الإحصائيات
+            </button>
 
-        <mat-card class="stat-card nurses">
-          <mat-card-content>
-            <div class="stat-icon">
-              <mat-icon>healing</mat-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-number">{{ nursesCount() }}</div>
-              <div class="stat-label">الممرضين</div>
-            </div>
-          </mat-card-content>
-        </mat-card>
-      </div>
-    </div>
-
-    <!-- Filters Section -->
-    <mat-card class="filters-card">
-      <mat-card-content>
-        <form [formGroup]="filterForm" class="filters-form">
-          <div class="filters-row">
-            <!-- Search -->
-            <mat-form-field class="search-field">
-              <mat-label>البحث في المستخدمين</mat-label>
-              <input
-                matInput
-                formControlName="search"
-                placeholder="البحث بالاسم، البريد الإلكتروني، أو اسم المستخدم"
-              />
-              <mat-icon matSuffix>search</mat-icon>
-            </mat-form-field>
-
-            <!-- Role Filter -->
-            <mat-form-field>
-              <mat-label>الدور</mat-label>
-              <mat-select formControlName="role">
-                <mat-option
-                  *ngFor="let role of roleOptions"
-                  [value]="role.value"
-                >
-                  {{ role.label }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <!-- Status Filter -->
-            <mat-form-field>
-              <mat-label>الحالة</mat-label>
-              <mat-select formControlName="isActive">
-                <mat-option
-                  *ngFor="let status of statusOptions"
-                  [value]="status.value"
-                >
-                  {{ status.label }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <!-- Sort Options -->
-            <mat-form-field>
-              <mat-label>ترتيب حسب</mat-label>
-              <mat-select formControlName="sortBy">
-                <mat-option value="fullName">الاسم</mat-option>
-                <mat-option value="email">البريد الإلكتروني</mat-option>
-                <mat-option value="role">الدور</mat-option>
-                <mat-option value="createdAt">تاريخ الإنشاء</mat-option>
-                <mat-option value="lastLoginAt">آخر دخول</mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <!-- Clear Filters -->
-            <button
-              mat-stroked-button
-              type="button"
-              (click)="clearFilters()"
-              class="clear-filters-btn"
-            >
-              <mat-icon>clear</mat-icon>
-              مسح الفلاتر
+            <button mat-raised-button
+                    color="primary"
+                    (click)="navigateToCreateUser()"
+                    *ngIf="canManageUsers()">
+              <mat-icon>person_add</mat-icon>
+              إضافة مستخدم
             </button>
           </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
+        </div>
 
-    <!-- Bulk Actions -->
-    <div class="bulk-actions" *ngIf="hasSelectedUsers()">
-      <mat-card>
+        <!-- Enhanced Statistics Cards -->
+        <div class="stats-cards">
+          <mat-card class="stat-card primary" routerLink="/users/clinic-users">
+            <div class="stat-content">
+              <mat-icon class="stat-icon">people</mat-icon>
+              <div class="stat-info">
+                <span class="stat-number">{{ totalUsers() }}</span>
+                <span class="stat-label">إجمالي المستخدمين</span>
+              </div>
+            </div>
+          </mat-card>
+
+          <mat-card class="stat-card success">
+            <div class="stat-content">
+              <mat-icon class="stat-icon">check_circle</mat-icon>
+              <div class="stat-info">
+                <span class="stat-number">{{ activeUsers() }}</span>
+                <span class="stat-label">نشط</span>
+              </div>
+            </div>
+          </mat-card>
+
+          <mat-card class="stat-card warning" *ngIf="inactiveUsers() > 0">
+            <div class="stat-content">
+              <mat-icon class="stat-icon">cancel</mat-icon>
+              <div class="stat-info">
+                <span class="stat-number">{{ inactiveUsers() }}</span>
+                <span class="stat-label">معطل</span>
+              </div>
+            </div>
+          </mat-card>
+
+          <mat-card class="stat-card accent" routerLink="/users/doctors">
+            <div class="stat-content">
+              <mat-icon class="stat-icon">medical_services</mat-icon>
+              <div class="stat-info">
+                <span class="stat-number">{{ totalDoctors() }}</span>
+                <span class="stat-label">أطباء</span>
+              </div>
+            </div>
+          </mat-card>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           LOADING INDICATOR
+           =================================================================== -->
+      <div class="loading-container" *ngIf="loading()">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>جارٍ تحميل بيانات المستخدمين...</p>
+      </div>
+
+      <!-- ===================================================================
+           ERROR MESSAGE
+           =================================================================== -->
+      <mat-card class="error-card" *ngIf="error() && !loading()">
         <mat-card-content>
-          <div class="bulk-actions-content">
-            <div class="selection-info">
-              <mat-icon>info</mat-icon>
-              <span>تم اختيار {{ selection.selected.length }} مستخدم</span>
-            </div>
-
-            <div class="bulk-buttons">
-              <button
-                mat-stroked-button
-                color="primary"
-                (click)="onBulkActivate()"
-              >
-                <mat-icon>check_circle</mat-icon>
-                تفعيل المحدد
-              </button>
-
-              <button
-                mat-stroked-button
-                color="warn"
-                (click)="onBulkDeactivate()"
-              >
-                <mat-icon>block</mat-icon>
-                إلغاء تفعيل المحدد
-              </button>
-
-              <button mat-stroked-button (click)="selection.clear()">
-                <mat-icon>clear</mat-icon>
-                إلغاء التحديد
-              </button>
-            </div>
+          <div class="error-content">
+            <mat-icon color="warn">error</mat-icon>
+            <p>{{ error() }}</p>
+            <button mat-raised-button color="primary" (click)="refresh()">
+              إعادة المحاولة
+            </button>
           </div>
         </mat-card-content>
       </mat-card>
-    </div>
 
-    <!-- Users List -->
-    <mat-card class="table-card">
-      <mat-card-header>
-        <mat-card-title>
-          <div class="table-header">
-            <div class="table-title">
-              <mat-icon>list</mat-icon>
-              قائمة المستخدمين
-            </div>
+      <!-- ===================================================================
+           TABS NAVIGATION - Enhanced with new views
+           =================================================================== -->
+      <mat-tab-group [selectedIndex]="selectedTab()" (selectedTabChange)="onTabChange($event.index)">
 
-            <div class="table-actions">
-              <!-- Select All Checkbox -->
-              <mat-checkbox
-                [checked]="selection.hasValue() && isAllSelected()"
-                [indeterminate]="selection.hasValue() && !isAllSelected()"
-                (change)="onSelectAll()"
-                matTooltip="تحديد الكل"
-              >
-              </mat-checkbox>
+        <!-- All Users Tab -->
+        <mat-tab label="جميع المستخدمين">
+          <ng-template matTabContent>
+            <div class="tab-content">
 
-              <!-- Export Button -->
-              <button
-                mat-icon-button
-                matTooltip="تصدير البيانات"
-                (click)="exportUsers()"
-              >
-                <mat-icon>download</mat-icon>
-              </button>
+              <!-- Quick Navigation Cards -->
+              <div class="quick-nav-cards" *ngIf="isSystemAdmin()">
+                <mat-card class="nav-card" routerLink="/users/clinic-users">
+                  <div class="nav-content">
+                    <mat-icon>business</mat-icon>
+                    <div class="nav-info">
+                      <h3>إدارة مستخدمي العيادة</h3>
+                      <p>إدارة متقدمة للمستخدمين حسب العيادة</p>
+                    </div>
+                  </div>
+                </mat-card>
 
-              <!-- Refresh Button -->
-              <button
-                mat-icon-button
-                matTooltip="تحديث القائمة"
-                (click)="refreshUsers()"
-              >
-                <mat-icon>refresh</mat-icon>
-              </button>
-            </div>
-          </div>
-        </mat-card-title>
-      </mat-card-header>
-
-      <mat-card-content>
-        <!-- Loading Spinner -->
-        <div class="loading-container" *ngIf="loading()">
-          <mat-spinner diameter="50"></mat-spinner>
-          <p>جاري تحميل المستخدمين...</p>
-        </div>
-
-        <!-- Users Grid -->
-        <div class="users-grid" *ngIf="!loading()">
-          <div *ngFor="let user of users()" class="user-card">
-            <!-- Selection Checkbox -->
-            <div class="user-selection">
-              <mat-checkbox
-                [checked]="selection.isSelected(user)"
-                [disabled]="user.id === currentUser()?.id"
-                (change)="onSelectionChange(user)"
-              >
-              </mat-checkbox>
-            </div>
-
-            <!-- User Info -->
-            <div class="user-info-section">
-              <div class="user-avatar">
-                <img
-                  [src]="
-                    user.profilePicture || '/assets/images/default-avatar.png'
-                  "
-                  [alt]="user.fullName"
-                  class="avatar-img"
-                />
-                <div
-                  class="status-indicator"
-                  [class.active]="user.isActive"
-                  [class.inactive]="!user.isActive"
-                ></div>
+                <mat-card class="nav-card" routerLink="/users/statistics">
+                  <div class="nav-content">
+                    <mat-icon>analytics</mat-icon>
+                    <div class="nav-info">
+                      <h3>إحصائيات المستخدمين</h3>
+                      <p>تحليل مفصل لبيانات المستخدمين</p>
+                    </div>
+                  </div>
+                </mat-card>
               </div>
 
-              <div class="user-details">
-                <div class="user-name">
-                  {{ user.firstName }} {{ user.lastName }}
-                </div>
-                <div class="user-username">@{{ user.username }}</div>
-                <div class="user-email">{{ user.email }}</div>
-                <div class="user-phone" *ngIf="user.phone">
-                  📞 {{ user.phone }}
+              <!-- Filters and Controls -->
+              <mat-card class="controls-card">
+                <mat-card-content>
+                  <div class="controls-header">
+                    <div class="view-controls">
+                      <button mat-icon-button
+                              [color]="viewMode() === 'table' ? 'primary' : 'default'"
+                              (click)="viewMode.set('table')"
+                              matTooltip="عرض جدولي">
+                        <mat-icon>table_view</mat-icon>
+                      </button>
+                      <button mat-icon-button
+                              [color]="viewMode() === 'cards' ? 'primary' : 'default'"
+                              (click)="viewMode.set('cards')"
+                              matTooltip="عرض بطاقات">
+                        <mat-icon>view_module</mat-icon>
+                      </button>
+                    </div>
+
+                    <button mat-stroked-button (click)="toggleFilters()">
+                      <mat-icon>{{ showFilters() ? 'expand_less' : 'expand_more' }}</mat-icon>
+                      تصفية النتائج
+                    </button>
+                  </div>
+
+                  <!-- Filters Section -->
+                  <div class="filters-section" *ngIf="showFilters()" [@expandCollapse]>
+                    <form [formGroup]="filtersForm" class="filters-form">
+                      <div class="filters-row">
+                        <!-- Search Field -->
+                        <mat-form-field appearance="outline" class="search-field">
+                          <mat-label>البحث</mat-label>
+                          <input matInput
+                                 formControlName="search"
+                                 placeholder="البحث في الاسم، البريد الإلكتروني، أو اسم المستخدم">
+                          <mat-icon matSuffix>search</mat-icon>
+                        </mat-form-field>
+
+                        <!-- Role Filter -->
+                        <mat-form-field appearance="outline">
+                          <mat-label>الدور</mat-label>
+                          <mat-select formControlName="role">
+                            <mat-option *ngFor="let role of roleOptions" [value]="role.value">
+                              <mat-icon>{{ role.icon }}</mat-icon>
+                              <span>{{ role.label }}</span>
+                            </mat-option>
+                          </mat-select>
+                        </mat-form-field>
+
+                        <!-- Status Filter -->
+                        <mat-form-field appearance="outline">
+                          <mat-label>الحالة</mat-label>
+                          <mat-select formControlName="isActive">
+                            <mat-option [value]="true">النشطون فقط</mat-option>
+                            <mat-option [value]="false">المعطلون فقط</mat-option>
+                            <mat-option [value]="null">الكل</mat-option>
+                          </mat-select>
+                        </mat-form-field>
+                      </div>
+
+                      <!-- Filter Actions -->
+                      <div class="filter-actions">
+                        <button mat-button type="button" (click)="clearFilters()">
+                          <mat-icon>clear</mat-icon>
+                          مسح التصفية
+                        </button>
+
+                        <span class="results-count">
+                          {{ filteredUsers().length }} من {{ clinicUsers().length }} مستخدم
+                        </span>
+                      </div>
+                    </form>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <!-- Bulk Actions -->
+              <div class="bulk-actions" *ngIf="selection.selected.length > 0 && canManageUsers()">
+                <mat-card class="bulk-actions-card">
+                  <div class="bulk-content">
+                    <span class="selection-info">
+                      تم تحديد {{ selection.selected.length }} مستخدم
+                    </span>
+
+                    <div class="bulk-buttons">
+                      <button mat-stroked-button
+                              color="primary"
+                              (click)="bulkActivateUsers()">
+                        <mat-icon>check_circle</mat-icon>
+                        تفعيل المحددين
+                      </button>
+
+                      <button mat-stroked-button
+                              color="warn"
+                              (click)="bulkDeactivateUsers()">
+                        <mat-icon>cancel</mat-icon>
+                        تعطيل المحددين
+                      </button>
+                    </div>
+                  </div>
+                </mat-card>
+              </div>
+
+              <!-- Users Table View -->
+              <div class="users-table-view" *ngIf="viewMode() === 'table'">
+                <mat-card class="table-card">
+                  <mat-card-content>
+                    <div class="table-container">
+                      <table mat-table
+                             [dataSource]="dataSource"
+                             matSort
+                             class="users-table">
+
+                        <!-- Selection Column -->
+                        <ng-container matColumnDef="select" *ngIf="canManageUsers()">
+                          <th mat-header-cell *matHeaderCellDef>
+                            <mat-checkbox (change)="$event ? masterToggle() : null"
+                                          [checked]="selection.hasValue() && isAllSelected()"
+                                          [indeterminate]="selection.hasValue() && !isAllSelected()">
+                            </mat-checkbox>
+                          </th>
+                          <td mat-cell *matCellDef="let user">
+                            <mat-checkbox (click)="$event.stopPropagation()"
+                                          (change)="$event ? selection.toggle(user) : null"
+                                          [checked]="selection.isSelected(user)">
+                            </mat-checkbox>
+                          </td>
+                        </ng-container>
+
+                        <!-- User Information Column -->
+                        <ng-container matColumnDef="user">
+                          <th mat-header-cell *matHeaderCellDef mat-sort-header="fullName">
+                            معلومات المستخدم
+                          </th>
+                          <td mat-cell *matCellDef="let user" class="user-cell">
+                            <div class="user-info">
+                              <div class="user-avatar">
+                                <mat-icon class="avatar-icon">person</mat-icon>
+                              </div>
+                              <div class="user-details">
+                                <div class="user-name">{{ user.fullName }}</div>
+                                <div class="user-email">{{ user.email }}</div>
+                                <div class="user-username">@{{ user.username }}</div>
+                              </div>
+                            </div>
+                          </td>
+                        </ng-container>
+
+                        <!-- Role Column -->
+                        <ng-container matColumnDef="role">
+                          <th mat-header-cell *matHeaderCellDef mat-sort-header="role">
+                            الدور
+                          </th>
+                          <td mat-cell *matCellDef="let user">
+                            <mat-chip [color]="getRoleColor(user.role)">
+                              <mat-icon matChipAvatar>{{ getRoleIcon(user.role) }}</mat-icon>
+                              {{ getRoleDisplayName(user.role) }}
+                            </mat-chip>
+                          </td>
+                        </ng-container>
+
+                        <!-- Specialization Column -->
+                        <ng-container matColumnDef="specialization">
+                          <th mat-header-cell *matHeaderCellDef>التخصص</th>
+                          <td mat-cell *matCellDef="let user">
+                            <span *ngIf="user.specialization; else noSpecialization">
+                              {{ user.specialization }}
+                            </span>
+                            <ng-template #noSpecialization>
+                              <span class="no-data">غير محدد</span>
+                            </ng-template>
+                          </td>
+                        </ng-container>
+
+                        <!-- Status Column -->
+                        <ng-container matColumnDef="status">
+                          <th mat-header-cell *matHeaderCellDef mat-sort-header="isActive">
+                            الحالة
+                          </th>
+                          <td mat-cell *matCellDef="let user">
+                            <mat-chip [color]="getStatusColor(user.isActive)" class="status-chip">
+                              <mat-icon matChipAvatar>{{ getStatusIcon(user.isActive) }}</mat-icon>
+                              {{ getStatusText(user.isActive) }}
+                            </mat-chip>
+                          </td>
+                        </ng-container>
+
+                        <!-- Last Login Column -->
+                        <ng-container matColumnDef="lastLogin">
+                          <th mat-header-cell *matHeaderCellDef mat-sort-header="lastLoginAt">
+                            آخر دخول
+                          </th>
+                          <td mat-cell *matCellDef="let user">
+                            <span class="date-cell">{{ formatDateTime(user.lastLoginAt) }}</span>
+                          </td>
+                        </ng-container>
+
+                        <!-- Actions Column -->
+                        <ng-container matColumnDef="actions">
+                          <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+                          <td mat-cell *matCellDef="let user">
+                            <div class="actions-cell">
+                              <button mat-icon-button
+                                      [matTooltip]="'عرض الملف الشخصي'"
+                                      (click)="viewUser(user)">
+                                <mat-icon>visibility</mat-icon>
+                              </button>
+
+                              <button mat-icon-button
+                                      [matTooltip]="'تعديل'"
+                                      (click)="editUser(user)"
+                                      *ngIf="canManageUsers()">
+                                <mat-icon>edit</mat-icon>
+                              </button>
+
+                              <button mat-icon-button
+                                      [matTooltip]="user.isActive ? 'تعطيل' : 'تفعيل'"
+                                      [color]="user.isActive ? 'warn' : 'primary'"
+                                      (click)="toggleUserStatus(user)"
+                                      *ngIf="canManageUsers()">
+                                <mat-icon>{{ user.isActive ? 'cancel' : 'check_circle' }}</mat-icon>
+                              </button>
+
+                              <!-- More Actions Menu -->
+                              <button mat-icon-button [matMenuTriggerFor]="actionsMenu">
+                                <mat-icon>more_vert</mat-icon>
+                              </button>
+                              <mat-menu #actionsMenu="matMenu">
+                                <button mat-menu-item (click)="viewUser(user)">
+                                  <mat-icon>person</mat-icon>
+                                  <span>الملف الشخصي</span>
+                                </button>
+                                <button mat-menu-item (click)="editUser(user)" *ngIf="canManageUsers()">
+                                  <mat-icon>edit</mat-icon>
+                                  <span>تعديل</span>
+                                </button>
+                                <mat-divider></mat-divider>
+                                <button mat-menu-item (click)="toggleUserStatus(user)" *ngIf="canManageUsers()">
+                                  <mat-icon>{{ user.isActive ? 'cancel' : 'check_circle' }}</mat-icon>
+                                  <span>{{ user.isActive ? 'تعطيل' : 'تفعيل' }}</span>
+                                </button>
+                              </mat-menu>
+                            </div>
+                          </td>
+                        </ng-container>
+
+                        <!-- Table Header and Data Rows -->
+                        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                        <tr mat-row
+                            *matRowDef="let user; columns: displayedColumns;"
+                            class="user-row"
+                            [class.selected]="selection.isSelected(user)"
+                            (click)="viewUser(user)">
+                        </tr>
+
+                        <!-- No Data Row -->
+                        <tr class="mat-row no-data-row" *matNoDataRow>
+                          <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+                            <div class="no-data-content">
+                              <mat-icon class="no-data-icon">people_outline</mat-icon>
+                              <p class="no-data-message">
+                                <span *ngIf="filtersForm.get('search')?.value; else noUsers">
+                                  لم يتم العثور على مستخدمين يطابقون البحث "{{ filtersForm.get('search')?.value }}"
+                                </span>
+                                <ng-template #noUsers>
+                                  لا يوجد مستخدمون مسجلون حالياً
+                                </ng-template>
+                              </p>
+                              <button mat-raised-button
+                                      color="primary"
+                                      (click)="navigateToCreateUser()"
+                                      *ngIf="canManageUsers() && !filtersForm.get('search')?.value">
+                                <mat-icon>person_add</mat-icon>
+                                إضافة مستخدم جديد
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <!-- Paginator -->
+                      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]"
+                                     [pageSize]="25"
+                                     showFirstLastButtons
+                                     [length]="filteredUsers().length">
+                      </mat-paginator>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+
+              <!-- Users Cards View -->
+              <div class="users-cards-view" *ngIf="viewMode() === 'cards'">
+                <div class="users-grid">
+                  <mat-card class="user-card"
+                            *ngFor="let user of filteredUsers()"
+                            [class.inactive]="!user.isActive"
+                            (click)="viewUser(user)">
+                    <mat-card-header>
+                      <div mat-card-avatar class="user-avatar-large">
+                        <mat-icon>person</mat-icon>
+                      </div>
+                      <mat-card-title>{{ user.fullName }}</mat-card-title>
+                      <mat-card-subtitle>{{ getRoleDisplayName(user.role) }}</mat-card-subtitle>
+
+                      <!-- Card Actions Menu -->
+                      <button mat-icon-button [matMenuTriggerFor]="cardMenu" class="card-menu">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+                      <mat-menu #cardMenu="matMenu">
+                        <button mat-menu-item (click)="viewUser(user); $event.stopPropagation()">
+                          <mat-icon>visibility</mat-icon>
+                          <span>عرض الملف</span>
+                        </button>
+                        <button mat-menu-item (click)="editUser(user); $event.stopPropagation()" *ngIf="canManageUsers()">
+                          <mat-icon>edit</mat-icon>
+                          <span>تعديل</span>
+                        </button>
+                      </mat-menu>
+                    </mat-card-header>
+
+                    <mat-card-content>
+                      <div class="card-details">
+                        <!-- Role -->
+                        <div class="detail-item">
+                          <mat-icon [style.color]="getRoleColor(user.role)">
+                            {{ getRoleIcon(user.role) }}
+                          </mat-icon>
+                          <span>{{ getRoleDisplayName(user.role) }}</span>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="detail-item">
+                          <mat-icon [color]="user.isActive ? 'primary' : 'warn'">
+                            {{ getStatusIcon(user.isActive) }}
+                          </mat-icon>
+                          <span>{{ getStatusText(user.isActive) }}</span>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="detail-item" *ngIf="user.email">
+                          <mat-icon>email</mat-icon>
+                          <span>{{ user.email }}</span>
+                        </div>
+
+                        <!-- Phone -->
+                        <div class="detail-item" *ngIf="user.phone">
+                          <mat-icon>phone</mat-icon>
+                          <span>{{ user.phone }}</span>
+                        </div>
+
+                        <!-- Specialization -->
+                        <div class="detail-item" *ngIf="user.specialization">
+                          <mat-icon>medical_services</mat-icon>
+                          <span>{{ user.specialization }}</span>
+                        </div>
+
+                        <!-- Clinic -->
+                        <div class="detail-item" *ngIf="user.clinicName">
+                          <mat-icon>local_hospital</mat-icon>
+                          <span>{{ user.clinicName }}</span>
+                        </div>
+                      </div>
+                    </mat-card-content>
+
+                    <mat-card-actions align="end">
+                      <button mat-button (click)="viewUser(user); $event.stopPropagation()">
+                        عرض التفاصيل
+                      </button>
+                      <button mat-raised-button
+                              color="primary"
+                              (click)="editUser(user); $event.stopPropagation()"
+                              *ngIf="canManageUsers()">
+                        تعديل
+                      </button>
+                    </mat-card-actions>
+                  </mat-card>
                 </div>
               </div>
             </div>
+          </ng-template>
+        </mat-tab>
 
-            <!-- User Role & Status -->
-            <div class="user-badges">
-              <mat-chip class="role-chip role-{{ user.role.toLowerCase() }}">
-                {{ userService.getRoleDisplayName(user.role) }}
-              </mat-chip>
-
-              <mat-chip
-                [color]="user.isActive ? 'primary' : 'warn'"
-                selected
-                class="status-chip"
-              >
-                {{ user.isActive ? "نشط" : "غير نشط" }}
-              </mat-chip>
+        <!-- Doctors Tab -->
+        <mat-tab label="الأطباء">
+          <ng-template matTabContent>
+            <div class="tab-content">
+              <!-- Navigate to specialized doctors view -->
+              <div class="redirect-card">
+                <mat-card>
+                  <mat-card-content>
+                    <div class="redirect-content">
+                      <mat-icon class="redirect-icon">medical_services</mat-icon>
+                      <div class="redirect-info">
+                        <h2>عرض الأطباء المتخصص</h2>
+                        <p>للحصول على عرض مفصل ومتخصص للأطباء مع جميع الميزات المتقدمة</p>
+                        <button mat-raised-button color="primary" routerLink="/users/doctors">
+                          <mat-icon>arrow_forward</mat-icon>
+                          انتقال إلى قائمة الأطباء
+                        </button>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
             </div>
+          </ng-template>
+        </mat-tab>
 
-            <!-- User Actions -->
-            <div class="user-actions">
-              <button
-                mat-icon-button
-                matTooltip="عرض الملف"
-                (click)="onViewUser(user)"
-              >
-                <mat-icon>visibility</mat-icon>
-              </button>
-
-              <button
-                mat-icon-button
-                matTooltip="تعديل"
-                (click)="onEditUser(user)"
-                *ngIf="canEdit(user)"
-              >
-                <mat-icon>edit</mat-icon>
-              </button>
-
-              <button mat-icon-button [matMenuTriggerFor]="userActionsMenu">
-                <mat-icon>more_vert</mat-icon>
-              </button>
-
-              <mat-menu #userActionsMenu="matMenu">
-                <button
-                  mat-menu-item
-                  (click)="onResetPassword(user)"
-                  *ngIf="canResetPassword(user)"
-                >
-                  <mat-icon>key</mat-icon>
-                  <span>إعادة تعيين كلمة المرور</span>
-                </button>
-
-                <mat-divider></mat-divider>
-
-                <button
-                  mat-menu-item
-                  (click)="onToggleStatus(user)"
-                  *ngIf="canToggleStatus(user)"
-                  [class.text-warn]="user.isActive"
-                >
-                  <mat-icon>{{
-                    user.isActive ? "block" : "check_circle"
-                  }}</mat-icon>
-                  <span>{{ user.isActive ? "إلغاء التفعيل" : "تفعيل" }}</span>
-                </button>
-              </mat-menu>
+        <!-- Statistics Tab -->
+        <mat-tab label="الإحصائيات">
+          <ng-template matTabContent>
+            <div class="tab-content">
+              <!-- Navigate to statistics dashboard -->
+              <div class="redirect-card">
+                <mat-card>
+                  <mat-card-content>
+                    <div class="redirect-content">
+                      <mat-icon class="redirect-icon">analytics</mat-icon>
+                      <div class="redirect-info">
+                        <h2>لوحة الإحصائيات المتقدمة</h2>
+                        <p>عرض تحليلي مفصل لإحصائيات المستخدمين مع الرسوم البيانية والمقاييس</p>
+                        <button mat-raised-button color="primary" routerLink="/users/statistics">
+                          <mat-icon>arrow_forward</mat-icon>
+                          انتقال إلى لوحة الإحصائيات
+                        </button>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
             </div>
-          </div>
-        </div>
+          </ng-template>
+        </mat-tab>
+      </mat-tab-group>
 
-        <!-- Empty State -->
-        <div class="empty-state" *ngIf="!loading() && users().length === 0">
-          <mat-icon class="empty-icon">people_outline</mat-icon>
-          <h3>لا توجد مستخدمين</h3>
-          <p>لم يتم العثور على مستخدمين مطابقين لمعايير البحث</p>
-          <button mat-raised-button color="primary" (click)="onNewUser()">
+      <!-- Quick Actions FAB -->
+      <div class="quick-actions-fab" *ngIf="canManageUsers()">
+        <button mat-fab
+                color="primary"
+                [matMenuTriggerFor]="quickActionsMenu"
+                matTooltip="إجراءات سريعة">
+          <mat-icon>add</mat-icon>
+        </button>
+
+        <mat-menu #quickActionsMenu="matMenu" xPosition="before">
+          <button mat-menu-item (click)="navigateToCreateUser()">
             <mat-icon>person_add</mat-icon>
-            إضافة أول مستخدم
+            <span>إضافة مستخدم جديد</span>
           </button>
-        </div>
-      </mat-card-content>
-    </mat-card>
+
+          <button mat-menu-item routerLink="/users/clinic-users">
+            <mat-icon>business</mat-icon>
+            <span>إدارة مستخدمي العيادة</span>
+          </button>
+
+          <mat-divider></mat-divider>
+
+          <button mat-menu-item routerLink="/users/statistics">
+            <mat-icon>analytics</mat-icon>
+            <span>عرض الإحصائيات</span>
+          </button>
+
+          <button mat-menu-item (click)="refresh()">
+            <mat-icon>refresh</mat-icon>
+            <span>تحديث البيانات</span>
+          </button>
+        </mat-menu>
+      </div>
+    </main>
   </div>
-</app-sidebar>
+  </app-sidebar>
+</div>

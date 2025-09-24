@@ -1,0 +1,410 @@
+<!-- ===================================================================
+     src/app/features/users/components/user-statistics/user-statistics.component.html
+     Template for User Statistics Dashboard
+     =================================================================== -->
+
+<div class="layout-container">
+  <!-- Header Component -->
+  <app-header />
+
+  <!-- Main Layout with Sidebar -->
+  <app-sidebar>
+    <div class="layout-content">
+      <!-- Main Content Area -->
+      <main class="main-content" [class.rtl]="true">
+        <!-- ===================================================================
+           PAGE HEADER SECTION
+           =================================================================== -->
+        <div class="page-header">
+          <div class="header-content">
+            <div class="title-section">
+              <h1 class="page-title">
+                <mat-icon>analytics</mat-icon>
+                إحصائيات المستخدمين
+              </h1>
+              <p class="page-subtitle">تحليل مفصل لبيانات مستخدمي العيادة</p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="header-actions">
+              <button
+                mat-stroked-button
+                (click)="refresh()"
+                [disabled]="loading() || refreshing()"
+              >
+                <mat-icon>refresh</mat-icon>
+                <span *ngIf="!refreshing()">تحديث</span>
+                <span *ngIf="refreshing()">جارٍ التحديث...</span>
+              </button>
+
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="exportStatistics()"
+                [disabled]="!clinicStats()"
+              >
+                <mat-icon>download</mat-icon>
+                تصدير الإحصائيات
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+           LOADING INDICATOR
+           =================================================================== -->
+        <div class="loading-container" *ngIf="loading()">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p>جارٍ تحميل الإحصائيات...</p>
+        </div>
+
+        <!-- ===================================================================
+           ERROR MESSAGE
+           =================================================================== -->
+        <mat-card class="error-card" *ngIf="error() && !loading()">
+          <mat-card-content>
+            <div class="error-content">
+              <mat-icon color="warn">error</mat-icon>
+              <p>{{ error() }}</p>
+              <button mat-raised-button color="primary" (click)="refresh()">
+                إعادة المحاولة
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- ===================================================================
+           STATISTICS DASHBOARD - Main Content
+           =================================================================== -->
+        <div
+          class="statistics-container"
+          *ngIf="!loading() && !error() && clinicStats()"
+        >
+          <!-- Summary Statistics Cards -->
+          <div class="summary-section">
+            <h2 class="section-title">
+              <mat-icon>dashboard</mat-icon>
+              نظرة عامة
+            </h2>
+
+            <div class="summary-cards">
+              <mat-card
+                class="summary-card"
+                *ngFor="let stat of activityStatistics()"
+              >
+                <div class="card-content">
+                  <div class="stat-icon-container">
+                    <mat-icon class="stat-icon" [style.color]="stat.color">
+                      {{ stat.icon }}
+                    </mat-icon>
+                    <mat-icon
+                      class="trend-icon"
+                      [style.color]="getTrendColor(stat.trend)"
+                      *ngIf="stat.trend"
+                    >
+                      {{ getTrendIcon(stat.trend) }}
+                    </mat-icon>
+                  </div>
+                  <div class="stat-info">
+                    <span class="stat-value">{{ stat.value }}</span>
+                    <span class="stat-label">{{ stat.label }}</span>
+                  </div>
+                </div>
+              </mat-card>
+            </div>
+          </div>
+
+          <!-- Activity Status Overview -->
+          <div class="activity-overview" *ngIf="clinicStats()">
+            <mat-card class="overview-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>people</mat-icon>
+                  حالة النشاط
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="activity-content">
+                  <div class="activity-stats">
+                    <div class="activity-item active">
+                      <mat-icon>check_circle</mat-icon>
+                      <div class="activity-info">
+                        <span class="activity-number">{{
+                          clinicStats()?.activeUsers
+                        }}</span>
+                        <span class="activity-label">نشط</span>
+                      </div>
+                    </div>
+
+                    <div class="activity-item inactive">
+                      <mat-icon>cancel</mat-icon>
+                      <div class="activity-info">
+                        <span class="activity-number">{{
+                          clinicStats()?.inactiveUsers
+                        }}</span>
+                        <span class="activity-label">معطل</span>
+                      </div>
+                    </div>
+
+                    <div class="activity-percentage">
+                      <div class="percentage-display">
+                        <span class="percentage-value"
+                          >{{ activeUsersPercentage() }}%</span
+                        >
+                        <span class="percentage-label">معدل النشاط</span>
+                      </div>
+                      <mat-progress-bar
+                        mode="determinate"
+                        [value]="activeUsersPercentage()"
+                        color="primary"
+                      >
+                      </mat-progress-bar>
+                    </div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <!-- Role Distribution Section -->
+          <div class="role-distribution" *ngIf="roleStatistics().length > 0">
+            <h2 class="section-title">
+              <mat-icon>donut_large</mat-icon>
+              توزيع الأدوار
+            </h2>
+
+            <div class="role-cards">
+              <mat-card class="role-card" *ngFor="let role of roleStatistics()">
+                <div class="role-content">
+                  <div class="role-header">
+                    <mat-icon class="role-icon" [style.color]="role.color">
+                      {{ role.icon }}
+                    </mat-icon>
+                    <div class="role-info">
+                      <span class="role-name">{{ role.label }}</span>
+                      <span class="role-count">{{ role.count }} مستخدم</span>
+                    </div>
+                  </div>
+
+                  <div class="role-statistics">
+                    <div class="percentage-container">
+                      <span class="percentage">{{
+                        formatPercentage(role.percentage)
+                      }}</span>
+                    </div>
+
+                    <mat-progress-bar
+                      mode="determinate"
+                      [value]="role.percentage"
+                      [color]="
+                        role.role === userRole.DOCTOR ? 'accent' : 'primary'
+                      "
+                    >
+                    </mat-progress-bar>
+                  </div>
+                </div>
+              </mat-card>
+            </div>
+          </div>
+
+          <!-- Most Active Role Highlight -->
+          <div class="highlight-section" *ngIf="mostActiveRole()">
+            <mat-card class="highlight-card">
+              <div class="highlight-content">
+                <div class="highlight-icon">
+                  <mat-icon [style.color]="mostActiveRole()?.color">
+                    {{ mostActiveRole()?.icon }}
+                  </mat-icon>
+                </div>
+                <div class="highlight-info">
+                  <h3>الدور الأكثر انتشاراً</h3>
+                  <p>{{ mostActiveRole()?.label }}</p>
+                  <span class="highlight-count">
+                    {{ mostActiveRole()?.count }} مستخدم ({{
+                      formatPercentage(mostActiveRole()?.percentage || 0)
+                    }})
+                  </span>
+                </div>
+              </div>
+            </mat-card>
+          </div>
+
+          <!-- Recent Activity Section -->
+          <div class="recent-activity" *ngIf="recentActivity()">
+            <h2 class="section-title">
+              <mat-icon>history</mat-icon>
+              النشاط الأخير
+            </h2>
+
+            <div class="activity-cards">
+              <mat-card class="activity-card">
+                <mat-card-content>
+                  <div class="activity-item-content">
+                    <mat-icon color="primary">person_add</mat-icon>
+                    <div class="activity-details">
+                      <span class="activity-title">مستخدمون جدد هذا الشهر</span>
+                      <span class="activity-value">{{
+                        recentActivity()?.newUsersThisMonth || 0
+                      }}</span>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <mat-card class="activity-card">
+                <mat-card-content>
+                  <div class="activity-item-content">
+                    <mat-icon color="accent">login</mat-icon>
+                    <div class="activity-details">
+                      <span class="activity-title">نشطون هذا الأسبوع</span>
+                      <span class="activity-value">{{
+                        recentActivity()?.activeThisWeek || 0
+                      }}</span>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+
+              <mat-card
+                class="activity-card"
+                *ngIf="recentActivity()?.lastRegistrationDate"
+              >
+                <mat-card-content>
+                  <div class="activity-item-content">
+                    <mat-icon color="primary">schedule</mat-icon>
+                    <div class="activity-details">
+                      <span class="activity-title">آخر تسجيل</span>
+                      <span class="activity-value">
+                        {{
+                          formatDate(
+                            recentActivity()?.lastRegistrationDate || ""
+                          )
+                        }}
+                      </span>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </div>
+
+          <!-- Detailed Statistics Table -->
+          <div class="detailed-stats">
+            <mat-card class="stats-table-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>table_chart</mat-icon>
+                  تفاصيل الإحصائيات
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="stats-table">
+                  <div class="stats-row header">
+                    <div class="stats-cell">الدور</div>
+                    <div class="stats-cell">العدد</div>
+                    <div class="stats-cell">النسبة</div>
+                    <div class="stats-cell">الحالة</div>
+                  </div>
+
+                  <div class="stats-row" *ngFor="let role of roleStatistics()">
+                    <div class="stats-cell role-cell">
+                      <mat-icon [style.color]="role.color">{{
+                        role.icon
+                      }}</mat-icon>
+                      <span>{{ role.label }}</span>
+                    </div>
+                    <div class="stats-cell">{{ role.count }}</div>
+                    <div class="stats-cell">
+                      {{ formatPercentage(role.percentage) }}
+                    </div>
+                    <div class="stats-cell">
+                      <mat-chip
+                        [style.background-color]="role.color"
+                        [style.color]="'white'"
+                      >
+                        نشط
+                      </mat-chip>
+                    </div>
+                  </div>
+
+                  <!-- Total Row -->
+                  <div class="stats-row total" *ngIf="clinicStats()">
+                    <div class="stats-cell">
+                      <strong>الإجمالي</strong>
+                    </div>
+                    <div class="stats-cell">
+                      <strong>{{ clinicStats()?.totalUsers }}</strong>
+                    </div>
+                    <div class="stats-cell">
+                      <strong>100%</strong>
+                    </div>
+                    <div class="stats-cell">
+                      <mat-chip color="primary">
+                        {{ clinicStats()?.activeUsers }} نشط
+                      </mat-chip>
+                    </div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="quick-actions">
+            <mat-card class="actions-card">
+              <mat-card-header>
+                <mat-card-title>إجراءات سريعة</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="actions-buttons">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    routerLink="/users/list"
+                  >
+                    <mat-icon>people</mat-icon>
+                    عرض جميع المستخدمين
+                  </button>
+
+                  <button
+                    mat-raised-button
+                    color="accent"
+                    routerLink="/users/create"
+                  >
+                    <mat-icon>person_add</mat-icon>
+                    إضافة مستخدم جديد
+                  </button>
+
+                  <button mat-stroked-button (click)="refresh()">
+                    <mat-icon>refresh</mat-icon>
+                    تحديث الإحصائيات
+                  </button>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+
+        <!-- No Data State -->
+        <div
+          class="no-data-container"
+          *ngIf="!loading() && !error() && !clinicStats()"
+        >
+          <mat-card class="no-data-card">
+            <mat-card-content>
+              <div class="no-data-content">
+                <mat-icon class="no-data-icon">analytics</mat-icon>
+                <h2>لا توجد بيانات إحصائية</h2>
+                <p>لم يتم العثور على بيانات إحصائية لعرضها في الوقت الحالي</p>
+                <button mat-raised-button color="primary" (click)="refresh()">
+                  <mat-icon>refresh</mat-icon>
+                  إعادة تحميل البيانات
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </main>
+    </div>
+  </app-sidebar>
+</div>

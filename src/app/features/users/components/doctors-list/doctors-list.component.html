@@ -1,0 +1,711 @@
+<!-- ===================================================================
+     src/app/features/users/components/doctors-list/doctors-list.component.html
+     Template for Doctors List Component
+     =================================================================== -->
+
+<div class="layout-container">
+  <!-- Header Component -->
+  <app-header />
+
+  <!-- Main Layout with Sidebar -->
+  <app-sidebar>
+    <div class="layout-content">
+      <!-- Main Content Area -->
+      <main class="main-content" [class.rtl]="true">
+        <!-- ===================================================================
+           PAGE HEADER SECTION
+           =================================================================== -->
+        <div class="page-header">
+          <div class="header-content">
+            <div class="title-section">
+              <h1 class="page-title">
+                <mat-icon>medical_services</mat-icon>
+                قائمة الأطباء
+              </h1>
+              <p class="page-subtitle">عرض وإدارة الأطباء في العيادة</p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="header-actions">
+              <button
+                mat-stroked-button
+                (click)="refresh()"
+                [disabled]="loading()"
+              >
+                <mat-icon>refresh</mat-icon>
+                تحديث
+              </button>
+
+              <button mat-stroked-button (click)="exportDoctors()">
+                <mat-icon>download</mat-icon>
+                تصدير القائمة
+              </button>
+
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="navigateToCreateDoctor()"
+                *ngIf="canManageDoctors()"
+              >
+                <mat-icon>person_add</mat-icon>
+                إضافة طبيب
+              </button>
+            </div>
+          </div>
+
+          <!-- Statistics Cards -->
+          <div class="stats-overview">
+            <mat-card class="stat-card total">
+              <div class="stat-content">
+                <mat-icon class="stat-icon">medical_services</mat-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{ totalDoctors() }}</span>
+                  <span class="stat-label">إجمالي الأطباء</span>
+                </div>
+              </div>
+            </mat-card>
+
+            <mat-card class="stat-card active">
+              <div class="stat-content">
+                <mat-icon class="stat-icon">check_circle</mat-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{ activeDoctors() }}</span>
+                  <span class="stat-label">نشط</span>
+                </div>
+              </div>
+            </mat-card>
+
+            <mat-card class="stat-card inactive" *ngIf="inactiveDoctors() > 0">
+              <div class="stat-content">
+                <mat-icon class="stat-icon">cancel</mat-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{ inactiveDoctors() }}</span>
+                  <span class="stat-label">معطل</span>
+                </div>
+              </div>
+            </mat-card>
+
+            <mat-card class="stat-card specializations">
+              <div class="stat-content">
+                <mat-icon class="stat-icon">category</mat-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{
+                    specializations().length
+                  }}</span>
+                  <span class="stat-label">تخصص</span>
+                </div>
+              </div>
+            </mat-card>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+           LOADING INDICATOR
+           =================================================================== -->
+        <div class="loading-container" *ngIf="loading()">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p>جارٍ تحميل قائمة الأطباء...</p>
+        </div>
+
+        <!-- ===================================================================
+           ERROR MESSAGE
+           =================================================================== -->
+        <mat-card class="error-card" *ngIf="error() && !loading()">
+          <mat-card-content>
+            <div class="error-content">
+              <mat-icon color="warn">error</mat-icon>
+              <p>{{ error() }}</p>
+              <button mat-raised-button color="primary" (click)="refresh()">
+                إعادة المحاولة
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- ===================================================================
+           MAIN CONTENT - DOCTORS MANAGEMENT
+           =================================================================== -->
+        <div class="content-container" *ngIf="!loading() && !error()">
+          <!-- View Mode Toggle and Filters -->
+          <mat-card class="controls-card">
+            <mat-card-content>
+              <div class="controls-header">
+                <!-- View Mode Toggle -->
+                <div class="view-toggle">
+                  <button
+                    mat-icon-button
+                    [color]="viewMode() === 'table' ? 'primary' : 'default'"
+                    (click)="switchViewMode('table')"
+                    matTooltip="عرض جدولي"
+                  >
+                    <mat-icon>table_view</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    [color]="viewMode() === 'cards' ? 'primary' : 'default'"
+                    (click)="switchViewMode('cards')"
+                    matTooltip="عرض بطاقات"
+                  >
+                    <mat-icon>view_module</mat-icon>
+                  </button>
+                </div>
+
+                <!-- Filters Toggle -->
+                <button mat-stroked-button (click)="toggleFilters()">
+                  <mat-icon>{{
+                    showFilters() ? "expand_less" : "expand_more"
+                  }}</mat-icon>
+                  تصفية النتائج
+                  <!-- <mat-badge
+                  *ngIf="
+                    filtersForm.get('search')?.value ||
+                    filtersForm.get('specialization')?.value
+                  "
+                  color="accent"
+                  size="small"
+                  >●</mat-badge
+                > -->
+                  <span
+                    *ngIf="
+                      filtersForm.get('search')?.value ||
+                      filtersForm.get('specialization')?.value
+                    "
+                    matBadge="●"
+                    matBadgeColor="accent"
+                    matBadgeSize="small"
+                  ></span>
+                </button>
+              </div>
+
+              <!-- Filters Section -->
+              <div
+                class="filters-section"
+                *ngIf="showFilters()"
+                [@expandCollapse]
+              >
+                <form [formGroup]="filtersForm" class="filters-form">
+                  <div class="filters-row">
+                    <!-- Search Field -->
+                    <mat-form-field appearance="outline" class="search-field">
+                      <mat-label>البحث</mat-label>
+                      <input
+                        matInput
+                        formControlName="search"
+                        placeholder="البحث في الاسم، البريد، التخصص"
+                      />
+                      <mat-icon matSuffix>search</mat-icon>
+                    </mat-form-field>
+
+                    <!-- Specialization Filter -->
+                    <mat-form-field appearance="outline">
+                      <mat-label>التخصص</mat-label>
+                      <mat-select formControlName="specialization">
+                        <mat-option value="">جميع التخصصات</mat-option>
+                        <mat-option
+                          *ngFor="let spec of specializations()"
+                          [value]="spec"
+                        >
+                          {{ spec }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+
+                    <!-- Status Filter -->
+                    <mat-form-field appearance="outline">
+                      <mat-label>الحالة</mat-label>
+                      <mat-select formControlName="isActive">
+                        <mat-option [value]="true">النشطون فقط</mat-option>
+                        <mat-option [value]="false">المعطلون فقط</mat-option>
+                        <mat-option [value]="null">الكل</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+
+                  <!-- Filter Actions -->
+                  <div class="filter-actions">
+                    <button mat-button type="button" (click)="clearFilters()">
+                      <mat-icon>clear</mat-icon>
+                      مسح التصفية
+                    </button>
+
+                    <span class="results-count">
+                      {{ filteredDoctors().length }} من
+                      {{ totalDoctors() }} طبيب
+                    </span>
+                  </div>
+                </form>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Specializations Quick Filter -->
+          <div
+            class="specializations-filter"
+            *ngIf="specializations().length > 0"
+          >
+            <h3>التصفية السريعة حسب التخصص:</h3>
+            <div class="specialization-chips">
+              <mat-chip-set>
+                <mat-chip-option
+                  (click)="filterBySpecialization('')"
+                  [selected]="!filtersForm.get('specialization')?.value"
+                >
+                  الكل ({{ totalDoctors() }})
+                </mat-chip-option>
+
+                <mat-chip-option
+                  *ngFor="let spec of specializations()"
+                  (click)="filterBySpecialization(spec)"
+                  [selected]="filtersForm.get('specialization')?.value === spec"
+                >
+                  {{ spec }}
+                  ({{ getDoctorsCountBySpec(spec) }})
+                </mat-chip-option>
+              </mat-chip-set>
+            </div>
+          </div>
+
+          <!-- Bulk Actions -->
+          <div
+            class="bulk-actions"
+            *ngIf="selection.selected.length > 0 && canManageDoctors()"
+          >
+            <mat-card class="bulk-actions-card">
+              <div class="bulk-content">
+                <span class="selection-info">
+                  تم تحديد {{ selection.selected.length }} طبيب
+                </span>
+
+                <div class="bulk-buttons">
+                  <button
+                    mat-stroked-button
+                    color="primary"
+                    (click)="bulkToggleStatus(true)"
+                  >
+                    <mat-icon>check_circle</mat-icon>
+                    تفعيل المحددين
+                  </button>
+
+                  <button
+                    mat-stroked-button
+                    color="warn"
+                    (click)="bulkToggleStatus(false)"
+                  >
+                    <mat-icon>cancel</mat-icon>
+                    تعطيل المحددين
+                  </button>
+                </div>
+              </div>
+            </mat-card>
+          </div>
+
+          <!-- ===================================================================
+             TABLE VIEW
+             =================================================================== -->
+          <div class="table-view" *ngIf="viewMode() === 'table'">
+            <mat-card class="table-card">
+              <mat-card-content>
+                <div class="table-container">
+                  <table
+                    mat-table
+                    [dataSource]="dataSource"
+                    matSort
+                    class="doctors-table"
+                  >
+                    <!-- Selection Column -->
+                    <ng-container
+                      matColumnDef="select"
+                      *ngIf="canManageDoctors()"
+                    >
+                      <th mat-header-cell *matHeaderCellDef>
+                        <mat-checkbox
+                          (change)="$event ? masterToggle() : null"
+                          [checked]="selection.hasValue() && isAllSelected()"
+                          [indeterminate]="
+                            selection.hasValue() && !isAllSelected()
+                          "
+                        >
+                        </mat-checkbox>
+                      </th>
+                      <td mat-cell *matCellDef="let doctor">
+                        <mat-checkbox
+                          (click)="$event.stopPropagation()"
+                          (change)="$event ? selection.toggle(doctor) : null"
+                          [checked]="selection.isSelected(doctor)"
+                        >
+                        </mat-checkbox>
+                      </td>
+                    </ng-container>
+
+                    <!-- Doctor Information Column -->
+                    <ng-container matColumnDef="doctor">
+                      <th
+                        mat-header-cell
+                        *matHeaderCellDef
+                        mat-sort-header="fullName"
+                      >
+                        معلومات الطبيب
+                      </th>
+                      <td mat-cell *matCellDef="let doctor" class="doctor-cell">
+                        <div class="doctor-info">
+                          <div class="doctor-avatar">
+                            <span class="avatar-text">{{
+                              getDoctorInitials(doctor)
+                            }}</span>
+                          </div>
+                          <div class="doctor-details">
+                            <div class="doctor-name">
+                              د. {{ doctor.fullName }}
+                            </div>
+                            <div class="doctor-username">
+                              @{{ doctor.username }}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </ng-container>
+
+                    <!-- Specialization Column -->
+                    <ng-container matColumnDef="specialization">
+                      <th mat-header-cell *matHeaderCellDef>التخصص</th>
+                      <td mat-cell *matCellDef="let doctor">
+                        <mat-chip
+                          *ngIf="doctor.specialization; else noSpecialization"
+                          [color]="
+                            getSpecializationColor(doctor.specialization)
+                          "
+                        >
+                          {{ doctor.specialization }}
+                        </mat-chip>
+                        <ng-template #noSpecialization>
+                          <span class="no-data">غير محدد</span>
+                        </ng-template>
+                      </td>
+                    </ng-container>
+
+                    <!-- Contact Column -->
+                    <ng-container matColumnDef="contact">
+                      <th mat-header-cell *matHeaderCellDef>معلومات الاتصال</th>
+                      <td mat-cell *matCellDef="let doctor">
+                        <div class="contact-info">
+                          <div class="contact-item" *ngIf="doctor.email">
+                            <button
+                              mat-icon-button
+                              (click)="contactDoctor(doctor, 'email')"
+                              matTooltip="إرسال بريد إلكتروني"
+                            >
+                              <mat-icon>email</mat-icon>
+                            </button>
+                            <span class="contact-text">{{ doctor.email }}</span>
+                          </div>
+                          <div class="contact-item" *ngIf="doctor.phone">
+                            <button
+                              mat-icon-button
+                              (click)="contactDoctor(doctor, 'phone')"
+                              matTooltip="اتصال هاتفي"
+                            >
+                              <mat-icon>phone</mat-icon>
+                            </button>
+                            <span class="contact-text">{{
+                              formatPhoneNumber(doctor.phone)
+                            }}</span>
+                          </div>
+                        </div>
+                      </td>
+                    </ng-container>
+
+                    <!-- Status Column -->
+                    <ng-container matColumnDef="status">
+                      <th
+                        mat-header-cell
+                        *matHeaderCellDef
+                        mat-sort-header="isActive"
+                      >
+                        الحالة
+                      </th>
+                      <td mat-cell *matCellDef="let doctor">
+                        <mat-chip
+                          [color]="getStatusColor(doctor.isActive)"
+                          class="status-chip"
+                        >
+                          <mat-icon matChipAvatar>{{
+                            getStatusIcon(doctor.isActive)
+                          }}</mat-icon>
+                          {{ getStatusText(doctor.isActive) }}
+                        </mat-chip>
+                      </td>
+                    </ng-container>
+
+                    <!-- Clinic Column -->
+                    <ng-container matColumnDef="clinic">
+                      <th mat-header-cell *matHeaderCellDef>العيادة</th>
+                      <td mat-cell *matCellDef="let doctor">
+                        <span class="clinic-name">{{ doctor.clinicName }}</span>
+                      </td>
+                    </ng-container>
+
+                    <!-- Actions Column -->
+                    <ng-container matColumnDef="actions">
+                      <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+                      <td mat-cell *matCellDef="let doctor">
+                        <div class="actions-cell">
+                          <button
+                            mat-icon-button
+                            [matTooltip]="'عرض الملف الشخصي'"
+                            (click)="viewDoctor(doctor)"
+                          >
+                            <mat-icon>visibility</mat-icon>
+                          </button>
+
+                          <button
+                            mat-icon-button
+                            [matTooltip]="'الجدول الزمني'"
+                            (click)="navigateToDoctorSchedule(doctor.id)"
+                          >
+                            <mat-icon>schedule</mat-icon>
+                          </button>
+
+                          <button
+                            mat-icon-button
+                            [matTooltip]="'المواعيد'"
+                            (click)="navigateToDoctorAppointments(doctor.id)"
+                          >
+                            <mat-icon>event</mat-icon>
+                          </button>
+
+                          <!-- More Actions Menu -->
+                          <button
+                            mat-icon-button
+                            [matMenuTriggerFor]="actionsMenu"
+                          >
+                            <mat-icon>more_vert</mat-icon>
+                          </button>
+                          <mat-menu #actionsMenu="matMenu">
+                            <button mat-menu-item (click)="viewDoctor(doctor)">
+                              <mat-icon>person</mat-icon>
+                              <span>الملف الشخصي</span>
+                            </button>
+                            <button
+                              mat-menu-item
+                              (click)="editDoctor(doctor)"
+                              *ngIf="canManageDoctors()"
+                            >
+                              <mat-icon>edit</mat-icon>
+                              <span>تعديل</span>
+                            </button>
+                            <mat-divider></mat-divider>
+                            <button
+                              mat-menu-item
+                              (click)="contactDoctor(doctor, 'email')"
+                              *ngIf="doctor.email"
+                            >
+                              <mat-icon>email</mat-icon>
+                              <span>إرسال بريد</span>
+                            </button>
+                            <button
+                              mat-menu-item
+                              (click)="contactDoctor(doctor, 'phone')"
+                              *ngIf="doctor.phone"
+                            >
+                              <mat-icon>phone</mat-icon>
+                              <span>اتصال</span>
+                            </button>
+                            <mat-divider
+                              *ngIf="canManageDoctors()"
+                            ></mat-divider>
+                            <button
+                              mat-menu-item
+                              (click)="toggleDoctorStatus(doctor)"
+                              *ngIf="canManageDoctors()"
+                            >
+                              <mat-icon>{{
+                                doctor.isActive ? "cancel" : "check_circle"
+                              }}</mat-icon>
+                              <span>{{
+                                doctor.isActive ? "تعطيل" : "تفعيل"
+                              }}</span>
+                            </button>
+                          </mat-menu>
+                        </div>
+                      </td>
+                    </ng-container>
+
+                    <!-- Table Header and Data Rows -->
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr
+                      mat-row
+                      *matRowDef="let doctor; columns: displayedColumns"
+                      class="doctor-row"
+                      [class.selected]="selection.isSelected(doctor)"
+                      (click)="viewDoctor(doctor)"
+                    ></tr>
+
+                    <!-- No Data Row -->
+                    <tr class="mat-row no-data-row" *matNoDataRow>
+                      <td
+                        class="mat-cell"
+                        [attr.colspan]="displayedColumns.length"
+                      >
+                        <div class="no-data-content">
+                          <mat-icon class="no-data-icon"
+                            >medical_services</mat-icon
+                          >
+                          <p class="no-data-message">
+                            <span
+                              *ngIf="
+                                filtersForm.get('search')?.value;
+                                else noDoctors
+                              "
+                            >
+                              لم يتم العثور على أطباء يطابقون البحث "{{
+                                filtersForm.get("search")?.value
+                              }}"
+                            </span>
+                            <ng-template #noDoctors>
+                              لا يوجد أطباء مسجلون في العيادة حالياً
+                            </ng-template>
+                          </p>
+                          <button
+                            mat-raised-button
+                            color="primary"
+                            (click)="navigateToCreateDoctor()"
+                            *ngIf="
+                              canManageDoctors() &&
+                              !filtersForm.get('search')?.value
+                            "
+                          >
+                            <mat-icon>person_add</mat-icon>
+                            إضافة طبيب جديد
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <!-- Paginator -->
+                  <mat-paginator
+                    [pageSizeOptions]="[10, 25, 50, 100]"
+                    [pageSize]="25"
+                    showFirstLastButtons
+                    [length]="filteredDoctors().length"
+                  >
+                  </mat-paginator>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <!-- ===================================================================
+             CARDS VIEW
+             =================================================================== -->
+          <div class="cards-view" *ngIf="viewMode() === 'cards'">
+            <div class="doctors-grid">
+              <mat-card
+                class="doctor-card"
+                *ngFor="let doctor of filteredDoctors()"
+                [class.inactive]="!doctor.isActive"
+                (click)="viewDoctor(doctor)"
+              >
+                <mat-card-header>
+                  <div mat-card-avatar class="doctor-avatar-large">
+                    <span>{{ getDoctorInitials(doctor) }}</span>
+                  </div>
+                  <mat-card-title>د. {{ doctor.fullName }}</mat-card-title>
+                  <mat-card-subtitle>{{
+                    doctor.specialization || "غير محدد التخصص"
+                  }}</mat-card-subtitle>
+
+                  <!-- Card Actions Menu -->
+                  <button
+                    mat-icon-button
+                    [matMenuTriggerFor]="cardMenu"
+                    class="card-menu"
+                  >
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #cardMenu="matMenu">
+                    <button
+                      mat-menu-item
+                      (click)="viewDoctor(doctor); $event.stopPropagation()"
+                    >
+                      <mat-icon>visibility</mat-icon>
+                      <span>عرض الملف</span>
+                    </button>
+                    <button
+                      mat-menu-item
+                      (click)="editDoctor(doctor); $event.stopPropagation()"
+                      *ngIf="canManageDoctors()"
+                    >
+                      <mat-icon>edit</mat-icon>
+                      <span>تعديل</span>
+                    </button>
+                  </mat-menu>
+                </mat-card-header>
+
+                <mat-card-content>
+                  <div class="card-details">
+                    <!-- Status -->
+                    <div class="detail-item">
+                      <mat-icon [color]="doctor.isActive ? 'primary' : 'warn'">
+                        {{ getStatusIcon(doctor.isActive) }}
+                      </mat-icon>
+                      <span>{{ getStatusText(doctor.isActive) }}</span>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="detail-item" *ngIf="doctor.email">
+                      <mat-icon>email</mat-icon>
+                      <span>{{ doctor.email }}</span>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="detail-item" *ngIf="doctor.phone">
+                      <mat-icon>phone</mat-icon>
+                      <span>{{ formatPhoneNumber(doctor.phone) }}</span>
+                    </div>
+
+                    <!-- Clinic -->
+                    <div class="detail-item">
+                      <mat-icon>local_hospital</mat-icon>
+                      <span>{{ doctor.clinicName }}</span>
+                    </div>
+                  </div>
+                </mat-card-content>
+
+                <mat-card-actions align="end">
+                  <button
+                    mat-button
+                    (click)="
+                      contactDoctor(doctor, 'phone'); $event.stopPropagation()
+                    "
+                    *ngIf="doctor.phone"
+                  >
+                    <mat-icon>phone</mat-icon>
+                    اتصال
+                  </button>
+                  <button
+                    mat-button
+                    (click)="
+                      contactDoctor(doctor, 'email'); $event.stopPropagation()
+                    "
+                    *ngIf="doctor.email"
+                  >
+                    <mat-icon>email</mat-icon>
+                    بريد
+                  </button>
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="viewDoctor(doctor); $event.stopPropagation()"
+                  >
+                    عرض التفاصيل
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </app-sidebar>
+</div>

@@ -187,9 +187,9 @@ export class ScheduleFormComponent implements OnInit {
 
   private loadDoctors(): void {
     this.userService.getDoctors().subscribe({
-      next: (doctors) => {
-        console.log('loadDoctors', doctors);
-        this.doctors.set(doctors.map(d => ({
+      next: (res) => {
+        console.log('loadDoctors', res);
+        this.doctors.set(res.data!.map(d => ({
           id: d.id as number,
           fullName: d.fullName as string,
           specialization: d.specialization

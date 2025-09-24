@@ -141,31 +141,47 @@ export class SidebarComponent implements OnInit, OnDestroy {
           }
         ]
       },
-       {
-        title: 'المستخدمين',
-        icon: 'people',
-        expanded: false,
-        roles: ['SYSTEM_ADMIN', 'ADMIN'],
-        route: '',
-        badge: 5,
+      {
+        title: 'إدارة المستخدمين',
+        icon: 'admin_panel_settings',
+        route: '/users',
+        roles: ['ADMIN', 'SYSTEM_ADMIN'],
         children: [
           {
-            title: 'قائمة المستخدمين',
-            icon: 'list',
-            route: '/users',
-            roles: ['SYSTEM_ADMIN', 'ADMIN']
+            title: 'جميع المستخدمين',
+            icon: 'people',
+            route: '/users/list',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
           },
           {
-            title: 'إضافة مستخدم',
-            icon: 'person_add',
-            route: '/users/new',
-            roles: ['SYSTEM_ADMIN', 'ADMIN']
+            title: 'مستخدمو العيادة',
+            icon: 'business',
+            route: '/users/clinic-users',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
           },
           {
-            title: 'الأدوار',
-            icon: 'add_moderator',
-            route: '/users/roles',
-            roles: ['SYSTEM_ADMIN', 'ADMIN']
+            title: 'قائمة الأطباء',
+            icon: 'medical_services',
+            route: '/users/doctors',
+            roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'إحصائيات المستخدمين',
+            icon: 'analytics',
+            route: '/users/statistics',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
+          },
+          {
+            title: 'الممرضين',
+            icon: 'health_and_safety',
+            route: '/users/nurses',
+            roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR']
+          },
+          {
+            title: 'موظفو الاستقبال',
+            icon: 'support_agent',
+            route: '/users/receptionists',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
           }
         ]
       },
@@ -219,7 +235,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       // },
       {
         title: 'السجلات الطبية',
-        icon: 'folder_shared',
+        icon: 'medical_services',
         route: '/medical-records',
         roles: ['DOCTOR', 'NURSE', 'ADMIN', 'SYSTEM_ADMIN']
       },

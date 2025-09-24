@@ -197,11 +197,16 @@
                   <!-- Username -->
                   <mat-form-field class="form-field">
                     <mat-label>اسم المستخدم</mat-label>
-                    <input
+                    <!-- <input
                       matInput
                       formControlName="username"
                       placeholder="اختر اسم مستخدم فريد"
                       (blur)="checkUsernameAvailability()"
+                    /> -->
+                    <input
+                      matInput
+                      formControlName="username"
+                      placeholder="اختر اسم مستخدم فريد"
                     />
                     <mat-icon matSuffix>person</mat-icon>
                     <mat-error>{{
