@@ -1,587 +1,679 @@
-<!-- ===================================================================
-     User Form Component Template
-     src/app/features/users/components/user-form/user-form.component.html
-     =================================================================== -->
+<!--
+// ===================================================================
+// Updated User Form Component Template
+// src/app/features/users/components/user-form/user-form.component.html
+// ===================================================================
+-->
 
-<app-header></app-header>
+<div class="user-form-container">
+  <!-- Header -->
+  <app-header></app-header>
 
-<app-sidebar>
-  <div class="user-form-container">
-    <!-- Page Header -->
-    <div class="page-header">
-      <div class="header-content">
-        <div class="title-section">
-          <button mat-icon-button (click)="onBack()" class="back-btn">
-            <mat-icon>arrow_back</mat-icon>
-          </button>
-
-          <div class="title-info">
-            <h1 class="page-title">
-              <mat-icon>{{ isEditMode() ? "edit" : "person_add" }}</mat-icon>
-              {{ isEditMode() ? "تعديل المستخدم" : "إضافة مستخدم جديد" }}
-            </h1>
-            <p class="page-subtitle">
-              {{
-                isEditMode()
-                  ? "تعديل بيانات المستخدم وإعداداته"
-                  : "إنشاء حساب مستخدم جديد في النظام"
-              }}
-            </p>
-          </div>
-        </div>
-
-        <div class="header-actions">
-          <button mat-stroked-button (click)="onCancel()" [disabled]="saving()">
-            <mat-icon>cancel</mat-icon>
-            إلغاء
-          </button>
-
-          <button
-            mat-raised-button
-            color="primary"
-            (click)="onSubmit()"
-            [disabled]="saving()"
-          >
-            <mat-icon>{{ saving() ? "hourglass_empty" : "save" }}</mat-icon>
-            {{ saving() ? "جاري الحفظ..." : isEditMode() ? "تحديث" : "حفظ" }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div class="loading-container" *ngIf="loading()">
-      <mat-spinner diameter="50"></mat-spinner>
-      <p>جاري تحميل بيانات المستخدم...</p>
-    </div>
-
-    <!-- Form Content -->
-    <div class="form-content" *ngIf="!loading()">
-      <!-- Stepper Form -->
-      <mat-card class="stepper-card">
-        <mat-card-content>
-          <mat-stepper #stepper orientation="horizontal" [linear]="false">
-            <!-- Step 1: Basic Information -->
-            <mat-step [stepControl]="basicInfoForm" label="المعلومات الأساسية">
-              <ng-template matStepLabel>المعلومات الأساسية</ng-template>
-
-              <div class="step-content">
-                <div class="step-header">
-                  <mat-icon>person</mat-icon>
+  <!-- Sidebar -->
+  <app-sidebar>
+    <div class="main-content">
+      <!-- Content Area -->
+      <div class="content-area">
+        <div class="form-wrapper">
+          <mat-card class="user-form-card">
+            <!-- Form Header -->
+            <div class="form-header">
+              <div class="header-content">
+                <div class="title-section">
+                  <mat-icon class="form-icon">{{
+                    isEditMode() ? "edit" : "person_add"
+                  }}</mat-icon>
                   <div>
-                    <h3>المعلومات الشخصية</h3>
-                    <p>أدخل البيانات الأساسية للمستخدم</p>
+                    <h2>
+                      {{
+                        isEditMode() ? "تعديل المستخدم" : "إضافة مستخدم جديد"
+                      }}
+                    </h2>
+                    <p class="subtitle">
+                      {{
+                        isEditMode()
+                          ? "تحديث معلومات المستخدم"
+                          : "إنشاء حساب مستخدم جديد في النظام"
+                      }}
+                    </p>
                   </div>
                 </div>
-
-                <form [formGroup]="basicInfoForm" class="basic-form">
-                  <!-- Profile Picture -->
-                  <div class="profile-section">
-                    <div class="profile-picture-container">
-                      <div class="profile-picture">
-                        <img
-                          [src]="
-                            basicInfoForm.get('profilePicture')?.value ||
-                            '/assets/images/default-avatar.png'
-                          "
-                          alt="Profile Picture"
-                          class="avatar-preview"
-                        />
-                        <div class="upload-overlay">
-                          <mat-icon>camera_alt</mat-icon>
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          (change)="onProfilePictureSelected($event)"
-                          class="file-input"
-                        />
-                      </div>
-                      <p class="upload-hint">اضغط لتحديد صورة (اختياري)</p>
-                    </div>
-                  </div>
-
-                  <!-- Name Fields -->
-                  <div class="form-row">
-                    <mat-form-field class="form-field">
-                      <mat-label>الاسم الأول</mat-label>
-                      <input
-                        matInput
-                        formControlName="firstName"
-                        placeholder="أدخل الاسم الأول"
-                      />
-                      <mat-error>{{
-                        getErrorMessage(basicInfoForm, "firstName")
-                      }}</mat-error>
-                    </mat-form-field>
-
-                    <mat-form-field class="form-field">
-                      <mat-label>اسم العائلة</mat-label>
-                      <input
-                        matInput
-                        formControlName="lastName"
-                        placeholder="أدخل اسم العائلة"
-                      />
-                      <mat-error>{{
-                        getErrorMessage(basicInfoForm, "lastName")
-                      }}</mat-error>
-                    </mat-form-field>
-                  </div>
-
-                  <!-- Contact Information -->
-                  <div class="form-row">
-                    <mat-form-field class="form-field">
-                      <mat-label>البريد الإلكتروني</mat-label>
-                      <!-- <input
-                        matInput
-                        type="email"
-                        formControlName="email"
-                        placeholder="example@example.com"
-                        (blur)="checkEmailAvailability()"
-                      /> -->
-                      <input
-                        matInput
-                        type="email"
-                        formControlName="email"
-                        placeholder="example@example.com"
-                      />
-                      <mat-icon matSuffix>email</mat-icon>
-                      <mat-error>{{
-                        getErrorMessage(basicInfoForm, "email")
-                      }}</mat-error>
-                    </mat-form-field>
-
-                    <mat-form-field class="form-field">
-                      <mat-label>رقم الهاتف (اختياري)</mat-label>
-                      <input
-                        matInput
-                        formControlName="phone"
-                        placeholder="+966501234567"
-                      />
-                      <mat-icon matSuffix>phone</mat-icon>
-                      <mat-error>{{
-                        getErrorMessage(basicInfoForm, "phone")
-                      }}</mat-error>
-                    </mat-form-field>
-                  </div>
-                </form>
-
-                <div class="step-actions">
-                  <button
-                    mat-raised-button
-                    color="primary"
-                    matStepperNext
-                    [disabled]="!basicInfoForm.valid"
-                  >
-                    التالي
-                    <mat-icon>navigate_next</mat-icon>
+                <div class="header-actions">
+                  <button mat-stroked-button type="button" (click)="onCancel()">
+                    <mat-icon>close</mat-icon>
+                    إلغاء
                   </button>
                 </div>
               </div>
-            </mat-step>
+            </div>
 
-            <!-- Step 2: Credentials -->
-            <mat-step [stepControl]="credentialsForm" label="بيانات الدخول">
-              <ng-template matStepLabel>بيانات الدخول</ng-template>
+            <mat-divider></mat-divider>
 
-              <div class="step-content">
-                <div class="step-header">
-                  <mat-icon>lock</mat-icon>
-                  <div>
-                    <h3>بيانات تسجيل الدخول</h3>
-                    <p>قم بتعيين اسم المستخدم وكلمة المرور</p>
-                  </div>
-                </div>
+            <!-- Check if user has permission to create users -->
+            @if (!canCreateUsers && !isEditMode()) {
+            <div class="no-permission-message">
+              <mat-icon>block</mat-icon>
+              <h3>ليس لديك صلاحية لإنشاء المستخدمين</h3>
+              <p>يتطلب إنشاء المستخدمين صلاحيات مدير النظام أو مدير العيادة</p>
+              <button
+                mat-raised-button
+                color="primary"
+                type="button"
+                (click)="onCancel()"
+              >
+                العودة لقائمة المستخدمين
+              </button>
+            </div>
+            } @else {
+            <!-- Loading Spinner -->
+            @if (isLoading()) {
+            <div class="loading-overlay">
+              <mat-spinner diameter="50"></mat-spinner>
+              <p>
+                {{
+                  isEditMode()
+                    ? "جاري تحديث المستخدم..."
+                    : "جاري إنشاء المستخدم..."
+                }}
+              </p>
+            </div>
+            }
 
-                <form [formGroup]="credentialsForm" class="credentials-form">
-                  <!-- Username -->
-                  <mat-form-field class="form-field">
-                    <mat-label>اسم المستخدم</mat-label>
-                    <!-- <input
-                      matInput
-                      formControlName="username"
-                      placeholder="اختر اسم مستخدم فريد"
-                      (blur)="checkUsernameAvailability()"
-                    /> -->
-                    <input
-                      matInput
-                      formControlName="username"
-                      placeholder="اختر اسم مستخدم فريد"
-                    />
-                    <mat-icon matSuffix>person</mat-icon>
-                    <mat-error>{{
-                      getErrorMessage(credentialsForm, "username")
-                    }}</mat-error>
-                  </mat-form-field>
+            <!-- Multi-step Form -->
+            <form
+              (ngSubmit)="onSubmit()"
+              class="user-form"
+              [class.loading]="isLoading()"
+              novalidate
+            >
+              <mat-stepper #stepper orientation="horizontal" [linear]="true">
+                <!-- Step 1: Basic Information -->
+                <mat-step
+                  [stepControl]="basicInfoForm"
+                  label="المعلومات الأساسية"
+                >
+                  <ng-template matStepLabel>المعلومات الأساسية</ng-template>
 
-                  <!-- Password Section -->
-                  <div
-                    class="password-section"
-                    *ngIf="
-                      !isEditMode() || credentialsForm.get('password')?.value
-                    "
-                  >
-                    <div class="password-header">
-                      <h4>كلمة المرور</h4>
-                      <button
-                        type="button"
-                        mat-stroked-button
-                        (click)="generatePassword()"
-                        class="generate-btn"
-                      >
-                        <mat-icon>auto_fix_high</mat-icon>
-                        إنشاء كلمة مرور قوية
-                      </button>
+                  <div class="step-content">
+                    <div class="step-header">
+                      <mat-icon>person</mat-icon>
+                      <div>
+                        <h3>المعلومات الشخصية</h3>
+                        <p>أدخل الاسم والبيانات الأساسية للمستخدم</p>
+                      </div>
                     </div>
 
-                    <div class="form-row">
-                      <mat-form-field class="form-field">
+                    <div [formGroup]="basicInfoForm" class="basic-info-form">
+                      <div class="form-row">
+                        <mat-form-field appearance="outline" class="half-width">
+                          <mat-label>الاسم الأول</mat-label>
+                          <input
+                            matInput
+                            formControlName="firstName"
+                            placeholder="أدخل الاسم الأول"
+                          />
+                          <mat-icon matSuffix>person</mat-icon>
+                          <mat-error
+                            *ngIf="
+                              basicInfoForm
+                                .get('firstName')
+                                ?.hasError('required')
+                            "
+                          >
+                            الاسم الأول مطلوب
+                          </mat-error>
+                          <mat-error
+                            *ngIf="
+                              basicInfoForm
+                                .get('firstName')
+                                ?.hasError('minlength')
+                            "
+                          >
+                            الاسم الأول يجب أن يكون حرفين على الأقل
+                          </mat-error>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="half-width">
+                          <mat-label>اسم العائلة</mat-label>
+                          <input
+                            matInput
+                            formControlName="lastName"
+                            placeholder="أدخل اسم العائلة"
+                          />
+                          <mat-icon matSuffix>family_history</mat-icon>
+                          <mat-error
+                            *ngIf="
+                              basicInfoForm
+                                .get('lastName')
+                                ?.hasError('required')
+                            "
+                          >
+                            اسم العائلة مطلوب
+                          </mat-error>
+                          <mat-error
+                            *ngIf="
+                              basicInfoForm
+                                .get('lastName')
+                                ?.hasError('minlength')
+                            "
+                          >
+                            اسم العائلة يجب أن يكون حرفين على الأقل
+                          </mat-error>
+                        </mat-form-field>
+                      </div>
+
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>البريد الإلكتروني</mat-label>
+                        <input
+                          matInput
+                          formControlName="email"
+                          placeholder="example@domain.com"
+                        />
+                        <mat-icon matSuffix>email</mat-icon>
+                        <mat-error
+                          *ngIf="
+                            basicInfoForm.get('email')?.hasError('required')
+                          "
+                        >
+                          البريد الإلكتروني مطلوب
+                        </mat-error>
+                        <mat-error
+                          *ngIf="
+                            basicInfoForm.get('email')?.hasError('invalidEmail')
+                          "
+                        >
+                          يرجى إدخال بريد إلكتروني صحيح
+                        </mat-error>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>رقم الهاتف</mat-label>
+                        <input
+                          matInput
+                          formControlName="phone"
+                          placeholder="773123456"
+                        />
+                        <mat-icon matSuffix>phone</mat-icon>
+                        <mat-hint
+                          >اختياري - صيغة يمنية: 77xxxxxxx أو +967
+                          77xxxxxxx</mat-hint
+                        >
+                        <mat-error
+                          *ngIf="
+                            basicInfoForm.get('phone')?.hasError('invalidPhone')
+                          "
+                        >
+                          رقم الهاتف يجب أن يكون رقماً يمنياً صحيحاً
+                        </mat-error>
+                      </mat-form-field>
+                    </div>
+
+                    <div class="step-actions">
+                      <button
+                        mat-raised-button
+                        color="primary"
+                        matStepperNext
+                        type="button"
+                        [disabled]="!basicInfoForm.valid"
+                      >
+                        التالي
+                        <mat-icon>navigate_next</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </mat-step>
+
+                <!-- Step 2: Credentials -->
+                <mat-step [stepControl]="credentialsForm" label="بيانات الدخول">
+                  <ng-template matStepLabel>بيانات الدخول</ng-template>
+
+                  <div class="step-content">
+                    <div class="step-header">
+                      <mat-icon>key</mat-icon>
+                      <div>
+                        <h3>بيانات تسجيل الدخول</h3>
+                        <p>حدد اسم المستخدم وكلمة المرور</p>
+                      </div>
+                    </div>
+
+                    <div [formGroup]="credentialsForm" class="credentials-form">
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>اسم المستخدم</mat-label>
+                        <input
+                          matInput
+                          formControlName="username"
+                          placeholder="أدخل اسم المستخدم"
+                        />
+                        <mat-icon matSuffix>person</mat-icon>
+                        <mat-error
+                          *ngIf="
+                            credentialsForm
+                              .get('username')
+                              ?.hasError('required')
+                          "
+                        >
+                          اسم المستخدم مطلوب
+                        </mat-error>
+                        <mat-error
+                          *ngIf="
+                            credentialsForm
+                              .get('username')
+                              ?.hasError('minlength')
+                          "
+                        >
+                          اسم المستخدم يجب أن يكون 3 أحرف على الأقل
+                        </mat-error>
+                      </mat-form-field>
+
+                      <!-- Password fields (only for create mode or if changing password) -->
+                      @if (!isEditMode()) {
+                      <mat-form-field appearance="outline" class="full-width">
                         <mat-label>كلمة المرور</mat-label>
                         <input
                           matInput
-                          type="password"
+                          [type]="hidePassword() ? 'password' : 'text'"
                           formControlName="password"
-                          placeholder="أدخل كلمة مرور قوية"
+                          placeholder="أدخل كلمة المرور"
                         />
-                        <mat-icon matSuffix>lock</mat-icon>
-                        <mat-error>{{
-                          getErrorMessage(credentialsForm, "password")
-                        }}</mat-error>
-                      </mat-form-field>
-
-                      <mat-form-field class="form-field">
-                        <mat-label>تأكيد كلمة المرور</mat-label>
-                        <input
-                          matInput
-                          type="password"
-                          formControlName="confirmPassword"
-                          placeholder="أعد إدخال كلمة المرور"
-                        />
-                        <mat-icon matSuffix>lock</mat-icon>
-                        <mat-error>{{
-                          getErrorMessage(credentialsForm, "confirmPassword")
-                        }}</mat-error>
-                      </mat-form-field>
-                    </div>
-
-                    <!-- Password Strength Indicator -->
-                    <div
-                      class="password-strength"
-                      *ngIf="credentialsForm.get('password')?.value"
-                    >
-                      <div class="strength-bar">
-                        <div
-                          class="strength-fill"
-                          [class.weak]="
+                        <button
+                          mat-icon-button
+                          matSuffix
+                          (click)="hidePassword.set(!hidePassword())"
+                          type="button"
+                        >
+                          <mat-icon>{{
+                            hidePassword() ? "visibility" : "visibility_off"
+                          }}</mat-icon>
+                        </button>
+                        <mat-error
+                          *ngIf="
+                            credentialsForm
+                              .get('password')
+                              ?.hasError('required')
+                          "
+                        >
+                          كلمة المرور مطلوبة
+                        </mat-error>
+                        <mat-error
+                          *ngIf="
                             credentialsForm
                               .get('password')
                               ?.hasError('weakPassword')
                           "
-                          [class.strong]="
-                            !credentialsForm
-                              .get('password')
-                              ?.hasError('weakPassword')
-                          "
-                        ></div>
-                      </div>
-                      <p class="strength-text">
-                        {{
-                          credentialsForm
-                            .get("password")
-                            ?.hasError("weakPassword")
-                            ? "كلمة مرور ضعيفة"
-                            : "كلمة مرور قوية"
-                        }}
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- Edit Mode Password Note -->
-                  <div
-                    class="edit-note"
-                    *ngIf="
-                      isEditMode() && !credentialsForm.get('password')?.value
-                    "
-                  >
-                    <mat-icon>info</mat-icon>
-                    <p>اتركه فارغاً إذا كنت لا تريد تغيير كلمة المرور</p>
-                    <button
-                      type="button"
-                      mat-stroked-button
-                      (click)="
-                        credentialsForm.patchValue({
-                          password: 'temp',
-                          confirmPassword: 'temp'
-                        })
-                      "
-                    >
-                      تغيير كلمة المرور
-                    </button>
-                  </div>
-
-                  <!-- Account Status -->
-                  <div class="status-section">
-                    <mat-checkbox formControlName="isActive">
-                      <strong>حساب نشط</strong>
-                      <span class="checkbox-description"
-                        >المستخدم يمكنه تسجيل الدخول للنظام</span
-                      >
-                    </mat-checkbox>
-                  </div>
-                </form>
-
-                <div class="step-actions">
-                  <button mat-stroked-button matStepperPrevious>
-                    <mat-icon>navigate_before</mat-icon>
-                    السابق
-                  </button>
-
-                  <button
-                    mat-raised-button
-                    color="primary"
-                    matStepperNext
-                    [disabled]="!credentialsForm.valid"
-                  >
-                    التالي
-                    <mat-icon>navigate_next</mat-icon>
-                  </button>
-                </div>
-              </div>
-            </mat-step>
-
-            <!-- Step 3: Professional Information -->
-            <mat-step
-              [stepControl]="professionalForm"
-              label="المعلومات المهنية"
-            >
-              <ng-template matStepLabel>المعلومات المهنية</ng-template>
-
-              <div class="step-content">
-                <div class="step-header">
-                  <mat-icon>work</mat-icon>
-                  <div>
-                    <h3>المعلومات المهنية</h3>
-                    <p>حدد دور المستخدم والمعلومات المهنية</p>
-                  </div>
-                </div>
-
-                <form [formGroup]="professionalForm" class="professional-form">
-                  <!-- Role Selection -->
-                  <div class="role-selection">
-                    <h4>اختيار الدور</h4>
-                    <div class="role-cards">
-                      <div
-                        *ngFor="let role of roleOptions"
-                        class="role-card"
-                        [class.selected]="
-                          professionalForm.get('role')?.value === role.value
-                        "
-                        (click)="
-                          professionalForm.patchValue({ role: role.value })
-                        "
-                      >
-                        <div class="role-icon">
-                          <mat-icon>{{ role.icon }}</mat-icon>
-                        </div>
-                        <div class="role-info">
-                          <h5>{{ role.label }}</h5>
-                          <p>{{ role.description }}</p>
-                        </div>
-                        <div class="role-check">
-                          <mat-icon
-                            *ngIf="
-                              professionalForm.get('role')?.value === role.value
-                            "
-                          >
-                            check_circle
-                          </mat-icon>
-                        </div>
-                      </div>
-                    </div>
-                    <mat-error
-                      *ngIf="
-                        professionalForm.get('role')?.invalid &&
-                        professionalForm.get('role')?.touched
-                      "
-                    >
-                      يرجى اختيار دور للمستخدم
-                    </mat-error>
-                  </div>
-
-                  <!-- Doctor-specific fields -->
-                  <div
-                    class="doctor-fields"
-                    *ngIf="professionalForm.get('role')?.value === 'DOCTOR'"
-                  >
-                    <mat-divider></mat-divider>
-                    <h4>معلومات الطبيب</h4>
-
-                    <div class="form-row">
-                      <mat-form-field class="form-field">
-                        <mat-label>التخصص</mat-label>
-                        <mat-select formControlName="specialization">
-                          <mat-option
-                            *ngFor="let spec of specializations"
-                            [value]="spec"
-                          >
-                            {{ spec }}
-                          </mat-option>
-                        </mat-select>
-                        <mat-error>{{
-                          getErrorMessage(professionalForm, "specialization")
-                        }}</mat-error>
+                        >
+                          كلمة المرور ضعيفة - يجب أن تحتوي على حرف كبير وصغير
+                          ورقم ورمز خاص وأن تكون 8 أحرف على الأقل
+                        </mat-error>
                       </mat-form-field>
 
-                      <mat-form-field class="form-field">
-                        <mat-label>رقم الترخيص</mat-label>
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>تأكيد كلمة المرور</mat-label>
+                        <input
+                          matInput
+                          [type]="hideConfirmPassword() ? 'password' : 'text'"
+                          formControlName="confirmPassword"
+                          placeholder="أعد كتابة كلمة المرور"
+                        />
+                        <button
+                          mat-icon-button
+                          matSuffix
+                          (click)="
+                            hideConfirmPassword.set(!hideConfirmPassword())
+                          "
+                          type="button"
+                        >
+                          <mat-icon>{{
+                            hideConfirmPassword()
+                              ? "visibility"
+                              : "visibility_off"
+                          }}</mat-icon>
+                        </button>
+                        <mat-error
+                          *ngIf="
+                            credentialsForm
+                              .get('confirmPassword')
+                              ?.hasError('required')
+                          "
+                        >
+                          تأكيد كلمة المرور مطلوب
+                        </mat-error>
+                        <mat-error
+                          *ngIf="credentialsForm.hasError('passwordMismatch')"
+                        >
+                          كلمات المرور غير متطابقة
+                        </mat-error>
+                      </mat-form-field>
+                      }
+
+                      <!-- Account Status -->
+                      <div class="checkbox-section">
+                        <mat-checkbox formControlName="isActive">
+                          <strong>تفعيل الحساب</strong>
+                          <span class="hint"
+                            >يمكن للمستخدم تسجيل الدخول والوصول للنظام</span
+                          >
+                        </mat-checkbox>
+                      </div>
+                    </div>
+
+                    <div class="step-actions">
+                      <button
+                        mat-stroked-button
+                        matStepperPrevious
+                        type="button"
+                      >
+                        <mat-icon>navigate_before</mat-icon>
+                        السابق
+                      </button>
+                      <button
+                        mat-raised-button
+                        color="primary"
+                        matStepperNext
+                        type="button"
+                        [disabled]="!credentialsForm.valid"
+                      >
+                        التالي
+                        <mat-icon>navigate_next</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </mat-step>
+
+                <!-- Step 3: Professional Information -->
+                <mat-step
+                  [stepControl]="professionalForm"
+                  label="المعلومات المهنية"
+                >
+                  <ng-template matStepLabel>المعلومات المهنية</ng-template>
+
+                  <div class="step-content">
+                    <div class="step-header">
+                      <mat-icon>work</mat-icon>
+                      <div>
+                        <h3>المعلومات المهنية</h3>
+                        <p>حدد دور المستخدم والمعلومات المهنية</p>
+                      </div>
+                    </div>
+
+                    <div
+                      [formGroup]="professionalForm"
+                      class="professional-form"
+                    >
+                      <!-- Role Selection with filtering -->
+                      <div class="role-selection">
+                        <h4>
+                          اختيار الدور @if (availableRolesCount <
+                          allRoleOptionsCount) {
+                          <mat-chip color="accent" selected>
+                            متاح {{ availableRolesCount }} من
+                            {{ allRoleOptionsCount }}
+                          </mat-chip>
+                          }
+                        </h4>
+
+                        <!-- Show message if no roles available -->
+                        @if (availableRolesCount === 0) {
+                        <div class="no-roles-message">
+                          <mat-icon>info</mat-icon>
+                          <p>ليس لديك صلاحية لإنشاء أي أدوار مستخدمين</p>
+                        </div>
+                        } @else {
+                        <!-- Role Cards -->
+                        <div class="role-cards">
+                          @for (role of roleOptions(); track role.value) {
+                          <div
+                            class="role-card"
+                            [class.selected]="
+                              professionalForm.get('role')?.value === role.value
+                            "
+                            [class.disabled]="!canAssignRole(role.value)"
+                            (click)="
+                              canAssignRole(role.value) &&
+                                professionalForm.patchValue({
+                                  role: role.value
+                                })
+                            "
+                          >
+                            <div class="role-icon">
+                              <mat-icon>{{ role.icon }}</mat-icon>
+                            </div>
+                            <div class="role-info">
+                              <h5>{{ role.label }}</h5>
+                              <p>{{ role.description }}</p>
+                            </div>
+                            <div class="role-check">
+                              @if (professionalForm.get('role')?.value ===
+                              role.value) {
+                              <mat-icon color="primary">check_circle</mat-icon>
+                              }
+                            </div>
+                          </div>
+                          }
+                        </div>
+                        }
+
+                        <mat-error
+                          *ngIf="
+                            professionalForm
+                              .get('role')
+                              ?.hasError('required') &&
+                            professionalForm.get('role')?.touched
+                          "
+                        >
+                          يرجى اختيار دور المستخدم
+                        </mat-error>
+                      </div>
+
+                      <!-- Specialization (for doctors) -->
+                      @if (professionalForm.get('role')?.value === 'DOCTOR') {
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>التخصص الطبي</mat-label>
+                        <mat-select
+                          formControlName="specialization"
+                          placeholder="اختر التخصص"
+                        >
+                          @for (specialization of specializations; track
+                          specialization) {
+                          <mat-option [value]="specialization">{{
+                            specialization
+                          }}</mat-option>
+                          }
+                        </mat-select>
+                        <mat-icon matSuffix>local_hospital</mat-icon>
+                        <mat-error
+                          *ngIf="
+                            professionalForm
+                              .get('specialization')
+                              ?.hasError('required')
+                          "
+                        >
+                          التخصص مطلوب للأطباء
+                        </mat-error>
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>رقم الترخيص الطبي</mat-label>
                         <input
                           matInput
                           formControlName="licenseNumber"
-                          placeholder="أدخل رقم ترخيص مزاولة المهنة"
+                          placeholder="أدخل رقم الترخيص"
                         />
                         <mat-icon matSuffix>verified</mat-icon>
-                        <mat-error>{{
-                          getErrorMessage(professionalForm, "licenseNumber")
-                        }}</mat-error>
+                        <mat-error
+                          *ngIf="
+                            professionalForm
+                              .get('licenseNumber')
+                              ?.hasError('required')
+                          "
+                        >
+                          رقم الترخيص مطلوب للأطباء
+                        </mat-error>
+                      </mat-form-field>
+                      }
+
+                      <!-- Notes -->
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>ملاحظات</mat-label>
+                        <textarea
+                          matInput
+                          formControlName="notes"
+                          rows="3"
+                          placeholder="أضف أي ملاحظات إضافية (اختياري)"
+                        ></textarea>
+                        <mat-icon matSuffix>notes</mat-icon>
                       </mat-form-field>
                     </div>
-                  </div>
 
-                  <!-- Notes -->
-                  <mat-form-field class="form-field full-width">
-                    <mat-label>ملاحظات إضافية (اختياري)</mat-label>
-                    <textarea
-                      matInput
-                      formControlName="notes"
-                      placeholder="أي معلومات إضافية عن المستخدم..."
-                      rows="3"
-                    >
-                    </textarea>
-                    <mat-icon matSuffix>note</mat-icon>
-                  </mat-form-field>
-                </form>
-
-                <div class="step-actions">
-                  <button mat-stroked-button matStepperPrevious>
-                    <mat-icon>navigate_before</mat-icon>
-                    السابق
-                  </button>
-
-                  <button
-                    mat-raised-button
-                    color="primary"
-                    matStepperNext
-                    [disabled]="!professionalForm.valid"
-                  >
-                    التالي
-                    <mat-icon>navigate_next</mat-icon>
-                  </button>
-                </div>
-              </div>
-            </mat-step>
-
-            <!-- Step 4: Permissions -->
-            <mat-step [stepControl]="permissionsForm" label="الصلاحيات">
-              <ng-template matStepLabel>الصلاحيات</ng-template>
-
-              <div class="step-content">
-                <div class="step-header">
-                  <mat-icon>security</mat-icon>
-                  <div>
-                    <h3>صلاحيات المستخدم</h3>
-                    <p>حدد ما يمكن للمستخدم الوصول إليه في النظام</p>
-                  </div>
-                </div>
-
-                <form [formGroup]="permissionsForm" class="permissions-form">
-                  <div class="permissions-grid">
-                    <div class="permission-item">
-                      <mat-checkbox formControlName="canManageAppointments">
-                        <div class="permission-info">
-                          <div class="permission-title">
-                            <mat-icon>event</mat-icon>
-                            إدارة المواعيد
-                          </div>
-                          <p>إضافة، تعديل، وحذف المواعيد</p>
-                        </div>
-                      </mat-checkbox>
-                    </div>
-
-                    <div class="permission-item">
-                      <mat-checkbox formControlName="canViewReports">
-                        <div class="permission-info">
-                          <div class="permission-title">
-                            <mat-icon>assessment</mat-icon>
-                            عرض التقارير
-                          </div>
-                          <p>الوصول للتقارير والإحصائيات</p>
-                        </div>
-                      </mat-checkbox>
-                    </div>
-
-                    <div class="permission-item">
-                      <mat-checkbox formControlName="canManageInvoices">
-                        <div class="permission-info">
-                          <div class="permission-title">
-                            <mat-icon>receipt</mat-icon>
-                            إدارة الفواتير
-                          </div>
-                          <p>إنشاء وتعديل الفواتير والمدفوعات</p>
-                        </div>
-                      </mat-checkbox>
-                    </div>
-
-                    <div class="permission-item">
-                      <mat-checkbox formControlName="canAccessMedicalRecords">
-                        <div class="permission-info">
-                          <div class="permission-title">
-                            <mat-icon>folder_special</mat-icon>
-                            السجلات الطبية
-                          </div>
-                          <p>عرض وتعديل السجلات الطبية</p>
-                        </div>
-                      </mat-checkbox>
+                    <div class="step-actions">
+                      <button
+                        mat-stroked-button
+                        matStepperPrevious
+                        type="button"
+                      >
+                        <mat-icon>navigate_before</mat-icon>
+                        السابق
+                      </button>
+                      <button
+                        mat-raised-button
+                        color="primary"
+                        matStepperNext
+                        type="button"
+                        [disabled]="!professionalForm.valid"
+                      >
+                        التالي
+                        <mat-icon>navigate_next</mat-icon>
+                      </button>
                     </div>
                   </div>
+                </mat-step>
 
-                  <!-- Role-based permissions note -->
-                  <div class="permissions-note">
-                    <mat-icon>info</mat-icon>
-                    <p>
-                      تم تعيين الصلاحيات الافتراضية بناءً على الدور المحدد (<span>{{ getRoleLabel() }}</span>). يمكنك تخصيصها حسب الحاجة.
-                    </p>
+                <!-- Step 4: Review & Submit -->
+                <mat-step label="مراجعة وحفظ">
+                  <ng-template matStepLabel>مراجعة وحفظ</ng-template>
+
+                  <div class="step-content">
+                    <div class="step-header">
+                      <mat-icon>preview</mat-icon>
+                      <div>
+                        <h3>مراجعة البيانات</h3>
+                        <p>تأكد من صحة جميع البيانات المدخلة</p>
+                      </div>
+                    </div>
+
+                    <!-- Review Summary -->
+                    <div class="review-summary">
+                      <mat-card class="summary-card">
+                        <mat-card-header>
+                          <mat-card-title>ملخص بيانات المستخدم</mat-card-title>
+                        </mat-card-header>
+                        <mat-card-content>
+                          <div class="summary-row">
+                            <strong>الاسم:</strong>
+                            <span
+                              >{{ basicInfoForm.value.firstName }}
+                              {{ basicInfoForm.value.lastName }}</span
+                            >
+                          </div>
+                          <div class="summary-row">
+                            <strong>البريد الإلكتروني:</strong>
+                            <span>{{ basicInfoForm.value.email }}</span>
+                          </div>
+                          <div class="summary-row">
+                            <strong>اسم المستخدم:</strong>
+                            <span>{{ credentialsForm.value.username }}</span>
+                          </div>
+                          @if (basicInfoForm.value.phone) {
+                          <div class="summary-row">
+                            <strong>رقم الهاتف:</strong>
+                            <span>{{ basicInfoForm.value.phone }}</span>
+                          </div>
+                          }
+                          <div class="summary-row">
+                            <strong>الدور:</strong>
+                            <mat-chip color="primary" selected>
+                              {{ getRoleLabel() }}
+                            </mat-chip>
+                          </div>
+                          @if (professionalForm.value.specialization) {
+                          <div class="summary-row">
+                            <strong>التخصص:</strong>
+                            <span>{{
+                              professionalForm.value.specialization
+                            }}</span>
+                          </div>
+                          }
+                          <div class="summary-row">
+                            <strong>حالة الحساب:</strong>
+                            <mat-chip
+                              [color]="
+                                credentialsForm.value.isActive
+                                  ? 'accent'
+                                  : 'warn'
+                              "
+                              selected
+                            >
+                              {{
+                                credentialsForm.value.isActive ? "مفعل" : "معطل"
+                              }}
+                            </mat-chip>
+                          </div>
+                        </mat-card-content>
+                      </mat-card>
+                    </div>
+
+                    <!-- Final Actions -->
+                    <div class="step-actions final-actions">
+                      <button
+                        mat-stroked-button
+                        matStepperPrevious
+                        type="button"
+                      >
+                        <mat-icon>navigate_before</mat-icon>
+                        السابق
+                      </button>
+
+                      <div class="primary-actions">
+                        <button
+                          mat-stroked-button
+                          type="button"
+                          (click)="onReset()"
+                          [disabled]="isLoading()"
+                        >
+                          <mat-icon>refresh</mat-icon>
+                          إعادة تعيين
+                        </button>
+
+                        <button
+                          mat-raised-button
+                          color="primary"
+                          type="submit"
+                          (click)="onSubmit($event)"
+                          [disabled]="!isFormValid || isLoading()"
+                        >
+                          @if (isLoading()) {
+                          <mat-spinner diameter="20"></mat-spinner>
+                          {{
+                            isEditMode() ? "جاري التحديث..." : "جاري الإنشاء..."
+                          }}
+                          } @else {
+                          <mat-icon>{{
+                            isEditMode() ? "save" : "person_add"
+                          }}</mat-icon>
+                          {{
+                            isEditMode() ? "حفظ التغييرات" : "إنشاء المستخدم"
+                          }}
+                          }
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </form>
-
-                <div class="step-actions">
-                  <button mat-stroked-button matStepperPrevious>
-                    <mat-icon>navigate_before</mat-icon>
-                    السابق
-                  </button>
-
-                  <button
-                    mat-raised-button
-                    color="primary"
-                    (click)="onSubmit()"
-                    [disabled]="saving()"
-                  >
-                    <mat-icon>{{
-                      saving() ? "hourglass_empty" : "save"
-                    }}</mat-icon>
-                    {{
-                      saving()
-                        ? "جاري الحفظ..."
-                        : isEditMode()
-                        ? "تحديث المستخدم"
-                        : "إنشاء المستخدم"
-                    }}
-                  </button>
-                </div>
-              </div>
-            </mat-step>
-          </mat-stepper>
-        </mat-card-content>
-      </mat-card>
+                </mat-step>
+              </mat-stepper>
+            </form>
+            }
+          </mat-card>
+        </div>
+      </div>
     </div>
-  </div>
-</app-sidebar>
+  </app-sidebar>
+</div>
