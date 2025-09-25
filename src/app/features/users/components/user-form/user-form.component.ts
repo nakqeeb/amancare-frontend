@@ -347,41 +347,40 @@ export class UserFormComponent implements OnInit {
     });
   }
 
-  private updateUser(): void {
-    if (!this.userId()) return;
+private updateUser(): void {
+  if (!this.userId()) return;
 
-    this.isLoading.set(true);
+  this.isLoading.set(true);
 
-    const updateRequest: UpdateUserRequest = {
-      email: this.basicInfoForm.value.email,
-      firstName: this.basicInfoForm.value.firstName,
-      lastName: this.basicInfoForm.value.lastName,
-      phone: this.basicInfoForm.value.phone || undefined,
-      role: this.professionalForm.value.role,
-      specialization: this.professionalForm.value.specialization || undefined,
-      isActive: this.credentialsForm.value.isActive
-    };
+  const updateRequest: UpdateUserRequest = {
+    email: this.basicInfoForm.value.email,
+    firstName: this.basicInfoForm.value.firstName,
+    lastName: this.basicInfoForm.value.lastName,
+    phone: this.basicInfoForm.value.phone || undefined,
+    role: this.professionalForm.value.role,
+    specialization: this.professionalForm.value.specialization || undefined,
+    isActive: this.credentialsForm.value.isActive
+  };
 
-    // Add password if changed
-    const password = this.credentialsForm.value.password;
-    if (password && password.trim()) {
-      // Handle password update separately if needed
-      // This depends on your UserService implementation
-    }
-
-    this.userService.updateUser(this.userId()!, updateRequest).subscribe({
-      next: (updatedUser) => {
-        this.isLoading.set(false);
-        this.notificationService.success('تم تحديث المستخدم بنجاح');
-        this.router.navigate(['/users']);
-      },
-      error: (error) => {
-        this.isLoading.set(false);
-        const message = error.error?.message || 'فشل في تحديث المستخدم';
-        this.notificationService.error(message);
-      }
-    });
+  // Add password if changed (now properly integrated with UpdateUserRequest)
+  const password = this.credentialsForm.value.password;
+  if (password && password.trim()) {
+    updateRequest.newPassword = password;
   }
+
+  this.userService.updateUser(this.userId()!, updateRequest).subscribe({
+    next: (updatedUser) => {
+      this.isLoading.set(false);
+      this.notificationService.success('تم تحديث المستخدم بنجاح');
+      this.router.navigate(['/users']);
+    },
+    error: (error) => {
+      this.isLoading.set(false);
+      const message = error.error?.message || 'فشل في تحديث المستخدم';
+      this.notificationService.error(message);
+    }
+  });
+}
 
   private resetForm(): void {
     this.basicInfoForm.reset();

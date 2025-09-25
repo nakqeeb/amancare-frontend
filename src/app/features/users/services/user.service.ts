@@ -28,40 +28,6 @@ import { SystemAdminService } from '../../../core/services/system-admin.service'
 // NEW INTERFACES FOR SPRING BOOT INTEGRATION
 // ===================================================================
 
-// Clinic User Response - matching Spring Boot DTO
-// export interface ClinicUserResponse {
-//   id: number;
-//   username: string;
-//   email: string;
-//   firstName: string;
-//   lastName: string;
-//   fullName: string;
-//   phone?: string;
-//   role: UserRole;
-//   specialization?: string;
-//   isActive: boolean;
-//   clinicId: number;
-//   clinicName: string;
-//   createdAt: string;
-//   updatedAt?: string;
-//   lastLoginAt?: string;
-// }
-
-// Doctor Response - matching Spring Boot DTO
-// export interface DoctorResponse {
-//   id: number;
-//   username: string;
-//   firstName: string;
-//   lastName: string;
-//   fullName: string;
-//   phone?: string;
-//   email?: string;
-//   specialization?: string;
-//   isActive: boolean;
-//   clinicId: number;
-//   clinicName: string;
-// }
-
 // Clinic User Statistics - matching Spring Boot DTO
 export interface ClinicUserStats {
   totalUsers: number;
@@ -133,12 +99,25 @@ export class UserService {
     );
   }
 
-  // Update user
+  /**
+   * UPDATED: Update user using PATCH endpoint
+   * Matches Spring Boot: UserController.patchUpdateUser()
+   */
   updateUser(id: number, request: UpdateUserRequest): Observable<User> {
+    // Validate SYSTEM_ADMIN context for write operations if applicable
+    const currentUser = this.authService.currentUser();
+    if (currentUser?.role === 'SYSTEM_ADMIN') {
+      if (!this.systemAdminService.canPerformWriteOperation()) {
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل تعديل المستخدم'));
+      }
+    }
+
     this.loading.set(true);
 
-    return this.http.put<User>(`${this.apiUrl}/${id}`, request).pipe(
+    // Use PATCH instead of PUT
+    return this.http.patch<User>(`${this.apiUrl}/${id}`, request).pipe(
       tap(updatedUser => {
+        // Update users list
         const currentUsers = this.users();
         const index = currentUsers.findIndex(u => u.id === id);
         if (index !== -1) {
@@ -146,7 +125,22 @@ export class UserService {
           this.users.set([...currentUsers]);
           this.usersSubject.next([...currentUsers]);
         }
-        this.selectedUser.set(updatedUser);
+
+        // Update clinic users list
+        const currentClinicUsers = this.clinicUsers();
+        const clinicIndex = currentClinicUsers.findIndex(u => u.id === id);
+        if (clinicIndex !== -1) {
+          currentClinicUsers[clinicIndex] = updatedUser;
+          this.clinicUsers.set([...currentClinicUsers]);
+          this.clinicUsersSubject.next([...currentClinicUsers]);
+        }
+
+        // Update selected user if it's the same one
+        const selectedUser = this.selectedUser();
+        if (selectedUser && selectedUser.id === id) {
+          this.selectedUser.set(updatedUser);
+        }
+
         this.loading.set(false);
         this.notificationService.success('تم تحديث المستخدم بنجاح');
       }),
@@ -400,11 +394,6 @@ export class UserService {
       })
     );
   }
-
-  // Check if username exists
-  /* checkUsernameExists(username: string): Observable<boolean> {
-    return this.http.get<boolean>(`${this.apiUrl}/check/username/${username}`);
-  } */
 
   // ===================================================================
   // LEGACY METHODS - Updated to work with new backend structure

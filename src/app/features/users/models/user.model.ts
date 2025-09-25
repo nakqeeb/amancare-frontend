@@ -94,6 +94,7 @@ export interface UpdateUserRequest {
   licenseNumber?: string;
   profilePicture?: string;
   isActive?: boolean;
+  newPassword?: string;
 }
 
 // Password management requests
