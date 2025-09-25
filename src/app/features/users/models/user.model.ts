@@ -51,7 +51,7 @@ export interface User {
   clinicName: string;
   createdAt: string;
   updatedAt?: string;
-  lastLoginAt?: string;
+  lastLogin?: string;
 }
 
 export interface DoctorsResponse {
@@ -429,8 +429,8 @@ export const canManageUser = (currentUser: User, targetUser: User): boolean => {
   // Admin can manage non-admin users in their clinic
   if (isAdmin(currentUser)) {
     return !isAdmin(targetUser) &&
-           currentUser.clinicId === targetUser.clinicId &&
-           currentUser.id !== targetUser.id;
+      currentUser.clinicId === targetUser.clinicId &&
+      currentUser.id !== targetUser.id;
   }
 
   return false;

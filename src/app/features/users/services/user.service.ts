@@ -428,7 +428,7 @@ export class UserService {
             clinicName: clinicUser.clinicName,
             createdAt: clinicUser.createdAt,
             updatedAt: clinicUser.updatedAt,
-            lastLoginAt: clinicUser.lastLoginAt
+            lastLogin: clinicUser.lastLogin
           } as User));
         }
         return [];

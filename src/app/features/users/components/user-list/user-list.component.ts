@@ -135,7 +135,7 @@ export class UserListComponent implements OnInit {
       clinicName: clinicUser.clinicName,
       createdAt: clinicUser.createdAt,
       updatedAt: clinicUser.updatedAt,
-      lastLoginAt: clinicUser.lastLoginAt
+      lastLogin: clinicUser.lastLogin
     } as User));
   });
 
@@ -509,7 +509,7 @@ export class UserListComponent implements OnInit {
       clinicName: clinicUser.clinicName,
       createdAt: clinicUser.createdAt,
       updatedAt: clinicUser.updatedAt,
-      lastLoginAt: clinicUser.lastLoginAt
+      lastLogin: clinicUser.lastLogin
     };
   }
 

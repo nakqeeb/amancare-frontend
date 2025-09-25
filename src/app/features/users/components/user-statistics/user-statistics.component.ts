@@ -216,8 +216,8 @@ export class UserStatisticsComponent implements OnInit {
     weekAgo.setDate(weekAgo.getDate() - 7);
 
     const activeThisWeek = users.filter(user => {
-      if (!user.lastLoginAt) return false;
-      const lastLogin = new Date(user.lastLoginAt);
+      if (!user.lastLogin) return false;
+      const lastLogin = new Date(user.lastLogin);
       return lastLogin >= weekAgo;
     }).length;
 
