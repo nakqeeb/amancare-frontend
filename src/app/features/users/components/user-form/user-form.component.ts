@@ -208,7 +208,7 @@ export class UserFormComponent implements OnInit {
     this.professionalForm = this.fb.group({
       role: ['', [Validators.required]],
       specialization: [''],
-      licenseNumber: [''],
+      // licenseNumber: [''],
     });
 
     // Permissions Form (for role-based features)
@@ -444,18 +444,18 @@ private updateUser(): void {
 
   private updateFormValidation(role: UserRole): void {
     const specializationControl = this.professionalForm.get('specialization');
-    const licenseControl = this.professionalForm.get('licenseNumber');
+    // const licenseControl = this.professionalForm.get('licenseNumber');
 
     if (role === UserRole.DOCTOR) {
       specializationControl?.setValidators([Validators.required]);
-      licenseControl?.setValidators([Validators.required]);
+      // licenseControl?.setValidators([Validators.required]);
     } else {
       specializationControl?.clearValidators();
-      licenseControl?.clearValidators();
+      // licenseControl?.clearValidators();
     }
 
     specializationControl?.updateValueAndValidity();
-    licenseControl?.updateValueAndValidity();
+    // licenseControl?.updateValueAndValidity();
   }
 
   private passwordMatchValidator(group: AbstractControl) {
