@@ -141,50 +141,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
           }
         ]
       },
-      {
-        title: 'إدارة المستخدمين',
-        icon: 'admin_panel_settings',
-        route: '/users',
-        roles: ['ADMIN', 'SYSTEM_ADMIN'],
-        children: [
-          {
-            title: 'جميع المستخدمين',
-            icon: 'people',
-            route: '/users/list',
-            roles: ['ADMIN', 'SYSTEM_ADMIN']
-          },
-          {
-            title: 'مستخدمو العيادة',
-            icon: 'business',
-            route: '/users/clinic-users',
-            roles: ['ADMIN', 'SYSTEM_ADMIN']
-          },
-          {
-            title: 'قائمة الأطباء',
-            icon: 'medical_services',
-            route: '/users/doctors',
-            roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
-          },
-          {
-            title: 'إحصائيات المستخدمين',
-            icon: 'analytics',
-            route: '/users/statistics',
-            roles: ['ADMIN', 'SYSTEM_ADMIN']
-          },
-          {
-            title: 'الممرضين',
-            icon: 'health_and_safety',
-            route: '/users/nurses',
-            roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR']
-          },
-          {
-            title: 'موظفو الاستقبال',
-            icon: 'support_agent',
-            route: '/users/receptionists',
-            roles: ['ADMIN', 'SYSTEM_ADMIN']
-          }
-        ]
-      },
       // ===================================================================
       // SCHEDULES MENU - New Addition
       // ===================================================================
@@ -269,30 +225,49 @@ export class SidebarComponent implements OnInit, OnDestroy {
         ]
       },
       {
-        title: 'الإدارة',
+        title: 'إدارة المستخدمين',
         icon: 'admin_panel_settings',
-        route: '/management',
+        route: '/users',
         roles: ['ADMIN', 'SYSTEM_ADMIN'],
         children: [
           {
-            title: 'إدارة المستخدمين',
-            icon: 'group',
-            route: '/users',
+            title: 'جميع المستخدمين',
+            icon: 'people',
+            route: '/users/list',
             roles: ['ADMIN', 'SYSTEM_ADMIN']
           },
           {
-            title: 'إدارة العيادات',
+            title: 'مستخدمو العيادة',
             icon: 'business',
-            route: '/clinics',
-            roles: ['SYSTEM_ADMIN']
+            route: '/users/clinic-users',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
           },
           {
-            title: 'الإعدادات',
-            icon: 'settings',
-            route: '/settings'
+            title: 'قائمة الأطباء',
+            icon: 'medical_services',
+            route: '/users/doctors',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
+          },
+          {
+            title: 'إحصائيات المستخدمين',
+            icon: 'analytics',
+            route: '/users/statistics',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
+          },
+          {
+            title: 'الممرضين',
+            icon: 'health_and_safety',
+            route: '/users/nurses',
+            roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR']
+          },
+          {
+            title: 'موظفو الاستقبال',
+            icon: 'support_agent',
+            route: '/users/receptionists',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
           }
         ]
-      }
+      },
     ];
 
     this.menuItems.set(items);

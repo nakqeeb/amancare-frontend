@@ -209,7 +209,6 @@ export class UserFormComponent implements OnInit {
       role: ['', [Validators.required]],
       specialization: [''],
       licenseNumber: [''],
-      notes: ['']
     });
 
     // Permissions Form (for role-based features)
@@ -285,7 +284,6 @@ export class UserFormComponent implements OnInit {
     this.professionalForm.patchValue({
       role: user.role,
       specialization: user.specialization || '',
-      notes: ''
     });
   }
 
