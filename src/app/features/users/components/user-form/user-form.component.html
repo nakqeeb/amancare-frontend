@@ -237,6 +237,8 @@
                     </div>
 
                     <div [formGroup]="credentialsForm" class="credentials-form">
+                      <!-- Username & Password fields (only for create mode or if changing password) -->
+                      @if (!isEditMode()) {
                       <mat-form-field appearance="outline" class="full-width">
                         <mat-label>اسم المستخدم</mat-label>
                         <input
@@ -265,8 +267,6 @@
                         </mat-error>
                       </mat-form-field>
 
-                      <!-- Password fields (only for create mode or if changing password) -->
-                      @if (!isEditMode()) {
                       <mat-form-field appearance="outline" class="full-width">
                         <mat-label>كلمة المرور</mat-label>
                         <input
