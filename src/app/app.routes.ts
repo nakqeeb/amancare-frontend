@@ -75,15 +75,6 @@ export const routes: Routes = [
     title: 'إدارة المواعيد - نظام أمان كير'
   },
 
-  // السجلات الطبية - Medical Records
-  {
-    path: 'medical-records',
-    loadChildren: () => import('./features/medical-records/medical-records.routes').then(r => r.MEDICAL_RECORDS_ROUTES),
-    canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['SYSTEM_ADMIN', 'DOCTOR', 'NURSE', 'ADMIN'] },
-    title: 'السجلات الطبية - نظام أمان كير'
-  },
-
   // الفواتير - Invoices
   {
     path: 'invoices',

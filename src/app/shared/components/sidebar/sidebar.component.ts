@@ -190,12 +190,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
       //   badge: 12
       // },
       {
-        title: 'السجلات الطبية',
-        icon: 'medical_services',
-        route: '/medical-records',
-        roles: ['DOCTOR', 'NURSE', 'ADMIN', 'SYSTEM_ADMIN']
-      },
-      {
         title: 'الفواتير',
         icon: 'receipt_long',
         route: '/invoices',
