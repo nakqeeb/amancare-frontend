@@ -39,7 +39,7 @@ export class AppointmentService {
   public readonly appointments = signal<AppointmentResponse[]>([]);
   public readonly selectedAppointment = signal<AppointmentResponse | null>(null);
   public readonly todayAppointments = signal<AppointmentSummaryResponse[]>([]);
-  public readonly upcomingAppointments = signal<AppointmentSummaryResponse[]>([]);
+  public readonly upcomingAppointments = signal<AppointmentResponse[]>([]);
   public readonly statistics = signal<AppointmentStatistics | null>(null);
 
   // Pagination state
@@ -61,7 +61,7 @@ export class AppointmentService {
     const currentUser = this.authService.currentUser();
     if (currentUser?.role === 'SYSTEM_ADMIN') {
       if (!this.systemAdminService.canPerformWriteOperation()) {
-        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل إنشاء مريض جديد'));
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل إنشاء موعد جديد'));
       }
 
       // Add clinic ID from context if not provided
@@ -244,7 +244,7 @@ export class AppointmentService {
   }
 
   // 6. Get Patient's Upcoming Appointments
-  getPatientUpcomingAppointments(patientId: number): Observable<AppointmentSummaryResponse[]> {
+  getPatientUpcomingAppointments(patientId: number): Observable<AppointmentResponse[]> {
     this.loading.set(true);
     this.error.set(null);
 
@@ -258,7 +258,7 @@ export class AppointmentService {
       params = params.set('clinicId', clinicId.toString());
     }
 
-    return this.http.get<ApiResponse<AppointmentSummaryResponse[]>>(
+    return this.http.get<ApiResponse<AppointmentResponse[]>>(
       `${this.apiUrl}/patient/${patientId}/upcoming`, { params }
     ).pipe(
       tap(response => {
@@ -333,7 +333,7 @@ export class AppointmentService {
     const currentUser = this.authService.currentUser();
     if (currentUser?.role === 'SYSTEM_ADMIN') {
       if (!this.systemAdminService.canPerformWriteOperation()) {
-        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل إنشاء مريض جديد'));
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل تحديث الموعد'));
       }
 
       // Add clinic ID from context if not provided

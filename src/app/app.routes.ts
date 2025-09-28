@@ -75,6 +75,18 @@ export const routes: Routes = [
     title: 'إدارة المواعيد - نظام أمان كير'
   },
 
+  {
+    path: 'medical-records',
+    loadChildren: () =>
+      import('./features/medical-records/medical-records.routes')
+        .then(m => m.MEDICAL_RECORDS_ROUTES),
+    data: {
+      title: 'السجلات الطبية',
+      icon: 'description',
+      breadcrumb: 'السجلات الطبية'
+    }
+  },
+
   // الفواتير - Invoices
   {
     path: 'invoices',
@@ -139,3 +151,15 @@ export const routes: Routes = [
     redirectTo: '/404'
   }
 ];
+
+
+// ===================================================================
+// Route Configuration Options
+// ===================================================================
+
+export const routeConfig = {
+  enableTracing: false, // Set to true for debugging
+  useHash: false, // Set to true for hash-based routing
+  initialNavigation: 'enabledBlocking',
+  scrollPositionRestoration: 'enabled'
+};

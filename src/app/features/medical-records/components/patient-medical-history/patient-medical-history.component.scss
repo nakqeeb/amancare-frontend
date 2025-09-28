@@ -1,0 +1,560 @@
+// ===================================================================
+// src/app/features/medical-records/components/patient-medical-history/patient-medical-history.component.scss
+// Patient Medical History Component Styles
+// ===================================================================
+
+@import '../../../../../styles.scss';
+
+.patient-medical-history-container {
+  min-height: 100vh;
+  background: var(--background-secondary);
+  padding-bottom: var(--spacing-2xl);
+
+  .history-header {
+    background: var(--surface);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-lg);
+
+    .header-content {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+
+      .back-button {
+        background: var(--background-secondary);
+
+        &:hover {
+          background: var(--hover-overlay);
+        }
+      }
+
+      .title-section {
+        flex: 1;
+
+        .page-title {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+          font-size: var(--font-size-xl);
+          font-weight: var(--font-weight-semibold);
+          color: var(--text-primary);
+          margin: 0 0 var(--spacing-sm) 0;
+
+          mat-icon {
+            color: var(--primary);
+          }
+        }
+
+        .patient-info {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: var(--spacing-md);
+
+          .patient-name {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-medium);
+            color: var(--primary);
+          }
+
+          .patient-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--background-secondary);
+            border-radius: var(--border-radius-sm);
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+
+            mat-icon {
+              font-size: 16px;
+              width: 16px;
+              height: 16px;
+            }
+
+            &.blood-type {
+              background: rgba(var(--error-rgb), 0.1);
+              color: var(--error);
+            }
+          }
+        }
+      }
+
+      .header-actions {
+        display: flex;
+        gap: var(--spacing-sm);
+        flex-wrap: wrap;
+      }
+    }
+
+    .history-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--spacing-md);
+
+      .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: var(--spacing-md);
+        background: var(--background-secondary);
+        border-radius: var(--border-radius-md);
+        text-align: center;
+
+        .stat-value {
+          font-size: var(--font-size-2xl);
+          font-weight: var(--font-weight-bold);
+          color: var(--primary);
+          margin-bottom: var(--spacing-xs);
+        }
+
+        .stat-label {
+          font-size: var(--font-size-sm);
+          color: var(--text-secondary);
+        }
+
+        &.chronic {
+          .stat-value {
+            color: var(--warning);
+          }
+        }
+
+        &.allergies {
+          .stat-value {
+            color: var(--error);
+          }
+        }
+      }
+    }
+  }
+
+  .history-content {
+    padding: 0 var(--spacing-lg);
+
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+
+      mat-spinner {
+        margin-bottom: var(--spacing-md);
+      }
+
+      p {
+        color: var(--text-secondary);
+        margin: 0;
+      }
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      text-align: center;
+
+      mat-icon {
+        font-size: 80px;
+        width: 80px;
+        height: 80px;
+        color: var(--text-disabled);
+        margin-bottom: var(--spacing-lg);
+      }
+
+      h3 {
+        font-size: var(--font-size-lg);
+        color: var(--text-primary);
+        margin: 0 0 var(--spacing-sm) 0;
+      }
+
+      p {
+        color: var(--text-secondary);
+        margin: 0 0 var(--spacing-lg) 0;
+      }
+    }
+
+    .filters-card {
+      margin-bottom: var(--spacing-lg);
+      background: var(--surface);
+
+      .filters-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--spacing-md);
+
+        mat-form-field {
+          width: 100%;
+        }
+
+        .search-field {
+          grid-column: span 2;
+        }
+      }
+    }
+
+    .timeline-container {
+      .year-section {
+        margin-bottom: var(--spacing-2xl);
+
+        .year-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: var(--spacing-lg);
+          padding: var(--spacing-sm) 0;
+          border-bottom: 2px solid var(--primary);
+
+          .year-title {
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--primary);
+            margin: 0;
+          }
+
+          .year-count {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--primary);
+            color: var(--text-on-primary);
+            border-radius: var(--border-radius-full);
+            font-size: var(--font-size-sm);
+          }
+        }
+
+        .month-section {
+          margin-bottom: var(--spacing-lg);
+
+          .month-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-medium);
+            color: var(--text-primary);
+            margin: 0 0 var(--spacing-md) 0;
+            padding-left: var(--spacing-md);
+
+            mat-icon {
+              color: var(--secondary);
+              font-size: 20px;
+              width: 20px;
+              height: 20px;
+            }
+          }
+
+          .records-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            padding-left: var(--spacing-lg);
+            border-left: 2px solid var(--divider);
+            margin-left: var(--spacing-md);
+
+            .record-card {
+              position: relative;
+              background: var(--surface);
+              transition: var(--transition-base);
+
+              &::before {
+                content: '';
+                position: absolute;
+                left: calc(-1 * var(--spacing-lg) - 9px);
+                top: 50%;
+                transform: translateY(-50%);
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: var(--surface);
+                border: 2px solid var(--primary);
+              }
+
+              &:hover {
+                transform: translateX(4px);
+                box-shadow: var(--shadow-md);
+
+                &::before {
+                  background: var(--primary);
+                }
+              }
+
+              &.confidential {
+                background: rgba(var(--warning-rgb), 0.05);
+                border: 1px solid rgba(var(--warning-rgb), 0.2);
+              }
+
+              mat-card-header {
+                padding-bottom: var(--spacing-sm);
+
+                .record-title {
+                  display: flex;
+                  align-items: center;
+                  gap: var(--spacing-sm);
+                  flex-wrap: wrap;
+
+                  .visit-date {
+                    font-weight: var(--font-weight-medium);
+                    color: var(--text-primary);
+                  }
+
+                  .visit-type-chip,
+                  .status-chip {
+                    padding: var(--spacing-xs) var(--spacing-sm);
+                    border-radius: var(--border-radius-full);
+                    font-size: var(--font-size-xs);
+                    font-weight: var(--font-weight-medium);
+                  }
+
+                  .visit-type-chip {
+                    &.type-first_visit {
+                      background: rgba(var(--primary-rgb), 0.1);
+                      color: var(--primary);
+                    }
+
+                    &.type-follow_up {
+                      background: rgba(var(--info-rgb), 0.1);
+                      color: var(--info);
+                    }
+
+                    &.type-emergency {
+                      background: rgba(var(--error-rgb), 0.1);
+                      color: var(--error);
+                    }
+
+                    &.type-routine_check {
+                      background: rgba(var(--success-rgb), 0.1);
+                      color: var(--success);
+                    }
+
+                    &.type-vaccination {
+                      background: rgba(var(--warning-rgb), 0.1);
+                      color: var(--warning);
+                    }
+
+                    &.type-consultation {
+                      background: rgba(var(--secondary-rgb), 0.1);
+                      color: var(--secondary);
+                    }
+                  }
+
+                  .status-chip {
+                    &.status-draft {
+                      background: rgba(var(--text-secondary-rgb), 0.1);
+                      color: var(--text-secondary);
+                    }
+
+                    &.status-completed {
+                      background: rgba(var(--success-rgb), 0.1);
+                      color: var(--success);
+                    }
+
+                    &.status-reviewed {
+                      background: rgba(var(--info-rgb), 0.1);
+                      color: var(--info);
+                    }
+
+                    &.status-locked {
+                      background: rgba(var(--error-rgb), 0.1);
+                      color: var(--error);
+                    }
+                  }
+
+                  .confidential-icon {
+                    color: var(--warning);
+                    font-size: 18px;
+                    width: 18px;
+                    height: 18px;
+                  }
+                }
+              }
+
+              mat-card-content {
+                .record-content {
+
+                  .chief-complaint,
+                  .diagnosis {
+                    margin-bottom: var(--spacing-md);
+
+                    strong {
+                      display: block;
+                      color: var(--text-secondary);
+                      font-size: var(--font-size-sm);
+                      margin-bottom: var(--spacing-xs);
+                    }
+
+                    p {
+                      margin: 0;
+                      color: var(--text-primary);
+                      line-height: 1.5;
+                    }
+                  }
+
+                  .record-meta {
+                    display: flex;
+                    gap: var(--spacing-md);
+                    font-size: var(--font-size-sm);
+                    color: var(--text-secondary);
+
+                    span {
+                      display: flex;
+                      align-items: center;
+                      gap: var(--spacing-xs);
+
+                      mat-icon {
+                        font-size: 16px;
+                        width: 16px;
+                        height: 16px;
+                      }
+                    }
+
+                    .follow-up {
+                      color: var(--info);
+                    }
+                  }
+                }
+              }
+
+              mat-card-actions {
+                padding-top: var(--spacing-sm);
+                border-top: 1px solid var(--divider);
+              }
+            }
+          }
+        }
+      }
+
+      .load-more {
+        display: flex;
+        justify-content: center;
+        padding: var(--spacing-lg);
+
+        button {
+          min-width: 200px;
+
+          mat-spinner {
+            display: inline-block;
+            margin-right: var(--spacing-sm);
+          }
+        }
+      }
+    }
+  }
+
+  .fab-button {
+    position: fixed;
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    z-index: 100;
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .patient-medical-history-container {
+    .history-header {
+      padding: var(--spacing-md);
+
+      .header-content {
+        flex-direction: column;
+
+        .header-actions {
+          width: 100%;
+          justify-content: flex-end;
+        }
+      }
+
+      .history-stats {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      }
+    }
+
+    .history-content {
+      padding: 0 var(--spacing-md);
+
+      .filters-card {
+        .filters-row {
+          grid-template-columns: 1fr;
+
+          .search-field {
+            grid-column: 1;
+          }
+        }
+      }
+
+      .timeline-container {
+        .month-section {
+          .records-list {
+            padding-left: var(--spacing-sm);
+            margin-left: var(--spacing-sm);
+          }
+        }
+      }
+    }
+
+    .fab-button {
+      bottom: var(--spacing-md);
+      right: var(--spacing-md);
+    }
+  }
+}
+
+// Print Styles
+@media print {
+  .patient-medical-history-container {
+    .history-header {
+
+      .back-button,
+      .header-actions {
+        display: none !important;
+      }
+    }
+
+    .filters-card,
+    .fab-button {
+      display: none !important;
+    }
+
+    .record-card {
+      page-break-inside: avoid;
+
+      mat-card-actions {
+        display: none !important;
+      }
+    }
+  }
+}
+
+// Dark Theme Support
+@media (prefers-color-scheme: dark) {
+  .patient-medical-history-container {
+    background: var(--background-dark);
+
+    .history-header {
+      background: var(--surface-dark);
+
+      .patient-meta {
+        background: var(--background-secondary-dark);
+      }
+
+      .history-stats {
+        .stat-item {
+          background: var(--background-secondary-dark);
+        }
+      }
+    }
+
+    .filters-card,
+    .record-card {
+      background: var(--surface-dark);
+
+      &.confidential {
+        background: rgba(var(--warning-rgb), 0.1);
+      }
+    }
+  }
+}
