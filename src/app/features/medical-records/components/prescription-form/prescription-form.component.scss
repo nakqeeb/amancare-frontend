@@ -1,0 +1,258 @@
+.prescription-form {
+  width: 100%;
+
+  .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+
+    .form-title {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      font-size: var(--font-size-md);
+      font-weight: var(--font-weight-medium);
+      color: var(--text-primary);
+      margin: 0;
+
+      mat-icon {
+        color: var(--primary);
+      }
+    }
+  }
+
+  .prescriptions-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+
+    .empty-state {
+      text-align: center;
+      padding: var(--spacing-xl);
+      color: var(--text-secondary);
+
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        color: var(--text-disabled);
+        margin-bottom: var(--spacing-md);
+      }
+
+      p {
+        margin: var(--spacing-xs) 0;
+
+        &.hint {
+          font-size: var(--font-size-sm);
+          color: var(--text-disabled);
+        }
+      }
+    }
+
+    .prescription-card {
+      .prescription-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-md);
+
+        .medication-info {
+          display: flex;
+          align-items: baseline;
+          gap: var(--spacing-sm);
+
+          .medication-name {
+            margin: 0;
+            font-size: var(--font-size-md);
+            font-weight: var(--font-weight-medium);
+            color: var(--primary);
+          }
+
+          .generic-name {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            font-style: italic;
+          }
+        }
+
+        .prescription-actions {
+          display: flex;
+          gap: var(--spacing-xs);
+        }
+      }
+
+      .prescription-edit {
+        .form-row {
+          display: flex;
+          gap: var(--spacing-md);
+          margin-bottom: var(--spacing-md);
+          align-items: center;
+
+          .flex-1 {
+            flex: 1;
+          }
+
+          .flex-2 {
+            flex: 2;
+          }
+
+          .prn-checkbox {
+            margin-top: var(--spacing-md);
+          }
+        }
+
+        .full-width {
+          width: 100%;
+          margin-bottom: var(--spacing-md);
+        }
+
+        .medication-suggestions {
+          background: var(--surface);
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius-md);
+          margin-bottom: var(--spacing-md);
+          max-height: 200px;
+          overflow-y: auto;
+
+          .suggestion-item {
+            padding: var(--spacing-sm) var(--spacing-md);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            transition: var(--transition-base);
+
+            &:hover {
+              background: var(--background-hover);
+            }
+
+            .med-name {
+              font-weight: var(--font-weight-medium);
+              color: var(--primary);
+            }
+
+            .med-generic {
+              color: var(--text-secondary);
+              font-size: var(--font-size-sm);
+              font-style: italic;
+            }
+          }
+        }
+
+        .edit-actions {
+          display: flex;
+          justify-content: flex-end;
+        }
+      }
+
+      .prescription-view {
+        .prescription-details {
+          display: flex;
+          flex-wrap: wrap;
+          gap: var(--spacing-lg);
+          margin-bottom: var(--spacing-md);
+
+          .detail-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            color: var(--text-primary);
+
+            mat-icon {
+              font-size: 20px;
+              width: 20px;
+              height: 20px;
+              color: var(--text-secondary);
+            }
+          }
+        }
+
+        .instructions {
+          display: flex;
+          align-items: flex-start;
+          gap: var(--spacing-sm);
+          padding: var(--spacing-sm) var(--spacing-md);
+          background: var(--background-secondary);
+          border-radius: var(--border-radius-sm);
+          margin-bottom: var(--spacing-md);
+          color: var(--text-secondary);
+          font-size: var(--font-size-sm);
+
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+          }
+        }
+
+        .prescription-meta {
+          display: flex;
+          gap: var(--spacing-md);
+          font-size: var(--font-size-sm);
+          color: var(--text-secondary);
+
+          .meta-item {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--background);
+            border-radius: var(--border-radius-sm);
+
+            &.prn {
+              background: var(--warning);
+              color: var(--text-on-warning);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .templates-section {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--divider);
+
+    h4 {
+      margin-bottom: var(--spacing-md);
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .templates-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-sm);
+
+      mat-chip-option {
+        cursor: pointer;
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .prescription-form {
+    .prescription-card {
+      .prescription-edit {
+        .form-row {
+          flex-direction: column;
+          gap: var(--spacing-sm);
+
+          .flex-1,
+          .flex-2 {
+            width: 100%;
+          }
+        }
+      }
+
+      .prescription-view {
+        .prescription-details {
+          gap: var(--spacing-md);
+        }
+      }
+    }
+  }
+}

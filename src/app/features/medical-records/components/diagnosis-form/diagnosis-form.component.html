@@ -1,1 +1,184 @@
-<p>diagnosis-form works!</p>
+<div class="diagnosis-form">
+  <div class="form-header">
+    <h3 class="form-title">
+      <mat-icon>medical_information</mat-icon>
+      التشخيص الطبي
+    </h3>
+    <button mat-button color="primary" (click)="addDiagnosis()">
+      <mat-icon>add</mat-icon>
+      إضافة تشخيص
+    </button>
+  </div>
+
+  <!-- Diagnoses List -->
+  <div class="diagnoses-list">
+    @if (diagnoses.length === 0) {
+    <div class="empty-state">
+      <mat-icon>medical_services</mat-icon>
+      <p>لا يوجد تشخيصات مضافة</p>
+      <p class="hint">اضغط على "إضافة تشخيص" لإضافة تشخيص جديد</p>
+    </div>
+    } @for (diagnosis of diagnoses; track diagnosis; let i = $index) {
+    <mat-card
+      class="diagnosis-card"
+      [class.primary-diagnosis]="diagnosis.isPrimary"
+    >
+      <mat-card-content>
+        <div class="diagnosis-header">
+          <div class="diagnosis-badges">
+            @if (diagnosis.isPrimary) {
+            <span class="badge primary">تشخيص رئيسي</span>
+            }
+            <span class="badge type">{{
+              getDiagnosisTypeLabel(diagnosis.type)
+            }}</span>
+            @if (diagnosis.icdCode) {
+            <span class="badge icd">{{ diagnosis.icdCode }}</span>
+            }
+          </div>
+
+          <div class="diagnosis-actions">
+            @if (!diagnosis.isPrimary && diagnoses.length > 1) {
+            <button
+              mat-icon-button
+              (click)="setPrimary(i)"
+              matTooltip="تعيين كتشخيص رئيسي"
+            >
+              <mat-icon>star_outline</mat-icon>
+            </button>
+            }
+            <button
+              mat-icon-button
+              (click)="editMode.set(editMode() === i ? -1 : i)"
+              matTooltip="تعديل"
+            >
+              <mat-icon>{{ editMode() === i ? "close" : "edit" }}</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              color="warn"
+              (click)="removeDiagnosis(i)"
+              matTooltip="حذف"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        @if (editMode() === i) {
+        <!-- Edit Mode -->
+        <div class="diagnosis-edit">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>وصف التشخيص</mat-label>
+              <input
+                matInput
+                [(ngModel)]="diagnosis.description"
+                placeholder="أدخل وصف التشخيص"
+                required
+              />
+              <mat-icon matPrefix>description</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="icd-field">
+              <mat-label>رمز ICD-10</mat-label>
+              <input
+                matInput
+                [(ngModel)]="diagnosis.icdCode"
+                placeholder="مثال: J06.9"
+                (input)="searchICDCode($event, i)"
+              />
+              <mat-icon matPrefix>qr_code</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="type-field">
+              <mat-label>نوع التشخيص</mat-label>
+              <mat-select [(ngModel)]="diagnosis.type">
+                <mat-option value="PROVISIONAL">مؤقت</mat-option>
+                <mat-option value="DEFINITIVE">نهائي</mat-option>
+                <mat-option value="DIFFERENTIAL">تفريقي</mat-option>
+                <mat-option value="SYMPTOMATIC">عرضي</mat-option>
+                <mat-option value="COMPLICATIONS">مضاعفات</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-checkbox
+              [(ngModel)]="diagnosis.isPrimary"
+              [disabled]="diagnosis.isPrimary"
+              class="primary-checkbox"
+            >
+              تشخيص رئيسي
+            </mat-checkbox>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>ملاحظات إضافية</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="diagnosis.notes"
+              rows="2"
+              placeholder="أي ملاحظات إضافية حول التشخيص"
+            ></textarea>
+          </mat-form-field>
+
+          <!-- ICD Code Suggestions -->
+          @if (icdSuggestions().length > 0 && activeICDIndex() === i) {
+          <div class="icd-suggestions">
+            <div class="suggestions-header">اقتراحات ICD-10:</div>
+            <div class="suggestions-list">
+              @for (suggestion of icdSuggestions(); track suggestion.code) {
+              <div
+                class="suggestion-item"
+                (click)="selectICDCode(suggestion, i)"
+              >
+                <span class="code">{{ suggestion.code }}</span>
+                <span class="description">{{ suggestion.description }}</span>
+              </div>
+              }
+            </div>
+          </div>
+          }
+
+          <div class="edit-actions">
+            <button mat-button (click)="editMode.set(-1)">
+              <mat-icon>check</mat-icon>
+              حفظ
+            </button>
+          </div>
+        </div>
+        } @else {
+        <!-- View Mode -->
+        <div class="diagnosis-view">
+          <div class="diagnosis-description">
+            {{ diagnosis.description }}
+          </div>
+          @if (diagnosis.notes) {
+          <div class="diagnosis-notes">
+            <mat-icon>note</mat-icon>
+            {{ diagnosis.notes }}
+          </div>
+          }
+        </div>
+        }
+      </mat-card-content>
+    </mat-card>
+    }
+  </div>
+
+  <!-- Quick Templates -->
+  @if (showTemplates()) {
+  <div class="templates-section">
+    <h4>تشخيصات شائعة:</h4>
+    <div class="templates-chips">
+      <mat-chip-option
+        *ngFor="let template of commonDiagnoses"
+        (click)="addFromTemplate(template)"
+      >
+        {{ template.description }}
+      </mat-chip-option>
+    </div>
+  </div>
+  }
+</div>

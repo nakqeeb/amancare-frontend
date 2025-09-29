@@ -1,0 +1,274 @@
+.referrals-form {
+  width: 100%;
+
+  .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+
+    .form-title {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      font-size: var(--font-size-md);
+      font-weight: var(--font-weight-medium);
+      color: var(--text-primary);
+      margin: 0;
+
+      mat-icon {
+        color: var(--primary);
+      }
+    }
+  }
+
+  .referrals-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+
+    .empty-state {
+      text-align: center;
+      padding: var(--spacing-xl);
+      color: var(--text-secondary);
+
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        color: var(--text-disabled);
+        margin-bottom: var(--spacing-md);
+      }
+
+      p {
+        margin: var(--spacing-xs) 0;
+
+        &.hint {
+          font-size: var(--font-size-sm);
+          color: var(--text-disabled);
+        }
+      }
+    }
+
+    .referral-card {
+      .referral-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-md);
+
+        .referral-badges {
+          display: flex;
+          gap: var(--spacing-sm);
+          flex-wrap: wrap;
+
+          .badge {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--border-radius-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+
+            &.type-badge {
+              background: var(--primary);
+              color: var(--text-on-primary);
+            }
+
+            &.status-badge {
+              background: var(--info);
+              color: var(--text-on-info);
+            }
+
+            &.priority-low {
+              background: var(--background-secondary);
+              color: var(--text-secondary);
+            }
+
+            &.priority-medium {
+              background: var(--warning);
+              color: var(--text-on-warning);
+            }
+
+            &.priority-high {
+              background: var(--error);
+              color: var(--text-on-error);
+            }
+
+            &.priority-urgent {
+              background: var(--error);
+              color: var(--text-on-error);
+              animation: pulse 2s infinite;
+            }
+          }
+        }
+
+        .referral-actions {
+          display: flex;
+          gap: var(--spacing-xs);
+        }
+      }
+
+      .referral-edit {
+        .form-row {
+          display: flex;
+          gap: var(--spacing-md);
+          margin-bottom: var(--spacing-md);
+
+          .flex-1 {
+            flex: 1;
+          }
+
+          .flex-2 {
+            flex: 2;
+          }
+        }
+
+        .full-width {
+          width: 100%;
+          margin-bottom: var(--spacing-md);
+        }
+
+        .edit-actions {
+          display: flex;
+          justify-content: flex-end;
+        }
+      }
+
+      .referral-view {
+        .referral-details {
+          .detail-row {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            padding: var(--spacing-sm) 0;
+
+            strong {
+              color: var(--text-secondary);
+              min-width: 120px;
+            }
+
+            .specialty {
+              color: var(--primary);
+              font-style: italic;
+            }
+
+            .appointment-date {
+              display: flex;
+              align-items: center;
+              gap: var(--spacing-xs);
+              margin-left: auto;
+              padding: var(--spacing-xs) var(--spacing-sm);
+              background: var(--background-secondary);
+              border-radius: var(--border-radius-sm);
+              font-size: var(--font-size-sm);
+
+              mat-icon {
+                font-size: 16px;
+                width: 16px;
+                height: 16px;
+              }
+            }
+          }
+
+          .notes-section {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--background-secondary);
+            border-radius: var(--border-radius-sm);
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+
+            mat-icon {
+              font-size: 18px;
+              width: 18px;
+              height: 18px;
+              margin-top: 2px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .templates-section {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--divider);
+
+    h4 {
+      margin-bottom: var(--spacing-md);
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+    }
+
+    mat-chip-set {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-sm);
+
+      mat-chip {
+        cursor: pointer;
+
+        mat-icon {
+          margin-right: var(--spacing-xs);
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .referrals-form {
+    .referral-card {
+      .referral-edit {
+        .form-row {
+          flex-direction: column;
+          gap: var(--spacing-sm);
+
+          .flex-1,
+          .flex-2 {
+            width: 100%;
+          }
+        }
+      }
+
+      .referral-view {
+        .referral-details {
+          .detail-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--spacing-xs);
+
+            .appointment-date {
+              margin-left: 0;
+              margin-top: var(--spacing-xs);
+            }
+          }
+        }
+      }
+    }
+  }
+}

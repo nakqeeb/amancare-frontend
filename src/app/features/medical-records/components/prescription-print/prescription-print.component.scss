@@ -1,0 +1,327 @@
+.prescription-print-container {
+  min-height: 100vh;
+  background: var(--background);
+  padding: var(--spacing-lg);
+
+  &.print-mode {
+    padding: 0;
+  }
+
+  .print-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--surface);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .loading-container {
+    text-align: center;
+    padding: var(--spacing-xxl);
+
+    mat-spinner {
+      margin: 0 auto var(--spacing-md);
+    }
+  }
+
+  .prescription-document {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 40px;
+    box-shadow: var(--shadow-lg);
+    min-height: 1122px; // A4 height in pixels at 96 DPI
+
+    .clinic-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+
+      .clinic-logo {
+        width: 100px;
+        height: 100px;
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+      }
+
+      .clinic-info {
+        text-align: center;
+        flex: 1;
+
+        h1 {
+          color: var(--primary);
+          margin: 0 0 10px 0;
+          font-size: 24px;
+        }
+
+        p {
+          margin: 5px 0;
+          color: var(--text-secondary);
+        }
+
+        .contact-info {
+          display: flex;
+          justify-content: center;
+          gap: 20px;
+          margin-top: 10px;
+
+          span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+
+            mat-icon {
+              font-size: 16px;
+              width: 16px;
+              height: 16px;
+            }
+          }
+        }
+      }
+
+      .license-info {
+        text-align: right;
+        font-size: 12px;
+        color: var(--text-secondary);
+
+        p {
+          margin: 2px 0;
+        }
+      }
+    }
+
+    .divider {
+      height: 2px;
+      background: linear-gradient(to right, var(--primary), var(--primary-light), var(--primary));
+      margin: 20px 0;
+    }
+
+    .prescription-title {
+      text-align: center;
+      margin: 30px 0;
+
+      h2 {
+        font-size: 28px;
+        color: var(--primary);
+        margin: 0;
+      }
+
+      .prescription-number {
+        color: var(--text-secondary);
+        font-size: 14px;
+      }
+    }
+
+    .patient-section,
+    .diagnosis-section,
+    .prescriptions-section {
+      margin-bottom: 30px;
+
+      h3 {
+        color: var(--primary);
+        border-bottom: 2px solid var(--primary);
+        padding-bottom: 5px;
+        margin-bottom: 15px;
+      }
+    }
+
+    .patient-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+
+      .info-item {
+        display: flex;
+        gap: 10px;
+
+        label {
+          font-weight: bold;
+          color: var(--text-secondary);
+        }
+
+        span {
+          color: var(--text-primary);
+        }
+      }
+    }
+
+    .diagnosis-list {
+      .diagnosis-item {
+        padding: 5px 0;
+
+        .diagnosis-text {
+          font-weight: 500;
+        }
+
+        .icd-code {
+          color: var(--text-secondary);
+          font-size: 12px;
+          margin-left: 10px;
+        }
+      }
+    }
+
+    .prescriptions-section {
+      .rx-symbol {
+        font-size: 32px;
+        color: var(--primary);
+        margin-bottom: 20px;
+      }
+
+      .medications-list {
+        .medication-item {
+          display: flex;
+          margin-bottom: 20px;
+          padding: 15px;
+          background: var(--background);
+          border-radius: var(--border-radius-md);
+          border: 1px solid var(--border-color);
+
+          .medication-number {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-right: 15px;
+          }
+
+          .medication-details {
+            flex: 1;
+
+            .medication-header {
+              margin-bottom: 10px;
+
+              strong {
+                font-size: 16px;
+                color: var(--text-primary);
+              }
+
+              .generic {
+                color: var(--text-secondary);
+                font-style: italic;
+                margin-left: 10px;
+              }
+            }
+
+            .medication-info {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 10px;
+
+              >div {
+                .label {
+                  font-weight: 500;
+                  color: var(--text-secondary);
+                  margin-right: 5px;
+                }
+              }
+
+              .instructions {
+                grid-column: span 2;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .signature-section {
+      display: flex;
+      justify-content: space-between;
+      margin: 40px 0;
+      padding-top: 20px;
+      border-top: 1px solid var(--divider);
+
+      .doctor-info {
+        h4 {
+          color: var(--primary);
+          margin: 0 0 10px 0;
+        }
+
+        p {
+          margin: 5px 0;
+        }
+      }
+
+      .signature-box,
+      .stamp-box {
+        text-align: center;
+
+        p {
+          color: var(--text-secondary);
+          margin-bottom: 10px;
+        }
+
+        .signature-line {
+          width: 150px;
+          height: 50px;
+          border-bottom: 1px solid var(--text-secondary);
+        }
+
+        .stamp-area {
+          width: 100px;
+          height: 100px;
+          border: 1px dashed var(--text-secondary);
+          border-radius: 50%;
+        }
+      }
+    }
+
+    .footer-instructions {
+      background: var(--background);
+      padding: 15px;
+      border-radius: var(--border-radius-md);
+      margin: 30px 0;
+
+      h4 {
+        color: var(--primary);
+        margin: 0 0 10px 0;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 20px;
+
+        li {
+          color: var(--text-secondary);
+          margin: 5px 0;
+        }
+      }
+    }
+
+    .document-footer {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 12px;
+      margin-top: 30px;
+
+      p {
+        margin: 5px 0;
+      }
+    }
+  }
+}
+
+// Print Styles
+@media print {
+  .prescription-print-container {
+    padding: 0;
+    background: white;
+
+    .no-print {
+      display: none !important;
+    }
+
+    .prescription-document {
+      box-shadow: none;
+      padding: 20px;
+      margin: 0;
+    }
+  }
+}

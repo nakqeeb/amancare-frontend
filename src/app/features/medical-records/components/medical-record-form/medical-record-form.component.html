@@ -65,21 +65,21 @@
               matInput
               [matAutocomplete]="patientAuto"
               formControlName="patientSearch"
-              [displayWith]="displayPatient"
               placeholder="ابحث عن المريض"
             />
             <mat-icon matPrefix>person</mat-icon>
             <mat-autocomplete
               #patientAuto="matAutocomplete"
+              [displayWith]="displayPatient"
               (optionSelected)="onPatientSelected($event)"
             >
               @for (patient of filteredPatients$ | async; track patient.id) {
               <mat-option [value]="patient">
                 <div class="patient-option">
                   <span class="patient-name">{{ patient.fullName }}</span>
-                  <span class="patient-info"
-                    >{{ patient.patientNumber }} | {{ patient.phone }}</span
-                  >
+                  <span class="patient-info">
+                    {{ patient.patientNumber }} | {{ patient.phone }}
+                  </span>
                 </div>
               </mat-option>
               }
@@ -145,7 +145,7 @@
               {
               <mat-option [value]="appointment.id">
                 {{ formatDateTime(appointment.appointmentDate) }} -
-                {{ appointment.doctorName }}
+                {{ appointment.doctor.fullName }}
               </mat-option>
               }
             </mat-select>

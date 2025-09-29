@@ -166,7 +166,7 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
       doctorId: [this.currentUser()?.id || '', Validators.required],
       appointmentId: [''],
       visitDate: [new Date(), Validators.required],
-      visitType: [VisitType.FIRST_VISIT, Validators.required],
+      visitType: [VisitType.CONSULTATION, Validators.required],
       isConfidential: [false],
 
       // Clinical Examination

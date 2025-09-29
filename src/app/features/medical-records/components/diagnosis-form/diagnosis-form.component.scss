@@ -1,0 +1,254 @@
+ .diagnosis-form {
+   width: 100%;
+
+   .form-header {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: var(--spacing-md);
+
+     .form-title {
+       display: flex;
+       align-items: center;
+       gap: var(--spacing-sm);
+       font-size: var(--font-size-md);
+       font-weight: var(--font-weight-medium);
+       color: var(--text-primary);
+       margin: 0;
+
+       mat-icon {
+         color: var(--primary);
+       }
+     }
+   }
+
+   .diagnoses-list {
+     display: flex;
+     flex-direction: column;
+     gap: var(--spacing-md);
+     margin-bottom: var(--spacing-md);
+
+     .empty-state {
+       text-align: center;
+       padding: var(--spacing-xl);
+       color: var(--text-secondary);
+
+       mat-icon {
+         font-size: 48px;
+         width: 48px;
+         height: 48px;
+         color: var(--text-disabled);
+         margin-bottom: var(--spacing-md);
+       }
+
+       p {
+         margin: var(--spacing-xs) 0;
+
+         &.hint {
+           font-size: var(--font-size-sm);
+           color: var(--text-disabled);
+         }
+       }
+     }
+
+     .diagnosis-card {
+       border-left: 3px solid var(--border-color);
+       transition: var(--transition-base);
+
+       &.primary-diagnosis {
+         border-left-color: var(--primary);
+         background: rgba(var(--primary-rgb), 0.05);
+       }
+
+       &:hover {
+         box-shadow: var(--shadow-sm);
+       }
+
+       .diagnosis-header {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         margin-bottom: var(--spacing-md);
+
+         .diagnosis-badges {
+           display: flex;
+           gap: var(--spacing-sm);
+           flex-wrap: wrap;
+
+           .badge {
+             padding: var(--spacing-xs) var(--spacing-sm);
+             border-radius: var(--border-radius-sm);
+             font-size: var(--font-size-xs);
+             font-weight: var(--font-weight-medium);
+
+             &.primary {
+               background: var(--primary);
+               color: var(--text-on-primary);
+             }
+
+             &.type {
+               background: var(--background-secondary);
+               color: var(--text-secondary);
+             }
+
+             &.icd {
+               background: var(--info);
+               color: var(--text-on-info);
+               font-family: var(--font-family-mono);
+             }
+           }
+         }
+
+         .diagnosis-actions {
+           display: flex;
+           gap: var(--spacing-xs);
+         }
+       }
+
+       .diagnosis-edit {
+         .form-row {
+           display: flex;
+           gap: var(--spacing-md);
+           margin-bottom: var(--spacing-md);
+           align-items: center;
+
+           .flex-1 {
+             flex: 1;
+           }
+
+           .icd-field {
+             width: 200px;
+           }
+
+           .type-field {
+             flex: 1;
+           }
+
+           .primary-checkbox {
+             margin-left: var(--spacing-md);
+           }
+         }
+
+         .full-width {
+           width: 100%;
+         }
+
+         .icd-suggestions {
+           background: var(--surface);
+           border: 1px solid var(--border-color);
+           border-radius: var(--border-radius-md);
+           margin-bottom: var(--spacing-md);
+           overflow: hidden;
+
+           .suggestions-header {
+             padding: var(--spacing-sm) var(--spacing-md);
+             background: var(--background-secondary);
+             font-size: var(--font-size-sm);
+             font-weight: var(--font-weight-medium);
+             color: var(--text-secondary);
+           }
+
+           .suggestions-list {
+             max-height: 200px;
+             overflow-y: auto;
+
+             .suggestion-item {
+               padding: var(--spacing-sm) var(--spacing-md);
+               cursor: pointer;
+               display: flex;
+               gap: var(--spacing-md);
+               transition: var(--transition-base);
+
+               &:hover {
+                 background: var(--background-hover);
+               }
+
+               .code {
+                 font-family: var(--font-family-mono);
+                 font-weight: var(--font-weight-medium);
+                 color: var(--primary);
+                 min-width: 80px;
+               }
+
+               .description {
+                 flex: 1;
+                 color: var(--text-primary);
+               }
+             }
+           }
+         }
+
+         .edit-actions {
+           display: flex;
+           justify-content: flex-end;
+           margin-top: var(--spacing-md);
+         }
+       }
+
+       .diagnosis-view {
+         .diagnosis-description {
+           font-size: var(--font-size-base);
+           color: var(--text-primary);
+           font-weight: var(--font-weight-medium);
+           margin-bottom: var(--spacing-sm);
+         }
+
+         .diagnosis-notes {
+           display: flex;
+           align-items: flex-start;
+           gap: var(--spacing-sm);
+           color: var(--text-secondary);
+           font-size: var(--font-size-sm);
+
+           mat-icon {
+             font-size: 18px;
+             width: 18px;
+             height: 18px;
+             margin-top: 2px;
+           }
+         }
+       }
+     }
+   }
+
+   .templates-section {
+     margin-top: var(--spacing-lg);
+     padding-top: var(--spacing-lg);
+     border-top: 1px solid var(--divider);
+
+     h4 {
+       margin-bottom: var(--spacing-md);
+       color: var(--text-secondary);
+       font-size: var(--font-size-sm);
+       font-weight: var(--font-weight-medium);
+     }
+
+     .templates-chips {
+       display: flex;
+       flex-wrap: wrap;
+       gap: var(--spacing-sm);
+
+       mat-chip-option {
+         cursor: pointer;
+       }
+     }
+   }
+ }
+
+ // Responsive Design
+ @media (max-width: 768px) {
+   .diagnosis-form {
+     .diagnosis-card {
+       .diagnosis-edit {
+         .form-row {
+           flex-direction: column;
+
+           .icd-field,
+           .type-field {
+             width: 100%;
+           }
+         }
+       }
+     }
+   }
+ }

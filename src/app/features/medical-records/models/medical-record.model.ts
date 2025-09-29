@@ -10,12 +10,16 @@ import { PageResponse } from "../../../core/models/api-response.model";
 // ===================================================================
 
 export enum VisitType {
-  FIRST_VISIT = 'FIRST_VISIT',
+  CONSULTATION = 'CONSULTATION',
   FOLLOW_UP = 'FOLLOW_UP',
   EMERGENCY = 'EMERGENCY',
-  ROUTINE_CHECK = 'ROUTINE_CHECK',
+  ROUTINE_CHECKUP = 'ROUTINE_CHECKUP',
   VACCINATION = 'VACCINATION',
-  CONSULTATION = 'CONSULTATION'
+  PROCEDURE = 'PROCEDURE',
+  SURGERY = 'SURGERY',
+  REHABILITATION = 'REHABILITATION',
+  PREVENTIVE_CARE = 'PREVENTIVE_CARE',
+  CHRONIC_CARE = 'CHRONIC_CARE'
 }
 
 export enum RecordStatus {
@@ -23,83 +27,109 @@ export enum RecordStatus {
   IN_PROGRESS = 'IN_PROGRESS',
   COMPLETED = 'COMPLETED',
   REVIEWED = 'REVIEWED',
-  AMENDED = 'AMENDED',
   LOCKED = 'LOCKED',
   CANCELLED = 'CANCELLED'
 }
 
 export enum DiagnosisType {
-  PRELIMINARY = 'PRELIMINARY',
-  DIFFERENTIAL = 'DIFFERENTIAL',
-  CONFIRMED = 'CONFIRMED',
-  RULED_OUT = 'RULED_OUT'
+  PRIMARY = 'PRIMARY',           // أساسي
+  SECONDARY = 'SECONDARY',       // ثانوي
+  DIFFERENTIAL = 'DIFFERENTIAL', // تشخيص تفريقي
+  PROVISIONAL = 'PROVISIONAL',   // مؤقت
+  FINAL = 'FINAL',               // نهائي
+  RULED_OUT = 'RULED_OUT'        // مستبعد
 }
 
 export enum MedicationRoute {
   ORAL = 'ORAL',
+  TOPICAL = 'TOPICAL',
+  INJECTION = 'INJECTION',
   INTRAVENOUS = 'INTRAVENOUS',
   INTRAMUSCULAR = 'INTRAMUSCULAR',
   SUBCUTANEOUS = 'SUBCUTANEOUS',
-  TOPICAL = 'TOPICAL',
   INHALATION = 'INHALATION',
   RECTAL = 'RECTAL',
+  SUBLINGUAL = 'SUBLINGUAL',
+  NASAL = 'NASAL',
   OPHTHALMIC = 'OPHTHALMIC',
-  OTIC = 'OTIC',
-  NASAL = 'NASAL'
+  OTIC = 'OTIC'
 }
 
 export enum TestUrgency {
   ROUTINE = 'ROUTINE',
   URGENT = 'URGENT',
-  STAT = 'STAT'
+  STAT = 'STAT',
+  ASAP = 'ASAP'
 }
 
 export enum TestStatus {
   ORDERED = 'ORDERED',
-  SPECIMEN_COLLECTED = 'SPECIMEN_COLLECTED',
+  COLLECTED = 'COLLECTED',
   IN_PROGRESS = 'IN_PROGRESS',
   COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
+  DELAYED = 'DELAYED',
 }
 
+// =============================================================================
+// Lab Test Category Enum - فئة الفحص المخبري (Frontend)
+// مطابق للـ Backend Enum
+// =============================================================================
 export enum LabTestCategory {
-  HEMATOLOGY = 'HEMATOLOGY',
-  CHEMISTRY = 'CHEMISTRY',
-  MICROBIOLOGY = 'MICROBIOLOGY',
-  IMMUNOLOGY = 'IMMUNOLOGY',
-  PATHOLOGY = 'PATHOLOGY',
-  GENETICS = 'GENETICS',
-  OTHER = 'OTHER'
+  HEMATOLOGY = 'HEMATOLOGY',       // أمراض الدم
+  BIOCHEMISTRY = 'BIOCHEMISTRY',   // الكيمياء الحيوية
+  MICROBIOLOGY = 'MICROBIOLOGY',   // الأحياء الدقيقة
+  IMMUNOLOGY = 'IMMUNOLOGY',       // المناعة
+  ENDOCRINOLOGY = 'ENDOCRINOLOGY', // الغدد الصماء
+  CARDIOLOGY = 'CARDIOLOGY',       // القلب
+  NEPHROLOGY = 'NEPHROLOGY',       // الكلى
+  HEPATOLOGY = 'HEPATOLOGY',       // الكبد
+  ONCOLOGY = 'ONCOLOGY',           // الأورام
+  TOXICOLOGY = 'TOXICOLOGY',       // السموم
+  GENETICS = 'GENETICS',           // الوراثة
+  COAGULATION = 'COAGULATION'      // التخثر
 }
 
 export enum RadiologyType {
-  XRAY = 'XRAY',
+  X_RAY = 'X_RAY',
   CT_SCAN = 'CT_SCAN',
   MRI = 'MRI',
   ULTRASOUND = 'ULTRASOUND',
   MAMMOGRAPHY = 'MAMMOGRAPHY',
+  BONE_SCAN = 'BONE_SCAN',
   PET_SCAN = 'PET_SCAN',
+  ANGIOGRAPHY = 'ANGIOGRAPHY',
+  FLUOROSCOPY = 'FLUOROSCOPY',
   NUCLEAR_MEDICINE = 'NUCLEAR_MEDICINE',
-  OTHER = 'OTHER'
 }
 
 export enum ProcedureCategory {
   DIAGNOSTIC = 'DIAGNOSTIC',
   THERAPEUTIC = 'THERAPEUTIC',
   SURGICAL = 'SURGICAL',
-  PREVENTIVE = 'PREVENTIVE'
+  PREVENTIVE = 'PREVENTIVE',
+  COSMETIC = 'COSMETIC',
+  EMERGENCY = 'EMERGENCY',
+  REHABILITATION = 'REHABILITATION',
 }
 
 export enum ReferralType {
-  INTERNAL = 'INTERNAL',
-  EXTERNAL = 'EXTERNAL'
+  SPECIALIST = 'SPECIALIST',
+  HOSPITAL = 'HOSPITAL',
+  EMERGENCY = 'EMERGENCY',
+  LABORATORY = 'LABORATORY',
+  RADIOLOGY = 'RADIOLOGY',
+  PHYSIOTHERAPY = 'PHYSIOTHERAPY',
+  PSYCHIATRY = 'PSYCHIATRY',
+  DENTISTRY = 'DENTISTRY',
+  OPHTHALMOLOGY = 'OPHTHALMOLOGY',
+  ENT = 'ENT',
 }
 
 export enum ReferralPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  URGENT = 'URGENT'
+  ROUTINE = 'ROUTINE',
+  URGENT = 'URGENT',
+  EMERGENCY = 'EMERGENCY',
 }
 
 // ===================================================================
@@ -226,6 +256,10 @@ export interface Diagnosis {
 
 export interface Prescription {
   id?: number;
+
+  // علاقة مع السجل الطبي
+  medicalRecordId?: number; // بدل full MedicalRecord object عشان يكون أبسط في الـ frontend
+
   medicationName: string;
   genericName?: string;
   dosage: string;
@@ -235,9 +269,10 @@ export interface Prescription {
   instructions?: string;
   quantity?: number;
   refills?: number;
-  startDate?: string;
-  endDate?: string;
-  isPrn?: boolean; // As needed
+  startDate?: string;   // ISO string من LocalDate
+  endDate?: string;     // ISO string من LocalDate
+  isPrn?: boolean;      // As needed
+  createdAt?: string;   // ISO string من LocalDateTime
 }
 
 export interface LabTest {
@@ -284,19 +319,23 @@ export interface MedicalProcedure {
   complications?: string;
   outcome?: string;
   notes?: string;
+  createdAt?: string;
 }
+
 
 export interface Referral {
   id?: number;
-  referralType: ReferralType;
-  referredTo: string;
-  specialty?: string;
-  priority: ReferralPriority;
-  reason: string;
-  notes?: string;
-  referralDate: string;
-  appointmentDate?: string;
-  status?: string;
+  referralType: ReferralType;       // required
+  referredTo: string;               // required
+  specialty?: string;               // optional
+  priority: ReferralPriority;       // required
+  reason: string;                   // required
+  notes?: string;                   // optional
+  referralDate: string;             // required, format: YYYY-MM-DD
+  appointmentDate?: string;         // optional, format: YYYY-MM-DD
+  isCompleted?: boolean;            // optional, defaults to false
+  createdAt?: string;               // optional, ISO datetime
+  updatedAt?: string;               // optional, ISO datetime
 }
 
 export interface Attachment {
@@ -464,16 +503,19 @@ export interface CreateReferralDto {
 /**
  * Medical Record Search Criteria
  */
+/**
+ * Medical Record Search Criteria
+ */
 export interface MedicalRecordSearchCriteria {
   patientId?: number;
   doctorId?: number;
   visitType?: VisitType;
   status?: RecordStatus;
-  visitDateFrom?: string;
-  visitDateTo?: string;
+  visitDateFrom?: string; // ISO date string (yyyy-MM-dd)
+  visitDateTo?: string;   // ISO date string (yyyy-MM-dd)
+  searchTerm?: string;    // Search in chief complaint, diagnosis, etc.
   isConfidential?: boolean;
-  searchTerm?: string;
-  clinicId?: number; // For SYSTEM_ADMIN
+  clinicId?: number;      // For SYSTEM_ADMIN - to search across clinics
 }
 
 // ===================================================================
@@ -485,7 +527,7 @@ export interface MedicalRecordSearchCriteria {
  */
 export interface MedicalRecordStatistics {
   totalRecords: number;
-  recordsByStatus: { [key in RecordStatus]?: number };
+  recordsByStatus: { [key in RecordStatus]?: number }; // maps completed/draft/reviewed/locked
   recordsToday: number;
   recordsThisWeek: number;
   recordsThisMonth: number;
@@ -514,10 +556,10 @@ export interface DiagnosisFrequency {
 
 export interface MedicationFrequency {
   medicationName: string;
+  genericName?: string;
   count: number;
   percentage?: number;
 }
-
 // ===================================================================
 // PAGE RESPONSE
 // ===================================================================

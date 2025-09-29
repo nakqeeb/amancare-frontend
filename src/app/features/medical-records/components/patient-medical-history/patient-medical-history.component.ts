@@ -168,8 +168,8 @@ export class PatientMedicalHistoryComponent implements OnInit {
 
     this.totalLabTests.set(
       records.filter(r =>
-        r.visitType === VisitType.ROUTINE_CHECK ||
-        r.visitType === VisitType.FIRST_VISIT
+        r.visitType === VisitType.ROUTINE_CHECKUP ||
+        r.visitType === VisitType.CONSULTATION
       ).length
     );
   }
@@ -335,12 +335,16 @@ export class PatientMedicalHistoryComponent implements OnInit {
 
   getVisitTypeLabel(type: VisitType): string {
     const labels: Record<VisitType, string> = {
-      [VisitType.FIRST_VISIT]: 'زيارة أولى',
+      [VisitType.CONSULTATION]: 'استشارة',
       [VisitType.FOLLOW_UP]: 'متابعة',
       [VisitType.EMERGENCY]: 'طوارئ',
-      [VisitType.ROUTINE_CHECK]: 'فحص دوري',
+      [VisitType.ROUTINE_CHECKUP]: 'فحص دوري',
       [VisitType.VACCINATION]: 'تطعيم',
-      [VisitType.CONSULTATION]: 'استشارة'
+      [VisitType.PROCEDURE]: 'إجراء طبي',
+      [VisitType.SURGERY]: 'عملية جراحية',
+      [VisitType.REHABILITATION]: 'تأهيل',
+      [VisitType.PREVENTIVE_CARE]: 'رعاية وقائية',
+      [VisitType.CHRONIC_CARE]: 'رعاية مزمنة'
     };
     return labels[type] || type;
   }
@@ -351,7 +355,6 @@ export class PatientMedicalHistoryComponent implements OnInit {
       [RecordStatus.IN_PROGRESS]: 'قيد التحرير',
       [RecordStatus.COMPLETED]: 'مكتمل',
       [RecordStatus.REVIEWED]: 'مراجع',
-      [RecordStatus.AMENDED]: 'معدل',
       [RecordStatus.LOCKED]: 'مقفل',
       [RecordStatus.CANCELLED]: 'ملغي'
     };
@@ -364,7 +367,6 @@ export class PatientMedicalHistoryComponent implements OnInit {
       [RecordStatus.IN_PROGRESS]: 'progress',
       [RecordStatus.COMPLETED]: 'completed',
       [RecordStatus.REVIEWED]: 'reviewed',
-      [RecordStatus.AMENDED]: 'amended',
       [RecordStatus.LOCKED]: 'locked',
       [RecordStatus.CANCELLED]: 'cancelled'
     };

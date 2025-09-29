@@ -1,0 +1,238 @@
+<div class="lab-tests-form">
+  <div class="form-header">
+    <h3 class="form-title">
+      <mat-icon>biotech</mat-icon>
+      الفحوصات المخبرية
+    </h3>
+    <button mat-button color="primary" (click)="addLabTest()">
+      <mat-icon>add</mat-icon>
+      إضافة فحص
+    </button>
+  </div>
+
+  <!-- Lab Tests List -->
+  <div class="lab-tests-list">
+    @if (labTests.length === 0) {
+    <div class="empty-state">
+      <mat-icon>science</mat-icon>
+      <p>لا توجد فحوصات مخبرية مضافة</p>
+      <p class="hint">اضغط على "إضافة فحص" لطلب فحص جديد</p>
+    </div>
+    } @for (labTest of labTests; track labTest; let i = $index) {
+    <mat-expansion-panel
+      class="lab-test-panel"
+      [expanded]="expandedIndex() === i"
+    >
+      <mat-expansion-panel-header (click)="setExpanded(i)">
+        <mat-panel-title>
+          <div class="test-title">
+            <mat-icon>{{ getCategoryIcon(labTest.category) }}</mat-icon>
+            <span>{{ labTest.testName || "فحص جديد" }}</span>
+            @if (labTest.testCode) {
+            <span class="test-code">[{{ labTest.testCode }}]</span>
+            }
+          </div>
+        </mat-panel-title>
+        <mat-panel-description>
+          <div class="test-badges">
+            <span class="badge urgency-{{ labTest.urgency?.toLowerCase() }}">
+              {{ getUrgencyLabel(labTest.urgency) }}
+            </span>
+            <span class="badge status-{{ labTest.status?.toLowerCase() }}">
+              {{ getStatusLabel(labTest.status) }}
+            </span>
+          </div>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <div class="test-content">
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="flex-2">
+            <mat-label>اسم الفحص</mat-label>
+            <input
+              matInput
+              [(ngModel)]="labTest.testName"
+              placeholder="مثال: تعداد الدم الكامل"
+              required
+            />
+            <mat-icon matPrefix>science</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>رمز الفحص</mat-label>
+            <input
+              matInput
+              [(ngModel)]="labTest.testCode"
+              placeholder="مثال: CBC"
+            />
+            <mat-icon matPrefix>qr_code</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>فئة الفحص</mat-label>
+            <mat-select [(ngModel)]="labTest.category">
+              <mat-option value="HEMATOLOGY">الدم</mat-option>
+              <mat-option value="CHEMISTRY">الكيمياء</mat-option>
+              <mat-option value="MICROBIOLOGY">الأحياء الدقيقة</mat-option>
+              <mat-option value="IMMUNOLOGY">المناعة</mat-option>
+              <mat-option value="PATHOLOGY">الأمراض</mat-option>
+              <mat-option value="GENETICS">الوراثة</mat-option>
+              <mat-option value="URINALYSIS">تحليل البول</mat-option>
+              <mat-option value="OTHER">أخرى</mat-option>
+            </mat-select>
+            <mat-icon matPrefix>category</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>الأولوية</mat-label>
+            <mat-select [(ngModel)]="labTest.urgency">
+              <mat-option value="ROUTINE">روتيني</mat-option>
+              <mat-option value="URGENT">عاجل</mat-option>
+              <mat-option value="STAT">فوري</mat-option>
+            </mat-select>
+            <mat-icon matPrefix>priority_high</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>نوع العينة</mat-label>
+            <input
+              matInput
+              [(ngModel)]="labTest.specimenType"
+              placeholder="مثال: دم، بول، لعاب"
+            />
+            <mat-icon matPrefix>water_drop</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>تعليمات خاصة</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="labTest.instructions"
+            rows="2"
+            placeholder="مثال: صيام 8 ساعات، عينة صباحية"
+          ></textarea>
+          <mat-icon matPrefix>info</mat-icon>
+        </mat-form-field>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>الحالة</mat-label>
+            <mat-select [(ngModel)]="labTest.status">
+              <mat-option value="ORDERED">مطلوب</mat-option>
+              <mat-option value="PENDING">قيد الانتظار</mat-option>
+              <mat-option value="IN_PROGRESS">قيد التنفيذ</mat-option>
+              <mat-option value="COMPLETED">مكتمل</mat-option>
+              <mat-option value="CANCELLED">ملغى</mat-option>
+            </mat-select>
+            <mat-icon matPrefix>pending</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>تاريخ الطلب</mat-label>
+            <input
+              matInput
+              [matDatepicker]="orderPicker"
+              [(ngModel)]="labTest.orderedDate"
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="orderPicker"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #orderPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>تاريخ النتيجة</mat-label>
+            <input
+              matInput
+              [matDatepicker]="resultPicker"
+              [(ngModel)]="labTest.resultDate"
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="resultPicker"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #resultPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <!-- Results Section -->
+        @if (labTest.status === 'COMPLETED') {
+        <div class="results-section">
+          <h4>النتائج</h4>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>النتيجة</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="labTest.results"
+              rows="3"
+              placeholder="أدخل نتائج الفحص"
+            ></textarea>
+            <mat-icon matPrefix>assessment</mat-icon>
+          </mat-form-field>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>النطاق الطبيعي</mat-label>
+              <input
+                matInput
+                [(ngModel)]="labTest.normalRange"
+                placeholder="مثال: 4.5-11.0 x10^9/L"
+              />
+              <mat-icon matPrefix>show_chart</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>أجرى الفحص</mat-label>
+              <input
+                matInput
+                [(ngModel)]="labTest.performedBy"
+                placeholder="اسم الفني/المختبر"
+              />
+              <mat-icon matPrefix>person</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>التفسير</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="labTest.interpretation"
+              rows="2"
+              placeholder="تفسير النتائج"
+            ></textarea>
+            <mat-icon matPrefix>psychology</mat-icon>
+          </mat-form-field>
+        </div>
+        }
+
+        <div class="test-actions">
+          <button mat-button color="warn" (click)="removeLabTest(i)">
+            <mat-icon>delete</mat-icon>
+            حذف الفحص
+          </button>
+        </div>
+      </div>
+    </mat-expansion-panel>
+    }
+  </div>
+
+  <!-- Quick Templates -->
+  @if (showTemplates()) {
+  <div class="templates-section">
+    <h4>فحوصات شائعة:</h4>
+    <mat-chip-set>
+      @for (template of commonTests; track template.testCode) {
+      <mat-chip (click)="addFromTemplate(template)">
+        <mat-icon>{{ getCategoryIcon(template.category) }}</mat-icon>
+        {{ template.testName }}
+      </mat-chip>
+      }
+    </mat-chip-set>
+  </div>
+  }
+</div>

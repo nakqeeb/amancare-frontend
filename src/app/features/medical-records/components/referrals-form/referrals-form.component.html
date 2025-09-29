@@ -1,0 +1,254 @@
+<div class="referrals-form">
+  <div class="form-header">
+    <h3 class="form-title">
+      <mat-icon>person_search</mat-icon>
+      التحويلات الطبية
+    </h3>
+    <button mat-button color="primary" (click)="addReferral()">
+      <mat-icon>add</mat-icon>
+      إضافة تحويل
+    </button>
+  </div>
+
+  <!-- Referrals List -->
+  <div class="referrals-list">
+    @if (referrals.length === 0) {
+    <div class="empty-state">
+      <mat-icon>swap_horiz</mat-icon>
+      <p>لا توجد تحويلات طبية</p>
+      <p class="hint">اضغط على "إضافة تحويل" لإحالة المريض</p>
+    </div>
+    } @for (referral of referrals; track referral; let i = $index) {
+    <mat-card class="referral-card">
+      <mat-card-content>
+        <div class="referral-header">
+          <div class="referral-badges">
+            <span class="badge type-badge">
+              {{ getReferralTypeLabel(referral.referralType) }}
+            </span>
+            <span class="badge priority-{{ referral.priority.toLowerCase() }}">
+              {{ getPriorityLabel(referral.priority) }}
+            </span>
+            <!-- @if (referral.status) {
+                    <span class="badge status-badge">{{ referral.status }}</span>
+                  } -->
+            <span class="badge status-badge">
+              {{ getReferralStatus(referral) }}
+            </span>
+          </div>
+
+          <div class="referral-actions">
+            <button mat-icon-button (click)="toggleEdit(i)" matTooltip="تعديل">
+              <mat-icon>{{ editMode()[i] ? "close" : "edit" }}</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              color="warn"
+              (click)="removeReferral(i)"
+              matTooltip="حذف"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        @if (editMode()[i]) {
+        <!-- Edit Mode -->
+        <div class="referral-edit">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>نوع التحويل</mat-label>
+              <mat-select [(ngModel)]="referral.referralType">
+                <mat-option value="INTERNAL">داخلي</mat-option>
+                <mat-option value="EXTERNAL">خارجي</mat-option>
+                <mat-option value="EMERGENCY">طارئ</mat-option>
+                <mat-option value="CONSULTATION">استشارة</mat-option>
+                <mat-option value="FOLLOWUP">متابعة</mat-option>
+              </mat-select>
+              <mat-icon matPrefix>swap_horiz</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>الأولوية</mat-label>
+              <mat-select [(ngModel)]="referral.priority">
+                <mat-option value="LOW">منخفضة</mat-option>
+                <mat-option value="MEDIUM">متوسطة</mat-option>
+                <mat-option value="HIGH">عالية</mat-option>
+                <mat-option value="URGENT">عاجلة</mat-option>
+              </mat-select>
+              <mat-icon matPrefix>priority_high</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-2">
+              <mat-label>التحويل إلى</mat-label>
+              <input
+                matInput
+                [(ngModel)]="referral.referredTo"
+                placeholder="اسم الطبيب أو المركز الطبي"
+                required
+              />
+              <mat-icon matPrefix>person</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>التخصص</mat-label>
+              <mat-select [(ngModel)]="referral.specialty">
+                <mat-option value="">-- اختر التخصص --</mat-option>
+                <mat-option value="INTERNAL_MEDICINE">الباطنة</mat-option>
+                <mat-option value="CARDIOLOGY">القلب</mat-option>
+                <mat-option value="NEUROLOGY">الأعصاب</mat-option>
+                <mat-option value="ORTHOPEDICS">العظام</mat-option>
+                <mat-option value="PEDIATRICS">الأطفال</mat-option>
+                <mat-option value="GYNECOLOGY">النساء والولادة</mat-option>
+                <mat-option value="OPHTHALMOLOGY">العيون</mat-option>
+                <mat-option value="ENT">الأنف والأذن والحنجرة</mat-option>
+                <mat-option value="DERMATOLOGY">الجلدية</mat-option>
+                <mat-option value="PSYCHIATRY">النفسية</mat-option>
+                <mat-option value="UROLOGY">المسالك البولية</mat-option>
+                <mat-option value="SURGERY">الجراحة</mat-option>
+                <mat-option value="OTHER">أخرى</mat-option>
+              </mat-select>
+              <mat-icon matPrefix>medical_services</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>سبب التحويل</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="referral.reason"
+              rows="3"
+              placeholder="وصف تفصيلي لسبب التحويل"
+              required
+            ></textarea>
+            <mat-icon matPrefix>description</mat-icon>
+          </mat-form-field>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>تاريخ التحويل</mat-label>
+              <input
+                matInput
+                [matDatepicker]="referralPicker"
+                [(ngModel)]="referral.referralDate"
+                required
+              />
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="referralPicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #referralPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>موعد المراجعة المقترح</mat-label>
+              <input
+                matInput
+                [matDatepicker]="appointmentPicker"
+                [(ngModel)]="referral.appointmentDate"
+              />
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="appointmentPicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #appointmentPicker></mat-datepicker>
+            </mat-form-field>
+
+            <!-- <mat-form-field appearance="outline" class="flex-1">
+                  <mat-label>الحالة</mat-label>
+                  <input
+                    matInput
+                    [(ngModel)]="referral.status"
+                    placeholder="مثال: قيد الانتظار، تم الحجز"
+                  />
+                </mat-form-field> -->
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>الحالة</mat-label>
+              <input
+                matInput
+                [value]="getReferralStatus(referral)"
+                readonly
+                placeholder="الحالة"
+              />
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>ملاحظات إضافية</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="referral.notes"
+              rows="2"
+              placeholder="أي معلومات إضافية للطبيب المحول إليه"
+            ></textarea>
+            <mat-icon matPrefix>note</mat-icon>
+          </mat-form-field>
+
+          <div class="edit-actions">
+            <button mat-button (click)="toggleEdit(i)">
+              <mat-icon>check</mat-icon>
+              حفظ
+            </button>
+          </div>
+        </div>
+        } @else {
+        <!-- View Mode -->
+        <div class="referral-view">
+          <div class="referral-details">
+            <div class="detail-row">
+              <strong>التحويل إلى:</strong>
+              <span>{{ referral.referredTo }}</span>
+              @if (referral.specialty) {
+              <span class="specialty"
+                >({{ getSpecialtyLabel(referral.specialty) }})</span
+              >
+              }
+            </div>
+
+            <div class="detail-row">
+              <strong>السبب:</strong>
+              <span>{{ referral.reason }}</span>
+            </div>
+
+            <div class="detail-row">
+              <strong>التاريخ:</strong>
+              <span>{{ formatDate(referral.referralDate) }}</span>
+              @if (referral.appointmentDate) {
+              <span class="appointment-date">
+                <mat-icon>event</mat-icon>
+                موعد مقترح: {{ formatDate(referral.appointmentDate) }}
+              </span>
+              }
+            </div>
+
+            @if (referral.notes) {
+            <div class="notes-section">
+              <mat-icon>note</mat-icon>
+              {{ referral.notes }}
+            </div>
+            }
+          </div>
+        </div>
+        }
+      </mat-card-content>
+    </mat-card>
+    }
+  </div>
+
+  <!-- Quick Templates -->
+  @if (showTemplates()) {
+  <div class="templates-section">
+    <h4>تحويلات شائعة:</h4>
+    <mat-chip-set>
+      @for (template of commonReferrals; track template.specialty) {
+      <mat-chip (click)="addFromTemplate(template)">
+        <mat-icon>medical_services</mat-icon>
+        {{ getSpecialtyLabel(template.specialty!) }}
+      </mat-chip>
+      }
+    </mat-chip-set>
+  </div>
+  }
+</div>

@@ -275,7 +275,6 @@ export class MedicalRecordDetailsComponent implements OnInit {
       [RecordStatus.IN_PROGRESS]: 'قيد التحرير',
       [RecordStatus.COMPLETED]: 'مكتمل',
       [RecordStatus.REVIEWED]: 'مراجع',
-      [RecordStatus.AMENDED]: 'معدل',
       [RecordStatus.LOCKED]: 'مقفل',
       [RecordStatus.CANCELLED]: 'ملغي'
     };
@@ -284,23 +283,30 @@ export class MedicalRecordDetailsComponent implements OnInit {
 
   getVisitTypeLabel(type: VisitType): string {
     const labels: Record<VisitType, string> = {
-      [VisitType.FIRST_VISIT]: 'زيارة أولى',
+      [VisitType.CONSULTATION]: 'استشارة',
       [VisitType.FOLLOW_UP]: 'متابعة',
       [VisitType.EMERGENCY]: 'طوارئ',
-      [VisitType.ROUTINE_CHECK]: 'فحص دوري',
+      [VisitType.ROUTINE_CHECKUP]: 'فحص دوري',
       [VisitType.VACCINATION]: 'تطعيم',
-      [VisitType.CONSULTATION]: 'استشارة'
+      [VisitType.PROCEDURE]: 'إجراء طبي',
+      [VisitType.SURGERY]: 'عملية جراحية',
+      [VisitType.REHABILITATION]: 'تأهيل',
+      [VisitType.PREVENTIVE_CARE]: 'رعاية وقائية',
+      [VisitType.CHRONIC_CARE]: 'رعاية مزمنة'
     };
     return labels[type] || type;
   }
 
   getDiagnosisTypeLabel(type: DiagnosisType): string {
     const labels: Record<DiagnosisType, string> = {
-      [DiagnosisType.PRELIMINARY]: 'أولي',
-      [DiagnosisType.DIFFERENTIAL]: 'تفريقي',
-      [DiagnosisType.CONFIRMED]: 'مؤكد',
+      [DiagnosisType.PRIMARY]: 'أساسي',
+      [DiagnosisType.SECONDARY]: 'ثانوي',
+      [DiagnosisType.DIFFERENTIAL]: 'تشخيص تفريقي',
+      [DiagnosisType.PROVISIONAL]: 'مؤقت',
+      [DiagnosisType.FINAL]: 'نهائي',
       [DiagnosisType.RULED_OUT]: 'مستبعد'
     };
+
     return labels[type] || type;
   }
 
@@ -315,7 +321,9 @@ export class MedicalRecordDetailsComponent implements OnInit {
       [MedicationRoute.RECTAL]: 'شرجي',
       [MedicationRoute.OPHTHALMIC]: 'قطرة عين',
       [MedicationRoute.OTIC]: 'قطرة أذن',
-      [MedicationRoute.NASAL]: 'أنفي'
+      [MedicationRoute.NASAL]: 'أنفي',
+      [MedicationRoute.INJECTION]: 'حقن',       // newly added
+      [MedicationRoute.SUBLINGUAL]: 'تحت اللسان' // newly added
     };
     return labels[route] || route;
   }
@@ -323,20 +331,20 @@ export class MedicalRecordDetailsComponent implements OnInit {
   getTestStatusLabel(status: TestStatus): string {
     const labels: Record<TestStatus, string> = {
       [TestStatus.ORDERED]: 'مطلوب',
-      [TestStatus.SPECIMEN_COLLECTED]: 'تم جمع العينة',
+      [TestStatus.COLLECTED]: 'تم جمع العينة',
       [TestStatus.IN_PROGRESS]: 'قيد التنفيذ',
       [TestStatus.COMPLETED]: 'مكتمل',
-      [TestStatus.CANCELLED]: 'ملغي'
+      [TestStatus.CANCELLED]: 'ملغي',
+      [TestStatus.DELAYED]: 'مؤجل'
     };
     return labels[status] || status;
   }
 
   getReferralPriorityLabel(priority: ReferralPriority): string {
     const labels: Record<ReferralPriority, string> = {
-      [ReferralPriority.LOW]: 'منخفض',
-      [ReferralPriority.MEDIUM]: 'متوسط',
-      [ReferralPriority.HIGH]: 'عالي',
-      [ReferralPriority.URGENT]: 'عاجل'
+      [ReferralPriority.ROUTINE]: 'عادي',
+      [ReferralPriority.URGENT]: 'عاجل',
+      [ReferralPriority.EMERGENCY]: 'طارئ'
     };
     return labels[priority] || priority;
   }

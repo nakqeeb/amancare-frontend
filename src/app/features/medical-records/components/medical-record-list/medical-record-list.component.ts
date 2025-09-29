@@ -457,16 +457,20 @@ export class MedicalRecordListComponent implements OnInit, OnDestroy {
   }
 
   getVisitTypeLabel(type: VisitType): string {
-    const labels: Record<VisitType, string> = {
-      [VisitType.FIRST_VISIT]: 'زيارة أولى',
-      [VisitType.FOLLOW_UP]: 'متابعة',
-      [VisitType.EMERGENCY]: 'طوارئ',
-      [VisitType.ROUTINE_CHECK]: 'فحص دوري',
-      [VisitType.VACCINATION]: 'تطعيم',
-      [VisitType.CONSULTATION]: 'استشارة'
-    };
-    return labels[type] || type;
-  }
+  const labels: Record<VisitType, string> = {
+    [VisitType.CONSULTATION]: 'استشارة',
+    [VisitType.FOLLOW_UP]: 'متابعة',
+    [VisitType.EMERGENCY]: 'طوارئ',
+    [VisitType.ROUTINE_CHECKUP]: 'فحص دوري',
+    [VisitType.VACCINATION]: 'تطعيم',
+    [VisitType.PROCEDURE]: 'إجراء طبي',
+    [VisitType.SURGERY]: 'عملية جراحية',
+    [VisitType.REHABILITATION]: 'تأهيل',
+    [VisitType.PREVENTIVE_CARE]: 'رعاية وقائية',
+    [VisitType.CHRONIC_CARE]: 'رعاية مزمنة'
+  };
+  return labels[type] || type;
+}
 
   getStatusLabel(status: RecordStatus): string {
     const labels: Record<RecordStatus, string> = {
@@ -474,7 +478,6 @@ export class MedicalRecordListComponent implements OnInit, OnDestroy {
       [RecordStatus.IN_PROGRESS]: 'قيد التحرير',
       [RecordStatus.COMPLETED]: 'مكتمل',
       [RecordStatus.REVIEWED]: 'مراجع',
-      [RecordStatus.AMENDED]: 'معدل',
       [RecordStatus.LOCKED]: 'مقفل',
       [RecordStatus.CANCELLED]: 'ملغي'
     };
@@ -487,7 +490,6 @@ export class MedicalRecordListComponent implements OnInit, OnDestroy {
       [RecordStatus.IN_PROGRESS]: 'pending',
       [RecordStatus.COMPLETED]: 'check_circle',
       [RecordStatus.REVIEWED]: 'task_alt',
-      [RecordStatus.AMENDED]: 'edit',
       [RecordStatus.LOCKED]: 'lock',
       [RecordStatus.CANCELLED]: 'cancel'
     };

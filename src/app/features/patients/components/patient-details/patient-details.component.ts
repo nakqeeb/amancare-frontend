@@ -40,7 +40,8 @@ import {
   AppointmentStatus,
   AppointmentType,
   APPOINTMENT_STATUS_LABELS,
-  APPOINTMENT_TYPE_LABELS
+  APPOINTMENT_TYPE_LABELS,
+  AppointmentResponse
 } from '../../../appointments/models/appointment.model';
 
 @Component({
@@ -92,7 +93,7 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
   activeTabIndex = signal(0);
 
   // Data signals
-  upcomingAppointments = signal<AppointmentSummaryResponse[]>([]);
+  upcomingAppointments = signal<AppointmentResponse[]>([]);
   appointmentsCount = computed(() => this.upcomingAppointments().length);
   medicalRecordsCount = signal(0);
   invoicesCount = signal(0);

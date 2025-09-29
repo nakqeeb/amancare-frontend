@@ -44,420 +44,8 @@ import { User } from '../../../users/models/user.model';
     MatChipsModule,
     MatTooltipModule
   ],
-  template: `
-    <div class="doctor-records-container">
-      <!-- Header -->
-      <div class="page-header">
-        <div class="header-content">
-          <button mat-icon-button (click)="onBack()" class="back-button">
-            <mat-icon>arrow_back</mat-icon>
-          </button>
-
-          <div class="title-section">
-            <h1 class="page-title">
-              <mat-icon>person</mat-icon>
-              سجلات الطبيب
-            </h1>
-            @if (doctor()) {
-              <div class="doctor-info">
-                <span class="doctor-name">د. {{ doctor()!.fullName }}</span>
-                @if (doctor()!.specialization) {
-                  <span class="doctor-specialty">{{ doctor()!.specialization }}</span>
-                }
-              </div>
-            }
-          </div>
-
-          <div class="header-actions">
-            <button mat-button (click)="onExport()">
-              <mat-icon>download</mat-icon>
-              تصدير
-            </button>
-
-            <button mat-icon-button (click)="onRefresh()">
-              <mat-icon>refresh</mat-icon>
-            </button>
-          </div>
-        </div>
-
-        <!-- Statistics -->
-        <div class="doctor-stats">
-          <div class="stat-card">
-            <mat-icon>description</mat-icon>
-            <div class="stat-content">
-              <span class="stat-value">{{ totalRecords() }}</span>
-              <span class="stat-label">إجمالي السجلات</span>
-            </div>
-          </div>
-          <div class="stat-card">
-            <mat-icon>people</mat-icon>
-            <div class="stat-content">
-              <span class="stat-value">{{ uniquePatients() }}</span>
-              <span class="stat-label">عدد المرضى</span>
-            </div>
-          </div>
-          <div class="stat-card">
-            <mat-icon>today</mat-icon>
-            <div class="stat-content">
-              <span class="stat-value">{{ todayRecords() }}</span>
-              <span class="stat-label">سجلات اليوم</span>
-            </div>
-          </div>
-          <div class="stat-card">
-            <mat-icon>done_all</mat-icon>
-            <div class="stat-content">
-              <span class="stat-value">{{ completedRecords() }}</span>
-              <span class="stat-label">مكتملة</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Filters -->
-      <mat-card class="filters-card">
-        <mat-card-content>
-          <div class="filters-row">
-            <mat-form-field appearance="outline">
-              <mat-label>الفترة الزمنية</mat-label>
-              <mat-select [(value)]="selectedPeriod" (selectionChange)="onFilterChange()">
-                <mat-option value="all">الكل</mat-option>
-                <mat-option value="today">اليوم</mat-option>
-                <mat-option value="week">هذا الأسبوع</mat-option>
-                <mat-option value="month">هذا الشهر</mat-option>
-                <mat-option value="year">هذه السنة</mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>الحالة</mat-label>
-              <mat-select [(value)]="selectedStatus" (selectionChange)="onFilterChange()">
-                <mat-option value="">الكل</mat-option>
-                <mat-option value="DRAFT">مسودة</mat-option>
-                <mat-option value="COMPLETED">مكتمل</mat-option>
-                <mat-option value="REVIEWED">مراجع</mat-option>
-                <mat-option value="LOCKED">مقفل</mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>نوع الزيارة</mat-label>
-              <mat-select [(value)]="selectedVisitType" (selectionChange)="onFilterChange()">
-                <mat-option value="">الكل</mat-option>
-                <mat-option value="FIRST_VISIT">زيارة أولى</mat-option>
-                <mat-option value="FOLLOW_UP">متابعة</mat-option>
-                <mat-option value="EMERGENCY">طوارئ</mat-option>
-                <mat-option value="ROUTINE_CHECK">فحص دوري</mat-option>
-                <mat-option value="CONSULTATION">استشارة</mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- Records Table -->
-      <mat-card class="records-card">
-        <mat-card-content>
-          @if (loading()) {
-            <div class="loading-container">
-              <mat-spinner></mat-spinner>
-              <p>جاري تحميل السجلات...</p>
-            </div>
-          } @else if (filteredRecords().length === 0) {
-            <div class="empty-state">
-              <mat-icon>folder_open</mat-icon>
-              <h3>لا توجد سجلات</h3>
-              <p>لم يتم العثور على سجلات طبية للطبيب المحدد</p>
-            </div>
-          } @else {
-            <table mat-table [dataSource]="filteredRecords()" class="records-table">
-
-              <ng-container matColumnDef="id">
-                <th mat-header-cell *matHeaderCellDef>رقم السجل</th>
-                <td mat-cell *matCellDef="let record">#{{ record.id }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="visitDate">
-                <th mat-header-cell *matHeaderCellDef>التاريخ</th>
-                <td mat-cell *matCellDef="let record">{{ formatDate(record.visitDate) }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="patient">
-                <th mat-header-cell *matHeaderCellDef>المريض</th>
-                <td mat-cell *matCellDef="let record">
-                  <div class="patient-info">
-                    <span>{{ record.patientName }}</span>
-                    <span class="patient-number">{{ record.patientNumber }}</span>
-                  </div>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="visitType">
-                <th mat-header-cell *matHeaderCellDef>نوع الزيارة</th>
-                <td mat-cell *matCellDef="let record">
-                  <mat-chip [style.background-color]="getVisitTypeColor(record.visitType)">
-                    {{ getVisitTypeLabel(record.visitType) }}
-                  </mat-chip>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="chiefComplaint">
-                <th mat-header-cell *matHeaderCellDef>الشكوى الرئيسية</th>
-                <td mat-cell *matCellDef="let record">{{ record.chiefComplaint | slice:0:50 }}...</td>
-              </ng-container>
-
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef>الحالة</th>
-                <td mat-cell *matCellDef="let record">
-                  <mat-chip [style.background-color]="getStatusColor(record.status)">
-                    {{ getStatusLabel(record.status) }}
-                  </mat-chip>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
-                <td mat-cell *matCellDef="let record">
-                  <button mat-icon-button (click)="onView(record)" matTooltip="عرض">
-                    <mat-icon>visibility</mat-icon>
-                  </button>
-                  @if (canEdit(record)) {
-                    <button mat-icon-button (click)="onEdit(record)" matTooltip="تعديل">
-                      <mat-icon>edit</mat-icon>
-                    </button>
-                  }
-                  <button mat-icon-button (click)="onPrint(record)" matTooltip="طباعة">
-                    <mat-icon>print</mat-icon>
-                  </button>
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-                  (click)="onView(row)" class="clickable-row"></tr>
-            </table>
-
-            <mat-paginator
-              [pageSize]="pageSize"
-              [length]="totalRecords()"
-              [pageIndex]="currentPage"
-              [pageSizeOptions]="[10, 25, 50]"
-              (page)="onPageChange($event)"
-              showFirstLastButtons>
-            </mat-paginator>
-          }
-        </mat-card-content>
-      </mat-card>
-    </div>
-  `,
-  styles: [`
-    .doctor-records-container {
-      padding: var(--spacing-lg);
-      background: var(--background-secondary);
-      min-height: 100vh;
-
-      .page-header {
-        background: var(--surface);
-        padding: var(--spacing-lg);
-        border-radius: var(--border-radius-lg);
-        margin-bottom: var(--spacing-lg);
-        box-shadow: var(--shadow-sm);
-
-        .header-content {
-          display: flex;
-          align-items: center;
-          gap: var(--spacing-md);
-          margin-bottom: var(--spacing-lg);
-
-          .back-button {
-            background: var(--background-secondary);
-
-            &:hover {
-              background: var(--hover-overlay);
-            }
-          }
-
-          .title-section {
-            flex: 1;
-
-            .page-title {
-              display: flex;
-              align-items: center;
-              gap: var(--spacing-sm);
-              font-size: var(--font-size-xl);
-              font-weight: var(--font-weight-semibold);
-              color: var(--text-primary);
-              margin: 0 0 var(--spacing-sm) 0;
-
-              mat-icon {
-                color: var(--primary);
-              }
-            }
-
-            .doctor-info {
-              display: flex;
-              align-items: center;
-              gap: var(--spacing-md);
-
-              .doctor-name {
-                font-size: var(--font-size-lg);
-                color: var(--primary);
-                font-weight: var(--font-weight-medium);
-              }
-
-              .doctor-specialty {
-                padding: var(--spacing-xs) var(--spacing-sm);
-                background: var(--background-secondary);
-                border-radius: var(--border-radius-sm);
-                color: var(--text-secondary);
-                font-size: var(--font-size-sm);
-              }
-            }
-          }
-
-          .header-actions {
-            display: flex;
-            gap: var(--spacing-sm);
-          }
-        }
-
-        .doctor-stats {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: var(--spacing-md);
-
-          .stat-card {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            padding: var(--spacing-md);
-            background: var(--background-secondary);
-            border-radius: var(--border-radius-md);
-
-            mat-icon {
-              font-size: 32px;
-              width: 32px;
-              height: 32px;
-              color: var(--primary);
-            }
-
-            .stat-content {
-              display: flex;
-              flex-direction: column;
-
-              .stat-value {
-                font-size: var(--font-size-xl);
-                font-weight: var(--font-weight-bold);
-                color: var(--text-primary);
-              }
-
-              .stat-label {
-                font-size: var(--font-size-sm);
-                color: var(--text-secondary);
-              }
-            }
-          }
-        }
-      }
-
-      .filters-card {
-        margin-bottom: var(--spacing-lg);
-
-        .filters-row {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: var(--spacing-md);
-
-          mat-form-field {
-            width: 100%;
-          }
-        }
-      }
-
-      .records-card {
-        .loading-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: var(--spacing-2xl);
-
-          mat-spinner {
-            margin-bottom: var(--spacing-md);
-          }
-        }
-
-        .empty-state {
-          text-align: center;
-          padding: var(--spacing-2xl);
-
-          mat-icon {
-            font-size: 64px;
-            width: 64px;
-            height: 64px;
-            color: var(--text-disabled);
-          }
-
-          h3 {
-            color: var(--text-primary);
-            margin: var(--spacing-md) 0;
-          }
-
-          p {
-            color: var(--text-secondary);
-          }
-        }
-
-        .records-table {
-          width: 100%;
-
-          .clickable-row {
-            cursor: pointer;
-
-            &:hover {
-              background: var(--hover-overlay);
-            }
-          }
-
-          .patient-info {
-            display: flex;
-            flex-direction: column;
-
-            .patient-number {
-              font-size: var(--font-size-sm);
-              color: var(--text-secondary);
-            }
-          }
-
-          mat-chip {
-            font-size: var(--font-size-sm);
-          }
-        }
-      }
-    }
-
-    @media (max-width: 768px) {
-      .doctor-records-container {
-        padding: var(--spacing-md);
-
-        .page-header {
-          .header-content {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-
-          .doctor-stats {
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          }
-        }
-
-        .filters-card {
-          .filters-row {
-            grid-template-columns: 1fr;
-          }
-        }
-      }
-    }
-  `]
+  templateUrl: './doctor-medical-records.component.html',
+  styleUrl: './doctor-medical-records.component.scss'
 })
 export class DoctorMedicalRecordsComponent implements OnInit {
   // Services
@@ -630,24 +218,32 @@ export class DoctorMedicalRecordsComponent implements OnInit {
 
   getVisitTypeLabel(type: VisitType): string {
     const labels: Record<VisitType, string> = {
-      [VisitType.FIRST_VISIT]: 'زيارة أولى',
+      [VisitType.CONSULTATION]: 'استشارة',
       [VisitType.FOLLOW_UP]: 'متابعة',
       [VisitType.EMERGENCY]: 'طوارئ',
-      [VisitType.ROUTINE_CHECK]: 'فحص دوري',
+      [VisitType.ROUTINE_CHECKUP]: 'فحص دوري',
       [VisitType.VACCINATION]: 'تطعيم',
-      [VisitType.CONSULTATION]: 'استشارة'
+      [VisitType.PROCEDURE]: 'إجراء طبي',
+      [VisitType.SURGERY]: 'عملية جراحية',
+      [VisitType.REHABILITATION]: 'تأهيل',
+      [VisitType.PREVENTIVE_CARE]: 'رعاية وقائية',
+      [VisitType.CHRONIC_CARE]: 'رعاية مزمنة'
     };
     return labels[type] || type;
   }
 
   getVisitTypeColor(type: VisitType): string {
     const colors: Record<VisitType, string> = {
-      [VisitType.FIRST_VISIT]: '#2196F3',
+      [VisitType.CONSULTATION]: '#9C27B0',
       [VisitType.FOLLOW_UP]: '#00BCD4',
       [VisitType.EMERGENCY]: '#F44336',
-      [VisitType.ROUTINE_CHECK]: '#4CAF50',
+      [VisitType.ROUTINE_CHECKUP]: '#4CAF50',
       [VisitType.VACCINATION]: '#FF9800',
-      [VisitType.CONSULTATION]: '#9C27B0'
+      [VisitType.PROCEDURE]: '#607D8B',
+      [VisitType.SURGERY]: '#795548',
+      [VisitType.REHABILITATION]: '#3F51B5',
+      [VisitType.PREVENTIVE_CARE]: '#8BC34A',
+      [VisitType.CHRONIC_CARE]: '#FF5722'
     };
     return colors[type] || '#757575';
   }
@@ -658,7 +254,6 @@ export class DoctorMedicalRecordsComponent implements OnInit {
       [RecordStatus.IN_PROGRESS]: 'قيد التحرير',
       [RecordStatus.COMPLETED]: 'مكتمل',
       [RecordStatus.REVIEWED]: 'مراجع',
-      [RecordStatus.AMENDED]: 'معدل',
       [RecordStatus.LOCKED]: 'مقفل',
       [RecordStatus.CANCELLED]: 'ملغي'
     };
@@ -671,7 +266,6 @@ export class DoctorMedicalRecordsComponent implements OnInit {
       [RecordStatus.IN_PROGRESS]: '#FF9800',
       [RecordStatus.COMPLETED]: '#4CAF50',
       [RecordStatus.REVIEWED]: '#2196F3',
-      [RecordStatus.AMENDED]: '#9C27B0',
       [RecordStatus.LOCKED]: '#F44336',
       [RecordStatus.CANCELLED]: '#757575'
     };

@@ -1,0 +1,186 @@
+ .medical-procedures-form {
+   width: 100%;
+
+   .form-header {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: var(--spacing-md);
+
+     .form-title {
+       display: flex;
+       align-items: center;
+       gap: var(--spacing-sm);
+       font-size: var(--font-size-md);
+       font-weight: var(--font-weight-medium);
+       color: var(--text-primary);
+       margin: 0;
+
+       mat-icon {
+         color: var(--primary);
+       }
+     }
+   }
+
+   .procedures-list {
+     display: flex;
+     flex-direction: column;
+     gap: var(--spacing-md);
+     margin-bottom: var(--spacing-md);
+
+     .empty-state {
+       text-align: center;
+       padding: var(--spacing-xl);
+       color: var(--text-secondary);
+
+       mat-icon {
+         font-size: 48px;
+         width: 48px;
+         height: 48px;
+         color: var(--text-disabled);
+         margin-bottom: var(--spacing-md);
+       }
+
+       p {
+         margin: var(--spacing-xs) 0;
+
+         &.hint {
+           font-size: var(--font-size-sm);
+           color: var(--text-disabled);
+         }
+       }
+     }
+
+     .procedure-panel {
+       border: 1px solid var(--border-color);
+       border-radius: var(--border-radius-md);
+       overflow: hidden;
+
+       .procedure-title {
+         display: flex;
+         align-items: center;
+         gap: var(--spacing-sm);
+
+         mat-icon {
+           font-size: 20px;
+           width: 20px;
+           height: 20px;
+         }
+
+         .procedure-code {
+           color: var(--text-secondary);
+           font-family: var(--font-family-mono);
+           font-size: var(--font-size-sm);
+         }
+       }
+
+       .procedure-info {
+         display: flex;
+         align-items: center;
+         gap: var(--spacing-md);
+
+         .category-badge {
+           padding: var(--spacing-xs) var(--spacing-sm);
+           background: var(--primary);
+           color: var(--text-on-primary);
+           border-radius: var(--border-radius-sm);
+           font-size: var(--font-size-xs);
+           font-weight: var(--font-weight-medium);
+         }
+
+         .date {
+           display: flex;
+           align-items: center;
+           gap: var(--spacing-xs);
+           color: var(--text-secondary);
+           font-size: var(--font-size-sm);
+
+           mat-icon {
+             font-size: 16px;
+             width: 16px;
+             height: 16px;
+           }
+         }
+       }
+
+       .procedure-content {
+         padding: var(--spacing-md);
+
+         .form-row {
+           display: flex;
+           gap: var(--spacing-md);
+           margin-bottom: var(--spacing-md);
+
+           .flex-1 {
+             flex: 1;
+           }
+
+           .flex-2 {
+             flex: 2;
+           }
+         }
+
+         .full-width {
+           width: 100%;
+           margin-bottom: var(--spacing-md);
+         }
+
+         .procedure-actions {
+           display: flex;
+           justify-content: flex-end;
+           padding-top: var(--spacing-md);
+           border-top: 1px solid var(--divider);
+         }
+       }
+     }
+   }
+
+   .templates-section {
+     margin-top: var(--spacing-lg);
+     padding-top: var(--spacing-lg);
+     border-top: 1px solid var(--divider);
+
+     h4 {
+       margin-bottom: var(--spacing-md);
+       color: var(--text-secondary);
+       font-size: var(--font-size-sm);
+       font-weight: var(--font-weight-medium);
+     }
+
+     mat-chip-set {
+       display: flex;
+       flex-wrap: wrap;
+       gap: var(--spacing-sm);
+
+       mat-chip {
+         cursor: pointer;
+
+         mat-icon {
+           margin-right: var(--spacing-xs);
+           font-size: 18px;
+           width: 18px;
+           height: 18px;
+         }
+       }
+     }
+   }
+ }
+
+ // Responsive Design
+ @media (max-width: 768px) {
+   .medical-procedures-form {
+     .procedure-panel {
+       .procedure-content {
+         .form-row {
+           flex-direction: column;
+           gap: var(--spacing-sm);
+
+           .flex-1,
+           .flex-2 {
+             width: 100%;
+           }
+         }
+       }
+     }
+   }
+ }
