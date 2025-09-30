@@ -30,6 +30,8 @@ import {
   MedicationFrequency,
   VisitType
 } from '../../models/medical-record.model';
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { SidebarComponent } from "../../../../shared/components/sidebar/sidebar.component";
 
 // Chart.js types
 interface ChartData {
@@ -61,8 +63,10 @@ interface ChartData {
     MatTableModule,
     MatChipsModule,
     MatTooltipModule,
-    MatTabsModule
-  ],
+    MatTabsModule,
+    HeaderComponent,
+    SidebarComponent
+],
   templateUrl: './medical-record-statistics.component.html',
   styleUrl: './medical-record-statistics.component.scss'
 })

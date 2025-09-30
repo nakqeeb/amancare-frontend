@@ -47,6 +47,8 @@ import {
 import { Patient } from '../../../patients/models/patient.model';
 import { User } from '../../../users/models/user.model';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { SidebarComponent } from "../../../../shared/components/sidebar/sidebar.component";
 
 @Component({
   selector: 'app-medical-record-list',
@@ -73,8 +75,10 @@ import { ConfirmDialogComponent } from '../../../../shared/components/confirm-di
     MatSlideToggleModule,
     MatAutocompleteModule,
     MatDialogModule,
-    MatSnackBarModule
-  ],
+    MatSnackBarModule,
+    HeaderComponent,
+    SidebarComponent
+],
   templateUrl: './medical-record-list.component.html',
   styleUrl: './medical-record-list.component.scss'
 })

@@ -277,19 +277,35 @@ export interface Prescription {
 
 export interface LabTest {
   id?: number;
+
+  // Required fields
   testName: string;
-  testCode?: string;
   category: LabTestCategory;
   urgency: TestUrgency;
+  orderedDate: string; // using ISO string to represent LocalDate
+
+  // Optional fields
+  testCode?: string;
   specimenType?: string;
   instructions?: string;
-  status?: TestStatus;
-  orderedDate?: string;
+  status?: TestStatus; // optional because backend has default
   resultDate?: string;
   results?: string;
   normalRange?: string;
   interpretation?: string;
   performedBy?: string;
+
+  // Timestamps (readonly, optional for frontend)
+  createdAt?: string; // ISO string for LocalDateTime
+  updatedAt?: string; // ISO string for LocalDateTime
+
+  // Reference to parent MedicalRecord (optional)
+  medicalRecordId?: number;
+
+  specimenNumber?: string;
+  collectedBy?: string;
+  labName?: string;
+  collectedDate?: string;
 }
 
 export interface RadiologyTest {

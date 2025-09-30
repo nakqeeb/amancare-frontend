@@ -1,634 +1,645 @@
 <!-- src/app/features/medical-records/components/medical-record-form/medical-record-form.component.html -->
-<div class="medical-record-form-container">
-  <!-- Header -->
-  <div class="form-header">
-    <div class="header-content">
-      <button mat-icon-button (click)="onBack()" class="back-button">
-        <mat-icon>arrow_back</mat-icon>
-      </button>
+<app-header />
+<app-sidebar>
+  <div class="medical-record-form-container">
+    <!-- Header -->
+    <div class="form-header">
+      <div class="header-content">
+        <button mat-icon-button (click)="onBack()" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
 
-      <div class="title-section">
-        <h1 class="page-title">
-          <mat-icon>{{ isEditMode() ? "edit_note" : "add_box" }}</mat-icon>
-          {{ isEditMode() ? "تعديل السجل الطبي" : "إضافة سجل طبي جديد" }}
-        </h1>
-        @if (recordId()) {
-        <span class="record-number">رقم السجل: #{{ recordId() }}</span>
-        }
+        <div class="title-section">
+          <h1 class="page-title">
+            <mat-icon>{{ isEditMode() ? "edit_note" : "add_box" }}</mat-icon>
+            {{ isEditMode() ? "تعديل السجل الطبي" : "إضافة سجل طبي جديد" }}
+          </h1>
+          @if (recordId()) {
+          <span class="record-number">رقم السجل: #{{ recordId() }}</span>
+          }
+        </div>
+
+        <div class="header-actions">
+          <button mat-button (click)="onSaveAsDraft()" [disabled]="loading()">
+            <mat-icon>save</mat-icon>
+            حفظ كمسودة
+          </button>
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="onSaveAndComplete()"
+            [disabled]="loading() || medicalRecordForm.invalid"
+          >
+            <mat-icon>check</mat-icon>
+            حفظ واكتمال
+          </button>
+        </div>
       </div>
 
-      <div class="header-actions">
-        <button mat-button (click)="onSaveAsDraft()" [disabled]="loading()">
-          <mat-icon>save</mat-icon>
-          حفظ كمسودة
-        </button>
-        <button
-          mat-raised-button
-          color="primary"
-          (click)="onSaveAndComplete()"
-          [disabled]="loading() || medicalRecordForm.invalid"
-        >
-          <mat-icon>check</mat-icon>
-          حفظ واكتمال
-        </button>
-      </div>
+      <!-- Progress Stepper -->
+      <mat-stepper #stepper linear="false" [selectedIndex]="currentStep()">
+        <mat-step label="معلومات أساسية"></mat-step>
+        <mat-step label="الفحص السريري"></mat-step>
+        <mat-step label="التشخيص والعلاج"></mat-step>
+        <mat-step label="الفحوصات والتحاليل"></mat-step>
+        <mat-step label="المتابعة والملاحظات"></mat-step>
+      </mat-stepper>
     </div>
 
-    <!-- Progress Stepper -->
-    <mat-stepper #stepper linear="false" [selectedIndex]="currentStep()">
-      <mat-step label="معلومات أساسية"></mat-step>
-      <mat-step label="الفحص السريري"></mat-step>
-      <mat-step label="التشخيص والعلاج"></mat-step>
-      <mat-step label="الفحوصات والتحاليل"></mat-step>
-      <mat-step label="المتابعة والملاحظات"></mat-step>
-    </mat-stepper>
-  </div>
+    <!-- Form Content -->
+    <form [formGroup]="medicalRecordForm" class="medical-record-form">
+      <!-- Step 1: Basic Information -->
+      @if (currentStep() === 0) {
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>info</mat-icon>
+            المعلومات الأساسية
+          </mat-card-title>
+        </mat-card-header>
 
-  <!-- Form Content -->
-  <form [formGroup]="medicalRecordForm" class="medical-record-form">
-    <!-- Step 1: Basic Information -->
-    @if (currentStep() === 0) {
-    <mat-card class="form-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>info</mat-icon>
-          المعلومات الأساسية
-        </mat-card-title>
-      </mat-card-header>
-
-      <mat-card-content>
-        <div class="form-grid">
-          <!-- Patient Selection -->
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>المريض</mat-label>
-            <input
-              matInput
-              [matAutocomplete]="patientAuto"
-              formControlName="patientSearch"
-              placeholder="ابحث عن المريض"
-            />
-            <mat-icon matPrefix>person</mat-icon>
-            <mat-autocomplete
-              #patientAuto="matAutocomplete"
-              [displayWith]="displayPatient"
-              (optionSelected)="onPatientSelected($event)"
-            >
-              @for (patient of filteredPatients$ | async; track patient.id) {
-              <mat-option [value]="patient">
-                <div class="patient-option">
-                  <span class="patient-name">{{ patient.fullName }}</span>
-                  <span class="patient-info">
-                    {{ patient.patientNumber }} | {{ patient.phone }}
-                  </span>
-                </div>
-              </mat-option>
-              }
-            </mat-autocomplete>
-            <mat-error
-              *ngIf="medicalRecordForm.get('patientId')?.hasError('required')"
-            >
-              يجب اختيار المريض
-            </mat-error>
-          </mat-form-field>
-
-          <!-- Selected Patient Info -->
-          @if (selectedPatient()) {
-          <div class="patient-info-card full-width">
-            <div class="info-header">
-              <mat-icon>person</mat-icon>
-              <span>معلومات المريض</span>
-            </div>
-            <div class="info-grid">
-              <div class="info-item">
-                <label>الاسم:</label>
-                <span>{{ selectedPatient()!.fullName }}</span>
-              </div>
-              <div class="info-item">
-                <label>العمر:</label>
-                <span
-                  >{{ calculateAge(selectedPatient()!.dateOfBirth) }} سنة</span
-                >
-              </div>
-              <div class="info-item">
-                <label>الجنس:</label>
-                <span>{{
-                  selectedPatient()!.gender === "MALE" ? "ذكر" : "أنثى"
-                }}</span>
-              </div>
-              <div class="info-item">
-                <label>فصيلة الدم:</label>
-                <span>{{ selectedPatient()!.bloodType || "-" }}</span>
-              </div>
-              @if (selectedPatient()!.allergies) {
-              <div class="info-item full-width">
-                <label>الحساسية:</label>
-                <span class="allergies-text">{{
-                  selectedPatient()!.allergies
-                }}</span>
-              </div>
-              } @if (selectedPatient()!.chronicDiseases) {
-              <div class="info-item full-width">
-                <label>الأمراض المزمنة:</label>
-                <span>{{ selectedPatient()!.chronicDiseases }}</span>
-              </div>
-              }
-            </div>
-          </div>
-          }
-
-          <!-- Appointment Selection (Optional) -->
-          <mat-form-field appearance="outline">
-            <mat-label>الموعد المرتبط (اختياري)</mat-label>
-            <mat-select formControlName="appointmentId">
-              <mat-option value="">بدون موعد</mat-option>
-              @for (appointment of patientAppointments(); track appointment.id)
-              {
-              <mat-option [value]="appointment.id">
-                {{ formatDateTime(appointment.appointmentDate) }} -
-                {{ appointment.doctor.fullName }}
-              </mat-option>
-              }
-            </mat-select>
-            <mat-icon matPrefix>event</mat-icon>
-          </mat-form-field>
-
-          <!-- Visit Date -->
-          <mat-form-field appearance="outline">
-            <mat-label>تاريخ الزيارة</mat-label>
-            <input
-              matInput
-              [matDatepicker]="visitDatePicker"
-              formControlName="visitDate"
-              [max]="today"
-            />
-            <mat-datepicker-toggle
-              matSuffix
-              [for]="visitDatePicker"
-            ></mat-datepicker-toggle>
-            <mat-datepicker #visitDatePicker></mat-datepicker>
-            <mat-icon matPrefix>calendar_today</mat-icon>
-            <mat-error
-              *ngIf="medicalRecordForm.get('visitDate')?.hasError('required')"
-            >
-              تاريخ الزيارة مطلوب
-            </mat-error>
-          </mat-form-field>
-
-          <!-- Visit Type -->
-          <mat-form-field appearance="outline">
-            <mat-label>نوع الزيارة</mat-label>
-            <mat-select formControlName="visitType">
-              <mat-option value="FIRST_VISIT">زيارة أولى</mat-option>
-              <mat-option value="FOLLOW_UP">متابعة</mat-option>
-              <mat-option value="EMERGENCY">طوارئ</mat-option>
-              <mat-option value="ROUTINE_CHECK">فحص دوري</mat-option>
-              <mat-option value="VACCINATION">تطعيم</mat-option>
-              <mat-option value="CONSULTATION">استشارة</mat-option>
-            </mat-select>
-            <mat-icon matPrefix>medical_services</mat-icon>
-            <mat-error
-              *ngIf="medicalRecordForm.get('visitType')?.hasError('required')"
-            >
-              نوع الزيارة مطلوب
-            </mat-error>
-          </mat-form-field>
-
-          <!-- Doctor -->
-          <mat-form-field appearance="outline">
-            <mat-label>الطبيب المعالج</mat-label>
-            <mat-select formControlName="doctorId">
-              @for (doctor of doctors(); track doctor.id) {
-              <mat-option [value]="doctor.id">
-                د. {{ doctor.fullName }}
-                @if (doctor.specialization) {
-                <span class="doctor-spec">({{ doctor.specialization }})</span>
+        <mat-card-content>
+          <div class="form-grid">
+            <!-- Patient Selection -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>المريض</mat-label>
+              <input
+                matInput
+                [matAutocomplete]="patientAuto"
+                formControlName="patientSearch"
+                placeholder="ابحث عن المريض"
+              />
+              <mat-icon matPrefix>person</mat-icon>
+              <mat-autocomplete
+                #patientAuto="matAutocomplete"
+                [displayWith]="displayPatient"
+                (optionSelected)="onPatientSelected($event)"
+              >
+                @for (patient of filteredPatients$ | async; track patient.id) {
+                <mat-option [value]="patient">
+                  <div class="patient-option">
+                    <span class="patient-name">{{ patient.fullName }}</span>
+                    <span class="patient-info">
+                      {{ patient.patientNumber }} | {{ patient.phone }}
+                    </span>
+                  </div>
+                </mat-option>
                 }
-              </mat-option>
-              }
-            </mat-select>
-            <mat-icon matPrefix>person</mat-icon>
-            <mat-error
-              *ngIf="medicalRecordForm.get('doctorId')?.hasError('required')"
-            >
-              الطبيب المعالج مطلوب
-            </mat-error>
-          </mat-form-field>
+              </mat-autocomplete>
+              <mat-error
+                *ngIf="medicalRecordForm.get('patientId')?.hasError('required')"
+              >
+                يجب اختيار المريض
+              </mat-error>
+            </mat-form-field>
 
-          <!-- Is Confidential -->
-          <div class="checkbox-field">
-            <mat-checkbox formControlName="isConfidential">
-              <mat-icon>lock</mat-icon>
-              سجل سري (يتطلب صلاحيات خاصة للعرض)
-            </mat-checkbox>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-    }
+            <!-- Selected Patient Info -->
+            @if (selectedPatient()) {
+            <div class="patient-info-card full-width">
+              <div class="info-header">
+                <mat-icon>person</mat-icon>
+                <span>معلومات المريض</span>
+              </div>
+              <div class="info-grid">
+                <div class="info-item">
+                  <label>الاسم:</label>
+                  <span>{{ selectedPatient()!.fullName }}</span>
+                </div>
+                <div class="info-item">
+                  <label>العمر:</label>
+                  <span
+                    >{{
+                      calculateAge(selectedPatient()!.dateOfBirth)
+                    }}
+                    سنة</span
+                  >
+                </div>
+                <div class="info-item">
+                  <label>الجنس:</label>
+                  <span>{{
+                    selectedPatient()!.gender === "MALE" ? "ذكر" : "أنثى"
+                  }}</span>
+                </div>
+                <div class="info-item">
+                  <label>فصيلة الدم:</label>
+                  <span>{{ selectedPatient()!.bloodType || "-" }}</span>
+                </div>
+                @if (selectedPatient()!.allergies) {
+                <div class="info-item full-width">
+                  <label>الحساسية:</label>
+                  <span class="allergies-text">{{
+                    selectedPatient()!.allergies
+                  }}</span>
+                </div>
+                } @if (selectedPatient()!.chronicDiseases) {
+                <div class="info-item full-width">
+                  <label>الأمراض المزمنة:</label>
+                  <span>{{ selectedPatient()!.chronicDiseases }}</span>
+                </div>
+                }
+              </div>
+            </div>
+            }
 
-    <!-- Step 2: Clinical Examination -->
-    @if (currentStep() === 1) {
-    <mat-card class="form-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>stethoscope</mat-icon>
-          الفحص السريري
-        </mat-card-title>
-      </mat-card-header>
+            <!-- Appointment Selection (Optional) -->
+            <mat-form-field appearance="outline">
+              <mat-label>الموعد المرتبط (اختياري)</mat-label>
+              <mat-select formControlName="appointmentId">
+                <mat-option value="">بدون موعد</mat-option>
+                @for (appointment of patientAppointments(); track
+                appointment.id) {
+                <mat-option [value]="appointment.id">
+                  {{ formatDateTime(appointment.appointmentDate) }} -
+                  {{ appointment.doctor.fullName }}
+                </mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix>event</mat-icon>
+            </mat-form-field>
 
-      <mat-card-content formGroupName="clinicalExamination">
-        <!-- Vital Signs Component -->
-        <app-vital-signs-form
-          [vitalSigns]="vitalSigns"
-          (vitalSignsChange)="onVitalSignsChange($event)"
-        >
-        </app-vital-signs-form>
+            <!-- Visit Date -->
+            <mat-form-field appearance="outline">
+              <mat-label>تاريخ الزيارة</mat-label>
+              <input
+                matInput
+                [matDatepicker]="visitDatePicker"
+                formControlName="visitDate"
+                [max]="today"
+              />
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="visitDatePicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #visitDatePicker></mat-datepicker>
+              <mat-icon matPrefix>calendar_today</mat-icon>
+              <mat-error
+                *ngIf="medicalRecordForm.get('visitDate')?.hasError('required')"
+              >
+                تاريخ الزيارة مطلوب
+              </mat-error>
+            </mat-form-field>
 
-        <mat-divider></mat-divider>
+            <!-- Visit Type -->
+            <mat-form-field appearance="outline">
+              <mat-label>نوع الزيارة</mat-label>
+              <mat-select formControlName="visitType">
+                <mat-option value="FIRST_VISIT">زيارة أولى</mat-option>
+                <mat-option value="FOLLOW_UP">متابعة</mat-option>
+                <mat-option value="EMERGENCY">طوارئ</mat-option>
+                <mat-option value="ROUTINE_CHECK">فحص دوري</mat-option>
+                <mat-option value="VACCINATION">تطعيم</mat-option>
+                <mat-option value="CONSULTATION">استشارة</mat-option>
+              </mat-select>
+              <mat-icon matPrefix>medical_services</mat-icon>
+              <mat-error
+                *ngIf="medicalRecordForm.get('visitType')?.hasError('required')"
+              >
+                نوع الزيارة مطلوب
+              </mat-error>
+            </mat-form-field>
 
-        <div class="form-grid">
-          <!-- Chief Complaint -->
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>الشكوى الرئيسية</mat-label>
-            <textarea
-              matInput
-              formControlName="chiefComplaint"
-              rows="3"
-              placeholder="وصف الشكوى الرئيسية للمريض"
-            ></textarea>
-            <mat-error
-              *ngIf="
-                medicalRecordForm
-                  .get('clinicalExamination.chiefComplaint')
-                  ?.hasError('required')
-              "
-            >
-              الشكوى الرئيسية مطلوبة
-            </mat-error>
-          </mat-form-field>
+            <!-- Doctor -->
+            <mat-form-field appearance="outline">
+              <mat-label>الطبيب المعالج</mat-label>
+              <mat-select formControlName="doctorId">
+                @for (doctor of doctors(); track doctor.id) {
+                <mat-option [value]="doctor.id">
+                  د. {{ doctor.fullName }}
+                  @if (doctor.specialization) {
+                  <span class="doctor-spec">({{ doctor.specialization }})</span>
+                  }
+                </mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix>person</mat-icon>
+              <mat-error
+                *ngIf="medicalRecordForm.get('doctorId')?.hasError('required')"
+              >
+                الطبيب المعالج مطلوب
+              </mat-error>
+            </mat-form-field>
 
-          <!-- Present Illness -->
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>تاريخ المرض الحالي</mat-label>
-            <textarea
-              matInput
-              formControlName="presentIllness"
-              rows="4"
-              placeholder="وصف تفصيلي للمرض الحالي"
-            ></textarea>
-            <mat-error
-              *ngIf="
-                medicalRecordForm
-                  .get('clinicalExamination.presentIllness')
-                  ?.hasError('required')
-              "
-            >
-              تاريخ المرض الحالي مطلوب
-            </mat-error>
-          </mat-form-field>
-
-          <!-- Past Medical History -->
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>التاريخ المرضي السابق</mat-label>
-            <textarea
-              matInput
-              formControlName="pastMedicalHistory"
-              rows="3"
-              placeholder="الأمراض السابقة، العمليات الجراحية، الإصابات"
-            ></textarea>
-          </mat-form-field>
-
-          <!-- Family History -->
-          <mat-form-field appearance="outline" class="half-width">
-            <mat-label>التاريخ العائلي</mat-label>
-            <textarea
-              matInput
-              formControlName="familyHistory"
-              rows="2"
-              placeholder="الأمراض الوراثية في العائلة"
-            ></textarea>
-          </mat-form-field>
-
-          <!-- Social History -->
-          <mat-form-field appearance="outline" class="half-width">
-            <mat-label>التاريخ الاجتماعي</mat-label>
-            <textarea
-              matInput
-              formControlName="socialHistory"
-              rows="2"
-              placeholder="التدخين، النشاط البدني، نمط الحياة"
-            ></textarea>
-          </mat-form-field>
-
-          <!-- Allergies -->
-          <mat-form-field appearance="outline" class="half-width">
-            <mat-label>الحساسية</mat-label>
-            <input
-              matInput
-              formControlName="allergies"
-              placeholder="قائمة بالمواد المسببة للحساسية (مفصولة بفاصلة)"
-            />
-            <mat-icon matPrefix>warning</mat-icon>
-          </mat-form-field>
-
-          <!-- Current Medications -->
-          <mat-form-field appearance="outline" class="half-width">
-            <mat-label>الأدوية الحالية</mat-label>
-            <input
-              matInput
-              formControlName="currentMedications"
-              placeholder="قائمة بالأدوية الحالية (مفصولة بفاصلة)"
-            />
-            <mat-icon matPrefix>medication</mat-icon>
-          </mat-form-field>
-
-          <!-- Physical Examination -->
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>الفحص البدني</mat-label>
-            <textarea
-              matInput
-              formControlName="physicalExamination"
-              rows="4"
-              placeholder="نتائج الفحص البدني"
-            ></textarea>
-          </mat-form-field>
-
-          <!-- Systemic Examination -->
-          <div class="systemic-exam-section full-width">
-            <h3>الفحص الجهازي</h3>
-            <div formGroupName="systemicExamination" class="systemic-grid">
-              <mat-form-field appearance="outline">
-                <mat-label>القلب والأوعية الدموية</mat-label>
-                <textarea
-                  matInput
-                  formControlName="cardiovascular"
-                  rows="2"
-                ></textarea>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>الجهاز التنفسي</mat-label>
-                <textarea
-                  matInput
-                  formControlName="respiratory"
-                  rows="2"
-                ></textarea>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>الجهاز الهضمي</mat-label>
-                <textarea
-                  matInput
-                  formControlName="gastrointestinal"
-                  rows="2"
-                ></textarea>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>الجهاز البولي التناسلي</mat-label>
-                <textarea
-                  matInput
-                  formControlName="genitourinary"
-                  rows="2"
-                ></textarea>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>الجهاز العضلي الهيكلي</mat-label>
-                <textarea
-                  matInput
-                  formControlName="musculoskeletal"
-                  rows="2"
-                ></textarea>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>الجهاز العصبي</mat-label>
-                <textarea
-                  matInput
-                  formControlName="neurological"
-                  rows="2"
-                ></textarea>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>الحالة النفسية</mat-label>
-                <textarea
-                  matInput
-                  formControlName="psychiatric"
-                  rows="2"
-                ></textarea>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>الجلد</mat-label>
-                <textarea matInput formControlName="skin" rows="2"></textarea>
-              </mat-form-field>
+            <!-- Is Confidential -->
+            <div class="checkbox-field">
+              <mat-checkbox formControlName="isConfidential">
+                <mat-icon>lock</mat-icon>
+                سجل سري (يتطلب صلاحيات خاصة للعرض)
+              </mat-checkbox>
             </div>
           </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-    }
-
-    <!-- Step 3: Diagnosis and Treatment -->
-    @if (currentStep() === 2) {
-    <mat-card class="form-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>medical_information</mat-icon>
-          التشخيص والعلاج
-        </mat-card-title>
-      </mat-card-header>
-
-      <mat-card-content formGroupName="diagnosisTreatment">
-        <!-- Diagnosis Component -->
-        <app-diagnosis-form
-          [diagnoses]="diagnoses"
-          (diagnosesChange)="onDiagnosesChange($event)"
-        >
-        </app-diagnosis-form>
-
-        <mat-divider></mat-divider>
-
-        <!-- Treatment Plan -->
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>خطة العلاج</mat-label>
-          <textarea
-            matInput
-            formControlName="treatmentPlan"
-            rows="4"
-            placeholder="وصف خطة العلاج المقترحة"
-          ></textarea>
-        </mat-form-field>
-
-        <!-- Prescriptions Component -->
-        <app-prescription-form
-          [prescriptions]="prescriptions"
-          (prescriptionsChange)="onPrescriptionsChange($event)"
-        >
-        </app-prescription-form>
-      </mat-card-content>
-    </mat-card>
-    }
-
-    <!-- Step 4: Tests and Investigations -->
-    @if (currentStep() === 3) {
-    <mat-card class="form-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>biotech</mat-icon>
-          الفحوصات والتحاليل
-        </mat-card-title>
-      </mat-card-header>
-
-      <mat-card-content>
-        <!-- Lab Tests Component -->
-        <app-lab-tests-form
-          [labTests]="labTests"
-          (labTestsChange)="onLabTestsChange($event)"
-        >
-        </app-lab-tests-form>
-
-        <mat-divider></mat-divider>
-
-        <!-- Radiology Tests Component -->
-        <app-radiology-tests-form
-          [radiologyTests]="radiologyTests"
-          (radiologyTestsChange)="onRadiologyTestsChange($event)"
-        >
-        </app-radiology-tests-form>
-
-        <mat-divider></mat-divider>
-
-        <!-- Medical Procedures Component -->
-        <app-medical-procedures-form
-          [procedures]="procedures"
-          (proceduresChange)="onProceduresChange($event)"
-        >
-        </app-medical-procedures-form>
-      </mat-card-content>
-    </mat-card>
-    }
-
-    <!-- Step 5: Follow-up and Notes -->
-    @if (currentStep() === 4) {
-    <mat-card class="form-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>event_note</mat-icon>
-          المتابعة والملاحظات
-        </mat-card-title>
-      </mat-card-header>
-
-      <mat-card-content formGroupName="followUp">
-        <div class="form-grid">
-          <!-- Follow-up Date -->
-          <mat-form-field appearance="outline">
-            <mat-label>موعد المتابعة</mat-label>
-            <input
-              matInput
-              [matDatepicker]="followUpPicker"
-              formControlName="followUpDate"
-              [min]="tomorrow"
-            />
-            <mat-datepicker-toggle
-              matSuffix
-              [for]="followUpPicker"
-            ></mat-datepicker-toggle>
-            <mat-datepicker #followUpPicker></mat-datepicker>
-            <mat-icon matPrefix>event</mat-icon>
-          </mat-form-field>
-
-          <!-- Follow-up Instructions -->
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>تعليمات المتابعة</mat-label>
-            <textarea
-              matInput
-              formControlName="followUpInstructions"
-              rows="3"
-              placeholder="التعليمات والإرشادات للمريض"
-            ></textarea>
-          </mat-form-field>
-
-          <!-- Referrals Component -->
-          <app-referrals-form
-            [referrals]="referrals"
-            (referralsChange)="onReferralsChange($event)"
-            class="full-width"
-          >
-          </app-referrals-form>
-
-          <!-- Additional Notes -->
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>ملاحظات إضافية</mat-label>
-            <textarea
-              matInput
-              formControlName="notes"
-              rows="4"
-              placeholder="أي ملاحظات إضافية"
-            ></textarea>
-          </mat-form-field>
-        </div>
-      </mat-card-content>
-    </mat-card>
-    }
-  </form>
-
-  <!-- Navigation Buttons -->
-  <div class="form-navigation">
-    <button
-      mat-button
-      (click)="previousStep()"
-      [disabled]="currentStep() === 0"
-    >
-      <mat-icon>arrow_back</mat-icon>
-      السابق
-    </button>
-
-    <div class="step-indicator">الخطوة {{ currentStep() + 1 }} من 5</div>
-
-    <button mat-button (click)="nextStep()" [disabled]="currentStep() === 4">
-      التالي
-      <mat-icon>arrow_forward</mat-icon>
-    </button>
-  </div>
-
-  <!-- Action Buttons -->
-  <div class="form-actions">
-    <button mat-button (click)="onCancel()">إلغاء</button>
-
-    <button mat-button (click)="onReset()" [disabled]="loading()">
-      <mat-icon>refresh</mat-icon>
-      إعادة تعيين
-    </button>
-
-    <div class="spacer"></div>
-
-    @if (isEditMode()) {
-    <button mat-button color="warn" (click)="onDelete()" [disabled]="loading()">
-      <mat-icon>delete</mat-icon>
-      حذف السجل
-    </button>
-    }
-
-    <button mat-button (click)="onSaveAsDraft()" [disabled]="loading()">
-      <mat-icon>save</mat-icon>
-      حفظ كمسودة
-    </button>
-
-    <button
-      mat-raised-button
-      color="primary"
-      (click)="onSaveAndComplete()"
-      [disabled]="loading() || medicalRecordForm.invalid"
-    >
-      @if (loading()) {
-      <mat-spinner diameter="20"></mat-spinner>
-      } @else {
-      <mat-icon>check</mat-icon>
-      {{ isEditMode() ? "تحديث" : "حفظ واكتمال" }}
+        </mat-card-content>
+      </mat-card>
       }
-    </button>
+
+      <!-- Step 2: Clinical Examination -->
+      @if (currentStep() === 1) {
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>stethoscope</mat-icon>
+            الفحص السريري
+          </mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content formGroupName="clinicalExamination">
+          <!-- Vital Signs Component -->
+          <app-vital-signs-form
+            [vitalSigns]="vitalSigns"
+            (vitalSignsChange)="onVitalSignsChange($event)"
+          >
+          </app-vital-signs-form>
+
+          <mat-divider></mat-divider>
+
+          <div class="form-grid">
+            <!-- Chief Complaint -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>الشكوى الرئيسية</mat-label>
+              <textarea
+                matInput
+                formControlName="chiefComplaint"
+                rows="3"
+                placeholder="وصف الشكوى الرئيسية للمريض"
+              ></textarea>
+              <mat-error
+                *ngIf="
+                  medicalRecordForm
+                    .get('clinicalExamination.chiefComplaint')
+                    ?.hasError('required')
+                "
+              >
+                الشكوى الرئيسية مطلوبة
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Present Illness -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>تاريخ المرض الحالي</mat-label>
+              <textarea
+                matInput
+                formControlName="presentIllness"
+                rows="4"
+                placeholder="وصف تفصيلي للمرض الحالي"
+              ></textarea>
+              <mat-error
+                *ngIf="
+                  medicalRecordForm
+                    .get('clinicalExamination.presentIllness')
+                    ?.hasError('required')
+                "
+              >
+                تاريخ المرض الحالي مطلوب
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Past Medical History -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>التاريخ المرضي السابق</mat-label>
+              <textarea
+                matInput
+                formControlName="pastMedicalHistory"
+                rows="3"
+                placeholder="الأمراض السابقة، العمليات الجراحية، الإصابات"
+              ></textarea>
+            </mat-form-field>
+
+            <!-- Family History -->
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>التاريخ العائلي</mat-label>
+              <textarea
+                matInput
+                formControlName="familyHistory"
+                rows="2"
+                placeholder="الأمراض الوراثية في العائلة"
+              ></textarea>
+            </mat-form-field>
+
+            <!-- Social History -->
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>التاريخ الاجتماعي</mat-label>
+              <textarea
+                matInput
+                formControlName="socialHistory"
+                rows="2"
+                placeholder="التدخين، النشاط البدني، نمط الحياة"
+              ></textarea>
+            </mat-form-field>
+
+            <!-- Allergies -->
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>الحساسية</mat-label>
+              <input
+                matInput
+                formControlName="allergies"
+                placeholder="قائمة بالمواد المسببة للحساسية (مفصولة بفاصلة)"
+              />
+              <mat-icon matPrefix>warning</mat-icon>
+            </mat-form-field>
+
+            <!-- Current Medications -->
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>الأدوية الحالية</mat-label>
+              <input
+                matInput
+                formControlName="currentMedications"
+                placeholder="قائمة بالأدوية الحالية (مفصولة بفاصلة)"
+              />
+              <mat-icon matPrefix>medication</mat-icon>
+            </mat-form-field>
+
+            <!-- Physical Examination -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>الفحص البدني</mat-label>
+              <textarea
+                matInput
+                formControlName="physicalExamination"
+                rows="4"
+                placeholder="نتائج الفحص البدني"
+              ></textarea>
+            </mat-form-field>
+
+            <!-- Systemic Examination -->
+            <div class="systemic-exam-section full-width">
+              <h3>الفحص الجهازي</h3>
+              <div formGroupName="systemicExamination" class="systemic-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>القلب والأوعية الدموية</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="cardiovascular"
+                    rows="2"
+                  ></textarea>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>الجهاز التنفسي</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="respiratory"
+                    rows="2"
+                  ></textarea>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>الجهاز الهضمي</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="gastrointestinal"
+                    rows="2"
+                  ></textarea>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>الجهاز البولي التناسلي</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="genitourinary"
+                    rows="2"
+                  ></textarea>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>الجهاز العضلي الهيكلي</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="musculoskeletal"
+                    rows="2"
+                  ></textarea>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>الجهاز العصبي</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="neurological"
+                    rows="2"
+                  ></textarea>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>الحالة النفسية</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="psychiatric"
+                    rows="2"
+                  ></textarea>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>الجلد</mat-label>
+                  <textarea matInput formControlName="skin" rows="2"></textarea>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      }
+
+      <!-- Step 3: Diagnosis and Treatment -->
+      @if (currentStep() === 2) {
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>medical_information</mat-icon>
+            التشخيص والعلاج
+          </mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content formGroupName="diagnosisTreatment">
+          <!-- Diagnosis Component -->
+          <app-diagnosis-form
+            [diagnoses]="diagnoses"
+            (diagnosesChange)="onDiagnosesChange($event)"
+          >
+          </app-diagnosis-form>
+
+          <mat-divider></mat-divider>
+
+          <!-- Treatment Plan -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>خطة العلاج</mat-label>
+            <textarea
+              matInput
+              formControlName="treatmentPlan"
+              rows="4"
+              placeholder="وصف خطة العلاج المقترحة"
+            ></textarea>
+          </mat-form-field>
+
+          <!-- Prescriptions Component -->
+          <app-prescription-form
+            [prescriptions]="prescriptions"
+            (prescriptionsChange)="onPrescriptionsChange($event)"
+          >
+          </app-prescription-form>
+        </mat-card-content>
+      </mat-card>
+      }
+
+      <!-- Step 4: Tests and Investigations -->
+      @if (currentStep() === 3) {
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>biotech</mat-icon>
+            الفحوصات والتحاليل
+          </mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content>
+          <!-- Lab Tests Component -->
+          <app-lab-tests-form
+            [labTests]="labTests"
+            (labTestsChange)="onLabTestsChange($event)"
+          >
+          </app-lab-tests-form>
+
+          <mat-divider></mat-divider>
+
+          <!-- Radiology Tests Component -->
+          <app-radiology-tests-form
+            [radiologyTests]="radiologyTests"
+            (radiologyTestsChange)="onRadiologyTestsChange($event)"
+          >
+          </app-radiology-tests-form>
+
+          <mat-divider></mat-divider>
+
+          <!-- Medical Procedures Component -->
+          <app-medical-procedures-form
+            [procedures]="procedures"
+            (proceduresChange)="onProceduresChange($event)"
+          >
+          </app-medical-procedures-form>
+        </mat-card-content>
+      </mat-card>
+      }
+
+      <!-- Step 5: Follow-up and Notes -->
+      @if (currentStep() === 4) {
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>event_note</mat-icon>
+            المتابعة والملاحظات
+          </mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content formGroupName="followUp">
+          <div class="form-grid">
+            <!-- Follow-up Date -->
+            <mat-form-field appearance="outline">
+              <mat-label>موعد المتابعة</mat-label>
+              <input
+                matInput
+                [matDatepicker]="followUpPicker"
+                formControlName="followUpDate"
+                [min]="tomorrow"
+              />
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="followUpPicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #followUpPicker></mat-datepicker>
+              <mat-icon matPrefix>event</mat-icon>
+            </mat-form-field>
+
+            <!-- Follow-up Instructions -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>تعليمات المتابعة</mat-label>
+              <textarea
+                matInput
+                formControlName="followUpInstructions"
+                rows="3"
+                placeholder="التعليمات والإرشادات للمريض"
+              ></textarea>
+            </mat-form-field>
+
+            <!-- Referrals Component -->
+            <app-referrals-form
+              [referrals]="referrals"
+              (referralsChange)="onReferralsChange($event)"
+              class="full-width"
+            >
+            </app-referrals-form>
+
+            <!-- Additional Notes -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>ملاحظات إضافية</mat-label>
+              <textarea
+                matInput
+                formControlName="notes"
+                rows="4"
+                placeholder="أي ملاحظات إضافية"
+              ></textarea>
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      }
+    </form>
+
+    <!-- Navigation Buttons -->
+    <div class="form-navigation">
+      <button
+        mat-button
+        (click)="previousStep()"
+        [disabled]="currentStep() === 0"
+      >
+        <mat-icon>arrow_back</mat-icon>
+        السابق
+      </button>
+
+      <div class="step-indicator">الخطوة {{ currentStep() + 1 }} من 5</div>
+
+      <button mat-button (click)="nextStep()" [disabled]="currentStep() === 4">
+        التالي
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-actions">
+      <button mat-button (click)="onCancel()">إلغاء</button>
+
+      <button mat-button (click)="onReset()" [disabled]="loading()">
+        <mat-icon>refresh</mat-icon>
+        إعادة تعيين
+      </button>
+
+      <div class="spacer"></div>
+
+      @if (isEditMode()) {
+      <button
+        mat-button
+        color="warn"
+        (click)="onDelete()"
+        [disabled]="loading()"
+      >
+        <mat-icon>delete</mat-icon>
+        حذف السجل
+      </button>
+      }
+
+      <button mat-button (click)="onSaveAsDraft()" [disabled]="loading()">
+        <mat-icon>save</mat-icon>
+        حفظ كمسودة
+      </button>
+
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="onSaveAndComplete()"
+        [disabled]="loading() || medicalRecordForm.invalid"
+      >
+        @if (loading()) {
+        <mat-spinner diameter="20"></mat-spinner>
+        } @else {
+        <mat-icon>check</mat-icon>
+        {{ isEditMode() ? "تحديث" : "حفظ واكتمال" }}
+        }
+      </button>
+    </div>
   </div>
-</div>
+</app-sidebar>

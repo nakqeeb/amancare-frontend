@@ -28,12 +28,15 @@ import {
   MedicationRoute,
   TestStatus,
   UpdateRecordStatusRequest,
-  ReferralPriority
+  ReferralPriority,
+  ReferralType
 } from '../../models/medical-record.model';
 
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { LabResultsComponent } from '../lab-results/lab-results.component';
 import { RadiologyResultsComponent } from '../radiology-results/radiology-results.component';
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { SidebarComponent } from "../../../../shared/components/sidebar/sidebar.component";
 
 @Component({
   selector: 'app-medical-record-details',
@@ -51,8 +54,10 @@ import { RadiologyResultsComponent } from '../radiology-results/radiology-result
     MatTableModule,
     MatDialogModule,
     LabResultsComponent,
-    RadiologyResultsComponent
-  ],
+    RadiologyResultsComponent,
+    HeaderComponent,
+    SidebarComponent
+],
   templateUrl: './medical-record-details.component.html',
   styleUrl: './medical-record-details.component.scss'
 })
@@ -64,6 +69,8 @@ export class MedicalRecordDetailsComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private dialog = inject(MatDialog);
+
+  referralType = ReferralType;
 
   // State
   medicalRecord = signal<MedicalRecord | null>(null);
@@ -347,5 +354,22 @@ export class MedicalRecordDetailsComponent implements OnInit {
       [ReferralPriority.EMERGENCY]: 'طارئ'
     };
     return labels[priority] || priority;
+  }
+
+  getReferralLabel(type?: ReferralType): string {
+    const labels: Record<ReferralType, string> = {
+      [ReferralType.SPECIALIST]: 'تحويل إلى أخصائي',
+      [ReferralType.HOSPITAL]: 'تحويل إلى مستشفى',
+      [ReferralType.EMERGENCY]: 'تحويل طارئ',
+      [ReferralType.LABORATORY]: 'تحويل إلى مختبر',
+      [ReferralType.RADIOLOGY]: 'تحويل إلى أشعة',
+      [ReferralType.PHYSIOTHERAPY]: 'تحويل علاج طبيعي',
+      [ReferralType.PSYCHIATRY]: 'تحويل إلى طبيب نفسي',
+      [ReferralType.DENTISTRY]: 'تحويل إلى طبيب أسنان',
+      [ReferralType.OPHTHALMOLOGY]: 'تحويل إلى طبيب عيون',
+      [ReferralType.ENT]: 'تحويل أنف وأذن وحنجرة'
+    };
+
+    return type ? labels[type] : '';
   }
 }

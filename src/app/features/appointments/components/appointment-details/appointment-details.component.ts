@@ -62,7 +62,7 @@ export class AppointmentDetailsComponent implements OnInit {
 
   // Component state - Fixed typing
   appointment = signal<AppointmentResponse | null>(null);
-  patientHistory = signal<AppointmentSummaryResponse[]>([]);  // Fixed: Changed from any[] to AppointmentSummaryResponse[]
+  patientHistory = signal<AppointmentResponse[]>([]);  // Fixed: Changed from any[] to AppointmentSummaryResponse[]
   loading = signal(false);
   loadingHistory = signal(false);
 
@@ -100,8 +100,8 @@ export class AppointmentDetailsComponent implements OnInit {
   private loadPatientHistory(patientId: number): void {
     this.loadingHistory.set(true);
     this.appointmentService.getPatientUpcomingAppointments(patientId).subscribe({
-      next: (appointments: AppointmentSummaryResponse[]) => {  // Added type annotation
-        this.patientHistory.set(appointments);
+      next: (response) => {  // Added type annotation
+        this.patientHistory.set(response);
         this.loadingHistory.set(false);
       },
       error: (error) => {

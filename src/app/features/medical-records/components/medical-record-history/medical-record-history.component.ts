@@ -20,6 +20,8 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MedicalRecordService } from '../../services/medical-record.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { SidebarComponent } from "../../../../shared/components/sidebar/sidebar.component";
 
 interface AuditEntry {
   id: number;
@@ -56,8 +58,10 @@ interface FieldChange {
     MatTooltipModule,
     MatChipsModule,
     MatExpansionModule,
-    MatDividerModule
-  ],
+    MatDividerModule,
+    HeaderComponent,
+    SidebarComponent
+],
   templateUrl: './medical-record-history.component.html',
   styleUrl: './medical-record-history.component.scss'
 })

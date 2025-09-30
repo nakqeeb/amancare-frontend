@@ -96,18 +96,6 @@ export const MEDICAL_RECORDS_ROUTES: Routes = [
         }
       },
 
-      // Medical Record History/Audit Log
-      {
-        path: ':id/history',
-        loadComponent: () =>
-          import('./components/medical-record-history/medical-record-history.component')
-            .then(m => m.MedicalRecordHistoryComponent),
-        data: {
-          title: 'سجل التعديلات',
-          breadcrumb: 'السجل التاريخي'
-        }
-      },
-
       // Medical Records Statistics
       {
         path: 'statistics',
@@ -131,6 +119,19 @@ export const MEDICAL_RECORDS_ROUTES: Routes = [
         data: {
           title: 'البحث المتقدم',
           breadcrumb: 'البحث'
+        }
+      },
+
+
+      // Medical Record History/Audit Log
+      {
+        path: ':id/history',
+        loadComponent: () =>
+          import('./components/medical-record-history/medical-record-history.component')
+            .then(m => m.MedicalRecordHistoryComponent),
+        data: {
+          title: 'سجل التعديلات',
+          breadcrumb: 'السجل التاريخي'
         }
       },
 

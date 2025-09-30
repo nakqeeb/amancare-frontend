@@ -25,6 +25,8 @@ import { NotificationService } from '../../../../core/services/notification.serv
 
 import { MedicalRecordSummary, RecordStatus, VisitType } from '../../models/medical-record.model';
 import { User } from '../../../users/models/user.model';
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { SidebarComponent } from "../../../../shared/components/sidebar/sidebar.component";
 
 @Component({
   selector: 'app-doctor-medical-records',
@@ -42,8 +44,10 @@ import { User } from '../../../users/models/user.model';
     MatSelectModule,
     MatProgressSpinnerModule,
     MatChipsModule,
-    MatTooltipModule
-  ],
+    MatTooltipModule,
+    HeaderComponent,
+    SidebarComponent
+],
   templateUrl: './doctor-medical-records.component.html',
   styleUrl: './doctor-medical-records.component.scss'
 })

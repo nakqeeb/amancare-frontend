@@ -59,6 +59,8 @@ import { RadiologyTestsFormComponent } from '../radiology-tests-form/radiology-t
 import { MedicalProceduresFormComponent } from '../medical-procedures-form/medical-procedures-form.component';
 import { ReferralsFormComponent } from '../referrals-form/referrals-form.component';
 import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { SidebarComponent } from "../../../../shared/components/sidebar/sidebar.component";
 
 @Component({
   selector: 'app-medical-record-form',
@@ -87,8 +89,10 @@ import { ConfirmDialogComponent } from '../../../../shared/components/confirm-di
     LabTestsFormComponent,
     RadiologyTestsFormComponent,
     MedicalProceduresFormComponent,
-    ReferralsFormComponent
-  ],
+    ReferralsFormComponent,
+    HeaderComponent,
+    SidebarComponent
+],
   templateUrl: './medical-record-form.component.html',
   styleUrl: './medical-record-form.component.scss'
 })

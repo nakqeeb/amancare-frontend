@@ -18,6 +18,8 @@ import { NotificationService } from '../../../../core/services/notification.serv
 
 import { MedicalRecord, Prescription, MedicationRoute } from '../../models/medical-record.model';
 import { Patient } from '../../../patients/models/patient.model';
+import { SidebarComponent } from "../../../../shared/components/sidebar/sidebar.component";
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 @Component({
   selector: 'app-prescription-print',
@@ -27,8 +29,10 @@ import { Patient } from '../../../patients/models/patient.model';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatCardModule
-  ],
+    MatCardModule,
+    SidebarComponent,
+    HeaderComponent
+],
   templateUrl: './prescription-print.component.html',
   styleUrl: './prescription-print.component.scss'
 })

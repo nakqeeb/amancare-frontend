@@ -41,6 +41,8 @@ import {
 } from '../../models/medical-record.model';
 import { Patient, PatientSearchCriteria } from '../../../patients/models/patient.model';
 import { User } from '../../../users/models/user.model';
+import { SidebarComponent } from "../../../../shared/components/sidebar/sidebar.component";
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
 
 @Component({
   selector: 'app-medical-record-search',
@@ -65,8 +67,10 @@ import { User } from '../../../users/models/user.model';
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatExpansionModule,
-    MatMenuModule
-  ],
+    MatMenuModule,
+    SidebarComponent,
+    HeaderComponent
+],
   templateUrl: './medical-record-search.component.html',
   styleUrl: './medical-record-search.component.scss'
 })

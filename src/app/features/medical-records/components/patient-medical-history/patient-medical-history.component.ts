@@ -29,6 +29,8 @@ import {
   GroupedRecords
 } from '../../models/medical-record.model';
 import { Patient } from '../../../patients/models/patient.model';
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { SidebarComponent } from "../../../../shared/components/sidebar/sidebar.component";
 
 @Component({
   selector: 'app-patient-medical-history',
@@ -45,8 +47,10 @@ import { Patient } from '../../../patients/models/patient.model';
     MatInputModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
-    MatDividerModule
-  ],
+    MatDividerModule,
+    HeaderComponent,
+    SidebarComponent
+],
   templateUrl: './patient-medical-history.component.html',
   styleUrl: './patient-medical-history.component.scss'
 })
