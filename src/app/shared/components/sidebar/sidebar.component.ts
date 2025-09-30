@@ -183,6 +183,39 @@ export class SidebarComponent implements OnInit, OnDestroy {
           }
         ]
       },
+      {
+        title: 'السجلات الطبية',
+        icon: 'description',
+        expanded: false,
+        roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE'],
+        route: '',
+        children: [
+          {
+            title: 'قائمة السجلات',
+            icon: 'list',
+            route: '/medical-records/list',
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE']
+          },
+          {
+            title: 'سجل جديد',
+            icon: 'add_circle',
+            route: '/medical-records/new',
+            roles: ['DOCTOR', 'ADMIN', 'SYSTEM_ADMIN']
+          },
+          {
+            title: 'البحث المتقدم',
+            icon: 'search',
+            route: '/medical-records/search',
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE']
+          },
+          {
+            title: 'الإحصائيات',
+            icon: 'analytics',
+            route: '/medical-records/statistics',
+            roles: ['DOCTOR', 'ADMIN', 'SYSTEM_ADMIN']
+          }
+        ]
+      },
       // {
       //   title: 'المواعيد',
       //   icon: 'event',
