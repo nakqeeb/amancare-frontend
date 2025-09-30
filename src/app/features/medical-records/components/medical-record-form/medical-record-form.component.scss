@@ -1,33 +1,53 @@
 // ===================================================================
 // src/app/features/medical-records/components/medical-record-form/medical-record-form.component.scss
-// Medical Record Form Component Styles
+// Professional Medical Record Form - Using ONLY Existing Global Variables
 // ===================================================================
 
 @import '../../../../../styles.scss';
 
 .medical-record-form-container {
   min-height: 100vh;
-  background: var(--background-secondary);
+  background: var(--bg-secondary);
 
+  // ===================================================================
+  // HEADER SECTION
+  // ===================================================================
   .form-header {
-    background: var(--surface);
-    padding: var(--spacing-lg);
-    box-shadow: var(--shadow-sm);
+    background: var(--bg-primary);
+    padding: var(--spacing-lg) var(--spacing-xl);
+    box-shadow: var(--shadow-md);
     position: sticky;
     top: 0;
     z-index: 100;
+    border-bottom: 1px solid var(--border-color);
 
     .header-content {
       display: flex;
       align-items: center;
-      gap: var(--spacing-md);
-      margin-bottom: var(--spacing-lg);
+      gap: var(--spacing-lg);
+      // margin-bottom: var(--spacing-xl);
+      max-width: 1400px;
+      margin-left: auto;
+      margin-right: auto;
 
       .back-button {
-        background: var(--background-secondary);
+        background: transparent;
+        border: 1px solid var(--border-color);
+        transition: var(--transition-base);
+        width: 40px;
+        height: 40px;
+
+        mat-icon {
+          color: var(--text-secondary);
+        }
 
         &:hover {
-          background: var(--hover-overlay);
+          background: var(--bg-light);
+          border-color: var(--primary-color);
+
+          mat-icon {
+            color: var(--primary-color);
+          }
         }
       }
 
@@ -37,21 +57,29 @@
         .page-title {
           display: flex;
           align-items: center;
-          gap: var(--spacing-sm);
-          font-size: var(--font-size-xl);
-          font-weight: var(--font-weight-semibold);
+          gap: var(--spacing-md);
+          font-size: var(--font-size-3xl);
+          font-weight: 600;
           color: var(--text-primary);
           margin: 0;
+          line-height: 1.2;
 
           mat-icon {
-            color: var(--primary);
+            color: var(--primary-color);
+            font-size: 28px;
+            width: 28px;
+            height: 28px;
           }
         }
 
         .record-number {
           font-size: var(--font-size-sm);
           color: var(--text-secondary);
-          margin-left: var(--spacing-md);
+          margin-top: var(--spacing-xs);
+          display: inline-block;
+          padding: var(--spacing-xs) var(--spacing-sm);
+          background: var(--bg-light);
+          border-radius: var(--radius-sm);
         }
       }
 
@@ -60,94 +88,201 @@
         gap: var(--spacing-sm);
 
         button {
+          transition: var(--transition-base);
+          font-weight: 500;
+          padding: 0 var(--spacing-lg);
+          height: 40px;
+
+          mat-icon {
+            margin-left: var(--spacing-xs);
+          }
+
           &:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+
+          &:not(:disabled):hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
           }
         }
       }
     }
 
+    // Stepper Styling
     mat-stepper {
       background: transparent;
+      max-width: 1400px;
+      margin: 0 auto;
 
       ::ng-deep {
         .mat-horizontal-stepper-header-container {
           margin-bottom: 0;
+          padding: var(--spacing-md) 0;
         }
 
         .mat-step-header {
+          padding: var(--spacing-md) var(--spacing-lg);
+          transition: var(--transition-base);
+          border-radius: var(--radius-md);
+          margin: 0 var(--spacing-xs);
 
-          &.cdk-keyboard-focused,
-          &.cdk-program-focused,
-          &:hover {
-            background-color: var(--hover-overlay);
+          &:hover:not(.mat-step-header-selected) {
+            background-color: var(--bg-light);
+          }
+
+          &.mat-step-header-selected {
+            background-color: var(--bg-light);
           }
 
           .mat-step-label {
             color: var(--text-secondary);
             font-size: var(--font-size-sm);
+            font-weight: 500;
 
             &.mat-step-label-active,
             &.mat-step-label-selected {
-              color: var(--primary);
-              font-weight: var(--font-weight-medium);
+              color: var(--primary-color);
             }
           }
 
           .mat-step-icon {
-            background-color: var(--text-disabled);
+            background-color: var(--bg-light);
+            color: var(--text-secondary);
+            border: 2px solid var(--border-color);
+            transition: var(--transition-base);
 
-            &.mat-step-icon-selected,
-            &.mat-step-icon-state-done,
-            &.mat-step-icon-state-edit {
-              background-color: var(--primary);
+            &.mat-step-icon-selected {
+              background-color: var(--primary-color);
+              border-color: var(--primary-color);
+              color: white;
+              box-shadow: var(--shadow-sm);
+            }
+
+            &.mat-step-icon-state-done {
+              background-color: var(--success-color);
+              border-color: var(--success-color);
+              color: white;
             }
           }
+
+          .mat-step-icon-content {
+            font-weight: 600;
+          }
+        }
+
+        .mat-stepper-horizontal-line {
+          border-top-width: 2px;
+          border-top-color: var(--border-color);
+          margin: 0 calc(-1 * var(--spacing-xs));
         }
       }
     }
   }
 
+  // ===================================================================
+  // LOADING OVERLAY
+  // ===================================================================
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    z-index: 2000;
+    animation: fadeIn 0.2s ease;
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    p {
+      color: white;
+      font-size: var(--font-size-lg);
+      font-weight: 500;
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  // ===================================================================
+  // FORM CONTENT
+  // ===================================================================
   .medical-record-form {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-xl);
     max-width: 1400px;
     margin: 0 auto;
 
     .form-card {
-      margin-bottom: var(--spacing-lg);
-      background: var(--surface);
-      border-radius: var(--border-radius-lg);
-      box-shadow: var(--shadow-sm);
+      margin-bottom: var(--spacing-xl);
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+      transition: var(--transition-base);
+      overflow: hidden;
+
+      &:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+      }
 
       mat-card-header {
-        background: var(--background-secondary);
-        padding: var(--spacing-md);
-        margin: calc(-1 * var(--spacing-md));
-        margin-bottom: var(--spacing-md);
-        border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+        background: var(--bg-light);
+        padding: var(--spacing-lg) var(--spacing-xl);
+        border-bottom: 2px solid var(--border-color);
 
         mat-card-title {
           display: flex;
           align-items: center;
-          gap: var(--spacing-sm);
+          gap: var(--spacing-md);
           font-size: var(--font-size-lg);
+          font-weight: 600;
           color: var(--text-primary);
           margin: 0;
 
           mat-icon {
-            color: var(--primary);
+            color: var(--primary-color);
+            font-size: 24px;
+            width: 24px;
+            height: 24px;
+          }
+
+          .required-badge {
+            background: var(--error-color);
+            color: white;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-xs);
+            font-weight: 500;
+            margin-right: auto;
+            animation: pulse 2s infinite;
+          }
+
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
           }
         }
       }
 
       mat-card-content {
-        padding-top: var(--spacing-md);
+        padding: var(--spacing-xl);
       }
 
       .form-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: var(--spacing-md);
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
 
         .full-width {
           grid-column: 1 / -1;
@@ -162,215 +297,351 @@
         }
       }
 
-      .patient-info-card {
-        background: var(--background-secondary);
-        border-radius: var(--border-radius-md);
-        padding: var(--spacing-md);
-        border: 1px solid var(--divider);
+      .systemic-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
 
-        .info-header {
-          display: flex;
-          align-items: center;
-          gap: var(--spacing-sm);
-          margin-bottom: var(--spacing-md);
-          color: var(--primary);
-          font-weight: var(--font-weight-medium);
-
-          mat-icon {
-            font-size: 20px;
-            width: 20px;
-            height: 20px;
-          }
-        }
-
-        .info-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: var(--spacing-sm);
-
-          .info-item {
-            display: flex;
-            gap: var(--spacing-sm);
-
-            &.full-width {
-              grid-column: 1 / -1;
-            }
-
-            label {
-              font-weight: var(--font-weight-medium);
-              color: var(--text-secondary);
-              min-width: 80px;
-            }
-
-            span {
-              color: var(--text-primary);
-              flex: 1;
-            }
-
-            .allergies-text {
-              color: var(--error);
-              font-weight: var(--font-weight-medium);
-            }
-          }
+        mat-form-field {
+          width: 100%;
         }
       }
+    }
 
-      .patient-option {
-        display: flex;
-        flex-direction: column;
+    // ===================================================================
+    // PATIENT INFO CARD
+    // ===================================================================
+    .patient-info-card {
+      background: var(--bg-light);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      border: 2px solid var(--border-color);
+      margin-top: var(--spacing-md);
+      transition: var(--transition-base);
 
-        .patient-name {
-          font-weight: var(--font-weight-medium);
-          color: var(--text-primary);
-        }
-
-        .patient-info {
-          font-size: var(--font-size-sm);
-          color: var(--text-secondary);
-        }
+      &:hover {
+        border-color: var(--primary-color);
+        box-shadow: var(--shadow-md);
       }
 
-      .doctor-spec {
-        font-size: var(--font-size-sm);
-        color: var(--text-secondary);
-        margin-left: var(--spacing-xs);
-      }
-
-      .checkbox-field {
+      .info-header {
         display: flex;
         align-items: center;
-        padding: var(--spacing-md);
-        background: var(--background-secondary);
-        border-radius: var(--border-radius-md);
-
-        mat-checkbox {
-          ::ng-deep .mat-checkbox-label {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            color: var(--text-primary);
-          }
-
-          mat-icon {
-            font-size: 18px;
-            width: 18px;
-            height: 18px;
-            color: var(--warning);
-          }
-        }
-      }
-
-      mat-divider {
-        margin: var(--spacing-lg) 0;
-      }
-
-      .systemic-exam-section {
-        h3 {
-          font-size: var(--font-size-md);
-          color: var(--text-primary);
-          margin-bottom: var(--spacing-md);
-        }
-
-        .systemic-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: var(--spacing-md);
-
-          mat-form-field {
-            width: 100%;
-          }
-        }
-      }
-
-      .section {
+        gap: var(--spacing-md);
         margin-bottom: var(--spacing-lg);
+        padding-bottom: var(--spacing-md);
+        border-bottom: 2px solid var(--border-color);
+
+        mat-icon {
+          color: var(--primary-color);
+          font-size: 28px;
+          width: 28px;
+          height: 28px;
+        }
+
+        h3 {
+          margin: 0;
+          font-size: var(--font-size-lg);
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-md) var(--spacing-xl);
+
+        .info-item {
+          display: flex;
+          gap: var(--spacing-sm);
+          align-items: center;
+          padding: var(--spacing-sm);
+          border-radius: var(--radius-sm);
+          transition: var(--transition-fast);
+
+          &:hover {
+            background: var(--bg-primary);
+          }
+
+          .info-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            min-width: 100px;
+            font-size: var(--font-size-sm);
+          }
+
+          .info-value {
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: var(--font-size-sm);
+          }
+        }
+      }
+    }
+
+    // ===================================================================
+    // AUTOCOMPLETE STYLING
+    // ===================================================================
+    ::ng-deep .patient-autocomplete-panel {
+      .mat-autocomplete-panel {
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border-color);
+        margin-top: var(--spacing-xs);
+      }
+
+      .mat-option {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-bottom: 1px solid var(--border-light);
+        transition: var(--transition-fast);
 
         &:last-child {
-          margin-bottom: 0;
+          border-bottom: none;
         }
 
-        h3 {
-          font-size: var(--font-size-md);
-          color: var(--text-primary);
-          margin-bottom: var(--spacing-sm);
+        &:hover {
+          background: var(--bg-light);
         }
 
-        .content-text {
-          color: var(--text-primary);
-          line-height: 1.6;
-          white-space: pre-wrap;
+        &.mat-selected {
+          background: var(--bg-light);
+          color: var(--primary-color);
         }
       }
     }
-  }
 
-  .form-navigation {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--spacing-md) var(--spacing-lg);
-    background: var(--surface);
-    border-top: 1px solid var(--divider);
-    position: sticky;
-    bottom: 60px;
-    z-index: 99;
+    .patient-option {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: var(--spacing-xs) 0;
 
-    button {
+      .patient-name {
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .patient-number {
+        font-size: var(--font-size-xs);
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+    }
+
+    // ===================================================================
+    // WARNING MESSAGE
+    // ===================================================================
+    .warning-message {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md) var(--spacing-lg);
+      background: var(--bg-light);
+      border: 2px solid var(--warning-color);
+      border-left-width: 4px;
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      margin-top: var(--spacing-lg);
+      font-weight: 500;
+      animation: slideIn 0.3s ease;
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
       mat-icon {
-        font-size: 18px;
+        color: var(--warning-color);
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
       }
     }
 
-    .step-indicator {
-      font-size: var(--font-size-sm);
-      color: var(--text-secondary);
-      padding: var(--spacing-sm) var(--spacing-md);
-      background: var(--background-secondary);
-      border-radius: var(--border-radius-full);
-    }
-  }
+    // ===================================================================
+    // FORM NAVIGATION
+    // ===================================================================
+    .form-navigation {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-lg) var(--spacing-xl);
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+      margin-bottom: var(--spacing-xl);
 
-  .form-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md) var(--spacing-lg);
-    background: var(--surface);
-    border-top: 1px solid var(--divider);
-    position: sticky;
-    bottom: 0;
-    z-index: 100;
+      button {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        font-weight: 500;
+        padding: var(--spacing-sm) var(--spacing-lg);
+        transition: var(--transition-base);
 
-    .spacer {
-      flex: 1;
-    }
+        mat-icon {
+          transition: var(--transition-fast);
+        }
 
-    button {
-      &:disabled {
-        opacity: 0.6;
+        &:not(:disabled):hover {
+          mat-icon {
+            transform: translateX(4px);
+          }
+
+          &:first-child mat-icon {
+            transform: translateX(-4px);
+          }
+        }
+
+        &:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
       }
 
-      mat-spinner {
-        display: inline-block;
-        margin-right: var(--spacing-xs);
+      .step-indicator {
+        font-size: var(--font-size-base);
+        color: var(--text-primary);
+        font-weight: 600;
+        padding: var(--spacing-sm) var(--spacing-lg);
+        background: var(--bg-light);
+        border-radius: var(--radius-md);
+      }
+    }
+
+    // ===================================================================
+    // FORM ACTIONS
+    // ===================================================================
+    .form-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-lg) var(--spacing-xl);
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      position: sticky;
+      bottom: var(--spacing-md);
+      margin-top: var(--spacing-xl);
+      backdrop-filter: blur(8px);
+
+      .action-buttons {
+        display: flex;
+        gap: var(--spacing-md);
+      }
+
+      button {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        font-weight: 500;
+        padding: var(--spacing-sm) var(--spacing-xl);
+        transition: var(--transition-base);
+        height: 44px;
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+
+        &:not(:disabled):hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        &[color="primary"] {
+          box-shadow: var(--shadow-sm);
+
+          &:hover:not(:disabled) {
+            box-shadow: var(--shadow-md);
+          }
+        }
       }
     }
   }
 }
 
-// Responsive Design
+// ===================================================================
+// RESPONSIVE DESIGN
+// ===================================================================
+@media (max-width: 1024px) {
+  .medical-record-form-container {
+    .form-header {
+      padding: var(--spacing-md) var(--spacing-lg);
+
+      .header-content {
+        .page-title {
+          font-size: var(--font-size-2xl);
+        }
+      }
+    }
+
+    .medical-record-form {
+      padding: var(--spacing-lg);
+
+      .form-card {
+        .form-grid {
+          gap: var(--spacing-md);
+        }
+      }
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .medical-record-form-container {
     .form-header {
-      padding: var(--spacing-md);
+      padding: var(--spacing-sm) var(--spacing-md);
 
       .header-content {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+
+        .title-section {
+          width: 100%;
+
+          .page-title {
+            font-size: var(--font-size-xl);
+
+            mat-icon {
+              font-size: 24px;
+            }
+          }
+        }
 
         .header-actions {
           width: 100%;
           justify-content: flex-end;
+
+          button {
+            font-size: var(--font-size-sm);
+            padding: 0 var(--spacing-md);
+            height: 36px;
+
+            span {
+              display: none;
+            }
+
+            mat-icon {
+              margin: 0;
+            }
+          }
         }
       }
 
@@ -378,10 +649,24 @@
         ::ng-deep {
           .mat-horizontal-stepper-header-container {
             overflow-x: auto;
+            padding: var(--spacing-sm) 0;
           }
 
-          .mat-step-label {
-            min-width: 120px;
+          .mat-step-header {
+            padding: var(--spacing-sm);
+            min-width: 80px;
+
+            .mat-step-label {
+              font-size: var(--font-size-xs);
+
+              span {
+                display: none;
+              }
+
+              mat-icon {
+                font-size: 16px;
+              }
+            }
           }
         }
       }
@@ -391,8 +676,19 @@
       padding: var(--spacing-md);
 
       .form-card {
+        margin-bottom: var(--spacing-lg);
+
+        mat-card-header {
+          padding: var(--spacing-md);
+        }
+
+        mat-card-content {
+          padding: var(--spacing-md);
+        }
+
         .form-grid {
           grid-template-columns: 1fr;
+          gap: var(--spacing-md);
 
           .half-width {
             grid-column: 1;
@@ -402,31 +698,65 @@
         .systemic-grid {
           grid-template-columns: 1fr;
         }
+
+        .patient-info-card {
+          padding: var(--spacing-md);
+
+          .info-grid {
+            grid-template-columns: 1fr;
+            gap: var(--spacing-sm);
+          }
+        }
       }
-    }
 
-    .form-navigation {
-      padding: var(--spacing-sm) var(--spacing-md);
+      .form-navigation {
+        padding: var(--spacing-sm) var(--spacing-md);
 
-      button {
-        padding: var(--spacing-xs) var(--spacing-sm);
+        button {
+          padding: var(--spacing-xs) var(--spacing-sm);
+          font-size: var(--font-size-sm);
+
+          span {
+            display: none;
+          }
+        }
+
+        .step-indicator {
+          font-size: var(--font-size-sm);
+          padding: var(--spacing-xs) var(--spacing-sm);
+        }
       }
-    }
 
-    .form-actions {
-      padding: var(--spacing-sm) var(--spacing-md);
-      flex-wrap: wrap;
+      .form-actions {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        padding: var(--spacing-md);
+
+        .action-buttons {
+          width: 100%;
+          flex-direction: column;
+
+          button {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      }
     }
   }
 }
 
-// Print Styles
+// ===================================================================
+// PRINT STYLES
+// ===================================================================
 @media print {
   .medical-record-form-container {
+    background: white;
 
     .form-header,
     .form-navigation,
-    .form-actions {
+    .form-actions,
+    .loading-overlay {
       display: none !important;
     }
 
@@ -435,37 +765,90 @@
 
       .form-card {
         box-shadow: none;
+        border: 1px solid var(--border-color);
         page-break-inside: avoid;
+        margin-bottom: var(--spacing-lg);
+
+        mat-card-header {
+          background: var(--bg-light);
+          border-bottom: 2px solid var(--text-primary);
+        }
       }
     }
   }
 }
 
-// Dark Theme Support
-@media (prefers-color-scheme: dark) {
+// ===================================================================
+// DARK THEME
+// ===================================================================
+[data-theme="dark"],
+.dark-theme {
   .medical-record-form-container {
-    background: var(--background-dark);
-
-    .form-header,
-    .form-card,
-    .form-navigation,
     .form-actions {
-      background: var(--surface-dark);
+      box-shadow: var(--shadow-xl);
+    }
+  }
+}
+
+// ===================================================================
+// ACCESSIBILITY
+// ===================================================================
+.medical-record-form-container {
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  @media (prefers-contrast: high) {
+    .form-card {
+      border: 2px solid var(--text-primary);
     }
 
     .patient-info-card {
-      background: var(--background-secondary-dark);
-      border-color: var(--divider-dark);
+      border: 3px solid var(--primary-color);
     }
 
-    mat-stepper {
-      ::ng-deep {
-        .mat-step-header {
-          &:hover {
-            background-color: var(--hover-overlay-dark);
-          }
-        }
-      }
+    button {
+      border: 2px solid currentColor;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+// ===================================================================
+// CUSTOM SCROLLBAR
+// ===================================================================
+.medical-record-form-container {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--bg-light);
+    border-radius: var(--radius-sm);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: var(--radius-sm);
+    transition: var(--transition-fast);
+
+    &:hover {
+      background: var(--text-secondary);
     }
   }
 }
