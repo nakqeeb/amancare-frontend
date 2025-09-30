@@ -65,9 +65,6 @@ export class PrescriptionFormComponent {
   showSuggestions = signal<boolean[]>([]);
 
   // Common prescriptions templates
-  // =====================================================
-  // قوالب شائعة للوصفات الطبية (للاستخدام السريع)
-  // =====================================================
   commonPrescriptions: Partial<Prescription>[] = [
     {
       medicationName: 'Paracetamol',
@@ -165,6 +162,80 @@ export class PrescriptionFormComponent {
     this.editModeArray.set(editModes);
   }
 
+  savePrescription(index: number): void {
+    // Validate required fields
+    const prescription = this.prescriptions[index];
+    if (!this.isPrescriptionValid(prescription)) {
+      return;
+    }
+
+    // Close edit mode
+    const editModes = [...this.editModeArray()];
+    editModes[index] = false;
+    this.editModeArray.set(editModes);
+
+    // Emit changes to parent
+    this.emitChanges();
+  }
+
+  isPrescriptionValid(prescription: Prescription): boolean {
+    // Check required fields
+    if (!prescription.medicationName || !prescription.dosage || !prescription.frequency) {
+      return false;
+    }
+
+    // Validate refills range (0-12)
+    if (prescription.refills !== undefined && prescription.refills !== null) {
+      if (prescription.refills < 0 || prescription.refills > 12) {
+        return false;
+      }
+    }
+
+    // Validate quantity is positive
+    if (prescription.quantity !== undefined && prescription.quantity !== null) {
+      if (prescription.quantity < 1) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  onRefillsChange(prescription: Prescription): void {
+    // Enforce max value
+    if (prescription.refills !== undefined && prescription.refills !== null) {
+      if (prescription.refills > 12) {
+        prescription.refills = 12;
+      } else if (prescription.refills < 0) {
+        prescription.refills = 0;
+      }
+    }
+    this.emitChanges();
+  }
+
+  onQuantityChange(prescription: Prescription): void {
+    // Enforce min value
+    if (prescription.quantity !== undefined && prescription.quantity !== null) {
+      if (prescription.quantity < 1) {
+        prescription.quantity = 1;
+      }
+    }
+    this.emitChanges();
+  }
+
+  cancelEdit(index: number): void {
+    // If this is a new empty prescription, remove it
+    const prescription = this.prescriptions[index];
+    if (!prescription.medicationName && !prescription.dosage) {
+      this.removePrescription(index);
+    } else {
+      // Just close edit mode without saving
+      const editModes = [...this.editModeArray()];
+      editModes[index] = false;
+      this.editModeArray.set(editModes);
+    }
+  }
+
   addFromTemplate(template: Partial<Prescription>): void {
     const newPrescription: Prescription = {
       medicationName: template.medicationName || '',
@@ -231,7 +302,9 @@ export class PrescriptionFormComponent {
     return labels[route] || route;
   }
 
-  private emitChanges(): void {
+  // CRITICAL FIX: Made this method public so it can be called from template
+  // This ensures parent component receives updates whenever any field changes
+  emitChanges(): void {
     this.prescriptionsChange.emit(this.prescriptions);
   }
 }

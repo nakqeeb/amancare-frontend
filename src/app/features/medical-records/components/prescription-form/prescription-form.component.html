@@ -33,9 +33,11 @@
           </div>
 
           <div class="prescription-actions">
+            @if (!editMode()[i]) {
             <button mat-icon-button (click)="toggleEdit(i)" matTooltip="تعديل">
-              <mat-icon>{{ editMode()[i] ? "close" : "edit" }}</mat-icon>
+              <mat-icon>edit</mat-icon>
             </button>
+            }
             <button
               mat-icon-button
               color="warn"
@@ -56,6 +58,7 @@
               <input
                 matInput
                 [(ngModel)]="prescription.medicationName"
+                (ngModelChange)="emitChanges()"
                 placeholder="مثال: Amoxicillin"
                 required
                 (input)="searchMedication($event, i)"
@@ -68,6 +71,7 @@
               <input
                 matInput
                 [(ngModel)]="prescription.genericName"
+                (ngModelChange)="emitChanges()"
                 placeholder="اختياري"
               />
             </mat-form-field>
@@ -93,6 +97,7 @@
               <input
                 matInput
                 [(ngModel)]="prescription.dosage"
+                (ngModelChange)="emitChanges()"
                 placeholder="مثال: 500mg"
                 required
               />
@@ -101,7 +106,10 @@
 
             <mat-form-field appearance="outline" class="flex-1">
               <mat-label>التكرار</mat-label>
-              <mat-select [(ngModel)]="prescription.frequency">
+              <mat-select
+                [(ngModel)]="prescription.frequency"
+                (ngModelChange)="emitChanges()"
+              >
                 <mat-option value="مرة واحدة يومياً"
                   >مرة واحدة يومياً</mat-option
                 >
@@ -123,6 +131,7 @@
               <input
                 matInput
                 [(ngModel)]="prescription.duration"
+                (ngModelChange)="emitChanges()"
                 placeholder="مثال: 7 أيام"
               />
               <mat-icon matPrefix>date_range</mat-icon>
@@ -132,7 +141,10 @@
           <div class="form-row">
             <mat-form-field appearance="outline" class="flex-1">
               <mat-label>طريق الإعطاء</mat-label>
-              <mat-select [(ngModel)]="prescription.route">
+              <mat-select
+                [(ngModel)]="prescription.route"
+                (ngModelChange)="emitChanges()"
+              >
                 <mat-option value="ORAL">فموي</mat-option>
                 <mat-option value="INJECTION">حقن</mat-option>
                 <mat-option value="TOPICAL">موضعي</mat-option>
@@ -153,9 +165,15 @@
                 matInput
                 type="number"
                 [(ngModel)]="prescription.quantity"
+                (ngModelChange)="onQuantityChange(prescription)"
                 placeholder="مثال: 21"
+                min="1"
               />
               <mat-icon matPrefix>inventory_2</mat-icon>
+              <mat-hint>الحد الأدنى: 1</mat-hint>
+              @if (prescription.quantity && prescription.quantity < 1) {
+              <mat-error>الكمية يجب أن تكون 1 على الأقل</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="flex-1">
@@ -164,21 +182,45 @@
                 matInput
                 type="number"
                 [(ngModel)]="prescription.refills"
+                (ngModelChange)="onRefillsChange(prescription)"
                 placeholder="مثال: 2"
                 min="0"
                 max="12"
               />
               <mat-icon matPrefix>replay</mat-icon>
+              <mat-hint>الحد الأقصى: 12</mat-hint>
+              @if (prescription.refills && prescription.refills > 12) {
+              <mat-error
+                >عدد التجديدات يجب أن يكون أقل من أو يساوي 12</mat-error
+              >
+              } @if (prescription.refills && prescription.refills < 0) {
+              <mat-error>عدد التجديدات يجب أن يكون 0 أو أكثر</mat-error>
+              }
             </mat-form-field>
           </div>
 
           <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>التعليمات</mat-label>
+              <textarea
+                matInput
+                [(ngModel)]="prescription.instructions"
+                (ngModelChange)="emitChanges()"
+                rows="2"
+                placeholder="تعليمات خاصة للمريض"
+              ></textarea>
+              <mat-icon matPrefix>info</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row dates-row">
             <mat-form-field appearance="outline" class="flex-1">
               <mat-label>تاريخ البدء</mat-label>
               <input
                 matInput
                 [matDatepicker]="startPicker"
                 [(ngModel)]="prescription.startDate"
+                (ngModelChange)="emitChanges()"
               />
               <mat-datepicker-toggle
                 matSuffix
@@ -193,6 +235,7 @@
                 matInput
                 [matDatepicker]="endPicker"
                 [(ngModel)]="prescription.endDate"
+                (ngModelChange)="emitChanges()"
               />
               <mat-datepicker-toggle
                 matSuffix
@@ -201,32 +244,35 @@
               <mat-datepicker #endPicker></mat-datepicker>
             </mat-form-field>
 
-            <mat-checkbox [(ngModel)]="prescription.isPrn" class="prn-checkbox">
+            <mat-checkbox
+              [(ngModel)]="prescription.isPrn"
+              (ngModelChange)="emitChanges()"
+              class="prn-checkbox"
+            >
               عند الحاجة (PRN)
             </mat-checkbox>
           </div>
 
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>تعليمات الاستخدام</mat-label>
-            <textarea
-              matInput
-              [(ngModel)]="prescription.instructions"
-              rows="2"
-              placeholder="مثال: تناول مع الطعام، تجنب التعرض للشمس"
-            ></textarea>
-            <mat-icon matPrefix>info</mat-icon>
-          </mat-form-field>
-
-          <div class="edit-actions">
-            <button mat-button (click)="toggleEdit(i)">
+          <!-- Save Button -->
+          <div class="form-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="savePrescription(i)"
+              [disabled]="!isPrescriptionValid(prescription)"
+            >
               <mat-icon>check</mat-icon>
-              حفظ
+              حفظ الوصفة
+            </button>
+            <button mat-button (click)="cancelEdit(i)">
+              <mat-icon>close</mat-icon>
+              إلغاء
             </button>
           </div>
         </div>
         } @else {
-        <!-- View Mode -->
-        <div class="prescription-view">
+        <!-- Display Mode -->
+        <div class="prescription-display">
           <div class="prescription-details">
             <div class="detail-item">
               <mat-icon>straighten</mat-icon>
