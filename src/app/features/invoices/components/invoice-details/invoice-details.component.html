@@ -389,11 +389,19 @@
                 </td>
               </ng-container>
 
+              <!-- Notes Column -->
+              <ng-container matColumnDef="notes">
+                <th mat-header-cell *matHeaderCellDef>الملاحظات</th>
+                <td mat-cell *matCellDef="let payment">
+                  {{ payment.notes || "-" }}
+                </td>
+              </ng-container>
+
               <!-- User Column -->
               <ng-container matColumnDef="user">
                 <th mat-header-cell *matHeaderCellDef>المستخدم</th>
                 <td mat-cell *matCellDef="let payment">
-                  {{ payment.createdBy || "-" }}
+                  {{ payment.processedBy || "-" }}
                 </td>
               </ng-container>
 

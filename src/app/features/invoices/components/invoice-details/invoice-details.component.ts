@@ -88,7 +88,7 @@ export class InvoiceDetailsComponent implements OnInit {
 
   // Table columns
   itemColumns: string[] = ['service', 'category', 'quantity', 'unitPrice', 'taxable', 'total'];
-  paymentColumns: string[] = ['date', 'amount', 'method', 'reference', 'user'];
+  paymentColumns: string[] = ['date', 'amount', 'method', 'reference', 'notes', 'user'];
 
   // ===================================================================
   // LIFECYCLE HOOKS
