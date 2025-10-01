@@ -223,12 +223,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
       //   badge: 12
       // },
       {
-        title: 'الفواتير',
-        icon: 'receipt_long',
-        route: '/invoices',
-        badge: 3
-      },
-      {
         title: 'التقارير',
         icon: 'assessment',
         route: '/reports',

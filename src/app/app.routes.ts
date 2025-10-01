@@ -87,14 +87,6 @@ export const routes: Routes = [
     }
   },
 
-  // الفواتير - Invoices
-  {
-    path: 'invoices',
-    loadChildren: () => import('./features/invoices/invoices.routes').then(r => r.INVOICES_ROUTES),
-    canActivate: [AuthGuard],
-    title: 'إدارة الفواتير - نظام أمان كير'
-  },
-
   // إدارة المستخدمين - Users (Admin only)
   {
     path: 'users',

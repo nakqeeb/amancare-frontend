@@ -28,7 +28,6 @@ import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.
 import { AuthService, User } from '../../../../core/services/auth.service';
 import { PatientService } from '../../../patients/services/patient.service';
 import { AppointmentService } from '../../../appointments/services/appointment.service';
-import { InvoiceService } from '../../../invoices/services/invoice.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 
 // Models
@@ -88,7 +87,6 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private patientService = inject(PatientService);
   private appointmentService = inject(AppointmentService);
-  private invoiceService = inject(InvoiceService);
   private notificationService = inject(NotificationService);
   private activityService = inject(ActivityService);
 

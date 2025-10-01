@@ -105,20 +105,6 @@ export const PATIENTS_ROUTES: Routes = [
         },
         canActivate: [RoleGuard]
       }, */
-      {
-        path: ':id/invoices',
-        loadComponent: () =>
-          import('../invoices/components/invoice-list/invoice-list.component')
-          .then(c => c.InvoiceListComponent),
-        title: 'فواتير المريض - نظام أمان كير',
-        data: {
-          breadcrumb: 'فواتير المريض',
-          roles: ['SYSTEM_ADMIN', 'ADMIN', 'RECEPTIONIST'],
-          pageTitle: 'فواتير المريض',
-          pageSubtitle: 'عرض جميع فواتير المريض'
-        },
-        canActivate: [RoleGuard]
-      },
       // Redirect route
       {
         path: '**',
