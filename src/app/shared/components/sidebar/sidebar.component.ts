@@ -216,6 +216,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
           }
         ]
       },
+      {
+        title: 'الفواتير',
+        icon: 'receipt_long',
+        route: '/invoices',
+        roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE'],
+      },
       // {
       //   title: 'المواعيد',
       //   icon: 'event',

@@ -105,6 +105,12 @@ export const routes: Routes = [
     title: 'إدارة العيادات - نظام أمان كير'
   },
 
+  {
+    path: 'invoices',
+    loadChildren: () => import('./features/invoices/invoices.routes').then(m => m.INVOICES_ROUTES),
+    canActivate: [AuthGuard]
+  },
+
   // التقارير - Reports
   {
     path: 'reports',

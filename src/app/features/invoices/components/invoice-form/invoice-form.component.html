@@ -1,0 +1,415 @@
+<!-- ===================================================================
+  src/app/features/invoices/components/invoice-form/invoice-form.component.html
+  Invoice Form Template
+  =================================================================== -->
+
+<app-header></app-header>
+<app-sidebar>
+  <div class="main-content">
+    <div class="invoice-form-container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="header-content">
+          <div class="title-section">
+            <button mat-icon-button (click)="onCancel()" matTooltip="رجوع">
+              <mat-icon>arrow_back</mat-icon>
+            </button>
+            <h1 class="page-title">
+              <mat-icon>{{ editMode() ? "edit" : "add" }}</mat-icon>
+              {{ editMode() ? "تعديل الفاتورة" : "إنشاء فاتورة جديدة" }}
+            </h1>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>جاري {{ editMode() ? "تحميل" : "حفظ" }} بيانات الفاتورة...</p>
+      </div>
+      }
+
+      <!-- Form -->
+      @if (!loading()) {
+      <form [formGroup]="invoiceForm" (ngSubmit)="onSubmit()">
+        <!-- Patient Selection Card -->
+        <mat-card class="form-card">
+          <mat-card-header>
+            <mat-card-title>معلومات المريض</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="form-row">
+              <!-- Patient Autocomplete -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>اختر المريض</mat-label>
+                <mat-icon matPrefix>person</mat-icon>
+                <input
+                  type="text"
+                  matInput
+                  formControlName="patientSearch"
+                  [matAutocomplete]="auto"
+                  [readonly]="editMode()"
+                  placeholder="ابحث بالاسم أو رقم المريض"
+                />
+
+                @if (selectedPatient() && !editMode()) {
+                <button
+                  mat-icon-button
+                  matSuffix
+                  (click)="clearPatient()"
+                  type="button"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+                }
+
+                <mat-autocomplete
+                  #auto="matAutocomplete"
+                  [displayWith]="displayPatientFn"
+                  (optionSelected)="onPatientSelected($event.option.value)"
+                >
+                  @for (patient of filteredPatients$ | async; track patient.id)
+                  {
+                  <mat-option [value]="patient">
+                    <div class="patient-option">
+                      <span class="patient-name">{{ patient.fullName }}</span>
+                      <span class="patient-details">
+                        {{ patient.patientNumber }} | {{ patient.phone }}
+                      </span>
+                    </div>
+                  </mat-option>
+                  }
+                </mat-autocomplete>
+
+                @if (isFieldInvalid('patientId')) {
+                <mat-error>{{ getFieldError("patientId") }}</mat-error>
+                }
+              </mat-form-field>
+
+              <!-- Appointment ID (Optional) -->
+              <mat-form-field appearance="outline">
+                <mat-label>رقم الموعد (اختياري)</mat-label>
+                <mat-icon matPrefix>event</mat-icon>
+                <input matInput type="number" formControlName="appointmentId" />
+              </mat-form-field>
+
+              <!-- Due Date -->
+              <mat-form-field appearance="outline">
+                <mat-label>تاريخ الاستحقاق</mat-label>
+                <mat-icon matPrefix>calendar_today</mat-icon>
+                <input
+                  matInput
+                  [matDatepicker]="dueDatePicker"
+                  formControlName="dueDate"
+                  [min]="minDate"
+                />
+                <mat-datepicker-toggle
+                  matSuffix
+                  [for]="dueDatePicker"
+                ></mat-datepicker-toggle>
+                <mat-datepicker #dueDatePicker></mat-datepicker>
+                @if (isFieldInvalid('dueDate')) {
+                <mat-error>{{ getFieldError("dueDate") }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <!-- Patient Info Display -->
+            @if (selectedPatient(); as patient) {
+            <div class="patient-info-display">
+              <mat-icon>info</mat-icon>
+              <div class="info-content">
+                <p><strong>رقم المريض:</strong> {{ patient.patientNumber }}</p>
+                <p><strong>الهاتف:</strong> {{ patient.phone }}</p>
+                @if (patient.email) {
+                <p><strong>البريد الإلكتروني:</strong> {{ patient.email }}</p>
+                }
+              </div>
+            </div>
+            }
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Invoice Items Card -->
+        <mat-card class="form-card">
+          <mat-card-header>
+            <mat-card-title>بنود الفاتورة</mat-card-title>
+            <button
+              mat-raised-button
+              color="primary"
+              type="button"
+              (click)="addItem()"
+              class="add-item-btn"
+            >
+              <mat-icon>add</mat-icon>
+              إضافة بند
+            </button>
+          </mat-card-header>
+          <mat-card-content>
+            <!-- Items Table -->
+            <div class="items-table-container">
+              <table class="items-table">
+                <thead>
+                  <tr>
+                    <th>الخدمة</th>
+                    <th>الفئة</th>
+                    <th>الكمية</th>
+                    <th>سعر الوحدة</th>
+                    <th>خاضع للضريبة</th>
+                    <th>الإجمالي</th>
+                    <th>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="items">
+                  @for (item of items.controls; track $index) {
+                  <tr [formGroupName]="$index" class="item-row">
+                    <!-- Service Name -->
+                    <td>
+                      <mat-form-field
+                        appearance="outline"
+                        class="compact-field"
+                      >
+                        <input
+                          matInput
+                          formControlName="serviceName"
+                          placeholder="اسم الخدمة"
+                        />
+                      </mat-form-field>
+                    </td>
+
+                    <!-- Category -->
+                    <td>
+                      <mat-form-field
+                        appearance="outline"
+                        class="compact-field"
+                      >
+                        <mat-select formControlName="category">
+                          @for (option of serviceCategoryOptions; track
+                          option.value) {
+                          <mat-option [value]="option.value">
+                            {{ option.label }}
+                          </mat-option>
+                          }
+                        </mat-select>
+                      </mat-form-field>
+                    </td>
+
+                    <!-- Quantity -->
+                    <td>
+                      <mat-form-field
+                        appearance="outline"
+                        class="compact-field number-field"
+                      >
+                        <input
+                          matInput
+                          type="number"
+                          formControlName="quantity"
+                          min="1"
+                        />
+                      </mat-form-field>
+                    </td>
+
+                    <!-- Unit Price -->
+                    <td>
+                      <mat-form-field
+                        appearance="outline"
+                        class="compact-field number-field"
+                      >
+                        <input
+                          matInput
+                          type="number"
+                          formControlName="unitPrice"
+                          min="0"
+                          step="0.01"
+                        />
+                      </mat-form-field>
+                    </td>
+
+                    <!-- Taxable -->
+                    <td class="checkbox-cell">
+                      <mat-checkbox formControlName="taxable"></mat-checkbox>
+                    </td>
+
+                    <!-- Total -->
+                    <td class="total-cell">
+                      <span class="item-total">{{
+                        formatCurrency(getItemTotal($index))
+                      }}</span>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="actions-cell">
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        type="button"
+                        (click)="removeItem($index)"
+                        [disabled]="items.length === 1"
+                        matTooltip="حذف البند"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            @if (items.length === 0) {
+            <div class="empty-items">
+              <mat-icon>inbox</mat-icon>
+              <p>لا توجد بنود. الرجاء إضافة بند واحد على الأقل.</p>
+            </div>
+            }
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Tax and Totals Card -->
+        <mat-card class="form-card totals-card">
+          <mat-card-header>
+            <mat-card-title>الضريبة والإجماليات</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="form-row">
+              <!-- Tax Percentage -->
+              <mat-form-field appearance="outline">
+                <mat-label>نسبة الضريبة (%)</mat-label>
+                <mat-icon matPrefix>percent</mat-icon>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="taxPercentage"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                />
+                @if (isFieldInvalid('taxPercentage')) {
+                <mat-error>{{ getFieldError("taxPercentage") }}</mat-error>
+                }
+              </mat-form-field>
+
+              <!-- Discount Amount -->
+              <mat-form-field appearance="outline">
+                <mat-label>الخصم</mat-label>
+                <mat-icon matPrefix>local_offer</mat-icon>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="discountAmount"
+                  min="0"
+                  step="0.01"
+                />
+                <span matSuffix>ريال</span>
+                @if (isFieldInvalid('discountAmount')) {
+                <mat-error>{{ getFieldError("discountAmount") }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <!-- Totals Summary -->
+            <div class="totals-summary">
+              <div class="total-row">
+                <span class="total-label">المجموع الفرعي:</span>
+                <span class="total-value">{{
+                  formatCurrency(subtotal())
+                }}</span>
+              </div>
+
+              <div class="total-row">
+                <span class="total-label"
+                  >الضريبة ({{
+                    invoiceForm.get("taxPercentage")?.value
+                  }}%):</span
+                >
+                <span class="total-value">{{
+                  formatCurrency(taxAmount())
+                }}</span>
+              </div>
+
+              <div class="total-row">
+                <span class="total-label">الخصم:</span>
+                <span class="total-value discount"
+                  >-
+                  {{
+                    formatCurrency(
+                      invoiceForm.get("discountAmount")?.value || 0
+                    )
+                  }}</span
+                >
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="total-row grand-total">
+                <span class="total-label">المبلغ الإجمالي:</span>
+                <span class="total-value">{{
+                  formatCurrency(totalAmount())
+                }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Notes and Terms Card -->
+        <mat-card class="form-card">
+          <mat-card-header>
+            <mat-card-title>ملاحظات وشروط</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="form-column">
+              <!-- Notes -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>ملاحظات</mat-label>
+                <textarea
+                  matInput
+                  formControlName="notes"
+                  rows="3"
+                  placeholder="أي ملاحظات إضافية..."
+                ></textarea>
+              </mat-form-field>
+
+              <!-- Terms -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>شروط الدفع</mat-label>
+                <textarea
+                  matInput
+                  formControlName="terms"
+                  rows="2"
+                  placeholder="شروط وأحكام الدفع..."
+                ></textarea>
+              </mat-form-field>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            [disabled]="loading() || invoiceForm.invalid"
+          >
+            <mat-icon>{{ editMode() ? "save" : "check" }}</mat-icon>
+            {{ editMode() ? "حفظ التعديلات" : "إنشاء الفاتورة" }}
+          </button>
+
+          <button
+            mat-button
+            type="button"
+            (click)="onCancel()"
+            [disabled]="loading()"
+          >
+            <mat-icon>close</mat-icon>
+            إلغاء
+          </button>
+        </div>
+      </form>
+      }
+    </div>
+  </div>
+</app-sidebar>

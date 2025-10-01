@@ -1,0 +1,450 @@
+<!-- ===================================================================
+  src/app/features/invoices/components/invoice-details/invoice-details.component.html
+  Invoice Details Template
+  =================================================================== -->
+
+<app-header></app-header>
+<app-sidebar>
+  <div class="main-content">
+    <div class="invoice-details-container">
+      <!-- Loading State -->
+      @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>جاري تحميل تفاصيل الفاتورة...</p>
+      </div>
+      }
+
+      <!-- Invoice Details -->
+      @if (!loading() && invoice(); as invoice) {
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="header-content">
+          <div class="title-section">
+            <button mat-icon-button (click)="onBack()" matTooltip="رجوع">
+              <mat-icon>arrow_back</mat-icon>
+            </button>
+            <div class="title-info">
+              <h1 class="page-title">
+                <mat-icon>receipt_long</mat-icon>
+                فاتورة {{ invoice.invoiceNumber }}
+              </h1>
+              <p class="page-subtitle">تفاصيل الفاتورة والمدفوعات</p>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <button
+              mat-icon-button
+              (click)="onPrintInvoice()"
+              matTooltip="طباعة"
+            >
+              <mat-icon>print</mat-icon>
+            </button>
+
+            <button mat-icon-button [matMenuTriggerFor]="menu">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+
+            <mat-menu #menu="matMenu">
+              @if (canEditInvoice()) {
+              <button mat-menu-item (click)="onEdit()">
+                <mat-icon>edit</mat-icon>
+                <span>تعديل</span>
+              </button>
+              } @if (canAddPayment()) {
+              <button mat-menu-item (click)="onAddPayment()">
+                <mat-icon>payment</mat-icon>
+                <span>إضافة دفعة</span>
+              </button>
+              }
+
+              <button mat-menu-item (click)="onSendInvoice()">
+                <mat-icon>send</mat-icon>
+                <span>إرسال للمريض</span>
+              </button>
+
+              <button mat-menu-item (click)="onViewPatient()">
+                <mat-icon>person</mat-icon>
+                <span>عرض ملف المريض</span>
+              </button>
+
+              @if (canCancelInvoice()) {
+              <mat-divider></mat-divider>
+              <button mat-menu-item (click)="onCancel()" class="delete-action">
+                <mat-icon color="warn">cancel</mat-icon>
+                <span>إلغاء الفاتورة</span>
+              </button>
+              }
+            </mat-menu>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Banner -->
+      <mat-card class="status-banner" [class]="invoice.status.toLowerCase()">
+        <div class="status-content">
+          <div class="status-info">
+            <mat-chip
+              [color]="getStatusColor(invoice.status)"
+              class="status-chip"
+            >
+              <mat-icon>{{ getStatusIcon(invoice.status) }}</mat-icon>
+              {{ statusLabels[invoice.status] }}
+            </mat-chip>
+
+            @if (invoice.isOverdue && invoice.daysOverdue) {
+            <span class="overdue-warning">
+              <mat-icon>warning</mat-icon>
+              متأخرة {{ invoice.daysOverdue }} يوم
+            </span>
+            }
+          </div>
+
+          <div class="payment-status">
+            <span class="payment-label">حالة الدفع:</span>
+            <span class="payment-value">{{
+              paymentStatusLabels[invoice.paymentStatus]
+            }}</span>
+          </div>
+        </div>
+
+        @if (invoice.balanceDue > 0) {
+        <div class="payment-progress">
+          <div class="progress-info">
+            <span>المدفوع: {{ formatCurrency(invoice.paidAmount) }}</span>
+            <span>المتبقي: {{ formatCurrency(invoice.balanceDue) }}</span>
+          </div>
+          <div class="progress-bar">
+            <div
+              class="progress-fill"
+              [style.width.%]="getPaymentProgress()"
+            ></div>
+          </div>
+        </div>
+        }
+      </mat-card>
+
+      <div class="details-grid">
+        <!-- Invoice Information -->
+        <mat-card class="info-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>description</mat-icon>
+              معلومات الفاتورة
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">رقم الفاتورة:</span>
+                <span class="info-value">{{ invoice.invoiceNumber }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="info-label">تاريخ الإصدار:</span>
+                <span class="info-value">{{
+                  formatDate(invoice.invoiceDate)
+                }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="info-label">تاريخ الاستحقاق:</span>
+                <span class="info-value">{{
+                  formatDate(invoice.dueDate)
+                }}</span>
+              </div>
+
+              @if (invoice.appointmentId) {
+              <div class="info-item">
+                <span class="info-label">رقم الموعد:</span>
+                <span class="info-value">{{ invoice.appointmentId }}</span>
+              </div>
+              } @if (invoice.createdBy) {
+              <div class="info-item">
+                <span class="info-label">أنشئت بواسطة:</span>
+                <span class="info-value">{{ invoice.createdBy }}</span>
+              </div>
+              } @if (invoice.createdAt) {
+              <div class="info-item">
+                <span class="info-label">تاريخ الإنشاء:</span>
+                <span class="info-value">{{
+                  formatDate(invoice.createdAt)
+                }}</span>
+              </div>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Patient Information -->
+        <mat-card class="info-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>person</mat-icon>
+              معلومات المريض
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="patient-info">
+              <div class="patient-avatar">
+                <mat-icon>account_circle</mat-icon>
+              </div>
+              <div class="patient-details">
+                <h3>{{ invoice.patientName }}</h3>
+                @if (invoice.patientPhone) {
+                <p>
+                  <mat-icon>phone</mat-icon>
+                  {{ invoice.patientPhone }}
+                </p>
+                }
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  (click)="onViewPatient()"
+                >
+                  <mat-icon>visibility</mat-icon>
+                  عرض ملف المريض
+                </button>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Invoice Items -->
+      <mat-card class="items-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>list</mat-icon>
+            بنود الفاتورة
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="table-wrapper">
+            <table mat-table [dataSource]="invoice.items" class="items-table">
+              <!-- Service Column -->
+              <ng-container matColumnDef="service">
+                <th mat-header-cell *matHeaderCellDef>الخدمة</th>
+                <td mat-cell *matCellDef="let item">
+                  <div class="service-cell">
+                    <span class="service-name">{{ item.serviceName }}</span>
+                    @if (item.serviceCode) {
+                    <span class="service-code">{{ item.serviceCode }}</span>
+                    } @if (item.description) {
+                    <span class="service-desc">{{ item.description }}</span>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Category Column -->
+              <ng-container matColumnDef="category">
+                <th mat-header-cell *matHeaderCellDef>الفئة</th>
+                <td mat-cell *matCellDef="let item">
+                  {{ getCategoryLabel(item.category) }}
+                </td>
+              </ng-container>
+
+              <!-- Quantity Column -->
+              <ng-container matColumnDef="quantity">
+                <th mat-header-cell *matHeaderCellDef>الكمية</th>
+                <td mat-cell *matCellDef="let item" class="quantity-cell">
+                  {{ item.quantity }}
+                </td>
+              </ng-container>
+
+              <!-- Unit Price Column -->
+              <ng-container matColumnDef="unitPrice">
+                <th mat-header-cell *matHeaderCellDef>سعر الوحدة</th>
+                <td mat-cell *matCellDef="let item">
+                  {{ formatCurrency(item.unitPrice) }}
+                </td>
+              </ng-container>
+
+              <!-- Taxable Column -->
+              <ng-container matColumnDef="taxable">
+                <th mat-header-cell *matHeaderCellDef>خاضع للضريبة</th>
+                <td mat-cell *matCellDef="let item" class="taxable-cell">
+                  @if (item.taxable) {
+                  <mat-icon class="check-icon">check_circle</mat-icon>
+                  } @else {
+                  <mat-icon class="cancel-icon">cancel</mat-icon>
+                  }
+                </td>
+              </ng-container>
+
+              <!-- Total Column -->
+              <ng-container matColumnDef="total">
+                <th mat-header-cell *matHeaderCellDef>الإجمالي</th>
+                <td mat-cell *matCellDef="let item" class="total-cell">
+                  {{ formatCurrency(item.totalAmount) }}
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="itemColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: itemColumns"></tr>
+            </table>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <!-- Totals Summary -->
+          <div class="totals-section">
+            <div class="total-row">
+              <span class="total-label">المجموع الفرعي:</span>
+              <span class="total-value">{{
+                formatCurrency(invoice.subtotal)
+              }}</span>
+            </div>
+
+            <div class="total-row">
+              <span class="total-label"
+                >الضريبة ({{ "invoice.taxPercentage" }}%):</span
+              >
+              <span class="total-value">{{
+                formatCurrency(invoice.taxAmount)
+              }}</span>
+            </div>
+
+            @if (invoice.discountAmount > 0) {
+            <div class="total-row">
+              <span class="total-label">الخصم:</span>
+              <span class="total-value discount"
+                >- {{ formatCurrency(invoice.discountAmount) }}</span
+              >
+            </div>
+            }
+
+            <mat-divider></mat-divider>
+
+            <div class="total-row grand-total">
+              <span class="total-label">المبلغ الإجمالي:</span>
+              <span class="total-value">{{
+                formatCurrency(invoice.totalAmount)
+              }}</span>
+            </div>
+
+            <div class="total-row paid">
+              <span class="total-label">المدفوع:</span>
+              <span class="total-value">{{
+                formatCurrency(invoice.paidAmount)
+              }}</span>
+            </div>
+
+            @if (invoice.balanceDue > 0) {
+            <div class="total-row balance-due">
+              <span class="total-label">المتبقي:</span>
+              <span class="total-value">{{
+                formatCurrency(invoice.balanceDue)
+              }}</span>
+            </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Payments History -->
+      @if (payments().length > 0) {
+      <mat-card class="payments-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>payment</mat-icon>
+            سجل المدفوعات
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="table-wrapper">
+            <table mat-table [dataSource]="payments()" class="payments-table">
+              <!-- Date Column -->
+              <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef>التاريخ</th>
+                <td mat-cell *matCellDef="let payment">
+                  {{ formatDate(payment.paymentDate) }}
+                </td>
+              </ng-container>
+
+              <!-- Amount Column -->
+              <ng-container matColumnDef="amount">
+                <th mat-header-cell *matHeaderCellDef>المبلغ</th>
+                <td mat-cell *matCellDef="let payment" class="amount-cell">
+                  {{ formatCurrency(payment.amount) }}
+                </td>
+              </ng-container>
+
+              <!-- Method Column -->
+              <ng-container matColumnDef="method">
+                <th mat-header-cell *matHeaderCellDef>طريقة الدفع</th>
+                <td mat-cell *matCellDef="let payment">
+                  {{ getPaymentMethodLabel(payment.paymentMethod) }}
+                </td>
+              </ng-container>
+
+              <!-- Reference Column -->
+              <ng-container matColumnDef="reference">
+                <th mat-header-cell *matHeaderCellDef>الرقم المرجعي</th>
+                <td mat-cell *matCellDef="let payment">
+                  {{ payment.referenceNumber || "-" }}
+                </td>
+              </ng-container>
+
+              <!-- User Column -->
+              <ng-container matColumnDef="user">
+                <th mat-header-cell *matHeaderCellDef>المستخدم</th>
+                <td mat-cell *matCellDef="let payment">
+                  {{ payment.createdBy || "-" }}
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="paymentColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: paymentColumns"></tr>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      }
+
+      <!-- Notes and Terms -->
+      @if (invoice.notes || invoice.terms) {
+      <div class="notes-grid">
+        @if (invoice.notes) {
+        <mat-card class="notes-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>note</mat-icon>
+              ملاحظات
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p>{{ invoice.notes }}</p>
+          </mat-card-content>
+        </mat-card>
+        } @if (invoice.terms) {
+        <mat-card class="terms-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>gavel</mat-icon>
+              شروط الدفع
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p>{{ invoice.terms }}</p>
+          </mat-card-content>
+        </mat-card>
+        }
+      </div>
+      }
+
+      <!-- Quick Actions -->
+      @if (canAddPayment()) {
+      <div class="quick-actions">
+        <button mat-raised-button color="primary" (click)="onAddPayment()">
+          <mat-icon>payment</mat-icon>
+          إضافة دفعة
+        </button>
+      </div>
+      } }
+    </div>
+  </div>
+</app-sidebar>
