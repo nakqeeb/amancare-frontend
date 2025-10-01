@@ -307,4 +307,17 @@ export class InvoiceDetailsComponent implements OnInit {
   getPaymentMethodLabel(method: string): string {
     return this.paymentMethodLabels[method as keyof typeof this.paymentMethodLabels] || method;
   }
+
+  /**
+ * Navigate to payment details
+ */
+  onViewPaymentDetails(paymentId: number): void {
+    this.router.navigate(['/invoices/payments', paymentId], {
+      state: {
+        invoiceId: this.invoice()?.id,
+        returnUrl: this.router.url
+      }
+    });
+  }
+
 }

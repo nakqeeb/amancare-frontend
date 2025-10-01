@@ -11,7 +11,7 @@ import { InvoiceFormComponent } from './components/invoice-form/invoice-form.com
 import { InvoiceListComponent } from './components/invoice-list/invoice-list.component';
 
 export const INVOICES_ROUTES: Routes = [
- {
+  {
     path: '',
     canActivate: [AuthGuard],
     children: [
@@ -32,6 +32,19 @@ export const INVOICES_ROUTES: Routes = [
           roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'RECEPTIONIST']
         }
       },
+
+      // Payment Details - تفاصيل الدفعة
+      // NOTE: This route must be before ':id' to prevent 'payments' being treated as an ID
+      {
+        path: 'payments/:id',
+        loadComponent: () => import('./components/payment-details/payment-details.component')
+          .then(m => m.PaymentDetailsComponent),
+        data: {
+          title: 'تفاصيل الدفعة',
+          roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE']
+        }
+      },
+
       {
         path: ':id',
         component: InvoiceDetailsComponent,
