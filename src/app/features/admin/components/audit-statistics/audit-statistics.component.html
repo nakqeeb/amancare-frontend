@@ -1,0 +1,361 @@
+<p>audit-statistics works!</p>
+<!-- ===================================================================
+     src/app/features/admin/components/audit-statistics/audit-statistics.component.html
+     Audit Statistics Template
+     =================================================================== -->
+
+<app-header />
+<app-sidebar>
+  <div class="main-layout">
+    <div class="content-wrapper">
+      <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="page-header-content">
+            <div class="page-title-section">
+              <mat-icon class="page-icon">bar_chart</mat-icon>
+              <div>
+                <h1 class="page-title">إحصائيات المراجعة</h1>
+                <p class="page-subtitle">
+                  تحليل شامل لنشاطات النظام والإجراءات الإدارية
+                </p>
+              </div>
+            </div>
+
+            <div class="page-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="viewAuditLogs()"
+              >
+                <mat-icon>list</mat-icon>
+                عرض السجلات
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters Section -->
+        <mat-card class="filter-card">
+          <mat-card-content>
+            <form [formGroup]="filterForm" class="filter-form">
+              <div class="filter-row">
+                <!-- Admin User ID -->
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>معرف المستخدم المسؤول (اختياري)</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="adminUserId"
+                    placeholder="جميع المستخدمين"
+                  />
+                  <mat-icon matPrefix>person</mat-icon>
+                </mat-form-field>
+
+                <!-- Start Date -->
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>تاريخ البداية</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="startPicker"
+                    formControlName="startDate"
+                    required
+                  />
+                  <mat-datepicker-toggle
+                    matSuffix
+                    [for]="startPicker"
+                  ></mat-datepicker-toggle>
+                  <mat-datepicker #startPicker></mat-datepicker>
+                </mat-form-field>
+
+                <!-- End Date -->
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>تاريخ النهاية</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="endPicker"
+                    formControlName="endDate"
+                    required
+                  />
+                  <mat-datepicker-toggle
+                    matSuffix
+                    [for]="endPicker"
+                  ></mat-datepicker-toggle>
+                  <mat-datepicker #endPicker></mat-datepicker>
+                </mat-form-field>
+              </div>
+
+              <!-- Quick Date Range Buttons -->
+              <div class="quick-filters">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="setDateRange(7)"
+                >
+                  آخر 7 أيام
+                </button>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="setDateRange(30)"
+                >
+                  آخر 30 يوم
+                </button>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="setDateRange(90)"
+                >
+                  آخر 90 يوم
+                </button>
+              </div>
+
+              <!-- Filter Actions -->
+              <div class="filter-actions">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="applyFilters()"
+                  type="button"
+                >
+                  <mat-icon>search</mat-icon>
+                  تطبيق التصفية
+                </button>
+                <button
+                  mat-stroked-button
+                  (click)="resetFilters()"
+                  type="button"
+                >
+                  <mat-icon>refresh</mat-icon>
+                  إعادة تعيين
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Loading Spinner -->
+        <div *ngIf="loading()" class="loading-container">
+          <mat-spinner diameter="60"></mat-spinner>
+          <p>جاري تحميل الإحصائيات...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="isEmpty()" class="empty-state">
+          <mat-icon class="empty-icon">analytics</mat-icon>
+          <h3>لا توجد بيانات</h3>
+          <p>لم يتم العثور على إحصائيات للفترة المحددة</p>
+        </div>
+
+        <!-- Statistics Content -->
+        <div *ngIf="hasData() && !loading()" class="statistics-content">
+          <!-- Overview Cards -->
+          <div class="overview-cards">
+            <mat-card class="stat-card">
+              <mat-card-content>
+                <div class="stat-icon total-icon">
+                  <mat-icon>analytics</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-label">إجمالي الإجراءات</div>
+                  <div class="stat-value">
+                    {{ formatNumber(statistics()!.totalActions) }}
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="stat-card">
+              <mat-card-content>
+                <div class="stat-icon users-icon">
+                  <mat-icon>people</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-label">المسؤولون النشطون</div>
+                  <div class="stat-value">
+                    {{ formatNumber(statistics()!.uniqueAdmins) }}
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="stat-card">
+              <mat-card-content>
+                <div class="stat-icon clinics-icon">
+                  <mat-icon>local_hospital</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-label">العيادات المتأثرة</div>
+                  <div class="stat-value">
+                    {{ formatNumber(statistics()!.uniqueClinics) }}
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="stat-card critical-card">
+              <mat-card-content>
+                <div class="stat-icon critical-icon">
+                  <mat-icon>warning</mat-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-label">الإجراءات الحرجة</div>
+                  <div class="stat-value">
+                    {{ formatNumber(statistics()!.criticalActions) }}
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <!-- Breakdown Cards -->
+          <div class="breakdown-section">
+            <!-- Action Type Breakdown -->
+            <mat-card class="breakdown-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>category</mat-icon>
+                  توزيع أنواع الإجراءات
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="breakdown-list">
+                  <div
+                    *ngFor="let item of getTopActionTypes()"
+                    class="breakdown-item"
+                  >
+                    <div class="item-info">
+                      <span class="item-name">{{ item.name }}</span>
+                      <span class="item-count">{{
+                        formatNumber(item.value)
+                      }}</span>
+                    </div>
+                    <div class="progress-bar">
+                      <div
+                        class="progress-fill action-type-fill"
+                        [style.width.%]="
+                          getPercentage(item.value, statistics()!.totalActions)
+                        "
+                      ></div>
+                    </div>
+                    <span class="item-percentage">
+                      {{
+                        getPercentage(item.value, statistics()!.totalActions)
+                      }}%
+                    </span>
+                  </div>
+
+                  <div
+                    *ngIf="actionTypeChartData().length === 0"
+                    class="no-data-message"
+                  >
+                    <mat-icon>info</mat-icon>
+                    <span>لا توجد بيانات متاحة</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Resource Type Breakdown -->
+            <mat-card
+              class="breakdown-card"
+              *ngIf="statistics()!.resourceTypeBreakdown"
+            >
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>folder</mat-icon>
+                  توزيع أنواع الموارد
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="breakdown-list">
+                  <div
+                    *ngFor="let item of getTopResourceTypes()"
+                    class="breakdown-item"
+                  >
+                    <div class="item-info">
+                      <span class="item-name">{{ item.name }}</span>
+                      <span class="item-count">{{
+                        formatNumber(item.value)
+                      }}</span>
+                    </div>
+                    <div class="progress-bar">
+                      <div
+                        class="progress-fill resource-type-fill"
+                        [style.width.%]="
+                          getPercentage(item.value, statistics()!.totalActions)
+                        "
+                      ></div>
+                    </div>
+                    <span class="item-percentage">
+                      {{
+                        getPercentage(item.value, statistics()!.totalActions)
+                      }}%
+                    </span>
+                  </div>
+
+                  <div
+                    *ngIf="resourceTypeChartData().length === 0"
+                    class="no-data-message"
+                  >
+                    <mat-icon>info</mat-icon>
+                    <span>لا توجد بيانات متاحة</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Clinic Breakdown -->
+            <mat-card
+              class="breakdown-card"
+              *ngIf="statistics()!.clinicBreakdown"
+            >
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>local_hospital</mat-icon>
+                  توزيع حسب العيادات
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="breakdown-list">
+                  <div
+                    *ngFor="let item of getTopClinics()"
+                    class="breakdown-item"
+                  >
+                    <div class="item-info">
+                      <span class="item-name">{{ item.name }}</span>
+                      <span class="item-count">{{
+                        formatNumber(item.value)
+                      }}</span>
+                    </div>
+                    <div class="progress-bar">
+                      <div
+                        class="progress-fill clinic-fill"
+                        [style.width.%]="
+                          getPercentage(item.value, statistics()!.totalActions)
+                        "
+                      ></div>
+                    </div>
+                    <span class="item-percentage">
+                      {{
+                        getPercentage(item.value, statistics()!.totalActions)
+                      }}%
+                    </span>
+                  </div>
+
+                  <div
+                    *ngIf="clinicChartData().length === 0"
+                    class="no-data-message"
+                  >
+                    <mat-icon>info</mat-icon>
+                    <span>لا توجد بيانات متاحة</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</app-sidebar>

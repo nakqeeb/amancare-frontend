@@ -74,11 +74,41 @@ export class SidebarComponent implements OnInit, OnDestroy {
         icon: 'dashboard',
         route: '/dashboard'
       },
+      // {
+      //   title: 'تحديد سياق العيادة',
+      //   icon: 'business',
+      //   route: '/admin/select-clinic-context',
+      //   roles: ['SYSTEM_ADMIN']
+      // },
+      // ===================================================================
+      // ADMIN SECTION - إدارة النظام (SYSTEM_ADMIN Only)
+      // ===================================================================
       {
-        title: 'تحديد سياق العيادة',
-        icon: 'business',
-        route: '/admin/select-clinic-context',
-        roles: ['SYSTEM_ADMIN']
+        title: 'إدارة النظام',
+        icon: 'admin_panel_settings',
+        route: '',
+        roles: ['SYSTEM_ADMIN'],
+        expanded: false,
+        children: [
+          {
+            title: 'سجلات المراجعة',
+            icon: 'security',
+            route: '/admin/audit/logs',
+            roles: ['SYSTEM_ADMIN']
+          },
+          {
+            title: 'إحصائيات المراجعة',
+            icon: 'bar_chart',
+            route: '/admin/audit/statistics',
+            roles: ['SYSTEM_ADMIN']
+          },
+          {
+            title: 'تحديد سياق العيادة',
+            icon: 'business',
+            route: '/system/select-clinic-context',
+            roles: ['SYSTEM_ADMIN']
+          }
+        ]
       },
       {
         title: 'المواعيد',

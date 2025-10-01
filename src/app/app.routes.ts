@@ -17,32 +17,59 @@ export const routes: Routes = [
     title: 'تسجيل الدخول - نظام أمان كير'
   },
 
-  // System Admin specific routes
+  // ===================================================================
+  // SYSTEM ADMIN ROUTES - إدارة النظام
+  // ===================================================================
   {
     path: 'admin',
-    canActivate: [RoleGuard],
+    loadChildren: () => import('./features/admin/admin.routes').then(r => r.ADMIN_ROUTES),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['SYSTEM_ADMIN'] },
+    title: 'إدارة النظام - نظام أمان كير'
+  },
+
+  // System Admin specific components (outside audit)
+  {
+    path: 'system',
+    canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['SYSTEM_ADMIN'] },
     children: [
       {
         path: 'select-clinic-context',
         loadComponent: () =>
           import('./features/admin/components/clinic-context-selector/clinic-context-selector.component')
-            .then(m => m.ClinicContextSelectorComponent)
-      },
-      // {
-      //   path: 'system-logs',
-      //   loadComponent: () =>
-      //     import('./features/admin/components/system-logs/system-logs.component')
-      //       .then(m => m.SystemLogsComponent)
-      // },
-      // {
-      //   path: 'audit-trail',
-      //   loadComponent: () =>
-      //     import('./features/admin/components/audit-trail/audit-trail.component')
-      //       .then(m => m.AuditTrailComponent)
-      // }
+            .then(m => m.ClinicContextSelectorComponent),
+        title: 'اختيار سياق العيادة - نظام أمان كير'
+      }
     ]
   },
+
+  // System Admin specific routes
+  // {
+  //   path: 'admin',
+  //   canActivate: [RoleGuard],
+  //   data: { roles: ['SYSTEM_ADMIN'] },
+  //   children: [
+  //     {
+  //       path: 'select-clinic-context',
+  //       loadComponent: () =>
+  //         import('./features/admin/components/clinic-context-selector/clinic-context-selector.component')
+  //           .then(m => m.ClinicContextSelectorComponent)
+  //     },
+  //     // {
+  //     //   path: 'system-logs',
+  //     //   loadComponent: () =>
+  //     //     import('./features/admin/components/system-logs/system-logs.component')
+  //     //       .then(m => m.SystemLogsComponent)
+  //     // },
+  //     // {
+  //     //   path: 'audit-trail',
+  //     //   loadComponent: () =>
+  //     //     import('./features/admin/components/audit-trail/audit-trail.component')
+  //     //       .then(m => m.AuditTrailComponent)
+  //     // }
+  //   ]
+  // },
 
   // لوحة التحكم - Dashboard
   {

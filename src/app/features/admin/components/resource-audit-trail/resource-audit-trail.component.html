@@ -1,0 +1,243 @@
+<!-- ===================================================================
+     src/app/features/admin/components/resource-audit-trail/resource-audit-trail.component.html
+     Resource Audit Trail Template
+     =================================================================== -->
+
+<app-header />
+<app-sidebar>
+  <div class="main-layout">
+    <div class="content-wrapper">
+      <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="page-header-content">
+            <div class="page-title-section">
+              <button mat-icon-button (click)="goBack()" class="back-button">
+                <mat-icon>arrow_back</mat-icon>
+              </button>
+              <mat-icon class="page-icon">history</mat-icon>
+              <div>
+                <h1 class="page-title">
+                  سجل المراجعة - {{ resourceTypeLabel() }}
+                </h1>
+                <p class="page-subtitle">معرف المورد: #{{ resourceId() }}</p>
+              </div>
+            </div>
+
+            <div class="page-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="viewAuditLogs()"
+              >
+                <mat-icon>list</mat-icon>
+                جميع السجلات
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div *ngIf="loading()" class="loading-container">
+          <mat-spinner diameter="60"></mat-spinner>
+          <p>جاري تحميل سجل المراجعة...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="isEmpty()" class="empty-state">
+          <mat-icon class="empty-icon">history</mat-icon>
+          <h3>لا يوجد سجل مراجعة</h3>
+          <p>لم يتم العثور على أي إجراءات مسجلة لهذا المورد</p>
+          <button mat-raised-button color="primary" (click)="goBack()">
+            العودة
+          </button>
+        </div>
+
+        <!-- Audit Trail Timeline -->
+        <div *ngIf="hasData() && !loading()" class="audit-trail-content">
+          <mat-card class="timeline-card">
+            <mat-card-content>
+              <div class="timeline">
+                <!-- Group by Date -->
+                <div *ngFor="let group of groupedByDate()" class="date-group">
+                  <div class="date-separator">
+                    <mat-icon>calendar_today</mat-icon>
+                    <span>{{ group.date }}</span>
+                  </div>
+
+                  <!-- Timeline Items -->
+                  <div class="timeline-items">
+                    <div
+                      *ngFor="let log of group.logs; let last = last"
+                      class="timeline-item"
+                      [class.last-item]="last"
+                    >
+                      <!-- Timeline Dot -->
+                      <div
+                        class="timeline-dot"
+                        [class]="getActionChipClass(log.actionType)"
+                      >
+                        <mat-icon>{{ getActionIcon(log.actionType) }}</mat-icon>
+                      </div>
+
+                      <!-- Timeline Content -->
+                      <div class="timeline-content">
+                        <mat-card class="action-card">
+                          <mat-card-content>
+                            <!-- Action Header -->
+                            <div class="action-header">
+                              <div class="action-info">
+                                <mat-chip
+                                  [class]="getActionChipClass(log.actionType)"
+                                >
+                                  {{ getActionTypeLabel(log.actionType) }}
+                                </mat-chip>
+                                <span class="action-time">{{
+                                  formatTime(log.createdAt)
+                                }}</span>
+                              </div>
+                              <button
+                                mat-icon-button
+                                [matTooltip]="formatFullDate(log.createdAt)"
+                              >
+                                <mat-icon>info</mat-icon>
+                              </button>
+                            </div>
+
+                            <mat-divider></mat-divider>
+
+                            <!-- Action Details -->
+                            <div class="action-details">
+                              <!-- User Info -->
+                              <div class="detail-row">
+                                <mat-icon class="detail-icon">person</mat-icon>
+                                <div class="detail-content">
+                                  <span class="detail-label">المستخدم:</span>
+                                  <span class="detail-value">{{
+                                    log.adminFullName
+                                  }}</span>
+                                  <span class="detail-secondary"
+                                    >@{{ log.adminUsername }}</span
+                                  >
+                                </div>
+                              </div>
+
+                              <!-- Clinic Info -->
+                              <div
+                                class="detail-row"
+                                *ngIf="log.targetClinicName"
+                              >
+                                <mat-icon class="detail-icon"
+                                  >local_hospital</mat-icon
+                                >
+                                <div class="detail-content">
+                                  <span class="detail-label">العيادة:</span>
+                                  <span class="detail-value">{{
+                                    log.targetClinicName
+                                  }}</span>
+                                </div>
+                              </div>
+
+                              <!-- IP Address -->
+                              <div class="detail-row" *ngIf="log.ipAddress">
+                                <mat-icon class="detail-icon"
+                                  >computer</mat-icon
+                                >
+                                <div class="detail-content">
+                                  <span class="detail-label">عنوان IP:</span>
+                                  <span class="detail-value">{{
+                                    log.ipAddress
+                                  }}</span>
+                                </div>
+                              </div>
+
+                              <!-- Request Info -->
+                              <div
+                                class="detail-row"
+                                *ngIf="log.requestMethod && log.requestPath"
+                              >
+                                <mat-icon class="detail-icon">http</mat-icon>
+                                <div class="detail-content">
+                                  <span class="detail-label">الطلب:</span>
+                                  <span class="detail-value request-method">{{
+                                    log.requestMethod
+                                  }}</span>
+                                  <span class="detail-secondary">{{
+                                    log.requestPath
+                                  }}</span>
+                                </div>
+                              </div>
+
+                              <!-- Reason -->
+                              <div
+                                class="detail-row full-width"
+                                *ngIf="log.reason"
+                              >
+                                <mat-icon class="detail-icon"
+                                  >description</mat-icon
+                                >
+                                <div class="detail-content">
+                                  <span class="detail-label">السبب:</span>
+                                  <p class="detail-reason">{{ log.reason }}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </mat-card-content>
+                        </mat-card>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Summary Card -->
+          <mat-card class="summary-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>summarize</mat-icon>
+                ملخص السجل
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="summary-stats">
+                <div class="summary-item">
+                  <mat-icon>timeline</mat-icon>
+                  <div>
+                    <div class="summary-value">{{ auditTrail().length }}</div>
+                    <div class="summary-label">إجمالي الإجراءات</div>
+                  </div>
+                </div>
+
+                <mat-divider [vertical]="true"></mat-divider>
+
+                <div class="summary-item">
+                  <mat-icon>people</mat-icon>
+                  <div>
+                    <div class="summary-value">
+                      {{ (auditTrail() | keyvalue).length }}
+                    </div>
+                    <div class="summary-label">مستخدمين مختلفين</div>
+                  </div>
+                </div>
+
+                <mat-divider [vertical]="true"></mat-divider>
+
+                <div class="summary-item">
+                  <mat-icon>event</mat-icon>
+                  <div>
+                    <div class="summary-value">
+                      {{ groupedByDate().length }}
+                    </div>
+                    <div class="summary-label">أيام النشاط</div>
+                  </div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </main>
+    </div>
+  </div>
+</app-sidebar>
