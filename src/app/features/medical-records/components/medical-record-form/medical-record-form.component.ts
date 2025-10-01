@@ -602,21 +602,42 @@ export class MedicalRecordFormComponent implements OnInit, OnDestroy {
       notes: d.notes
     }));
 
-    // Map prescriptions to CreatePrescriptionDto
-    const prescriptionsDto: CreatePrescriptionDto[] = this.prescriptions.map(p => ({
-      medicationName: p.medicationName,
-      genericName: p.genericName,
-      dosage: p.dosage,
-      frequency: p.frequency,
-      duration: p.duration,
-      route: p.route,
-      instructions: p.instructions,
-      quantity: p.quantity,
-      refills: p.refills,
-      startDate: p.startDate ? this.formatDate(new Date(p.startDate)) : undefined,
-      endDate: p.endDate ? this.formatDate(new Date(p.endDate)) : undefined,
-      isPrn: p.isPrn
-    }));
+    // ============================================================================
+    // FIX: Map prescriptions to CreatePrescriptionDto - FILTER INVALID ONES FIRST
+    // ============================================================================
+    const prescriptionsDto: CreatePrescriptionDto[] = this.prescriptions
+      .filter(p => {
+        const isValid = p.medicationName?.trim() &&
+          p.dosage?.trim() &&
+          p.frequency?.trim() &&
+          p.duration?.trim() &&
+          p.route;
+
+        // Log incomplete prescriptions for debugging
+        if (!isValid && (p.medicationName || p.dosage || p.frequency)) {
+          console.warn('Incomplete prescription excluded from submission:', p);
+        }
+
+        return isValid;
+      })
+      .map(p => ({
+        medicationName: p.medicationName,
+        genericName: p.genericName,
+        dosage: p.dosage,
+        frequency: p.frequency,
+        duration: p.duration,
+        route: p.route,
+        instructions: p.instructions,
+        quantity: p.quantity,
+        refills: p.refills,
+        startDate: p.startDate ? this.formatDate(new Date(p.startDate)) : undefined,
+        endDate: p.endDate ? this.formatDate(new Date(p.endDate)) : undefined,
+        isPrn: p.isPrn
+      }));
+
+    // Log how many prescriptions will be sent
+    console.log(`Sending ${prescriptionsDto.length} of ${this.prescriptions.length} prescriptions to backend`);
+
 
     // Map lab tests to CreateLabTestDto
     const labTestsDto: CreateLabTestDto[] = this.labTests.map(lt => ({

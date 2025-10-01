@@ -57,6 +57,8 @@ export class DiagnosisFormComponent {
   icdSuggestions = signal<ICD10Code[]>([]);
   activeICDIndex = signal(-1);
 
+  diagnosisTypes = Object.values(DiagnosisType);
+
   // Common diagnoses templates
   commonDiagnoses: Partial<Diagnosis>[] = [
     { description: 'ارتفاع ضغط الدم', icdCode: 'I10', type: DiagnosisType.PRIMARY },

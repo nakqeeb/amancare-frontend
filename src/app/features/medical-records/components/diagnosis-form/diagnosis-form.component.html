@@ -4,7 +4,7 @@
       <mat-icon>medical_information</mat-icon>
       التشخيص الطبي
     </h3>
-    <button mat-button color="primary" (click)="addDiagnosis()">
+    <button type="button" mat-button color="primary" (click)="addDiagnosis()">
       <mat-icon>add</mat-icon>
       إضافة تشخيص
     </button>
@@ -40,6 +40,7 @@
           <div class="diagnosis-actions">
             @if (!diagnosis.isPrimary && diagnoses.length > 1) {
             <button
+              type="button"
               mat-icon-button
               (click)="setPrimary(i)"
               matTooltip="تعيين كتشخيص رئيسي"
@@ -48,6 +49,7 @@
             </button>
             }
             <button
+              type="button"
               mat-icon-button
               (click)="editMode.set(editMode() === i ? -1 : i)"
               matTooltip="تعديل"
@@ -55,6 +57,7 @@
               <mat-icon>{{ editMode() === i ? "close" : "edit" }}</mat-icon>
             </button>
             <button
+              type="button"
               mat-icon-button
               color="warn"
               (click)="removeDiagnosis(i)"
@@ -95,12 +98,12 @@
           <div class="form-row">
             <mat-form-field appearance="outline" class="type-field">
               <mat-label>نوع التشخيص</mat-label>
-              <mat-select [(ngModel)]="diagnosis.type">
-                <mat-option value="PROVISIONAL">مؤقت</mat-option>
-                <mat-option value="DEFINITIVE">نهائي</mat-option>
-                <mat-option value="DIFFERENTIAL">تفريقي</mat-option>
-                <mat-option value="SYMPTOMATIC">عرضي</mat-option>
-                <mat-option value="COMPLICATIONS">مضاعفات</mat-option>
+              <mat-select formControlName="type">
+                @for (type of diagnosisTypes; track type) {
+                <mat-option [value]="type">
+                  {{ getDiagnosisTypeLabel(type) }}
+                </mat-option>
+                }
               </mat-select>
             </mat-form-field>
 
