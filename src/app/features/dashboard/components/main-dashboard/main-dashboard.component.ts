@@ -177,7 +177,7 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
   quickActions: QuickAction[] = [
     { label: 'إضافة مريض', icon: 'person_add', route: '/patients/new', color: 'primary' },
     { label: 'حجز موعد', icon: 'event', route: '/appointments/new', color: 'accent' },
-    { label: 'إصدار فاتورة', icon: 'receipt', route: '/invoices/new', color: 'success' },
+    { label: 'إصدار فاتورة', icon: 'receipt', route: '/invoices/create', color: 'success' },
     { label: 'عرض التقارير', icon: 'assessment', route: '/reports', color: 'warn' }
   ];
 
