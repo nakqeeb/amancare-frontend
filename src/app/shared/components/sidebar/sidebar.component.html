@@ -1,80 +1,92 @@
 <mat-sidenav-container class="sidenav-container">
-      <mat-sidenav
-        #sidenav
-        [opened]="isOpen()"
-        [mode]="sidenavMode()"
-        class="app-sidenav">
-
-        <div class="sidenav-header">
-          <div class="clinic-info" *ngIf="currentUser()">
-            <mat-icon class="clinic-icon">local_hospital</mat-icon>
-            <div class="clinic-details">
-              <h3 class="clinic-name">{{ currentUser()?.clinicName }}</h3>
-              <span class="user-role">{{ getRoleDisplayName(currentUser()?.role) }}</span>
-            </div>
-          </div>
+  <mat-sidenav
+    #sidenav
+    [opened]="isOpen()"
+    [mode]="sidenavMode()"
+    class="app-sidenav"
+  >
+    <div class="sidenav-header">
+      <div class="clinic-info" *ngIf="currentUser()">
+        <!-- <mat-icon class="clinic-icon">local_hospital</mat-icon> -->
+        <img class="clinic-logo" src="images/logo.png" />
+        <div class="clinic-details">
+          <h3 class="clinic-name">{{ currentUser()?.clinicName }}</h3>
+          <span class="user-role">{{
+            getRoleDisplayName(currentUser()?.role)
+          }}</span>
         </div>
+      </div>
+    </div>
 
-        <mat-divider></mat-divider>
+    <mat-divider></mat-divider>
 
-        <nav class="sidenav-nav">
-          <mat-nav-list>
-            <ng-container *ngFor="let item of menuItems()">
-              <ng-container *ngIf="hasPermission(item.roles)">
-                <!-- Main Menu Item -->
+    <nav class="sidenav-nav">
+      <mat-nav-list>
+        <ng-container *ngFor="let item of menuItems()">
+          <ng-container *ngIf="hasPermission(item.roles)">
+            <!-- Main Menu Item -->
+            <a
+              mat-list-item
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+              *ngIf="!item.children"
+              class="nav-item"
+            >
+              <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+              <span matListItemTitle>{{ item.title }}</span>
+              <span matListItemMeta *ngIf="item.badge" class="badge">{{
+                item.badge
+              }}</span>
+            </a>
+
+            <!-- Expandable Menu Item -->
+            <a
+              mat-list-item
+              (click)="toggleMenuItem(item)"
+              *ngIf="item.children"
+              class="nav-item expandable"
+              [class.expanded]="item.expanded"
+            >
+              <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+              <span matListItemTitle>{{ item.title }}</span>
+              <span matListItemMeta
+                ><mat-icon>{{
+                  item.expanded ? "expand_less" : "expand_more"
+                }}</mat-icon></span
+              >
+            </a>
+
+            <!-- Sub Menu Items -->
+            <div class="sub-menu" *ngIf="item.children && item.expanded">
+              <ng-container *ngFor="let subItem of item.children">
                 <a
                   mat-list-item
-                  [routerLink]="item.route"
+                  [routerLink]="subItem.route"
                   routerLinkActive="active"
-                  [routerLinkActiveOptions]="{exact: item.route === '/dashboard'}"
-                  *ngIf="!item.children"
-                  class="nav-item">
-                  <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-                  <span matListItemTitle>{{ item.title }}</span>
-                  <span matListItemMeta *ngIf="item.badge" class="badge">{{ item.badge }}</span>
+                  *ngIf="hasPermission(subItem.roles)"
+                  class="nav-item sub-item"
+                >
+                  <mat-icon matListItemIcon>{{ subItem.icon }}</mat-icon>
+                  <span matListItemTitle>{{ subItem.title }}</span>
                 </a>
-
-                <!-- Expandable Menu Item -->
-                <a
-                  mat-list-item
-                  (click)="toggleMenuItem(item)"
-                  *ngIf="item.children"
-                  class="nav-item expandable"
-                  [class.expanded]="item.expanded">
-                  <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-                  <span matListItemTitle>{{ item.title }}</span>
-                  <span matListItemMeta><mat-icon>{{ item.expanded ? 'expand_less' : 'expand_more' }}</mat-icon></span>
-                </a>
-
-                <!-- Sub Menu Items -->
-                <div class="sub-menu" *ngIf="item.children && item.expanded">
-                  <ng-container *ngFor="let subItem of item.children">
-                    <a
-                      mat-list-item
-                      [routerLink]="subItem.route"
-                      routerLinkActive="active"
-                      *ngIf="hasPermission(subItem.roles)"
-                      class="nav-item sub-item">
-                      <mat-icon matListItemIcon>{{ subItem.icon }}</mat-icon>
-                      <span matListItemTitle>{{ subItem.title }}</span>
-                    </a>
-                  </ng-container>
-                </div>
               </ng-container>
-            </ng-container>
-          </mat-nav-list>
-        </nav>
+            </div>
+          </ng-container>
+        </ng-container>
+      </mat-nav-list>
+    </nav>
 
-        <div class="sidenav-footer">
-          <mat-divider></mat-divider>
-          <div class="footer-info">
-            <p>نظام أمان كير</p>
-            <span>الإصدار 1.0.0</span>
-          </div>
-        </div>
-      </mat-sidenav>
+    <div class="sidenav-footer">
+      <mat-divider></mat-divider>
+      <div class="footer-info">
+        <p>نظام أمان كير</p>
+        <span>الإصدار 1.0.0</span>
+      </div>
+    </div>
+  </mat-sidenav>
 
-      <mat-sidenav-content>
-        <ng-content></ng-content>
-      </mat-sidenav-content>
-    </mat-sidenav-container>
+  <mat-sidenav-content>
+    <ng-content></ng-content>
+  </mat-sidenav-content>
+</mat-sidenav-container>
