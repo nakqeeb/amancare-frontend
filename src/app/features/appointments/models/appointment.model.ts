@@ -100,7 +100,7 @@ export interface AppointmentResponse {
   durationMinutes: number;
   appointmentType: AppointmentType;
   status: AppointmentStatus;
-  chiefComplaint: string;
+  chiefComplaint: string;  /** الشكوى الرئيسية */
   notes: string;
   createdAt: string;             // ISO datetime
   updatedAt: string;             // ISO datetime

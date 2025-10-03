@@ -115,7 +115,7 @@
                 <th mat-header-cell *matHeaderCellDef>المريض</th>
                 <td mat-cell *matCellDef="let appointment">
                   <div class="patient-info">
-                    <strong>{{ appointment.patientName }}</strong>
+                    <strong>{{ appointment.patient.fullName }}</strong>
                     <span class="patient-number">{{
                       appointment.patientNumber
                     }}</span>
@@ -128,7 +128,7 @@
                 <th mat-header-cell *matHeaderCellDef>الطبيب</th>
                 <td mat-cell *matCellDef="let appointment">
                   <div class="doctor-info">
-                    <strong>{{ appointment.doctorName }}</strong>
+                    <strong>{{ appointment.doctor.fullName }}</strong>
                     @if (appointment.doctorSpecialization) {
                     <span class="specialization">{{
                       appointment.doctorSpecialization
