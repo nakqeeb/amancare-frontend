@@ -52,11 +52,11 @@ export class SystemAdminContextIndicatorComponent {
   });
 
   selectContext(): void {
-    this.router.navigate(['/admin/select-clinic-context']);
+    this.router.navigate(['/system/select-clinic-context']);
   }
 
   changeContext(): void {
-    this.router.navigate(['/admin/select-clinic-context']);
+    this.router.navigate(['/system/select-clinic-context']);
   }
 
   clearContext(): void {
