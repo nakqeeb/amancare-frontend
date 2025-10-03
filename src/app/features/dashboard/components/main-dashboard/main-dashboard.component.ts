@@ -36,7 +36,7 @@ import { AppointmentSummaryResponse } from '../../../appointments/models/appoint
 import { SystemAdminContextIndicatorComponent } from "../../../../shared/components/system-admin-context-indicator/system-admin-context-indicator.component";
 import { ActivityService } from '../../../../core/services/activity.service';
 import { ActivityFeedComponent } from "../../../../shared/components/activity-feed/activity-feed.component";
-// import { InvoiceStatistics } from '../../../invoices/models/invoice.model';
+import { RecentActivitiesComponent } from '../../../clinic-admin/components/recent-activities/recent-activities.component';
 
 // Statistics Interfaces
 interface DashboardStatCard {
@@ -75,8 +75,9 @@ interface QuickAction {
     HeaderComponent,
     SidebarComponent,
     SystemAdminContextIndicatorComponent,
-    ActivityFeedComponent
-  ],
+    ActivityFeedComponent,
+    RecentActivitiesComponent
+],
   templateUrl: './main-dashboard.component.html',
   styleUrl: './main-dashboard.component.scss'
 })

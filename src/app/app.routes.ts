@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { RoleGuard } from './core/guards/role.guard';
+import { ActivitiesListComponent } from './features/clinic-admin/components/activities-list/activities-list.component';
 
 export const routes: Routes = [
   // الصفحة الرئيسية - إعادة توجيه
@@ -26,6 +27,16 @@ export const routes: Routes = [
     canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['SYSTEM_ADMIN'] },
     title: 'إدارة النظام - نظام أمان كير'
+  },
+
+  {
+    path: 'admin/activities',
+    component: ActivitiesListComponent,
+    canActivate: [RoleGuard],
+    data: {
+      roles: ['ADMIN', 'SYSTEM_ADMIN'],
+      title: 'سجل الأنشطة'
+    }
   },
 
   // System Admin specific components (outside audit)

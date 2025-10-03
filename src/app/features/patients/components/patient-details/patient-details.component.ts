@@ -358,7 +358,7 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
   onEditPatient(): void {
     const patientId = this.patientId();
     if (patientId) {
-      this.router.navigate(['/patients/edit', patientId]);
+      this.router.navigate(['/patients', patientId, 'edit']);
     }
   }
 

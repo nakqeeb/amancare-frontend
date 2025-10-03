@@ -325,6 +325,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
           }
         ]
       },
+      {
+        title: 'سجل الأنشطة',
+        icon: 'history',
+        route: '/admin/activities',
+        roles: ['SYSTEM_ADMIN', 'ADMIN'],
+      },
     ];
 
     this.menuItems.set(items);

@@ -166,7 +166,7 @@ export class AppointmentFormComponent implements OnInit {
   private loadPatients(): void {
     this.patientService.getAllPatients().subscribe({
       next: (response) => {
-        // console.log('loadPatients: ', response.data?.patients);
+        console.log('loadPatients: ', response.data?.patients);
         this.patients.set(response.data?.patients || []);
       },
       error: (error) => {
