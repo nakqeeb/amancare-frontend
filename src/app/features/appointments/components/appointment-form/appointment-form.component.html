@@ -98,14 +98,16 @@
                   <mat-icon matSuffix>person</mat-icon>
                   } @else {
                   <!-- البحث عن مريض -->
-                  <input
-                    matInput
-                    formControlName="patientSearch"
-                    [matAutocomplete]="auto"
-                    (focus)="onFocus()"
-                    placeholder="ابحث بالاسم أو رقم المريض"
-                  />
-                  <mat-icon matSuffix>search</mat-icon>
+                  <div class="search-patient-input">
+                    <input
+                      matInput
+                      formControlName="patientSearch"
+                      [matAutocomplete]="auto"
+                      (focus)="onFocus()"
+                      placeholder="ابحث بالاسم أو رقم المريض"
+                    />
+                    <mat-icon matSuffix>search</mat-icon>
+                  </div>
 
                   <mat-autocomplete
                     #auto="matAutocomplete"
