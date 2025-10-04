@@ -141,7 +141,6 @@ export class RecentActivitiesComponent implements OnInit, OnDestroy {
   viewActivityDetails(activity: ActivityLogResponse): void {
     // Edited: Don't navigate for authentication activities
     if (activity.entityType === 'Authentication' || activity.entityType === 'Registration') {
-    console.log(activity.entityId, activity.entityType);
       // Authentication activities don't have a detail page
       return;
     }

@@ -94,8 +94,16 @@ export class InvoiceService {
   getAllInvoices(criteria: InvoiceSearchCriteria = {}): Observable<ApiResponse<PageResponse<InvoiceResponse>>> {
     this.loading.set(true);
 
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
     let params = new HttpParams();
 
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
     if (criteria.patientId) params = params.set('patientId', criteria.patientId.toString());
     if (criteria.doctorId) params = params.set('doctorId', criteria.doctorId.toString());
     if (criteria.clinicId) params = params.set('clinicId', criteria.clinicId.toString());
@@ -275,12 +283,18 @@ export class InvoiceService {
   /**
    * 9. GET /invoices/statistics - Get invoice statistics
    */
-  getInvoiceStatistics(clinicId?: number): Observable<ApiResponse<InvoiceStatistics>> {
+  getInvoiceStatistics(): Observable<ApiResponse<InvoiceStatistics>> {
     this.loading.set(true);
 
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
     let params = new HttpParams();
+
     if (clinicId) {
-      params = params.set('clinicId', clinicId.toString());
+      params = params.set('clinicId', clinicId);
     }
 
     return this.http.get<ApiResponse<InvoiceStatistics>>(`${this.apiUrl}/statistics`, { params }).pipe(

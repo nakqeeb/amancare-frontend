@@ -17,6 +17,8 @@ import {
   ActivitySearchFilters,
   ActionType
 } from '../models/activity.model';
+import { SystemAdminService } from '../../../core/services/system-admin.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 /**
  * خدمة الأنشطة - مسؤولة عن جلب وإدارة سجلات الأنشطة
@@ -28,6 +30,8 @@ import {
 export class ActivityService {
   private http = inject(HttpClient);
   private notificationService = inject(NotificationService);
+  private systemAdminService = inject(SystemAdminService);
+  private authService = inject(AuthService);
 
   private readonly apiUrl = `${environment.apiUrl}/admin/activities`;
 
@@ -59,7 +63,16 @@ export class ActivityService {
     this.loading.set(true);
     this.error.set(null);
 
-    const params = new HttpParams().set('limit', limit.toString());
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
+    let params = new HttpParams().set('limit', limit.toString());
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
 
     return this.http.get<ApiResponse<ActivityLogResponse[]>>(`${this.apiUrl}/recent`, { params })
       .pipe(
@@ -88,8 +101,16 @@ export class ActivityService {
     this.loading.set(true);
     this.error.set(null);
 
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
     let params = new HttpParams();
 
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
     if (filters.userId) {
       params = params.set('userId', filters.userId.toString());
     }
@@ -144,8 +165,18 @@ export class ActivityService {
     entityType: string,
     entityId: number
   ): Observable<ApiResponse<ActivityLogResponse[]>> {
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+    let params = new HttpParams();
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
+
     return this.http.get<ApiResponse<ActivityLogResponse[]>>(
-      `${this.apiUrl}/entity/${entityType}/${entityId}`
+      `${this.apiUrl}/entity/${entityType}/${entityId}`, { params }
     ).pipe(
       catchError(error => {
         this.notificationService.error('فشل في جلب سجل نشاط الكيان');
@@ -162,9 +193,17 @@ export class ActivityService {
     page: number = 0,
     size: number = 20
   ): Observable<ApiResponse<PageResponse<ActivityLogResponse>>> {
-    const params = new HttpParams()
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+    let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
 
     return this.http.get<ApiResponse<PageResponse<ActivityLogResponse>>>(
       `${this.apiUrl}/user/${userId}`,
@@ -181,10 +220,19 @@ export class ActivityService {
    * Get activity statistics
    */
   getStatistics(since?: Date): Observable<ApiResponse<ActivityStatisticsResponse>> {
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
     let params = new HttpParams();
 
     if (since) {
       params = params.set('since', since.toISOString());
+    }
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
     }
 
     return this.http.get<ApiResponse<ActivityStatisticsResponse>>(

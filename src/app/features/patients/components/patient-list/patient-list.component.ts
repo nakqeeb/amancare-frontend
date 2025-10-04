@@ -2,7 +2,7 @@
 // src/app/features/patients/components/patient-list/patient-list.component.ts
 // Updated to use integrated PatientService with Spring Boot APIs
 // ===================================================================
-import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, signal, OnInit, ViewChild, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -41,6 +41,7 @@ import {
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatTableModule } from '@angular/material/table';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-patient-list',
@@ -79,6 +80,7 @@ export class PatientListComponent implements OnInit {
   // Services
   private patientService = inject(PatientService);
   private notificationService = inject(NotificationService);
+  private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
@@ -102,6 +104,7 @@ export class PatientListComponent implements OnInit {
   searchPerformed = signal(false);
   showAdvancedSearch = signal(false);
   selectedPatients = signal<Patient[]>([]);
+  userRole = computed(() => this.authService.currentUser()?.role || '');
 
   // Search Form
   searchForm: FormGroup;
@@ -233,7 +236,9 @@ export class PatientListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPatients();
-    this.loadStatistics();
+    if (this.userRole() === 'SYSTEM_ADMIN' || this.userRole() === 'ADMIN') {
+      this.loadStatistics();
+    }
     this.checkRouteParams();
   }
 
@@ -410,7 +415,9 @@ export class PatientListComponent implements OnInit {
    */
   onRefresh(): void {
     this.loadPatients();
-    this.loadStatistics();
+    if (this.userRole() === 'SYSTEM_ADMIN' || this.userRole() === 'ADMIN') {
+      this.loadStatistics();
+    }
   }
 
   // ===================================================================

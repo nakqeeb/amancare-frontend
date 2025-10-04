@@ -178,10 +178,7 @@ export class InvoiceListComponent implements OnInit {
   }
 
   private loadStatistics(): void {
-    const user = this.currentUser();
-    const clinicId = user?.role === 'SYSTEM_ADMIN' ? undefined : user?.clinicId;
-
-    this.invoiceService.getInvoiceStatistics(clinicId).subscribe();
+    this.invoiceService.getInvoiceStatistics().subscribe();
   }
 
   private buildSearchCriteria(): InvoiceSearchCriteria {

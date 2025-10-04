@@ -6,7 +6,7 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { Subject, takeUntil, interval, forkJoin, timer } from 'rxjs';
+import { Subject, takeUntil, interval, forkJoin, timer, Observable } from 'rxjs';
 
 // Angular Material Modules
 import { MatCardModule } from '@angular/material/card';
@@ -37,6 +37,7 @@ import { SystemAdminContextIndicatorComponent } from "../../../../shared/compone
 import { ActivityService } from '../../../../core/services/activity.service';
 import { ActivityFeedComponent } from "../../../../shared/components/activity-feed/activity-feed.component";
 import { RecentActivitiesComponent } from '../../../clinic-admin/components/recent-activities/recent-activities.component';
+import { ApiResponse } from '../../../../core/models/api-response.model';
 
 // Statistics Interfaces
 interface DashboardStatCard {
@@ -77,7 +78,7 @@ interface QuickAction {
     SystemAdminContextIndicatorComponent,
     ActivityFeedComponent,
     RecentActivitiesComponent
-],
+  ],
   templateUrl: './main-dashboard.component.html',
   styleUrl: './main-dashboard.component.scss'
 })
@@ -229,34 +230,36 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  private loadDashboardData(): void {
-    this.loadingStats.set(true);
+ private loadDashboardData(): void {
+  this.loadingStats.set(true);
 
-    // Load all statistics in parallel
-    forkJoin({
-      patientStats: this.patientService.getPatientStatistics(),
-      todayAppointments: this.appointmentService.getTodayAppointments(),
-      // Add other services as needed
-    }).pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (results) => {
-          // Patient Statistics
-          if (results.patientStats.success) {
-            this.patientStats.set(results.patientStats.data!);
-          }
+  // حدد أي Requests تنفذ بناءً على الدور
+  const requests: any = {
+    todayAppointments: this.appointmentService.getTodayAppointments()
+  };
 
-          // Today's Appointments
-          this.todayAppointments.set(results.todayAppointments);
-
-          this.loadingStats.set(false);
-        },
-        error: (error) => {
-          console.error('Error loading dashboard data:', error);
-          this.notificationService.error('حدث خطأ في تحميل البيانات');
-          this.loadingStats.set(false);
-        }
-      });
+  if (this.userRole() === 'SYSTEM_ADMIN' || this.userRole() === 'ADMIN') {
+    requests.patientStats = this.patientService.getPatientStatistics();
   }
+
+  forkJoin(requests).pipe(takeUntil(this.destroy$)).subscribe({
+    next: (results: any) => {
+      // فقط لو الدور يسمح يكون موجود
+      if (results.patientStats) {
+        this.patientStats.set(results.patientStats.data!);
+      }
+
+      this.todayAppointments.set(results.todayAppointments);
+
+      this.loadingStats.set(false);
+    },
+    error: (error) => {
+      console.error('Error loading dashboard data:', error);
+      this.notificationService.error('حدث خطأ في تحميل البيانات');
+      this.loadingStats.set(false);
+    }
+  });
+}
 
   private startClock(): void {
     // Update time every second

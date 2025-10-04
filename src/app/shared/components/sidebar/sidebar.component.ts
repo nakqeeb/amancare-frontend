@@ -259,29 +259,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
       //   badge: 12
       // },
       {
-        title: 'التقارير',
-        icon: 'assessment',
-        route: '/reports',
-        roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR'],
-        children: [
-          {
-            title: 'التقارير المالية',
-            icon: 'attach_money',
-            route: '/reports/financial'
-          },
-          {
-            title: 'تقارير المرضى',
-            icon: 'person_search',
-            route: '/reports/patients'
-          },
-          {
-            title: 'تقارير المواعيد',
-            icon: 'event_note',
-            route: '/reports/appointments'
-          }
-        ]
-      },
-      {
         title: 'إدارة المستخدمين',
         icon: 'admin_panel_settings',
         route: '/users',

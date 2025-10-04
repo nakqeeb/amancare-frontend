@@ -150,13 +150,13 @@ export const routes: Routes = [
   },
 
   // التقارير - Reports
-  {
-    path: 'reports',
-    loadChildren: () => import('./features/reports/reports.routes').then(r => r.REPORTS_ROUTES),
-    canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR'] },
-    title: 'التقارير - نظام أمان كير'
-  },
+  // {
+  //   path: 'reports',
+  //   loadChildren: () => import('./features/reports/reports.routes').then(r => r.REPORTS_ROUTES),
+  //   canActivate: [AuthGuard, RoleGuard],
+  //   data: { roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR'] },
+  //   title: 'التقارير - نظام أمان كير'
+  // },
 
   // // الإعدادات - Settings
   // {

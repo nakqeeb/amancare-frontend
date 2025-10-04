@@ -322,6 +322,7 @@
       </mat-card-content>
     </mat-card> -->
     <!-- Activity Feed Component Integration -->
+     @if (currentUser()?.role === 'SYSTEM_ADMIN' || currentUser()?.role === 'ADMIN') {
     <mat-card class="activity-card">
       <!-- <app-activity-feed
         [limit]="10"
@@ -333,5 +334,6 @@
       </app-activity-feed> -->
       <app-recent-activities />
     </mat-card>
+  }
   </div>
 </app-sidebar>
