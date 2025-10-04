@@ -374,7 +374,7 @@
             </div>
           </mat-tab>
 
-         <!-- Appointments Tab -->
+          <!-- Appointments Tab -->
           <mat-tab>
             <ng-template mat-tab-label>
               <mat-icon>event</mat-icon>
@@ -391,7 +391,11 @@
                     <mat-icon>event</mat-icon>
                     المواعيد القادمة
                   </mat-card-title>
-                  <button mat-icon-button (click)="refreshAppointments()" matTooltip="تحديث">
+                  <button
+                    mat-icon-button
+                    (click)="refreshAppointments()"
+                    matTooltip="تحديث"
+                  >
                     <mat-icon>refresh</mat-icon>
                   </button>
                 </mat-card-header>
@@ -404,25 +408,46 @@
                   </div>
 
                   <!-- No Appointments State -->
-                  <div *ngIf="!loadingAppointments() && upcomingAppointments().length === 0" class="empty-state">
+                  <div
+                    *ngIf="
+                      !loadingAppointments() &&
+                      upcomingAppointments().length === 0
+                    "
+                    class="empty-state"
+                  >
                     <mat-icon>event_busy</mat-icon>
                     <h3>لا توجد مواعيد قادمة</h3>
                     <p>لا يوجد مواعيد مجدولة لهذا المريض</p>
-                    <button mat-raised-button color="primary" (click)="onNewAppointment()">
+                    <button
+                      mat-raised-button
+                      color="primary"
+                      (click)="onNewAppointment()"
+                    >
                       <mat-icon>add</mat-icon>
                       حجز موعد جديد
                     </button>
                   </div>
 
                   <!-- Appointments Table -->
-                  <div *ngIf="!loadingAppointments() && upcomingAppointments().length > 0" class="appointments-table-container">
-                    <table mat-table [dataSource]="upcomingAppointments()" class="appointments-table">
-
+                  <div
+                    *ngIf="
+                      !loadingAppointments() &&
+                      upcomingAppointments().length > 0
+                    "
+                    class="appointments-table-container"
+                  >
+                    <table
+                      mat-table
+                      [dataSource]="upcomingAppointments()"
+                      class="appointments-table"
+                    >
                       <!-- Date Column -->
                       <ng-container matColumnDef="appointmentDate">
                         <th mat-header-cell *matHeaderCellDef>التاريخ</th>
                         <td mat-cell *matCellDef="let appointment">
-                          {{ formatAppointmentDate(appointment.appointmentDate) }}
+                          {{
+                            formatAppointmentDate(appointment.appointmentDate)
+                          }}
                         </td>
                       </ng-container>
 
@@ -430,7 +455,9 @@
                       <ng-container matColumnDef="appointmentTime">
                         <th mat-header-cell *matHeaderCellDef>الوقت</th>
                         <td mat-cell *matCellDef="let appointment">
-                          {{ formatAppointmentTime(appointment.appointmentTime) }}
+                          {{
+                            formatAppointmentTime(appointment.appointmentTime)
+                          }}
                         </td>
                       </ng-container>
 
@@ -447,7 +474,11 @@
                         <th mat-header-cell *matHeaderCellDef>النوع</th>
                         <td mat-cell *matCellDef="let appointment">
                           <mat-chip>
-                            {{ getAppointmentTypeLabel(appointment.appointmentType) }}
+                            {{
+                              getAppointmentTypeLabel(
+                                appointment.appointmentType
+                              )
+                            }}
                           </mat-chip>
                         </td>
                       </ng-container>
@@ -456,7 +487,11 @@
                       <ng-container matColumnDef="status">
                         <th mat-header-cell *matHeaderCellDef>الحالة</th>
                         <td mat-cell *matCellDef="let appointment">
-                          <mat-chip [color]="getAppointmentStatusColor(appointment.status)">
+                          <mat-chip
+                            [color]="
+                              getAppointmentStatusColor(appointment.status)
+                            "
+                          >
                             {{ getAppointmentStatusLabel(appointment.status) }}
                           </mat-chip>
                         </td>
@@ -466,23 +501,33 @@
                       <ng-container matColumnDef="actions">
                         <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
                         <td mat-cell *matCellDef="let appointment">
-                          <button mat-icon-button
-                                  [matMenuTriggerFor]="appointmentMenu"
-                                  matTooltip="خيارات">
+                          <button
+                            mat-icon-button
+                            [matMenuTriggerFor]="appointmentMenu"
+                            matTooltip="خيارات"
+                          >
                             <mat-icon>more_vert</mat-icon>
                           </button>
                           <mat-menu #appointmentMenu="matMenu">
-                            <button mat-menu-item (click)="onViewAppointment(appointment.id)">
+                            <button
+                              mat-menu-item
+                              (click)="onViewAppointment(appointment.id)"
+                            >
                               <mat-icon>visibility</mat-icon>
                               <span>عرض التفاصيل</span>
                             </button>
-                            <button mat-menu-item (click)="onRescheduleAppointment(appointment.id)">
+                            <button
+                              mat-menu-item
+                              (click)="onRescheduleAppointment(appointment.id)"
+                            >
                               <mat-icon>schedule</mat-icon>
                               <span>إعادة جدولة</span>
                             </button>
-                            <button mat-menu-item
-                                    (click)="onCancelAppointment(appointment)"
-                                    class="cancel-button">
+                            <button
+                              mat-menu-item
+                              (click)="onCancelAppointment(appointment)"
+                              class="cancel-button"
+                            >
                               <mat-icon>cancel</mat-icon>
                               <span>إلغاء الموعد</span>
                             </button>
@@ -490,13 +535,26 @@
                         </td>
                       </ng-container>
 
-                      <tr mat-header-row *matHeaderRowDef="appointmentsDisplayedColumns"></tr>
-                      <tr mat-row *matRowDef="let row; columns: appointmentsDisplayedColumns;"></tr>
+                      <tr
+                        mat-header-row
+                        *matHeaderRowDef="appointmentsDisplayedColumns"
+                      ></tr>
+                      <tr
+                        mat-row
+                        *matRowDef="
+                          let row;
+                          columns: appointmentsDisplayedColumns
+                        "
+                      ></tr>
                     </table>
 
                     <!-- Add New Appointment Button -->
                     <div class="table-footer">
-                      <button mat-raised-button color="primary" (click)="onNewAppointment()">
+                      <button
+                        mat-raised-button
+                        color="primary"
+                        (click)="onNewAppointment()"
+                      >
                         <mat-icon>add</mat-icon>
                         حجز موعد جديد
                       </button>
@@ -506,7 +564,6 @@
               </mat-card>
             </div>
           </mat-tab>
-
 
           <!-- Medical Records Tab -->
           <mat-tab>
@@ -538,11 +595,236 @@
             </ng-template>
 
             <div class="tab-content">
-              <div class="coming-soon">
-                <mat-icon>receipt</mat-icon>
-                <h3>قريباً: عرض الفواتير</h3>
-                <p>ستتمكن هنا من عرض فواتير المريض</p>
+              <!-- Loading State -->
+              @if (loadingInvoices()) {
+              <div class="loading-container">
+                <mat-spinner diameter="40"></mat-spinner>
+                <p>جاري تحميل الفواتير...</p>
               </div>
+              } @else {
+              <!-- Header with Actions -->
+              <div class="invoices-header">
+                <div class="header-info">
+                  <h3>
+                    <mat-icon>receipt</mat-icon>
+                    فواتير المريض
+                  </h3>
+                  <p class="subtitle">
+                    إجمالي الفواتير: {{ invoicesCount() }} | الرصيد المستحق:
+                    {{ formatCurrency(outstandingBalance()) }}
+                  </p>
+                </div>
+
+                <div class="header-actions">
+                  @if (canCreateInvoice()) {
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="onCreateInvoice()"
+                  >
+                    <mat-icon>add</mat-icon>
+                    إنشاء فاتورة جديدة
+                  </button>
+                  }
+                  <button
+                    mat-stroked-button
+                    (click)="refreshInvoices()"
+                    matTooltip="تحديث"
+                  >
+                    <mat-icon>refresh</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <!-- Empty State -->
+              @if (patientInvoices().length === 0) {
+              <div class="empty-state">
+                <mat-icon>receipt_long</mat-icon>
+                <h3>لا توجد فواتير</h3>
+                <p>لم يتم إنشاء أي فواتير لهذا المريض بعد</p>
+                @if (canCreateInvoice()) {
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="onCreateInvoice()"
+                >
+                  <mat-icon>add</mat-icon>
+                  إنشاء فاتورة الآن
+                </button>
+                }
+              </div>
+              } @else {
+              <!-- Invoices Table -->
+              <div class="invoices-table-container">
+                <table
+                  mat-table
+                  [dataSource]="patientInvoices()"
+                  class="invoices-table"
+                >
+                  <!-- Invoice Number Column -->
+                  <ng-container matColumnDef="invoiceNumber">
+                    <th mat-header-cell *matHeaderCellDef>رقم الفاتورة</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <div class="invoice-number">
+                        <mat-icon class="invoice-icon">receipt</mat-icon>
+                        <span class="number">{{ invoice.invoiceNumber }}</span>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <!-- Invoice Date Column -->
+                  <ng-container matColumnDef="invoiceDate">
+                    <th mat-header-cell *matHeaderCellDef>تاريخ الإصدار</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <div class="date-cell">
+                        <mat-icon>calendar_today</mat-icon>
+                        <span>{{ formatDate(invoice.invoiceDate) }}</span>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <!-- Total Amount Column -->
+                  <ng-container matColumnDef="totalAmount">
+                    <th mat-header-cell *matHeaderCellDef>المبلغ الإجمالي</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <span class="amount total">{{
+                        formatCurrency(invoice.totalAmount)
+                      }}</span>
+                    </td>
+                  </ng-container>
+
+                  <!-- Paid Amount Column -->
+                  <ng-container matColumnDef="amountPaid">
+                    <th mat-header-cell *matHeaderCellDef>المدفوع</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <span class="amount paid">{{
+                        formatCurrency(invoice.paidAmount)
+                      }}</span>
+                    </td>
+                  </ng-container>
+
+                  <!-- Balance Due Column -->
+                  <ng-container matColumnDef="balanceDue">
+                    <th mat-header-cell *matHeaderCellDef>المتبقي</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <span
+                        class="amount balance"
+                        [class.overdue]="invoice.balanceDue > 0"
+                      >
+                        {{ formatCurrency(invoice.balanceDue) }}
+                      </span>
+                    </td>
+                  </ng-container>
+
+                  <!-- Invoices Status Column -->
+                  <ng-container matColumnDef="status">
+                    <th mat-header-cell *matHeaderCellDef>حالة الفاتورة</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <div class="status-chips">
+                        <mat-chip [color]="getStatusColor(invoice.status)">
+                          {{ getInvoiceStatusLabel(invoice.status) }}
+                        </mat-chip>
+                      </div>
+                    </td>
+                  </ng-container>
+                   <!-- Payment status -->
+                  <ng-container matColumnDef="paymentStatus">
+                    <th mat-header-cell *matHeaderCellDef>حالة الدفع</th>
+                    <td mat-cell *matCellDef="let invoice">
+                        <mat-chip
+                          [color]="getPaymentStatusColor(invoice.paymentStatus)"
+                          class="payment-status"
+                        >
+                          {{ getPaymentStatusLabel(invoice.paymentStatus) }}
+                        </mat-chip>
+                    </td>
+                  </ng-container>
+
+                  <!-- Actions Column -->
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <div class="action-buttons">
+                        <button
+                          mat-icon-button
+                          (click)="onViewInvoice(invoice.id)"
+                          matTooltip="عرض التفاصيل"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+
+                        @if (invoice.balanceDue > 0 && canCreateInvoice()) {
+                        <button
+                          mat-icon-button
+                          color="primary"
+                          (click)="onAddPayment(invoice.id)"
+                          matTooltip="إضافة دفعة"
+                        >
+                          <mat-icon>payment</mat-icon>
+                        </button>
+                        }
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <tr
+                    mat-header-row
+                    *matHeaderRowDef="invoicesDisplayedColumns"
+                  ></tr>
+                  <tr
+                    mat-row
+                    *matRowDef="let row; columns: invoicesDisplayedColumns"
+                    class="invoice-row"
+                    [class.overdue]="row.status === 'OVERDUE'"
+                  ></tr>
+                </table>
+              </div>
+
+              <!-- Summary Cards -->
+              <div class="invoices-summary">
+                <mat-card class="summary-card">
+                  <mat-card-content>
+                    <div class="summary-icon total">
+                      <mat-icon>receipt_long</mat-icon>
+                    </div>
+                    <div class="summary-info">
+                      <span class="label">إجمالي الفواتير</span>
+                      <span class="value">{{ invoicesCount() }}</span>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <mat-card class="summary-card">
+                  <mat-card-content>
+                    <div class="summary-icon paid">
+                      <mat-icon>check_circle</mat-icon>
+                    </div>
+                    <div class="summary-info">
+                      <span class="label">إجمالي المدفوعات</span>
+                      <span class="value">
+                        {{ formatCurrency(getTotalPaidAmount()) }}
+                      </span>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <mat-card class="summary-card">
+                  <mat-card-content>
+                    <div class="summary-icon outstanding">
+                      <mat-icon>account_balance_wallet</mat-icon>
+                    </div>
+                    <div class="summary-info">
+                      <span class="label">الرصيد المستحق</span>
+                      <span class="value outstanding-value">{{
+                        formatCurrency(outstandingBalance())
+                      }}</span>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+              } }
             </div>
           </mat-tab>
         </mat-tab-group>

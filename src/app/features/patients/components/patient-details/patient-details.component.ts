@@ -43,6 +43,15 @@ import {
   APPOINTMENT_TYPE_LABELS,
   AppointmentResponse
 } from '../../../appointments/models/appointment.model';
+import {
+  InvoiceResponse,
+  InvoiceStatus,
+  PaymentStatus,
+  INVOICE_STATUS_LABELS,
+  PAYMENT_STATUS_LABELS
+} from '../../../invoices/models/invoice.model';
+import { InvoiceService } from '../../../invoices/services/invoice.service';
+
 
 @Component({
   selector: 'app-patient-details',
@@ -72,6 +81,7 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
   // Services
   private readonly patientService = inject(PatientService);
   private readonly appointmentService = inject(AppointmentService);
+  private readonly invoiceService = inject(InvoiceService);
   private readonly notificationService = inject(NotificationService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
@@ -88,6 +98,7 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
   // UI State
   loading = signal(false);
   loadingAppointments = signal(false);
+  loadingInvoices = signal(false);
   patientId = signal<number | null>(null);
   patient = signal<Patient | null>(null);
   activeTabIndex = signal(0);
@@ -96,15 +107,34 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
   upcomingAppointments = signal<AppointmentResponse[]>([]);
   appointmentsCount = computed(() => this.upcomingAppointments().length);
   medicalRecordsCount = signal(0);
-  invoicesCount = signal(0);
-  outstandingBalance = signal(0);
+
+  // Invoices data
+  patientInvoices = signal<InvoiceResponse[]>([]);
+  invoicesCount = computed(() => this.patientInvoices().length);
+  outstandingBalance = computed(() => {
+    return this.patientInvoices().reduce((total, invoice) => {
+      return total + (invoice.balanceDue || 0);
+    }, 0);
+  });
 
   // Table configuration
   appointmentsDisplayedColumns = ['appointmentDate', 'appointmentTime', 'doctor', 'type', 'status', 'actions'];
+  invoicesDisplayedColumns : string[] = [
+    'invoiceNumber',
+    'invoiceDate',
+    'totalAmount',
+    'amountPaid',
+    'balanceDue',
+    'status',
+    'paymentStatus',
+    'actions'
+  ];
 
   // Labels
   appointmentStatusLabels = APPOINTMENT_STATUS_LABELS;
   appointmentTypeLabels = APPOINTMENT_TYPE_LABELS;
+  invoiceStatusLabels = INVOICE_STATUS_LABELS;
+  paymentStatusLabels = PAYMENT_STATUS_LABELS;
 
   // Current user
   currentUser = this.authService.currentUser;
@@ -474,13 +504,6 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  onCreateInvoice(): void {
-    const patientId = this.patientId();
-    if (patientId) {
-      this.router.navigate(['/invoices/new'], { queryParams: { patientId } });
-    }
-  }
-
   onPrintPatientCard(): void {
     this.notificationService.info('طباعة بطاقة المريض - قيد التطوير');
   }
@@ -534,9 +557,139 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
     if (tab === 'appointments' && this.upcomingAppointments().length === 0 && !this.loadingAppointments()) {
       this.loadUpcomingAppointments();
     }
+     // Load data for specific tabs
+    if (tab === 'invoices' && this.invoicesCount() === 0 && !this.loadingInvoices()) {
+      this.loadPatientInvoices(this.patientId()!);
+    }
   }
 
   refreshAppointments(): void {
     this.loadUpcomingAppointments();
+  }
+
+  // ===================================================================
+  // NEW: INVOICE DATA LOADING METHODS
+  // ===================================================================
+
+  /**
+   * NEW: Load all invoices for the patient
+   */
+  private loadPatientInvoices(patientId: number): void {
+    this.loadingInvoices.set(true);
+
+    this.invoiceService.getPatientInvoices(patientId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.patientInvoices.set(response.data);
+          }
+          this.loadingInvoices.set(false);
+        },
+        error: (error) => {
+          this.loadingInvoices.set(false);
+          this.notificationService.error('فشل تحميل فواتير المريض');
+          console.error('Error loading patient invoices:', error);
+        }
+      });
+  }
+
+  /**
+   * NEW: Refresh invoices data
+   */
+  refreshInvoices(): void {
+    const id = this.patientId();
+    if (id) {
+      this.loadPatientInvoices(id);
+    }
+  }
+
+  // ===================================================================
+  // NEW: INVOICE ACTIONS
+  // ===================================================================
+
+  /**
+   * NEW: Navigate to invoice details
+   */
+  onViewInvoice(invoiceId: number): void {
+    this.router.navigate(['/invoices', invoiceId]);
+  }
+
+  /**
+   * NEW: Navigate to create new invoice for this patient
+   */
+  onCreateInvoice(): void {
+    const patient = this.patient();
+    if (patient) {
+      this.router.navigate(['/invoices/new'], {
+        queryParams: { patientId: patient.id }
+      });
+    }
+  }
+
+  /**
+   * NEW: Add payment to invoice
+   */
+  onAddPayment(invoiceId: number): void {
+    this.router.navigate(['/invoices', invoiceId, 'payment']);
+  }
+
+  /**
+   * NEW: Get status chip color
+   */
+  getStatusColor(status: InvoiceStatus): string {
+    switch (status) {
+      case InvoiceStatus.PAID:
+        return 'primary';
+      case InvoiceStatus.PARTIALLY_PAID:
+        return 'accent';
+      case InvoiceStatus.OVERDUE:
+        return 'warn';
+      case InvoiceStatus.CANCELLED:
+      case InvoiceStatus.REFUNDED:
+        return '';
+      default:
+        return 'primary';
+    }
+  }
+
+  /**
+   * NEW: Get payment status chip color
+   */
+  getPaymentStatusColor(status: PaymentStatus): string {
+    switch (status) {
+      case PaymentStatus.COMPLETED:
+        return 'primary';
+      case PaymentStatus.PENDING:
+        return 'accent';
+      case PaymentStatus.FAILED:
+      case PaymentStatus.CANCELLED:
+        return 'warn';
+      default:
+        return '';
+    }
+  }
+
+  /**
+   * NEW: Format currency
+   */
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('ar-YE', {
+      style: 'currency',
+      currency: 'YER',
+      minimumFractionDigits: 2
+    }).format(amount);
+  }
+
+  getTotalPaidAmount(): number {
+    return this.patientInvoices().reduce((sum, inv) => sum + inv.paidAmount, 0);
+  }
+
+  getInvoiceStatusLabel(status: InvoiceStatus): string {
+    return this.invoiceStatusLabels[status];
+  }
+
+  getPaymentStatusLabel(status: PaymentStatus): string {
+    return this.paymentStatusLabels[status];
   }
 }
