@@ -5,7 +5,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
-import { tap, catchError, finalize } from 'rxjs/operators';
+import { tap, catchError, finalize, map } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
 import { NotificationService } from '../../../core/services/notification.service';
@@ -478,6 +478,167 @@ export class InvoiceService {
   isOverdue(invoice: InvoiceResponse): boolean {
     return invoice.isOverdue ||
       (invoice.balanceDue > 0 && new Date(invoice.dueDate) < new Date());
+  }
+
+  // ===================================================================
+  // PDF EXPORT OPERATIONS - NEW
+  // ===================================================================
+
+  /**
+   * NEW: Export invoice as PDF
+   * تصدير الفاتورة كملف PDF
+   */
+  exportInvoicePdf(id: number): Observable<Blob> {
+    this.loading.set(true);
+
+    // NEW: Build URL with clinic context for SYSTEM_ADMIN
+    let params = new HttpParams();
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      const clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+      if (clinicId) {
+        params = params.set('clinicId', clinicId.toString());
+      }
+    }
+
+    // NEW: Return blob for file download
+    return this.http.get(`${this.apiUrl}/${id}/export/pdf`, {
+      params,
+      responseType: 'blob',
+      observe: 'response'
+    }).pipe(
+      map(response => {
+        // NEW: Extract filename from Content-Disposition header if available
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `invoice_${id}.pdf`;
+
+        if (contentDisposition) {
+          const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+          if (matches != null && matches[1]) {
+            filename = matches[1].replace(/['"]/g, '');
+          }
+        }
+
+        // NEW: Trigger download
+        this.downloadFile(response.body!, filename);
+        this.notificationService.success('تم تصدير الفاتورة بنجاح');
+        return response.body!;
+      }),
+      catchError(error => {
+        this.notificationService.error('فشل تصدير الفاتورة');
+        return this.handleError('خطأ في تصدير الفاتورة', error);
+      }),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  /**
+   * NEW: Export invoice receipt as PDF
+   * تصدير إيصال الدفع كملف PDF
+   */
+  exportInvoiceReceipt(id: number): Observable<Blob> {
+    this.loading.set(true);
+
+    // NEW: Build URL with clinic context for SYSTEM_ADMIN
+    let params = new HttpParams();
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      const clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+      if (clinicId) {
+        params = params.set('clinicId', clinicId.toString());
+      }
+    }
+
+    // NEW: Return blob for file download
+    return this.http.get(`${this.apiUrl}/${id}/export/receipt`, {
+      params,
+      responseType: 'blob',
+      observe: 'response'
+    }).pipe(
+      map(response => {
+        // NEW: Extract filename from Content-Disposition header
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `receipt_${id}.pdf`;
+
+        if (contentDisposition) {
+          const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+          if (matches != null && matches[1]) {
+            filename = matches[1].replace(/['"]/g, '');
+          }
+        }
+
+        // NEW: Trigger download
+        this.downloadFile(response.body!, filename);
+        this.notificationService.success('تم تصدير الإيصال بنجاح');
+        return response.body!;
+      }),
+      catchError(error => {
+        this.notificationService.error('فشل تصدير الإيصال');
+        return this.handleError('خطأ في تصدير الإيصال', error);
+      }),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  /**
+   * NEW: Preview invoice PDF in browser
+   * معاينة الفاتورة PDF في المتصفح
+   */
+  previewInvoicePdf(id: number): Observable<void> {
+    this.loading.set(true);
+
+    // NEW: Build URL with clinic context for SYSTEM_ADMIN
+    let params = new HttpParams();
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      const clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+      if (clinicId) {
+        params = params.set('clinicId', clinicId.toString());
+      }
+    }
+
+    // NEW: Get PDF as blob and open in new tab
+    return this.http.get(`${this.apiUrl}/${id}/preview/pdf`, {
+      params,
+      responseType: 'blob'
+    }).pipe(
+      map(blob => {
+        // NEW: Create object URL and open in new tab
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+
+        // NEW: Clean up object URL after a delay
+        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+
+        this.notificationService.success('تم فتح الفاتورة في نافذة جديدة');
+      }),
+      catchError(error => {
+        this.notificationService.error('فشل معاينة الفاتورة');
+        return this.handleError('خطأ في معاينة الفاتورة', error);
+      }),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  // ===================================================================
+  // UTILITY METHODS - NEW
+  // ===================================================================
+
+  /**
+   * NEW: Download file helper
+   * مساعد لتحميل الملفات
+   */
+  private downloadFile(blob: Blob, filename: string): void {
+    // NEW: Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+
+    // NEW: Trigger download
+    document.body.appendChild(link);
+    link.click();
+
+    // NEW: Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   }
 
   // ===================================================================

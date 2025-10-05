@@ -34,7 +34,7 @@
             </div>
           </div>
 
-          <div class="header-actions">
+          <!-- <div class="header-actions">
             <button
               mat-icon-button
               (click)="onPrintInvoice()"
@@ -71,6 +71,77 @@
               </button>
 
               @if (canCancelInvoice()) {
+              <mat-divider></mat-divider>
+              <button mat-menu-item (click)="onCancel()" class="delete-action">
+                <mat-icon color="warn">cancel</mat-icon>
+                <span>إلغاء الفاتورة</span>
+              </button>
+              }
+            </mat-menu>
+          </div> -->
+          <!-- Updated Header Actions Section with PDF Export -->
+          <div class="header-actions">
+            <!-- NEW: PDF Export Menu -->
+            <button
+              mat-raised-button
+              color="primary"
+              [matMenuTriggerFor]="pdfMenu"
+              class="export-pdf-button"
+            >
+              <mat-icon>picture_as_pdf</mat-icon>
+              تصدير PDF
+            </button>
+
+            <!-- NEW: PDF Export Menu Options -->
+            <mat-menu #pdfMenu="matMenu">
+              <button mat-menu-item (click)="previewInvoicePdf()">
+                <mat-icon>visibility</mat-icon>
+                <span>معاينة الفاتورة</span>
+              </button>
+              <button mat-menu-item (click)="exportInvoicePdf()">
+                <mat-icon>download</mat-icon>
+                <span>تحميل الفاتورة</span>
+              </button>
+              <button
+                mat-menu-item
+                (click)="exportInvoiceReceipt()"
+                [disabled]="
+                  !invoice?.payments || invoice?.payments?.length === 0
+                "
+              >
+                <mat-icon>receipt</mat-icon>
+                <span>تحميل إيصال الدفع</span>
+              </button>
+              <mat-divider></mat-divider>
+              <button mat-menu-item (click)="printInvoice()">
+                <mat-icon>print</mat-icon>
+                <span>طباعة الفاتورة</span>
+              </button>
+            </mat-menu>
+
+            <!-- Existing buttons (Edit, Delete, etc.) -->
+            <button
+              mat-icon-button
+              [matMenuTriggerFor]="menu"
+              matTooltip="المزيد من الخيارات"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="onEdit()">
+                <mat-icon>edit</mat-icon>
+                <span>تعديل الفاتورة</span>
+              </button>
+              <button mat-menu-item (click)="onAddPayment()">
+                <mat-icon>payment</mat-icon>
+                <span>إضافة دفعة</span>
+              </button>
+              <button mat-menu-item (click)="onSendInvoice()">
+                <mat-icon>send</mat-icon>
+                <span>إرسال الفاتورة</span>
+              </button>
+               @if (canCancelInvoice()) {
               <mat-divider></mat-divider>
               <button mat-menu-item (click)="onCancel()" class="delete-action">
                 <mat-icon color="warn">cancel</mat-icon>
@@ -412,7 +483,6 @@
                 class="payment-row-clickable"
                 (click)="onViewPaymentDetails(row.id)"
               ></tr>
-
             </table>
           </div>
         </mat-card-content>

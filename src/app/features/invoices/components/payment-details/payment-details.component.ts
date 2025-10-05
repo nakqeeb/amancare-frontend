@@ -202,15 +202,88 @@ export class PaymentDetailsComponent implements OnInit {
   }
 
   // ===================================================================
-  // ACTIONS
+  // PDF EXPORT ACTIONS - NEW
   // ===================================================================
 
-  onPrint(): void {
-    window.print();
+  /**
+   * NEW: Download payment receipt as PDF
+   * تحميل إيصال الدفع كملف PDF
+   */
+  onDownload(): void {
+    const paymentData = this.payment();
+    if (!paymentData || !paymentData.invoiceId) {
+      this.notificationService.error('لا توجد بيانات دفعة للتحميل');
+      return;
+    }
+
+    // NEW: Export receipt for the invoice associated with this payment
+    this.invoiceService.exportInvoiceReceipt(paymentData.invoiceId).subscribe({
+      next: () => {
+        // Success notification is handled in the service
+      },
+      error: (error) => {
+        console.error('Error downloading receipt:', error);
+      }
+    });
   }
 
-  onDownload(): void {
-    // Implement download functionality if needed
-    this.notificationService.info('سيتم تنفيذ هذه الميزة قريباً');
+  /**
+   * NEW: Preview payment receipt as PDF
+   * معاينة إيصال الدفع كملف PDF
+   */
+  onPreview(): void {
+    const paymentData = this.payment();
+    if (!paymentData || !paymentData.invoiceId) {
+      this.notificationService.error('لا توجد بيانات دفعة للمعاينة');
+      return;
+    }
+
+    // NEW: Preview the invoice PDF (which includes this payment)
+    this.invoiceService.previewInvoicePdf(paymentData.invoiceId).subscribe({
+      next: () => {
+        // Success notification is handled in the service
+      },
+      error: (error) => {
+        console.error('Error previewing receipt:', error);
+      }
+    });
+  }
+
+  /**
+   * NEW: Print payment receipt
+   * طباعة إيصال الدفع
+   */
+  onPrint(): void {
+    const paymentData = this.payment();
+    if (!paymentData || !paymentData.invoiceId) {
+      this.notificationService.error('لا توجد بيانات دفعة للطباعة');
+      return;
+    }
+
+    // NEW: Open preview which can then be printed
+    this.onPreview();
+    this.notificationService.info('استخدم خيار الطباعة من المتصفح (Ctrl+P)');
+  }
+
+  /**
+   * NEW: Export full invoice PDF from payment details
+   * تصدير الفاتورة الكاملة من تفاصيل الدفعة
+   */
+  exportInvoicePdf(): void {
+    const paymentData = this.payment();
+    if (!paymentData || !paymentData.invoiceId) {
+      this.notificationService.error('لا توجد بيانات فاتورة للتصدير');
+      return;
+    }
+
+    // NEW: Export full invoice PDF
+    this.invoiceService.exportInvoicePdf(paymentData.invoiceId).subscribe({
+      next: () => {
+        // Success notification is handled in the service
+      },
+      error: (error) => {
+        console.error('Error exporting invoice:', error);
+      }
+    });
   }
 }

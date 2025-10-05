@@ -320,4 +320,96 @@ export class InvoiceDetailsComponent implements OnInit {
     });
   }
 
+  // ===================================================================
+  // PDF EXPORT ACTIONS - NEW
+  // ===================================================================
+
+  /**
+   * NEW: Export invoice as PDF
+   * تصدير الفاتورة كملف PDF
+   */
+  exportInvoicePdf(): void {
+    const invoiceData = this.invoice();
+    if (!invoiceData) {
+      this.notificationService.error('لا توجد بيانات فاتورة للتصدير');
+      return;
+    }
+
+    // NEW: Call service to export PDF
+    this.invoiceService.exportInvoicePdf(invoiceData.id).subscribe({
+      next: () => {
+        // Success notification is handled in the service
+      },
+      error: (error) => {
+        console.error('Error exporting invoice PDF:', error);
+      }
+    });
+  }
+
+  /**
+   * NEW: Export invoice receipt as PDF
+   * تصدير إيصال الدفع كملف PDF
+   */
+  exportInvoiceReceipt(): void {
+    const invoiceData = this.invoice();
+    if (!invoiceData) {
+      this.notificationService.error('لا توجد بيانات فاتورة للتصدير');
+      return;
+    }
+
+    // NEW: Check if invoice has payments
+    if (!invoiceData.payments || invoiceData.payments.length === 0) {
+      this.notificationService.warning('لا توجد دفعات لهذه الفاتورة');
+      return;
+    }
+
+    // NEW: Call service to export receipt
+    this.invoiceService.exportInvoiceReceipt(invoiceData.id).subscribe({
+      next: () => {
+        // Success notification is handled in the service
+      },
+      error: (error) => {
+        console.error('Error exporting receipt PDF:', error);
+      }
+    });
+  }
+
+  /**
+   * NEW: Preview invoice PDF in browser
+   * معاينة الفاتورة PDF في المتصفح
+   */
+  previewInvoicePdf(): void {
+    const invoiceData = this.invoice();
+    if (!invoiceData) {
+      this.notificationService.error('لا توجد بيانات فاتورة للمعاينة');
+      return;
+    }
+
+    // NEW: Call service to preview PDF
+    this.invoiceService.previewInvoicePdf(invoiceData.id).subscribe({
+      next: () => {
+        // Success notification is handled in the service
+      },
+      error: (error) => {
+        console.error('Error previewing invoice PDF:', error);
+      }
+    });
+  }
+
+  /**
+   * NEW: Print invoice (opens preview and triggers print dialog)
+   * طباعة الفاتورة
+   */
+  printInvoice(): void {
+    const invoiceData = this.invoice();
+    if (!invoiceData) {
+      this.notificationService.error('لا توجد بيانات فاتورة للطباعة');
+      return;
+    }
+
+    // NEW: Preview PDF which can then be printed
+    this.previewInvoicePdf();
+    this.notificationService.info('استخدم خيار الطباعة من المتصفح (Ctrl+P)');
+  }
+
 }
