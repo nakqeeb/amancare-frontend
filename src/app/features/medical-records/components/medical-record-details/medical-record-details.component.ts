@@ -128,9 +128,9 @@ export class MedicalRecordDetailsComponent implements OnInit {
     }
   }
 
-  onPrint(): void {
+  /* onPrint(): void {
     window.print();
-  }
+  } */
 
   onExportPdf(): void {
     const record = this.medicalRecord();

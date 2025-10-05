@@ -51,6 +51,8 @@ import {
   PAYMENT_STATUS_LABELS
 } from '../../../invoices/models/invoice.model';
 import { InvoiceService } from '../../../invoices/services/invoice.service';
+import { MedicalRecordService } from '../../../medical-records/services/medical-record.service';
+import { MedicalRecordSummary, RecordStatus, VisitType } from '../../../medical-records/models/medical-record.model';
 
 
 @Component({
@@ -82,6 +84,7 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
   private readonly patientService = inject(PatientService);
   private readonly appointmentService = inject(AppointmentService);
   private readonly invoiceService = inject(InvoiceService);
+  private readonly medicalRecordService = inject(MedicalRecordService);
   private readonly notificationService = inject(NotificationService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
@@ -106,7 +109,6 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
   // Data signals
   upcomingAppointments = signal<AppointmentResponse[]>([]);
   appointmentsCount = computed(() => this.upcomingAppointments().length);
-  medicalRecordsCount = signal(0);
 
   // Invoices data
   patientInvoices = signal<InvoiceResponse[]>([]);
@@ -117,9 +119,15 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
     }, 0);
   });
 
+  // Medical Records Data
+  medicalRecords = signal<MedicalRecordSummary[]>([]);
+  loadingMedicalRecords = signal(false);
+  medicalRecordsCount = computed(() => this.medicalRecords().length);
+
+
   // Table configuration
   appointmentsDisplayedColumns = ['appointmentDate', 'appointmentTime', 'doctor', 'type', 'status', 'actions'];
-  invoicesDisplayedColumns : string[] = [
+  invoicesDisplayedColumns: string[] = [
     'invoiceNumber',
     'invoiceDate',
     'totalAmount',
@@ -129,6 +137,18 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
     'paymentStatus',
     'actions'
   ];
+  medicalRecordsColumns: string[] = [
+    'visitDate',
+    'visitType',
+    'chiefComplaint',
+    'doctorName',
+    'status',
+    'actions'
+  ];
+
+  // Enums for template
+  RecordStatus = RecordStatus;
+  VisitType = VisitType;
 
   // Labels
   appointmentStatusLabels = APPOINTMENT_STATUS_LABELS;
@@ -180,6 +200,11 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
     return !!(user && ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'].includes(user.role));
   }
 
+  canCreateMedicalRecord(): boolean {
+    const user = this.currentUser();
+    return !!(user && ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR'].includes(user.role));
+  }
+
   // ===================================================================
   // LIFECYCLE HOOKS
   // ===================================================================
@@ -207,6 +232,12 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
             this.activeTabIndex.set(tabIndex);
             if (tabIndex === 1) {
               this.loadUpcomingAppointments();
+            }
+            if (tabIndex === 2) {
+              this.loadMedicalRecords();
+            }
+            if (tabIndex === 3) {
+              this.loadPatientInvoices(this.patientId()!);
             }
           }
         }
@@ -279,6 +310,26 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
           }
           this.upcomingAppointments.set([]);
           this.loadingAppointments.set(false);
+        }
+      });
+  }
+
+  // NEW: Method to load medical records for the patient
+  loadMedicalRecords(): void {
+    const patientId = this.patientId();
+    if (!patientId || this.loadingMedicalRecords()) return;
+
+    this.loadingMedicalRecords.set(true);
+    this.medicalRecordService.getPatientMedicalHistory(patientId, 0, 20)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.medicalRecords.set(response.content || []);
+          this.loadingMedicalRecords.set(false);
+        },
+        error: () => {
+          this.notificationService.error('فشل تحميل السجلات الطبية');
+          this.loadingMedicalRecords.set(false);
         }
       });
   }
@@ -557,7 +608,11 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
     if (tab === 'appointments' && this.upcomingAppointments().length === 0 && !this.loadingAppointments()) {
       this.loadUpcomingAppointments();
     }
-     // Load data for specific tabs
+    // Load data for specific tabs
+    if (tab === 'medical-records' && this.medicalRecords().length === 0 && !this.loadingMedicalRecords()) {
+      this.loadMedicalRecords();
+    }
+    // Load data for specific tabs
     if (tab === 'invoices' && this.invoicesCount() === 0 && !this.loadingInvoices()) {
       this.loadPatientInvoices(this.patientId()!);
     }
@@ -603,6 +658,57 @@ export class PatientDetailsComponent implements OnInit, OnDestroy {
       this.loadPatientInvoices(id);
     }
   }
+
+  // NEW: Navigate to create medical record
+  onCreateMedicalRecord(): void {
+    const patientId = this.patientId();
+    if (patientId) {
+      this.router.navigate(['/medical-records/new'], {
+        queryParams: { patientId }
+      });
+    }
+  }
+
+  // NEW: Navigate to view medical record details
+  onViewMedicalRecord(recordId: number): void {
+    this.router.navigate(['/medical-records', recordId]);
+  }
+
+  // NEW: Navigate to edit medical record
+  onEditMedicalRecord(recordId: number): void {
+    this.router.navigate(['/medical-records', recordId, 'edit']);
+  }
+
+  // NEW: Get visit type label in Arabic
+  getVisitTypeLabel(type: VisitType): string {
+    const labels: Record<VisitType, string> = {
+      [VisitType.CONSULTATION]: 'استشارة',
+      [VisitType.FOLLOW_UP]: 'متابعة',
+      [VisitType.EMERGENCY]: 'طوارئ',
+      [VisitType.ROUTINE_CHECKUP]: 'فحص دوري',
+      [VisitType.VACCINATION]: 'تطعيم',
+      [VisitType.PROCEDURE]: 'إجراء طبي',
+      [VisitType.SURGERY]: 'عملية جراحية',
+      [VisitType.REHABILITATION]: 'تأهيل',
+      [VisitType.PREVENTIVE_CARE]: 'رعاية وقائية',
+      [VisitType.CHRONIC_CARE]: 'رعاية مزمنة'
+    };
+    return labels[type] || type;
+  }
+
+  // NEW: Get record status label in Arabic
+  getRecordStatusLabel(status: RecordStatus): string {
+    const labels: Record<RecordStatus, string> = {
+      [RecordStatus.DRAFT]: 'مسودة',
+      [RecordStatus.IN_PROGRESS]: 'قيد التحرير',
+      [RecordStatus.COMPLETED]: 'مكتمل',
+      [RecordStatus.REVIEWED]: 'مراجع',
+      [RecordStatus.LOCKED]: 'مقفل',
+      [RecordStatus.CANCELLED]: 'ملغي'
+    };
+    return labels[status] || status;
+  }
+
 
   // ===================================================================
   // NEW: INVOICE ACTIONS

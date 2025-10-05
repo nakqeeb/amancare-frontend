@@ -576,11 +576,186 @@
             </ng-template>
 
             <div class="tab-content">
-              <div class="coming-soon">
-                <mat-icon>local_hospital</mat-icon>
-                <h3>قريباً: السجلات الطبية</h3>
-                <p>ستتمكن هنا من عرض السجلات الطبية للمريض</p>
+              <!-- NEW: Loading State -->
+              @if (loadingMedicalRecords()) {
+              <div class="loading-container">
+                <mat-spinner diameter="40"></mat-spinner>
+                <p>جاري تحميل السجلات الطبية...</p>
               </div>
+              } @else {
+              <!-- NEW: Header with Actions -->
+              <div class="medical-records-header">
+                <div class="header-info">
+                  <h3>
+                    <mat-icon>local_hospital</mat-icon>
+                    السجلات الطبية للمريض
+                  </h3>
+                  <p class="subtitle">
+                    إجمالي السجلات: {{ medicalRecordsCount() }}
+                  </p>
+                </div>
+
+                <div class="header-actions">
+                  @if (canCreateMedicalRecord()) {
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="onCreateMedicalRecord()"
+                  >
+                    <mat-icon>add</mat-icon>
+                    إضافة سجل طبي
+                  </button>
+                  }
+                  <button
+                    mat-icon-button
+                    matTooltip="تحديث"
+                    (click)="loadMedicalRecords()"
+                  >
+                    <mat-icon>refresh</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- NEW: Medical Records Table -->
+              @if (medicalRecords().length > 0) {
+              <div class="table-container">
+                <table
+                  mat-table
+                  [dataSource]="medicalRecords()"
+                  class="medical-records-table"
+                >
+                  <!-- Visit Date Column -->
+                  <ng-container matColumnDef="visitDate">
+                    <th mat-header-cell *matHeaderCellDef>تاريخ الزيارة</th>
+                    <td mat-cell *matCellDef="let record">
+                      {{ formatDate(record.visitDate) }}
+                    </td>
+                  </ng-container>
+
+                  <!-- Visit Type Column -->
+                  <ng-container matColumnDef="visitType">
+                    <th mat-header-cell *matHeaderCellDef>نوع الزيارة</th>
+                    <td mat-cell *matCellDef="let record">
+                      <mat-chip>{{
+                        getVisitTypeLabel(record.visitType)
+                      }}</mat-chip>
+                    </td>
+                  </ng-container>
+
+                  <!-- Chief Complaint Column -->
+                  <ng-container matColumnDef="chiefComplaint">
+                    <th mat-header-cell *matHeaderCellDef>الشكوى الرئيسية</th>
+                    <td mat-cell *matCellDef="let record">
+                      <span class="complaint-text">{{
+                        record.chiefComplaint
+                      }}</span>
+                      @if (record.primaryDiagnosis) {
+                      <span class="diagnosis-badge">{{
+                        record.primaryDiagnosis
+                      }}</span>
+                      }
+                    </td>
+                  </ng-container>
+
+                  <!-- Doctor Name Column -->
+                  <ng-container matColumnDef="doctorName">
+                    <th mat-header-cell *matHeaderCellDef>الطبيب</th>
+                    <td mat-cell *matCellDef="let record">
+                      د. {{ record.doctorName }}
+                    </td>
+                  </ng-container>
+
+                  <!-- Status Column -->
+                  <ng-container matColumnDef="status">
+                    <th mat-header-cell *matHeaderCellDef>الحالة</th>
+                    <td mat-cell *matCellDef="let record">
+                      <mat-chip [color]="getStatusColor(record.status)">
+                        {{ getRecordStatusLabel(record.status) }}
+                      </mat-chip>
+                      @if (record.isConfidential) {
+                      <mat-icon
+                        class="confidential-icon"
+                        matTooltip="سجل سري"
+                        color="warn"
+                      >
+                        lock
+                      </mat-icon>
+                      }
+                    </td>
+                  </ng-container>
+
+                  <!-- Actions Column -->
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+                    <td mat-cell *matCellDef="let record">
+                      <button
+                        mat-icon-button
+                        [matMenuTriggerFor]="recordMenu"
+                        matTooltip="المزيد"
+                      >
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+                      <mat-menu #recordMenu="matMenu">
+                        <button
+                          mat-menu-item
+                          (click)="onViewMedicalRecord(record.id)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                          <span>عرض التفاصيل</span>
+                        </button>
+                        @if (canCreateMedicalRecord() && record.status ===
+                        RecordStatus.DRAFT) {
+                        <button
+                          mat-menu-item
+                          (click)="onEditMedicalRecord(record.id)"
+                        >
+                          <mat-icon>edit</mat-icon>
+                          <span>تعديل</span>
+                        </button>
+                        } @if (record.hasFollowUp) {
+                        <mat-divider></mat-divider>
+                        <button mat-menu-item disabled>
+                          <mat-icon>event</mat-icon>
+                          <span
+                            >موعد متابعة:
+                            {{ formatDate(record.followUpDate) }}</span
+                          >
+                        </button>
+                        }
+                      </mat-menu>
+                    </td>
+                  </ng-container>
+
+                  <tr
+                    mat-header-row
+                    *matHeaderRowDef="medicalRecordsColumns"
+                  ></tr>
+                  <tr
+                    mat-row
+                    *matRowDef="let row; columns: medicalRecordsColumns"
+                    class="medical-record-row"
+                    (click)="onViewMedicalRecord(row.id)"
+                  ></tr>
+                </table>
+              </div>
+              } @else {
+              <!-- NEW: Empty State -->
+              <div class="empty-state">
+                <mat-icon>local_hospital</mat-icon>
+                <h3>لا توجد سجلات طبية</h3>
+                <p>لم يتم إنشاء أي سجلات طبية لهذا المريض بعد</p>
+                @if (canCreateMedicalRecord()) {
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="onCreateMedicalRecord()"
+                >
+                  <mat-icon>add</mat-icon>
+                  إضافة أول سجل طبي
+                </button>
+                }
+              </div>
+              } }
             </div>
           </mat-tab>
 
@@ -729,16 +904,16 @@
                       </div>
                     </td>
                   </ng-container>
-                   <!-- Payment status -->
+                  <!-- Payment status -->
                   <ng-container matColumnDef="paymentStatus">
                     <th mat-header-cell *matHeaderCellDef>حالة الدفع</th>
                     <td mat-cell *matCellDef="let invoice">
-                        <mat-chip
-                          [color]="getPaymentStatusColor(invoice.paymentStatus)"
-                          class="payment-status"
-                        >
-                          {{ getPaymentStatusLabel(invoice.paymentStatus) }}
-                        </mat-chip>
+                      <mat-chip
+                        [color]="getPaymentStatusColor(invoice.paymentStatus)"
+                        class="payment-status"
+                      >
+                        {{ getPaymentStatusLabel(invoice.paymentStatus) }}
+                      </mat-chip>
                     </td>
                   </ng-container>
 
