@@ -82,11 +82,11 @@
 }
 
 .app-logo {
-  font-size: 3.5rem !important;
-  width: 3.5rem !important;
-  height: 3.5rem !important;
-  margin-bottom: 1rem;
+  font-size: 4rem;
+  width: 8rem;
+  height: 8rem;
   color: white;
+  filter: brightness(0) invert(1);
 }
 
 .auth-header h1 {

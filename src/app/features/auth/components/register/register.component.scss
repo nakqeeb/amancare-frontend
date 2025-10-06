@@ -87,11 +87,12 @@
 
 .app-logo {
   font-size: 4rem;
-  width: 4rem;
-  height: 4rem;
-  margin-bottom: 1rem;
+  width: 8rem;
+  height: 8rem;
+  // margin-bottom: 1rem;
   color: white;
-  drop-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  // filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  filter: brightness(0) invert(1);
 }
 
 .auth-header h1 {
