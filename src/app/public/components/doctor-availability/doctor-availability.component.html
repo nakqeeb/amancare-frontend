@@ -1,0 +1,83 @@
+<!-- src/app/public/components/doctor-availability/doctor-availability.component.html -->
+
+<div class="doctor-availability-container">
+  <div class="section-header">
+    <h2>
+      <mat-icon>person_check</mat-icon>
+      الأطباء المتاحون الآن
+    </h2>
+    <p>احجز موعدك فوراً مع الأطباء المتاحين حالياً</p>
+  </div>
+
+  @if (loading() && availableDoctors().length === 0) {
+  <div class="loading-state">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>جارٍ تحميل الأطباء المتاحين...</p>
+  </div>
+  } @if (availableDoctors().length === 0 && !loading()) {
+  <div class="empty-state">
+    <mat-icon>event_busy</mat-icon>
+    <h3>لا يوجد أطباء متاحون حالياً</h3>
+    <p>يرجى المحاولة لاحقاً أو حجز موعد مسبق</p>
+    <button mat-raised-button color="primary" routerLink="/guest/book">
+      <mat-icon>add</mat-icon>
+      احجز موعد
+    </button>
+  </div>
+  } @if (availableDoctors().length > 0) {
+  <div class="doctors-grid">
+    @for (doctor of availableDoctors(); track doctor.doctorId) {
+    <mat-card class="doctor-card">
+      <!-- Status Badge -->
+      <div class="status-badge">
+        <div class="pulse-dot"></div>
+        <span>متاح الآن</span>
+      </div>
+
+      <!-- Doctor Info -->
+      <div class="doctor-avatar">
+        @if (doctor.profileImage) {
+        <img [src]="doctor.profileImage" [alt]="doctor.doctorName" />
+        } @else {
+        <div class="avatar-placeholder">
+          <mat-icon>person</mat-icon>
+        </div>
+        }
+      </div>
+
+      <mat-card-content>
+        <h3>{{ doctor.doctorName }}</h3>
+        <p class="specialization">{{ doctor.specialization }}</p>
+
+        <div class="clinic-info">
+          <mat-icon>local_hospital</mat-icon>
+          <span>{{ doctor.clinicName }}</span>
+        </div>
+
+        @if (doctor.availableUntil) {
+        <div class="availability-info">
+          <mat-icon>schedule</mat-icon>
+          <span>متاح حتى {{ doctor.availableUntil }}</span>
+        </div>
+        }
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button
+          mat-raised-button
+          color="primary"
+          [routerLink]="['/guest/book']"
+          [queryParams]="{
+            doctorId: doctor.doctorId,
+            clinicId: doctor.clinicId
+          }"
+        >
+          <mat-icon>event</mat-icon>
+          احجز الآن
+        </button>
+      </mat-card-actions>
+    </mat-card>
+    }
+  </div>
+  }
+</div>

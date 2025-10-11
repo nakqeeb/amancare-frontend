@@ -1,0 +1,162 @@
+// src/app/features/guest-booking/components/confirm-appointment/confirm-appointment.component.scss
+
+.confirm-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.confirm-card {
+  max-width: 600px;
+  width: 100%;
+  padding: 40px;
+  text-align: center;
+
+  .loading-state {
+    mat-spinner {
+      margin: 0 auto 30px;
+    }
+
+    h2 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #666;
+    }
+  }
+
+  .success-state {
+    .success-icon {
+      mat-icon {
+        font-size: 80px;
+        width: 80px;
+        height: 80px;
+        color: #4caf50;
+        margin-bottom: 20px;
+      }
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .message {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    .info-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background-color: #e3f2fd;
+      padding: 20px;
+      border-radius: 8px;
+      border-right: 4px solid #2196f3;
+      margin-bottom: 30px;
+      text-align: right;
+
+      mat-icon {
+        color: #2196f3;
+        margin-top: 2px;
+      }
+
+      p {
+        margin: 0;
+        color: #1565c0;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .error-state {
+    .error-icon {
+      mat-icon {
+        font-size: 80px;
+        width: 80px;
+        height: 80px;
+        color: #f44336;
+        margin-bottom: 20px;
+      }
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .error-message {
+      font-size: 16px;
+      color: #d32f2f;
+      margin-bottom: 30px;
+      padding: 15px;
+      background-color: #ffebee;
+      border-radius: 8px;
+      border-right: 4px solid #f44336;
+    }
+
+    .help-box {
+      background-color: #fff3cd;
+      padding: 20px;
+      border-radius: 8px;
+      border-right: 4px solid #ffc107;
+      text-align: right;
+      margin-bottom: 30px;
+
+      h3 {
+        font-size: 18px;
+        color: #856404;
+        margin-bottom: 15px;
+      }
+
+      ul {
+        text-align: right;
+        padding-right: 20px;
+        margin: 0;
+
+        li {
+          color: #856404;
+          margin-bottom: 8px;
+        }
+      }
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+
+    button {
+      flex: 1;
+      padding: 12px 24px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .confirm-card {
+    padding: 20px;
+
+    .action-buttons {
+      flex-direction: column;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+}

@@ -1,0 +1,217 @@
+// src/app/public/components/public-navbar/public-navbar.component.scss
+
+.public-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: white;
+  box-shadow: none;
+  transition: all 0.3s ease;
+  padding: 0;
+  height: 70px;
+
+  &.scrolled {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+  }
+
+  .navbar-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+
+      &:hover {
+        transform: scale(1.05);
+      }
+
+      .logo-icon {
+        font-size: 36px;
+        width: 36px;
+        height: 36px;
+        color: #667eea;
+      }
+
+      .logo-text {
+        font-size: 24px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+    }
+
+    .desktop-nav {
+      display: flex;
+      gap: 10px;
+
+      button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 15px;
+        font-weight: 500;
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+
+      .book-button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 24px;
+        height: 42px;
+        font-weight: 600;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+
+      .login-button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 500;
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+
+      .mobile-menu-toggle {
+        display: none;
+      }
+    }
+  }
+
+  .mobile-menu {
+    position: absolute;
+    top: 70px;
+    left: 0;
+    right: 0;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    animation: slideDown 0.3s ease;
+
+    button {
+      width: 100%;
+      justify-content: flex-start;
+      padding: 12px 20px;
+      margin-bottom: 8px;
+
+      mat-icon {
+        margin-left: 12px;
+      }
+    }
+
+    mat-divider {
+      margin: 16px 0;
+    }
+
+    .mobile-login-section {
+      padding-top: 12px;
+
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #666;
+        padding: 0 20px 8px;
+        margin: 0;
+      }
+    }
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive
+@media (max-width: 1024px) {
+  .public-navbar {
+    .navbar-container {
+      .desktop-nav {
+        display: none;
+      }
+
+      .nav-actions {
+        .book-button {
+          display: none;
+        }
+
+        .login-button {
+          display: none;
+        }
+
+        .mobile-menu-toggle {
+          display: block;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .public-navbar {
+    height: 60px;
+
+    .navbar-container {
+      padding: 0 15px;
+
+      .logo {
+        .logo-text {
+          font-size: 20px;
+        }
+
+        .logo-icon {
+          font-size: 30px;
+          width: 30px;
+          height: 30px;
+        }
+      }
+    }
+
+    .mobile-menu {
+      top: 60px;
+    }
+  }
+}

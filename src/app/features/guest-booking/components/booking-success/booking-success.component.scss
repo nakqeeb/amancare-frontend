@@ -1,0 +1,180 @@
+// src/app/features/guest-booking/components/booking-success/booking-success.component.scss
+
+.success-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.success-card {
+  max-width: 600px;
+  width: 100%;
+  padding: 40px;
+  text-align: center;
+
+  .success-icon {
+    mat-icon {
+      font-size: 80px;
+      width: 80px;
+      height: 80px;
+      color: #4caf50;
+      margin-bottom: 20px;
+    }
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+  }
+
+  .subtitle {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 30px;
+  }
+
+  mat-divider {
+    margin: 30px 0;
+  }
+
+  .patient-number-section {
+    h2 {
+      font-size: 20px;
+      color: #667eea;
+      margin-bottom: 20px;
+    }
+
+    .patient-number-box {
+      background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+
+      .patient-number {
+        font-size: 36px;
+        font-weight: 700;
+        color: white;
+        letter-spacing: 3px;
+        margin-bottom: 15px;
+      }
+
+      .copy-button {
+        background-color: rgba(255, 255, 255, 0.9);
+      }
+    }
+
+    .important-note {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background-color: #fff3cd;
+      padding: 12px;
+      border-radius: 8px;
+      color: #856404;
+      font-weight: 500;
+
+      mat-icon {
+        color: #ff9800;
+      }
+    }
+  }
+
+  .appointment-details {
+    text-align: right;
+
+    h3 {
+      font-size: 18px;
+      color: #667eea;
+      margin-bottom: 20px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .label {
+        font-weight: 600;
+        color: #666;
+      }
+
+      .value {
+        color: #333;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .next-steps {
+    text-align: right;
+
+    h3 {
+      font-size: 18px;
+      color: #667eea;
+      margin-bottom: 15px;
+    }
+
+    ol {
+      text-align: right;
+
+      li {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        font-size: 16px;
+
+        mat-icon {
+          color: #667eea;
+        }
+      }
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+
+    button {
+      flex: 1;
+      padding: 12px 24px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .success-card {
+    padding: 20px;
+
+    h1 {
+      font-size: 24px;
+    }
+
+    .patient-number-box {
+      .patient-number {
+        font-size: 28px;
+      }
+    }
+
+    .action-buttons {
+      flex-direction: column;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+}

@@ -1,0 +1,198 @@
+<!-- src/app/features/guest-booking/components/manage-appointments/manage-appointments.component.html -->
+
+<div class="manage-container">
+  <mat-card class="manage-card">
+    <!-- Login Form -->
+    @if (showLoginForm()) {
+    <div class="login-section">
+      <div class="header">
+        <mat-icon>event_note</mat-icon>
+        <h1>إدارة مواعيدك</h1>
+        <p>أدخل رقمك الطبي لعرض وإدارة مواعيدك</p>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="loadAppointments()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>رقم المريض</mat-label>
+          <input
+            matInput
+            formControlName="patientNumber"
+            placeholder="P20240000001"
+            maxlength="12"
+          />
+          <mat-icon matPrefix>badge</mat-icon>
+          @if (loginForm.get('patientNumber')?.hasError('required')) {
+          <mat-error>رقم المريض مطلوب</mat-error>
+          } @if (loginForm.get('patientNumber')?.hasError('pattern')) {
+          <mat-error>رقم المريض غير صحيح</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="info-box">
+          <mat-icon>info</mat-icon>
+          <p>رقم المريض تم إرساله إلى بريدك الإلكتروني عند حجز الموعد</p>
+        </div>
+
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="loginForm.invalid || loading()"
+          class="full-width"
+        >
+          @if (loading()) {
+          <mat-icon>hourglass_empty</mat-icon>
+          جارٍ التحميل... } @else {
+          <mat-icon>login</mat-icon>
+          عرض مواعيدي }
+        </button>
+      </form>
+
+      <div class="help-section">
+        <p>لا تملك رقم مريض؟</p>
+        <button mat-stroked-button (click)="bookNewAppointment()">
+          <mat-icon>add</mat-icon>
+          احجز موعد جديد
+        </button>
+      </div>
+    </div>
+    }
+
+    <!-- Appointments List -->
+    @if (!showLoginForm()) {
+    <div class="appointments-section">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-info">
+          <h1>مواعيدك الطبية</h1>
+          <mat-chip>
+            <mat-icon>badge</mat-icon>
+            {{ patientNumber() }}
+          </mat-chip>
+        </div>
+        <button mat-icon-button (click)="logout()" matTooltip="تسجيل خروج">
+          <mat-icon>logout</mat-icon>
+        </button>
+      </div>
+
+      <!-- Empty State -->
+      @if (appointments().length === 0 && !loading()) {
+      <div class="empty-state">
+        <mat-icon>event_busy</mat-icon>
+        <h3>لا توجد مواعيد</h3>
+        <p>ليس لديك أي مواعيد قادمة حالياً</p>
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="bookNewAppointment()"
+        >
+          <mat-icon>add</mat-icon>
+          احجز موعد جديد
+        </button>
+      </div>
+      }
+
+      <!-- Appointments Table -->
+      @if (appointments().length > 0) {
+      <div class="table-container">
+        <table mat-table [dataSource]="appointments()">
+          <!-- Date Column -->
+          <ng-container matColumnDef="appointmentDate">
+            <th mat-header-cell *matHeaderCellDef>التاريخ</th>
+            <td mat-cell *matCellDef="let appointment">
+              <div class="date-cell">
+                <mat-icon>calendar_today</mat-icon>
+                {{ appointment.appointmentDate }}
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Time Column -->
+          <ng-container matColumnDef="appointmentTime">
+            <th mat-header-cell *matHeaderCellDef>الوقت</th>
+            <td mat-cell *matCellDef="let appointment">
+              <div class="time-cell">
+                <mat-icon>access_time</mat-icon>
+                {{ appointment.appointmentTime }}
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Doctor Column -->
+          <ng-container matColumnDef="doctor">
+            <th mat-header-cell *matHeaderCellDef>الطبيب</th>
+            <td mat-cell *matCellDef="let appointment">
+              <div class="doctor-cell">
+                <strong>{{ appointment.doctor.fullName }}</strong>
+                @if (appointment.doctor.specialization) {
+                <span class="specialization">
+                  {{ appointment.doctor.specialization }}
+                </span>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>الحالة</th>
+            <td mat-cell *matCellDef="let appointment">
+              <!-- <mat-chip
+                [style.background-color]="
+                  APPOINTMENT_STATUS_COLORS[appointment.status]
+                "
+                [style.color]="'white'"
+              >
+                {{ APPOINTMENT_STATUS_LABELS[appointment.status] }}
+              </mat-chip> -->
+              <mat-chip [color]="getStatusColor(appointment.status)">
+                {{ getStatusLabel(appointment.status) }}
+              </mat-chip>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+            <td mat-cell *matCellDef="let appointment">
+              @if (canCancelAppointment(appointment)) {
+              <button
+                mat-icon-button
+                color="warn"
+                (click)="cancelAppointment(appointment)"
+                matTooltip="إلغاء الموعد"
+              >
+                <mat-icon>cancel</mat-icon>
+              </button>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+
+      <div class="actions-footer">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="bookNewAppointment()"
+        >
+          <mat-icon>add</mat-icon>
+          احجز موعد جديد
+        </button>
+      </div>
+      }
+
+      <!-- Loading -->
+      @if (loading()) {
+      <div class="loading-state">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>جارٍ تحميل مواعيدك...</p>
+      </div>
+      }
+    </div>
+    }
+  </mat-card>
+</div>

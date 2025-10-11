@@ -1,0 +1,130 @@
+<!-- src/app/public/components/public-navbar/public-navbar.component.html -->
+
+<mat-toolbar [class.scrolled]="isScrolled()" class="public-navbar">
+  <div class="navbar-container">
+    <!-- Logo -->
+    <div class="logo" routerLink="/">
+      <mat-icon class="logo-icon">local_hospital</mat-icon>
+      <span class="logo-text">أمان كير</span>
+    </div>
+
+    <!-- Desktop Navigation -->
+    <nav class="desktop-nav">
+      <button mat-button (click)="scrollToSection('home')">
+        <mat-icon>home</mat-icon>
+        الرئيسية
+      </button>
+      <button mat-button (click)="scrollToSection('features')">
+        <mat-icon>stars</mat-icon>
+        المميزات
+      </button>
+      <button mat-button (click)="scrollToSection('how-it-works')">
+        <mat-icon>info</mat-icon>
+        كيف يعمل
+      </button>
+      <button mat-button (click)="scrollToSection('doctors')">
+        <mat-icon>people</mat-icon>
+        الأطباء
+      </button>
+      <button mat-button (click)="navigateToMyAppointments()">
+        <mat-icon>event_note</mat-icon>
+        مواعيدي
+      </button>
+    </nav>
+
+    <!-- Actions -->
+    <div class="nav-actions">
+      <!-- Book Appointment Button -->
+      <button
+        mat-raised-button
+        color="primary"
+        class="book-button"
+        (click)="navigateToBooking()"
+      >
+        <mat-icon>add</mat-icon>
+        احجز موعد
+      </button>
+
+      <!-- Login Menu -->
+      <button mat-button [matMenuTriggerFor]="loginMenu" class="login-button">
+        <mat-icon>login</mat-icon>
+        تسجيل الدخول
+      </button>
+
+      <mat-menu #loginMenu="matMenu" xPosition="before">
+        <button mat-menu-item (click)="navigateToLogin('staff')">
+          <mat-icon>badge</mat-icon>
+          <span>موظف العيادة</span>
+        </button>
+        <button mat-menu-item (click)="navigateToLogin('clinic')">
+          <mat-icon>business</mat-icon>
+          <span>صاحب عيادة</span>
+        </button>
+        <button mat-menu-item (click)="navigateToLogin('system-admin')">
+          <mat-icon>admin_panel_settings</mat-icon>
+          <span>مدير النظام</span>
+        </button>
+      </mat-menu>
+
+      <!-- Mobile Menu Toggle -->
+      <button
+        mat-icon-button
+        class="mobile-menu-toggle"
+        (click)="toggleMobileMenu()"
+      >
+        <mat-icon>{{ isMobileMenuOpen() ? "close" : "menu" }}</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  @if (isMobileMenuOpen()) {
+  <div class="mobile-menu">
+    <button mat-menu-item (click)="scrollToSection('home')">
+      <mat-icon>home</mat-icon>
+      <span>الرئيسية</span>
+    </button>
+    <button mat-menu-item (click)="scrollToSection('features')">
+      <mat-icon>stars</mat-icon>
+      <span>المميزات</span>
+    </button>
+    <button mat-menu-item (click)="scrollToSection('how-it-works')">
+      <mat-icon>info</mat-icon>
+      <span>كيف يعمل</span>
+    </button>
+    <button mat-menu-item (click)="scrollToSection('doctors')">
+      <mat-icon>people</mat-icon>
+      <span>الأطباء</span>
+    </button>
+    <button mat-menu-item (click)="navigateToMyAppointments()">
+      <mat-icon>event_note</mat-icon>
+      <span>مواعيدي</span>
+    </button>
+
+    <mat-divider></mat-divider>
+
+    <button mat-menu-item (click)="navigateToBooking()">
+      <mat-icon>add</mat-icon>
+      <span>احجز موعد</span>
+    </button>
+
+    <mat-divider></mat-divider>
+
+    <div class="mobile-login-section">
+      <p class="section-title">تسجيل الدخول</p>
+      <button mat-menu-item (click)="navigateToLogin('staff')">
+        <mat-icon>badge</mat-icon>
+        <span>موظف العيادة</span>
+      </button>
+      <button mat-menu-item (click)="navigateToLogin('clinic')">
+        <mat-icon>business</mat-icon>
+        <span>صاحب عيادة</span>
+      </button>
+      <button mat-menu-item (click)="navigateToLogin('system-admin')">
+        <mat-icon>admin_panel_settings</mat-icon>
+        <span>مدير النظام</span>
+      </button>
+    </div>
+  </div>
+  }
+</mat-toolbar>

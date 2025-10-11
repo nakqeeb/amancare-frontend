@@ -1,0 +1,71 @@
+<!-- src/app/features/guest-booking/components/confirm-appointment/confirm-appointment.component.html -->
+
+<div class="confirm-container">
+  <mat-card class="confirm-card">
+    <!-- Loading State -->
+    @if (confirming()) {
+    <div class="loading-state">
+      <mat-spinner diameter="60"></mat-spinner>
+      <h2>جارٍ تأكيد موعدك...</h2>
+      <p>الرجاء الانتظار</p>
+    </div>
+    }
+
+    <!-- Success State -->
+    @if (confirmed() && !confirming()) {
+    <div class="success-state">
+      <div class="success-icon">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <h1>تم تأكيد موعدك بنجاح! ✅</h1>
+      <p class="message">
+        تم تأكيد موعدك الطبي. سنكون في انتظارك في الموعد المحدد.
+      </p>
+
+      <div class="info-box">
+        <mat-icon>info</mat-icon>
+        <p>يرجى الحضور قبل موعدك بـ 15 دقيقة مع إحضار بطاقة الهوية.</p>
+      </div>
+
+      <div class="action-buttons">
+        <button mat-raised-button color="primary" (click)="goToHomePage()">
+          <mat-icon>home</mat-icon>
+          الصفحة الرئيسية
+        </button>
+
+        <button mat-stroked-button (click)="bookAnotherAppointment()">
+          <mat-icon>add</mat-icon>
+          حجز موعد آخر
+        </button>
+      </div>
+    </div>
+    }
+
+    <!-- Error State -->
+    @if (error() && !confirming()) {
+    <div class="error-state">
+      <div class="error-icon">
+        <mat-icon>error</mat-icon>
+      </div>
+      <h1>فشل التأكيد ❌</h1>
+      <p class="error-message">{{ error() }}</p>
+
+      <div class="help-box">
+        <h3>ماذا يمكنني فعله؟</h3>
+        <ul>
+          <li>تحقق من صحة الرابط</li>
+          <li>تأكد من أن الرابط لم تنته صلاحيته (48 ساعة)</li>
+          <li>تواصل مع العيادة للحصول على المساعدة</li>
+        </ul>
+      </div>
+
+      <div class="action-buttons">
+        <button mat-raised-button color="primary" (click)="goToHomePage()">
+          <mat-icon>home</mat-icon>
+          الصفحة الرئيسية
+        </button>
+      </div>
+    </div>
+    }
+  </mat-card>
+</div>

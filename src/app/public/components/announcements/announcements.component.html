@@ -1,0 +1,103 @@
+<!-- src/app/public/components/announcements/announcements.component.html -->
+
+<div class="announcements-container">
+  @if (loading() && announcements().length === 0) {
+  <div class="loading-state">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+  } @if (announcements().length > 0) {
+  <div class="announcements-carousel">
+    @for (announcement of announcements(); track announcement.id; let i =
+    $index) { @if (i === currentIndex()) {
+    <mat-card
+      class="announcement-card"
+      [style.border-color]="getAnnouncementColor(announcement.type)"
+      [@slideIn]
+    >
+      <div class="announcement-header">
+        <div class="announcement-type">
+          <mat-icon [style.color]="getAnnouncementColor(announcement.type)">
+            {{ ANNOUNCEMENT_TYPE_ICONS[announcement.type] }}
+          </mat-icon>
+          <mat-chip
+            [style.background-color]="getAnnouncementColor(announcement.type)"
+          >
+            {{ ANNOUNCEMENT_TYPE_LABELS[announcement.type] }}
+          </mat-chip>
+        </div>
+
+        @if (announcement.priority === 'URGENT') {
+        <mat-chip class="urgent-badge">
+          <mat-icon>priority_high</mat-icon>
+          عاجل
+        </mat-chip>
+        }
+      </div>
+
+      <mat-card-content>
+        <h3>{{ announcement.title }}</h3>
+        <p>{{ announcement.message }}</p>
+
+        @if (announcement.clinicName) {
+        <div class="clinic-info">
+          <mat-icon>local_hospital</mat-icon>
+          <span>{{ announcement.clinicName }}</span>
+        </div>
+        } @if (announcement.doctorName) {
+        <div class="doctor-info">
+          <mat-icon>person</mat-icon>
+          <span>{{ announcement.doctorName }}</span>
+          @if (announcement.specialization) {
+          <span class="specialization"
+            >- {{ announcement.specialization }}</span
+          >
+          }
+        </div>
+        }
+      </mat-card-content>
+
+      @if (announcement.actionUrl && announcement.actionText) {
+      <mat-card-actions>
+        <a
+          mat-raised-button
+          [routerLink]="announcement.actionUrl"
+          [style.background-color]="getAnnouncementColor(announcement.type)"
+        >
+          {{ announcement.actionText }}
+          <mat-icon>arrow_back</mat-icon>
+        </a>
+      </mat-card-actions>
+      }
+    </mat-card>
+    } }
+
+    <!-- Navigation -->
+    @if (announcements().length > 1) {
+    <div class="carousel-controls">
+      <button
+        mat-icon-button
+        (click)="previousAnnouncement()"
+        class="nav-button"
+      >
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+
+      <div class="carousel-dots">
+        @for (announcement of announcements(); track announcement.id; let i =
+        $index) {
+        <button
+          class="dot"
+          [class.active]="i === currentIndex()"
+          (click)="currentIndex.set(i)"
+        ></button>
+        }
+      </div>
+
+      <button mat-icon-button (click)="nextAnnouncement()" class="nav-button">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+    </div>
+    }
+  </div>
+  }
+</div>

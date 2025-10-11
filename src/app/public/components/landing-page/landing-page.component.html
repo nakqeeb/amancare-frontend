@@ -1,0 +1,279 @@
+<!-- src/app/public/components/landing-page/landing-page.component.html -->
+
+<div class="landing-page">
+  <!-- Navbar -->
+  <app-public-navbar></app-public-navbar>
+
+  <!-- Hero Section -->
+  <section id="home" class="hero-section">
+    <div class="hero-container">
+      <div class="hero-content">
+        <div class="hero-text">
+          <h1 class="hero-title">
+            احجز موعدك الطبي
+            <span class="gradient-text">بسهولة وسرعة</span>
+          </h1>
+          <p class="hero-description">
+            نظام أمان كير يوفر لك تجربة حجز مواعيد طبية سلسة وآمنة. احجز موعدك
+            الآن مع أفضل الأطباء في عياداتنا المعتمدة.
+          </p>
+
+          <div class="hero-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              class="primary-button"
+              (click)="navigateToBooking()"
+            >
+              <mat-icon>add</mat-icon>
+              احجز موعد الآن
+            </button>
+            <button
+              mat-stroked-button
+              class="secondary-button"
+              (click)="navigateToMyAppointments()"
+            >
+              <mat-icon>event_note</mat-icon>
+              مواعيدي
+            </button>
+          </div>
+
+          <!-- Trust Indicators -->
+          <div class="trust-indicators">
+            <div class="indicator">
+              <mat-icon>verified</mat-icon>
+              <span>نظام آمن ومعتمد</span>
+            </div>
+            <div class="indicator">
+              <mat-icon>lock</mat-icon>
+              <span>خصوصية مضمونة</span>
+            </div>
+            <div class="indicator">
+              <mat-icon>support_agent</mat-icon>
+              <span>دعم متواصل</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Booking Widget -->
+        <div class="hero-widget">
+          <app-quick-booking-widget></app-quick-booking-widget>
+        </div>
+      </div>
+
+      <!-- Animated Illustration -->
+      <div class="hero-illustration">
+        <div class="floating-card card-1">
+          <mat-icon>local_hospital</mat-icon>
+          <span>عيادات متخصصة</span>
+        </div>
+        <div class="floating-card card-2">
+          <mat-icon>people</mat-icon>
+          <span>أطباء خبراء</span>
+        </div>
+        <div class="floating-card card-3">
+          <mat-icon>schedule</mat-icon>
+          <span>حجز سريع</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="scroll-indicator">
+      <mat-icon>expand_more</mat-icon>
+    </div>
+  </section>
+
+  <!-- Announcements Section -->
+  <section class="announcements-section">
+    <div class="container">
+      <app-announcements></app-announcements>
+    </div>
+  </section>
+
+  <!-- Statistics Section -->
+  <section class="statistics-section">
+    <div class="container">
+      <div class="statistics-grid">
+        @for (stat of statistics; track stat.label) {
+        <div class="stat-card" [style.border-color]="stat.color">
+          <mat-icon [style.color]="stat.color">{{ stat.icon }}</mat-icon>
+          <h3 [style.color]="stat.color">{{ stat.value }}</h3>
+          <p>{{ stat.label }}</p>
+        </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>لماذا نظام أمان كير؟</h2>
+        <p>نوفر لك أفضل تجربة طبية رقمية</p>
+      </div>
+
+      <div class="features-grid">
+        @for (feature of features; track feature.title) {
+        <mat-card class="feature-card">
+          <div class="feature-icon" [style.background]="feature.color">
+            <mat-icon>{{ feature.icon }}</mat-icon>
+          </div>
+          <h3>{{ feature.title }}</h3>
+          <p>{{ feature.description }}</p>
+        </mat-card>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="how-it-works-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>كيف يعمل النظام؟</h2>
+        <p>أربع خطوات بسيطة لحجز موعدك</p>
+      </div>
+
+      <div class="steps-container">
+        @for (step of steps; track step.number) {
+        <div class="step-card">
+          <div class="step-number">{{ step.number }}</div>
+          <div class="step-icon">
+            <mat-icon>{{ step.icon }}</mat-icon>
+          </div>
+          <h3>{{ step.title }}</h3>
+          <p>{{ step.description }}</p>
+          @if (step.number < steps.length) {
+          <div class="step-connector"></div>
+          }
+        </div>
+        }
+      </div>
+
+      <div class="cta-container">
+        <button
+          mat-raised-button
+          color="primary"
+          class="large-button"
+          (click)="navigateToBooking()"
+        >
+          <mat-icon>rocket_launch</mat-icon>
+          ابدأ الآن
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Available Doctors Section -->
+  <section id="doctors" class="doctors-section">
+    <div class="container">
+      <app-doctor-availability></app-doctor-availability>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-content">
+        <h2>جاهز لحجز موعدك؟</h2>
+        <p>انضم إلى آلاف المرضى الذين يثقون في نظام أمان كير</p>
+        <div class="cta-buttons">
+          <button
+            mat-raised-button
+            class="cta-button primary"
+            (click)="navigateToBooking()"
+          >
+            <mat-icon>event</mat-icon>
+            احجز موعد الآن
+          </button>
+          <button
+            mat-stroked-button
+            class="cta-button secondary"
+            (click)="navigateToMyAppointments()"
+          >
+            <mat-icon>search</mat-icon>
+            ابحث عن موعدك
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <div class="footer-logo">
+            <mat-icon>local_hospital</mat-icon>
+            <span>أمان كير</span>
+          </div>
+          <p>نظام شامل لإدارة المواعيد الطبية وتقديم رعاية صحية متميزة</p>
+        </div>
+
+        <div class="footer-section">
+          <h4>روابط سريعة</h4>
+          <ul>
+            <li><a routerLink="/guest/book">احجز موعد</a></li>
+            <li><a routerLink="/guest/appointments">مواعيدي</a></li>
+            <li><a routerLink="/auth/login">تسجيل الدخول</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h4>للعيادات</h4>
+          <ul>
+            <li><a routerLink="/auth/register">سجل عيادتك</a></li>
+            <li>
+              <a
+                routerLink="/auth/login"
+                [queryParams]="{ type: 'clinic-owner' }"
+                >دخول صاحب عيادة</a
+              >
+            </li>
+            <li>
+              <a
+                routerLink="/auth/login"
+                [queryParams]="{ type: 'system-admin' }"
+                >دخول مدير النظام</a
+              >
+            </li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h4>تواصل معنا</h4>
+          <div class="contact-info">
+            <div class="contact-item">
+              <mat-icon>email</mat-icon>
+              <span>info@amancare.com</span>
+            </div>
+            <div class="contact-item">
+              <mat-icon>phone</mat-icon>
+              <span>+967 777 123 456</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div class="footer-bottom">
+        <p>&copy; {{ currentYear }} أمان كير. جميع الحقوق محفوظة.</p>
+        <div class="footer-links">
+          <a href="#">سياسة الخصوصية</a>
+          <a href="#">الشروط والأحكام</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scroll to Top Button -->
+  @if (showScrollTop()) {
+  <button mat-fab class="scroll-top-button" (click)="scrollToTop()" [@fadeIn]>
+    <mat-icon>arrow_upward</mat-icon>
+  </button>
+  }
+</div>

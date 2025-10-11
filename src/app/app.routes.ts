@@ -4,12 +4,53 @@ import { RoleGuard } from './core/guards/role.guard';
 import { ActivitiesListComponent } from './features/clinic-admin/components/activities-list/activities-list.component';
 
 export const routes: Routes = [
-  // الصفحة الرئيسية - إعادة توجيه
+
+  // ===================================================================
+  // PUBLIC ROUTES (No Authentication Required)
+  // ===================================================================
   {
     path: '',
-    redirectTo: '/dashboard',
-    pathMatch: 'full'
+    loadComponent: () => import('./public/components/landing-page/landing-page.component')
+      .then(m => m.LandingPageComponent),
+    title: 'أمان كير - نظام إدارة المواعيد الطبية'
   },
+
+  // Guest Booking Routes
+  {
+    path: 'guest',
+    children: [
+      {
+        path: 'book',
+        loadComponent: () => import('./features/guest-booking/components/book-appointment/book-appointment.component')
+          .then(m => m.BookAppointmentComponent),
+        title: 'احجز موعدك - أمان كير'
+      },
+      {
+        path: 'booking-success',
+        loadComponent: () => import('./features/guest-booking/components/booking-success/booking-success.component')
+          .then(m => m.BookingSuccessComponent),
+        title: 'تم الحجز بنجاح - أمان كير'
+      },
+      {
+        path: 'confirm-appointment',
+        loadComponent: () => import('./features/guest-booking/components/confirm-appointment/confirm-appointment.component')
+          .then(m => m.ConfirmAppointmentComponent),
+        title: 'تأكيد الموعد - أمان كير'
+      },
+      {
+        path: 'appointments',
+        loadComponent: () => import('./features/guest-booking/components/manage-appointments/manage-appointments.component')
+          .then(m => m.ManageAppointmentsComponent),
+        title: 'إدارة مواعيدي - أمان كير'
+      }
+    ]
+  },
+  // الصفحة الرئيسية - إعادة توجيه
+  // {
+  //   path: '',
+  //   redirectTo: '/dashboard',
+  //   pathMatch: 'full'
+  // },
 
   // المصادقة - Auth Module
   {
@@ -17,6 +58,11 @@ export const routes: Routes = [
     loadChildren: () => import('./features/auth/auth.routes').then(r => r.AUTH_ROUTES),
     title: 'تسجيل الدخول - نظام أمان كير'
   },
+
+  // {
+  //   path: 'guest',
+  //   loadChildren: () => import('./features/guest-booking/guest-booking.routes').then(m => m.GUEST_BOOKING_ROUTES),
+  // },
 
   // ===================================================================
   // SYSTEM ADMIN ROUTES - إدارة النظام

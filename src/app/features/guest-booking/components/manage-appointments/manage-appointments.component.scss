@@ -1,0 +1,205 @@
+// src/app/features/guest-booking/components/manage-appointments/manage-appointments.component.scss
+
+.manage-container {
+  min-height: 100vh;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.manage-card {
+  max-width: 900px;
+  width: 100%;
+  padding: 40px;
+
+  .login-section {
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+
+      mat-icon {
+        font-size: 64px;
+        width: 64px;
+        height: 64px;
+        color: #667eea;
+        margin-bottom: 15px;
+      }
+
+      h1 {
+        font-size: 28px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      p {
+        color: #666;
+        font-size: 16px;
+      }
+    }
+
+    form {
+      .full-width {
+        width: 100%;
+        margin-bottom: 20px;
+      }
+
+      .info-box {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background-color: #e3f2fd;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+
+        mat-icon {
+          color: #2196f3;
+          margin-top: 2px;
+        }
+
+        p {
+          margin: 0;
+          color: #1565c0;
+          font-size: 14px;
+        }
+      }
+    }
+
+    .help-section {
+      margin-top: 30px;
+      text-align: center;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+
+      p {
+        color: #666;
+        margin-bottom: 15px;
+      }
+    }
+  }
+
+  .appointments-section {
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+
+      .header-info {
+        h1 {
+          font-size: 24px;
+          font-weight: 600;
+          color: #333;
+          margin-bottom: 10px;
+        }
+
+        mat-chip {
+          background-color: #667eea;
+          color: white;
+        }
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+
+      mat-icon {
+        font-size: 80px;
+        width: 80px;
+        height: 80px;
+        color: #ccc;
+        margin-bottom: 20px;
+      }
+
+      h3 {
+        font-size: 24px;
+        color: #666;
+        margin-bottom: 10px;
+      }
+
+      p {
+        color: #999;
+        margin-bottom: 30px;
+      }
+    }
+
+    .table-container {
+      overflow-x: auto;
+      margin-bottom: 20px;
+
+      table {
+        width: 100%;
+
+        .date-cell,
+        .time-cell {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          mat-icon {
+            color: #667eea;
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+          }
+        }
+
+        .doctor-cell {
+          strong {
+            display: block;
+            margin-bottom: 4px;
+          }
+
+          .specialization {
+            font-size: 12px;
+            color: #666;
+          }
+        }
+      }
+    }
+
+    .actions-footer {
+      display: flex;
+      justify-content: center;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+
+    .loading-state {
+      text-align: center;
+      padding: 60px 20px;
+
+      mat-spinner {
+        margin: 0 auto 20px;
+      }
+
+      p {
+        color: #666;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .manage-card {
+    padding: 20px;
+
+    .appointments-section {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+
+      .table-container {
+        table {
+          font-size: 14px;
+        }
+      }
+    }
+  }
+}
