@@ -15,12 +15,48 @@ export const ADMIN_ROUTES: Routes = [
       title: 'إدارة النظام'
     },
     children: [
-      // Default redirect
+
       {
+        path: '',
+        redirectTo: 'announcements',
+        pathMatch: 'full'
+      },
+
+      // ===================================================================
+      // ANNOUNCEMENT MANAGEMENT ROUTES
+      // ===================================================================
+      {
+        path: 'announcements',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./components/announcement-list/announcement-list.component')
+                .then(c => c.AnnouncementListComponent),
+            title: 'إدارة الإعلانات - نظام أمان كير'
+          },
+          {
+            path: 'create',
+            loadComponent: () =>
+              import('./components/announcement-form/announcement-form.component')
+                .then(c => c.AnnouncementFormComponent),
+            title: 'إضافة إعلان - نظام أمان كير'
+          },
+          {
+            path: 'edit/:id',
+            loadComponent: () =>
+              import('./components/announcement-form/announcement-form.component')
+                .then(c => c.AnnouncementFormComponent),
+            title: 'تعديل إعلان - نظام أمان كير'
+          }
+        ]
+      },
+      // Default redirect
+      /* {
         path: '',
         redirectTo: 'audit/logs',
         pathMatch: 'full'
-      },
+      }, */
 
       // ===================================================================
       // AUDIT ROUTES

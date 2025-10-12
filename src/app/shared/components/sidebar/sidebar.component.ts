@@ -91,6 +91,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
         expanded: false,
         children: [
           {
+            title: 'إدارة الإعلانات',
+            icon: 'campaign',
+            route: '/admin/announcements',
+            roles: ['SYSTEM_ADMIN']
+          },
+          {
             title: 'سجلات المراجعة',
             icon: 'security',
             route: '/admin/audit/logs',

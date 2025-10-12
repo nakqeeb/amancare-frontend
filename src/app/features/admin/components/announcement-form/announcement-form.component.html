@@ -1,0 +1,362 @@
+<!-- ===================================================================
+src/app/features/admin/components/announcement-form/announcement-form.component.html
+UPDATED - With Clinic and Doctor Dropdowns
+==================================================================== -->
+<app-header />
+<app-sidebar>
+  <div class="announcement-form-container">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>
+          <h2>{{ isEditMode() ? "تعديل إعلان" : "إضافة إعلان جديد" }}</h2>
+        </mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (loading()) {
+        <div class="loading-container">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p>{{ isEditMode() ? "جارٍ تحميل البيانات..." : "جارٍ الحفظ..." }}</p>
+        </div>
+        } @else {
+        <form [formGroup]="announcementForm" (ngSubmit)="onSubmit()">
+          <div class="form-grid">
+            <!-- Type -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>نوع الإعلان</mat-label>
+              <mat-select formControlName="type">
+                @for (type of announcementTypes; track type) {
+                <mat-option [value]="type">
+                  <mat-icon>{{
+                    type === "DOCTOR_AVAILABLE"
+                      ? "person_check"
+                      : type === "CLINIC_HOURS"
+                      ? "schedule"
+                      : type === "SPECIAL_OFFER"
+                      ? "local_offer"
+                      : type === "HEALTH_TIP"
+                      ? "lightbulb"
+                      : type === "EMERGENCY"
+                      ? "emergency"
+                      : "campaign"
+                  }}</mat-icon>
+                  {{ typeLabels[type] }}
+                </mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix>category</mat-icon>
+              <mat-error>نوع الإعلان مطلوب</mat-error>
+            </mat-form-field>
+
+            <!-- Priority -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>الأولوية</mat-label>
+              <mat-select formControlName="priority">
+                @for (priority of announcementPriorities; track priority) {
+                <mat-option [value]="priority">
+                  <mat-icon
+                    [style.color]="
+                      priority === 'URGENT'
+                        ? '#f44336'
+                        : priority === 'HIGH'
+                        ? '#ff9800'
+                        : priority === 'MEDIUM'
+                        ? '#2196f3'
+                        : '#9e9e9e'
+                    "
+                    >{{
+                      priority === "URGENT"
+                        ? "priority_high"
+                        : priority === "HIGH"
+                        ? "flag"
+                        : priority === "MEDIUM"
+                        ? "flag"
+                        : "outlined_flag"
+                    }}</mat-icon
+                  >
+                  {{ priorityLabels[priority] }}
+                </mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix>flag</mat-icon>
+              <mat-error>الأولوية مطلوبة</mat-error>
+            </mat-form-field>
+
+            <!-- ========================================================= -->
+            <!-- CLINIC SELECTOR -->
+            <!-- ========================================================= -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>
+                العيادة @if (isDoctorAvailableType()) {
+                <span class="required-indicator"> *</span>
+                }
+              </mat-label>
+              <mat-select
+                formControlName="clinicId"
+                [disabled]="loadingClinics()"
+              >
+                <mat-option [value]="null"
+                  >-- بدون عيادة محددة (إعلان عام) --</mat-option
+                >
+                @for (clinic of clinics(); track clinic.id) {
+                <mat-option [value]="clinic.id">
+                  <div class="clinic-option">
+                    <mat-icon>local_hospital</mat-icon>
+                    <span>{{ clinic.name }}</span>
+                    @if (clinic.address) {
+                    <small class="clinic-location">{{ " " + clinic.address }}</small>
+                    }
+                  </div>
+                </mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix>local_hospital</mat-icon>
+              @if (loadingClinics()) {
+              <mat-spinner matSuffix diameter="20"></mat-spinner>
+              } @if (isDoctorAvailableType()) {
+              <mat-error>يجب اختيار العيادة لإعلان توفر طبيب</mat-error>
+              }
+              <mat-hint>
+                @if (isDoctorAvailableType()) { اختر العيادة التي سيكون الطبيب
+                متواجداً فيها } @else { اختياري - اترك فارغاً للإعلان العام
+                لجميع العيادات }
+              </mat-hint>
+            </mat-form-field>
+
+            <!-- ========================================================= -->
+            <!-- DOCTOR SELECTOR -->
+            <!-- ========================================================= -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>
+                الطبيب @if (isDoctorAvailableType()) {
+                <span class="required-indicator"> *</span>
+                }
+              </mat-label>
+              <mat-select
+                formControlName="doctorId"
+                [disabled]="
+                  loadingDoctors() ||
+                  (isDoctorAvailableType() &&
+                    !announcementForm.get('clinicId')?.value)
+                "
+              >
+                <mat-option [value]="null">-- بدون طبيب محدد --</mat-option>
+                @for (doctor of filteredDoctors(); track doctor.id) {
+                <mat-option [value]="doctor.id">
+                  <div class="doctor-option">
+                    <mat-icon>person</mat-icon>
+                    <div class="doctor-info">
+                      <span class="doctor-name">{{ doctor.fullName }}</span>
+                      @if (doctor.specialization) {
+                      <small class="doctor-specialization">{{
+                        doctor.specialization
+                      }}</small>
+                      } @if (doctor.clinicName &&
+                      !announcementForm.get('clinicId')?.value) {
+                      <small class="doctor-clinic">{{
+                        doctor.clinicName
+                      }}</small>
+                      }
+                    </div>
+                  </div>
+                </mat-option>
+                } @if (filteredDoctors().length === 0 &&
+                announcementForm.get('clinicId')?.value) {
+                <mat-option disabled>لا يوجد أطباء في هذه العيادة</mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix>person</mat-icon>
+              @if (loadingDoctors()) {
+              <mat-spinner matSuffix diameter="20"></mat-spinner>
+              } @if (isDoctorAvailableType()) {
+              <mat-error>يجب اختيار الطبيب لإعلان توفر طبيب</mat-error>
+              }
+              <mat-hint>
+                @if (isDoctorAvailableType() &&
+                !announcementForm.get('clinicId')?.value) { يرجى اختيار العيادة
+                أولاً } @else if (isDoctorAvailableType()) { اختر الطبيب
+                المتواجد في العيادة المحددة } @else { اختياري - للإعلانات
+                المتعلقة بطبيب معين }
+              </mat-hint>
+            </mat-form-field>
+
+            <!-- Title -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>عنوان الإعلان</mat-label>
+              <input
+                matInput
+                formControlName="title"
+                placeholder="مثال: د. أحمد متاح الآن في عيادة النور"
+              />
+              <mat-icon matPrefix>title</mat-icon>
+              <mat-error>
+                @if (announcementForm.get('title')?.hasError('required')) {
+                عنوان الإعلان مطلوب } @if
+                (announcementForm.get('title')?.hasError('minlength')) { يجب أن
+                يكون العنوان 3 أحرف على الأقل }
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Message -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>نص الإعلان</mat-label>
+              <textarea
+                matInput
+                formControlName="message"
+                rows="5"
+                placeholder="أدخل تفاصيل الإعلان، مثل: ساعات العمل، التخصص، معلومات الاتصال، إلخ..."
+              >
+              </textarea>
+              <mat-icon matPrefix>description</mat-icon>
+              <mat-error>
+                @if (announcementForm.get('message')?.hasError('required')) { نص
+                الإعلان مطلوب } @if
+                (announcementForm.get('message')?.hasError('minlength')) { يجب
+                أن يكون النص 10 أحرف على الأقل }
+              </mat-error>
+              <mat-hint align="end">
+                {{ announcementForm.get("message")?.value?.length || 0 }} / 2000
+              </mat-hint>
+            </mat-form-field>
+
+            <!-- Start Date -->
+            <mat-form-field appearance="outline">
+              <mat-label>تاريخ البداية</mat-label>
+              <input
+                matInput
+                [matDatepicker]="startPicker"
+                formControlName="startDate"
+              />
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="startPicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #startPicker></mat-datepicker>
+              <mat-icon matPrefix>event</mat-icon>
+              <mat-error>تاريخ البداية مطلوب</mat-error>
+              <mat-hint>تاريخ بدء عرض الإعلان</mat-hint>
+            </mat-form-field>
+
+            <!-- End Date -->
+            <mat-form-field appearance="outline">
+              <mat-label>تاريخ النهاية (اختياري)</mat-label>
+              <input
+                matInput
+                [matDatepicker]="endPicker"
+                formControlName="endDate"
+              />
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="endPicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #endPicker></mat-datepicker>
+              <mat-icon matPrefix>event_available</mat-icon>
+              <mat-hint>اترك فارغاً لإعلان دائم</mat-hint>
+            </mat-form-field>
+
+            <!-- Image URL -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>رابط الصورة (اختياري)</mat-label>
+              <input
+                matInput
+                formControlName="imageUrl"
+                placeholder="https://example.com/image.jpg"
+              />
+              <mat-icon matPrefix>image</mat-icon>
+              <mat-hint>رابط صورة توضيحية للإعلان</mat-hint>
+            </mat-form-field>
+
+            <!-- Action URL -->
+            <mat-form-field appearance="outline">
+              <mat-label>رابط الإجراء (اختياري)</mat-label>
+              <input
+                matInput
+                formControlName="actionUrl"
+                placeholder="/appointments/create"
+              />
+              <mat-icon matPrefix>link</mat-icon>
+              <mat-hint>صفحة يتم توجيه المستخدم إليها عند النقر</mat-hint>
+            </mat-form-field>
+
+            <!-- Action Text -->
+            <mat-form-field appearance="outline">
+              <mat-label>نص زر الإجراء (اختياري)</mat-label>
+              <input
+                matInput
+                formControlName="actionText"
+                placeholder="مثال: احجز موعد الآن"
+              />
+              <mat-icon matPrefix>touch_app</mat-icon>
+              <mat-hint>نص الزر الذي يظهر في الإعلان</mat-hint>
+            </mat-form-field>
+
+            <!-- Active Status -->
+            <div class="full-width checkbox-container">
+              <mat-checkbox formControlName="isActive">
+                <strong>تفعيل الإعلان فوراً</strong>
+                <br />
+                <small>سيظهر الإعلان مباشرة للزوار عند التفعيل</small>
+              </mat-checkbox>
+            </div>
+          </div>
+
+          <!-- Summary Card for Doctor Available Type -->
+          @if (isDoctorAvailableType() &&
+          announcementForm.get('clinicId')?.value &&
+          announcementForm.get('doctorId')?.value) {
+          <mat-card class="summary-card">
+            <mat-card-header>
+              <mat-icon>info</mat-icon>
+              <mat-card-title>ملخص الإعلان</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="summary-content">
+                <div class="summary-item">
+                  <mat-icon>person</mat-icon>
+                  <span>
+                    الطبيب:
+                    <strong>{{ selectedDoctorName }}</strong>
+                  </span>
+                </div>
+                <div class="summary-item">
+                  <mat-icon>local_hospital</mat-icon>
+                  <span>
+                    العيادة:
+                    <strong>{{ selectedClinicName }}</strong>
+                  </span>
+                </div>
+                @if (selectedDoctorSpecialization) {
+                <div class="summary-item">
+                  <mat-icon>medical_services</mat-icon>
+                  <span>
+                    التخصص:
+                    <strong>{{ selectedDoctorSpecialization }}</strong>
+                  </span>
+                </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+          }
+
+          <div class="form-actions">
+            <button mat-raised-button type="button" (click)="cancel()">
+              <mat-icon>cancel</mat-icon>
+              إلغاء
+            </button>
+            <button
+              mat-raised-button
+              color="primary"
+              type="submit"
+              [disabled]="announcementForm.invalid || loading()"
+            >
+              <mat-icon>{{ isEditMode() ? "save" : "add" }}</mat-icon>
+              {{ isEditMode() ? "حفظ التعديلات" : "إضافة الإعلان" }}
+            </button>
+          </div>
+        </form>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+</app-sidebar>

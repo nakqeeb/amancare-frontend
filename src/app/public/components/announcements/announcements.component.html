@@ -56,9 +56,18 @@
 
       @if (announcement.actionUrl && announcement.actionText) {
       <mat-card-actions>
-        <a
+        <!-- <a
           mat-raised-button
           [routerLink]="announcement.actionUrl"
+          [style.background-color]="getTypeColor(announcement.type)"
+        >
+          {{ announcement.actionText }}
+          <mat-icon>arrow_back</mat-icon>
+        </a> -->
+         <a
+          mat-raised-button
+          target="_blank"
+          [href]="announcement.actionUrl"
           [style.background-color]="getTypeColor(announcement.type)"
         >
           {{ announcement.actionText }}
