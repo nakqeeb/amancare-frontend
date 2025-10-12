@@ -1,14 +1,13 @@
 <!-- ===================================================================
-     src/app/features/invoices/components/invoice-list/invoice-list.component.html
-     =================================================================== -->
-<div class="invoice-list-container">
-  <!-- Header -->
-  <app-header></app-header>
+  src/app/features/invoices/components/invoice-list/invoice-list.component.html
+  Invoice List Template
+  =================================================================== -->
 
-  <!-- Sidebar -->
-  <app-sidebar>
-    <!-- Main Content -->
-    <div class="main-content">
+<app-header></app-header>
+<app-sidebar>
+  <div class="main-content">
+    <div class="invoices-container">
+      <!-- Page Header -->
       <div class="page-header">
         <div class="header-content">
           <div class="title-section">
@@ -16,127 +15,120 @@
               <mat-icon>receipt_long</mat-icon>
               إدارة الفواتير
             </h1>
-            <p class="page-subtitle">إدارة ومتابعة جميع الفواتير الطبية</p>
+            <p class="page-subtitle">عرض وإدارة جميع الفواتير والمدفوعات</p>
           </div>
 
           <div class="header-actions">
+            <button mat-icon-button (click)="onRefresh()" matTooltip="تحديث">
+              <mat-icon>refresh</mat-icon>
+            </button>
+
+            @if (canCreateInvoice()) {
             <button
               mat-raised-button
               color="primary"
-              (click)="navigateToCreate()"
+              (click)="onCreateInvoice()"
             >
               <mat-icon>add</mat-icon>
-              فاتورة جديدة
+              إنشاء فاتورة جديدة
             </button>
-
-            <button
-              mat-stroked-button
-              (click)="toggleFilters()"
-              [color]="showFilters() ? 'primary' : 'basic'"
-            >
-              <mat-icon>filter_list</mat-icon>
-              الفلاتر @if (showFilters()) {
-              <mat-icon>expand_less</mat-icon>
-              } @else {
-              <mat-icon>expand_more</mat-icon>
-              }
-            </button>
+            }
           </div>
-        </div>
-
-        <!-- Summary Cards -->
-        <div class="summary-cards">
-          <mat-card class="summary-card">
-            <mat-card-content>
-              <div class="card-content">
-                <div class="card-icon">
-                  <mat-icon>receipt</mat-icon>
-                </div>
-                <div class="card-info">
-                  <div class="card-value">{{ totalInvoices() }}</div>
-                  <div class="card-label">إجمالي الفواتير</div>
-                </div>
-              </div>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card class="summary-card">
-            <mat-card-content>
-              <div class="card-content">
-                <div class="card-icon success">
-                  <mat-icon>attach_money</mat-icon>
-                </div>
-                <div class="card-info">
-                  <div class="card-value">
-                    {{ formatCurrency(totalAmount()) }}
-                  </div>
-                  <div class="card-label">إجمالي المبلغ</div>
-                </div>
-              </div>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card class="summary-card">
-            <mat-card-content>
-              <div class="card-content">
-                <div class="card-icon warning">
-                  <mat-icon>schedule</mat-icon>
-                </div>
-                <div class="card-info">
-                  <div class="card-value">
-                    {{ formatCurrency(pendingAmount()) }}
-                  </div>
-                  <div class="card-label">المبلغ المستحق</div>
-                </div>
-              </div>
-            </mat-card-content>
-          </mat-card>
         </div>
       </div>
 
-      <!-- Filters Panel -->
-      @if (showFilters()) {
-      <mat-card class="filters-card">
-        <mat-card-header>
-          <mat-card-title>البحث والفلترة</mat-card-title>
-        </mat-card-header>
+      <!-- Statistics Cards -->
+      @if (statistics(); as stats) {
+      <div class="statistics-cards">
+        <mat-card class="stat-card">
+          <div class="stat-icon primary">
+            <mat-icon>description</mat-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">إجمالي الفواتير</span>
+            <span class="stat-value">{{ stats.totalInvoices }}</span>
+          </div>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <div class="stat-icon success">
+            <mat-icon>attach_money</mat-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">إجمالي الإيرادات</span>
+            <span class="stat-value">{{
+              formatCurrency(stats.totalRevenue)
+            }}</span>
+          </div>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <div class="stat-icon info">
+            <mat-icon>account_balance_wallet</mat-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">المدفوعات</span>
+            <span class="stat-value">{{
+              formatCurrency(stats.totalPaid)
+            }}</span>
+          </div>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <div class="stat-icon warning">
+            <mat-icon>pending_actions</mat-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">المتأخرة</span>
+            <span class="stat-value">{{ stats.overdueInvoices }}</span>
+          </div>
+        </mat-card>
+      </div>
+      }
+
+      <!-- Search and Filter Section -->
+      <mat-card class="search-card">
         <mat-card-content>
-          <form [formGroup]="searchForm" class="filters-form">
-            <div class="filter-row">
-              <mat-form-field appearance="outline">
-                <mat-label>البحث</mat-label>
+          <form [formGroup]="searchForm" class="search-form">
+            <!-- Basic Search -->
+            <div class="basic-search">
+              <mat-form-field appearance="outline" class="search-field">
+                <mat-label>بحث برقم الفاتورة أو اسم المريض</mat-label>
+                <mat-icon matPrefix>search</mat-icon>
                 <input
                   matInput
-                  formControlName="searchQuery"
-                  placeholder="رقم الفاتورة أو اسم المريض"
+                  formControlName="searchTerm"
+                  placeholder="ابحث..."
                 />
-                <mat-icon matSuffix>search</mat-icon>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
-                <mat-label>حالة الفاتورة</mat-label>
+                <mat-label>الحالة</mat-label>
                 <mat-select formControlName="status">
-                  <mat-option value="">جميع الحالات</mat-option>
-                  <mat-option value="DRAFT">مسودة</mat-option>
-                  <mat-option value="PENDING">معلقة</mat-option>
-                  <mat-option value="SENT">مرسلة</mat-option>
-                  <mat-option value="PAID">مدفوعة</mat-option>
-                  <mat-option value="OVERDUE">متأخرة</mat-option>
+                  <mat-option value="">الكل</mat-option>
+                  @for (option of getInvoiceStatusOptions(); track option.value)
+                  {
+                  <mat-option [value]="option.value">{{
+                    option.label
+                  }}</mat-option>
+                  }
                 </mat-select>
               </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>حالة الدفع</mat-label>
-                <mat-select formControlName="paymentStatus">
-                  <mat-option value="">جميع حالات الدفع</mat-option>
-                  <mat-option value="PENDING">معلق</mat-option>
-                  <mat-option value="COMPLETED">مكتمل</mat-option>
-                  <mat-option value="FAILED">فشل</mat-option>
-                </mat-select>
-              </mat-form-field>
+              <button
+                mat-icon-button
+                (click)="onToggleAdvancedSearch()"
+                matTooltip="فلاتر متقدمة"
+              >
+                <mat-icon>{{
+                  showAdvancedSearch() ? "expand_less" : "expand_more"
+                }}</mat-icon>
+              </button>
             </div>
 
-            <div class="filter-row">
+            <!-- Advanced Filters -->
+            @if (showAdvancedSearch()) {
+            <div class="advanced-filters">
               <mat-form-field appearance="outline">
                 <mat-label>من تاريخ</mat-label>
                 <input
@@ -166,150 +158,97 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline">
-                <mat-label>الأولوية</mat-label>
-                <mat-select formControlName="priority">
-                  <mat-option value="">جميع الأولويات</mat-option>
-                  <mat-option value="LOW">منخفضة</mat-option>
-                  <mat-option value="NORMAL">عادية</mat-option>
-                  <mat-option value="HIGH">عالية</mat-option>
-                  <mat-option value="URGENT">عاجل</mat-option>
-                </mat-select>
+                <mat-label>الحد الأدنى للمبلغ</mat-label>
+                <input matInput type="number" formControlName="minAmount" />
+                <span matSuffix>ريال</span>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>الحد الأقصى للمبلغ</mat-label>
+                <input matInput type="number" formControlName="maxAmount" />
+                <span matSuffix>ريال</span>
               </mat-form-field>
             </div>
+            }
 
-            <div class="filter-actions">
+            <!-- Search Actions -->
+            <div class="search-actions">
               <button
                 mat-raised-button
                 color="primary"
-                (click)="searchInvoices()"
+                type="button"
+                (click)="onSearch()"
               >
                 <mat-icon>search</mat-icon>
                 بحث
               </button>
-              <button mat-stroked-button (click)="clearFilters()">
-                <mat-icon>clear</mat-icon>
-                مسح الفلاتر
+              <button mat-button type="button" (click)="onClearSearch()">
+                إعادة تعيين
               </button>
             </div>
           </form>
         </mat-card-content>
       </mat-card>
+
+      <!-- Results Summary -->
+      <div class="results-summary">
+        <span class="results-text">{{ getSearchSummary() }}</span>
+
+        <div class="view-controls">
+          <button
+            mat-icon-button
+            (click)="onToggleViewMode()"
+            matTooltip="تغيير العرض"
+          >
+            <mat-icon>{{
+              viewMode() === "table" ? "view_module" : "view_list"
+            }}</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>جاري تحميل الفواتير...</p>
+      </div>
       }
 
-      <!-- Data Table -->
-      <mat-card class="table-card">
-        <mat-card-content>
-          <!-- Bulk Actions -->
-          @if (selectedInvoices().length > 0) {
-          <div class="bulk-actions">
-            <span class="selected-count">
-              تم تحديد {{ selectedInvoices().length }} عنصر
-            </span>
-            <div class="bulk-action-buttons">
-              <button mat-stroked-button color="warn" (click)="bulkDelete()">
-                <mat-icon>delete</mat-icon>
-                حذف المحدد
-              </button>
-              <button mat-stroked-button (click)="clearSelection()">
-                <mat-icon>clear</mat-icon>
-                إلغاء التحديد
-              </button>
-            </div>
-          </div>
-          }
-
-          <!-- Loading Spinner -->
-          @if (loading()) {
-          <div class="loading-container">
-            <mat-spinner diameter="50"></mat-spinner>
-            <p>جاري تحميل الفواتير...</p>
-          </div>
-          }
-
-          <!-- Invoices Table -->
-          @if (!loading() && invoices().length > 0) {
-          <div class="table-container">
-            <table
-              mat-table
-              [dataSource]="invoices()"
-              matSort
-              class="invoices-table"
-            >
-              <!-- Select Column -->
-              <ng-container matColumnDef="select">
-                <th mat-header-cell *matHeaderCellDef>
-                  <mat-checkbox
-                    [checked]="selectedInvoices().length === invoices().length"
-                    [indeterminate]="
-                      selectedInvoices().length > 0 &&
-                      selectedInvoices().length < invoices().length
-                    "
-                    (change)="$event ? selectAllInvoices() : clearSelection()"
-                  >
-                  </mat-checkbox>
-                </th>
-                <td mat-cell *matCellDef="let invoice">
-                  <!-- <mat-checkbox
-                  [checked]="selectedInvoices().includes(invoice)"
-                  (change)="$event ? selectedInvoices.update(s => [...s, invoice]) : selectedInvoices.update(s => s.filter(i => i !== invoice))"
-                >
-                </mat-checkbox> -->
-                  <mat-checkbox
-                    [checked]="selectedInvoices().includes(invoice)"
-                    (change)="onInvoiceSelectionChange($event.checked, invoice)"
-                  >
-                  </mat-checkbox>
-                </td>
-              </ng-container>
-
+      <!-- Table View -->
+      @if (!loading() && viewMode() === 'table') {
+      <div class="table-container">
+        <mat-card class="table-card">
+          <div class="table-wrapper">
+            <table mat-table [dataSource]="invoices()" class="invoices-table">
               <!-- Invoice Number Column -->
               <ng-container matColumnDef="invoiceNumber">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                  رقم الفاتورة
-                </th>
+                <th mat-header-cell *matHeaderCellDef>رقم الفاتورة</th>
                 <td mat-cell *matCellDef="let invoice">
-                  <div
-                    class="invoice-number"
-                    (click)="navigateToDetails(invoice)"
-                  >
-                    {{ invoice.invoiceNumber }}
-                  </div>
+                  <span class="invoice-number">{{
+                    invoice.invoiceNumber
+                  }}</span>
                 </td>
               </ng-container>
 
-              <!-- Patient Name Column -->
-              <ng-container matColumnDef="patientName">
+              <!-- Date Column -->
+              <ng-container matColumnDef="invoiceDate">
+                <th mat-header-cell *matHeaderCellDef>التاريخ</th>
+                <td mat-cell *matCellDef="let invoice">
+                  {{ invoice.invoiceDate | date : "dd/MM/yyyy" }}
+                </td>
+              </ng-container>
+
+              <!-- Patient Column -->
+              <ng-container matColumnDef="patient">
                 <th mat-header-cell *matHeaderCellDef>المريض</th>
                 <td mat-cell *matCellDef="let invoice">
                   <div class="patient-info">
-                    <div class="patient-name">{{ invoice.patientName }}</div>
+                    <span class="patient-name">{{ invoice.patientName }}</span>
                     @if (invoice.patientPhone) {
-                    <div class="patient-phone">{{ invoice.patientPhone }}</div>
-                    }
-                  </div>
-                </td>
-              </ng-container>
-
-              <!-- Issue Date Column -->
-              <ng-container matColumnDef="issueDate">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                  تاريخ الإصدار
-                </th>
-                <td mat-cell *matCellDef="let invoice">
-                  {{ formatDate(invoice.issueDate) }}
-                </td>
-              </ng-container>
-
-              <!-- Due Date Column -->
-              <ng-container matColumnDef="dueDate">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                  تاريخ الاستحقاق
-                </th>
-                <td mat-cell *matCellDef="let invoice">
-                  <div class="due-date" [class.overdue]="isOverdue(invoice)">
-                    {{ formatDate(invoice.dueDate) }}
-                    @if (isOverdue(invoice)) {
-                    <mat-icon class="overdue-icon">warning</mat-icon>
+                    <span class="patient-phone">{{
+                      invoice.patientPhone
+                    }}</span>
                     }
                   </div>
                 </td>
@@ -317,54 +256,43 @@
 
               <!-- Total Amount Column -->
               <ng-container matColumnDef="totalAmount">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                  إجمالي المبلغ
-                </th>
+                <th mat-header-cell *matHeaderCellDef>المبلغ الإجمالي</th>
                 <td mat-cell *matCellDef="let invoice">
-                  <div class="amount total">
-                    {{ formatCurrency(invoice.totalAmount) }}
-                  </div>
+                  <span class="amount">{{
+                    formatCurrency(invoice.totalAmount)
+                  }}</span>
                 </td>
               </ng-container>
 
-              <!-- Paid Amount Column -->
-              <ng-container matColumnDef="paidAmount">
-                <th mat-header-cell *matHeaderCellDef>المبلغ المدفوع</th>
+              <!-- Amount Paid Column -->
+              <ng-container matColumnDef="amountPaid">
+                <th mat-header-cell *matHeaderCellDef>المدفوع</th>
                 <td mat-cell *matCellDef="let invoice">
-                  <div class="amount paid">
-                    {{ formatCurrency(invoice.paidAmount || 0) }}
-                  </div>
+                  <span class="amount paid">{{
+                    formatCurrency(invoice.paidAmount)
+                  }}</span>
                 </td>
               </ng-container>
 
-              <!-- Remaining Amount Column -->
-              <ng-container matColumnDef="remainingAmount">
-                <th mat-header-cell *matHeaderCellDef>المبلغ المتبقي</th>
+              <!-- Balance Due Column -->
+              <ng-container matColumnDef="balanceDue">
+                <th mat-header-cell *matHeaderCellDef>المتبقي</th>
                 <td mat-cell *matCellDef="let invoice">
-                  <div class="amount remaining">
-                    {{ formatCurrency(invoice.remainingAmount || 0) }}
-                  </div>
+                  <span class="amount" [class.due]="invoice.balanceDue > 0">
+                    {{ formatCurrency(invoice.balanceDue) }}
+                  </span>
                 </td>
               </ng-container>
 
               <!-- Status Column -->
               <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef>الحالة</th>
+                <th mat-header-cell *matHeaderCellDef>حالة الفاتورة</th>
                 <td mat-cell *matCellDef="let invoice">
-                  <mat-chip-set>
-                    <mat-chip [color]="getStatusColor(invoice.status)" selected>
-                      <mat-icon>{{ getStatusIcon(invoice.status) }}</mat-icon>
-                      @switch (invoice.status) { @case (InvoiceStatus.DRAFT) {
-                      مسودة } @case (InvoiceStatus.PENDING) { معلقة } @case
-                      (InvoiceStatus.SENT) { مرسلة } @case
-                      (InvoiceStatus.VIEWED) { تمت المشاهدة } @case
-                      (InvoiceStatus.PAID) { مدفوعة } @case
-                      (InvoiceStatus.PARTIALLY_PAID) { مدفوعة جزئياً } @case
-                      (InvoiceStatus.OVERDUE) { متأخرة } @case
-                      (InvoiceStatus.CANCELLED) { ملغية } @case
-                      (InvoiceStatus.REFUNDED) { مسترد } }
-                    </mat-chip>
-                  </mat-chip-set>
+                  <mat-chip [color]="getStatusColor(invoice.status)">
+                    <mat-icon>{{ getStatusIcon(invoice.status) }}</mat-icon>
+                    <!-- {{ statusLabels[invoice.status] }} -->
+                    {{ getInvoiceStatusLabel(invoice.status) }}
+                  </mat-chip>
                 </td>
               </ng-container>
 
@@ -372,40 +300,8 @@
               <ng-container matColumnDef="paymentStatus">
                 <th mat-header-cell *matHeaderCellDef>حالة الدفع</th>
                 <td mat-cell *matCellDef="let invoice">
-                  <mat-chip-set>
-                    <mat-chip
-                      [color]="getPaymentStatusColor(invoice.paymentStatus)"
-                      selected
-                    >
-                      <mat-icon>{{
-                        getPaymentStatusIcon(invoice.paymentStatus)
-                      }}</mat-icon>
-                      @switch (invoice.paymentStatus) { @case
-                      (PaymentStatus.PENDING) { معلق } @case
-                      (PaymentStatus.COMPLETED) { مكتمل } @case
-                      (PaymentStatus.FAILED) { فشل } @case
-                      (PaymentStatus.CANCELLED) { ملغي } @case
-                      (PaymentStatus.REFUNDED) { مسترد } }
-                    </mat-chip>
-                  </mat-chip-set>
-                </td>
-              </ng-container>
-
-              <!-- Priority Column -->
-              <ng-container matColumnDef="priority">
-                <th mat-header-cell *matHeaderCellDef>الأولوية</th>
-                <td mat-cell *matCellDef="let invoice">
-                  @if (invoice.priority === 'HIGH' || invoice.priority ===
-                  'URGENT') {
-                  <mat-icon
-                    [class]="'priority-' + invoice.priority.toLowerCase()"
-                    [matTooltip]="
-                      invoice.priority === 'HIGH' ? 'عالية' : 'عاجل'
-                    "
-                  >
-                    priority_high
-                  </mat-icon>
-                  }
+                  <!-- {{ paymentStatusLabels[invoice.paymentStatus] }} -->
+                  {{ getPaymentStatusLabel(invoice.paymentStatus) }}
                 </td>
               </ng-container>
 
@@ -413,59 +309,48 @@
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
                 <td mat-cell *matCellDef="let invoice">
-                  <button mat-icon-button [matMenuTriggerFor]="actionMenu">
+                  <button mat-icon-button [matMenuTriggerFor]="menu">
                     <mat-icon>more_vert</mat-icon>
                   </button>
-                  <mat-menu #actionMenu="matMenu">
-                    <button mat-menu-item (click)="navigateToDetails(invoice)">
+                  <mat-menu #menu="matMenu">
+                    <button mat-menu-item (click)="onViewInvoice(invoice)">
                       <mat-icon>visibility</mat-icon>
                       <span>عرض التفاصيل</span>
                     </button>
-                    <button
-                      mat-menu-item
-                      (click)="navigateToEdit(invoice)"
-                      [disabled]="
-                        !hasPermission([
-                          'ADMIN',
-                          'SYSTEM_ADMIN',
-                          'RECEPTIONIST'
-                        ])
-                      "
-                    >
+
+                    @if (canEditInvoice(invoice)) {
+                    <button mat-menu-item (click)="onEditInvoice(invoice)">
                       <mat-icon>edit</mat-icon>
                       <span>تعديل</span>
                     </button>
-                    <button mat-menu-item (click)="navigateToPreview(invoice)">
-                      <mat-icon>preview</mat-icon>
-                      <span>معاينة</span>
-                    </button>
-                    <button mat-menu-item (click)="navigateToPayments(invoice)">
+                    } @if (canAddPayment(invoice)) {
+                    <button mat-menu-item (click)="onAddPayment(invoice)">
                       <mat-icon>payment</mat-icon>
-                      <span>تتبع المدفوعات</span>
+                      <span>إضافة دفعة</span>
                     </button>
-                    <mat-divider></mat-divider>
-                    <button mat-menu-item (click)="duplicateInvoice(invoice)">
-                      <mat-icon>content_copy</mat-icon>
-                      <span>إنشاء نسخة</span>
+                    }
+
+                    <button mat-menu-item (click)="onSendInvoice(invoice)">
+                      <mat-icon>send</mat-icon>
+                      <span>إرسال للمريض</span>
                     </button>
-                    <button mat-menu-item (click)="generatePDF(invoice)">
-                      <mat-icon>picture_as_pdf</mat-icon>
-                      <span>تحميل PDF</span>
+
+                    <button mat-menu-item (click)="onPrintInvoice(invoice)">
+                      <mat-icon>print</mat-icon>
+                      <span>طباعة</span>
                     </button>
-                    <button mat-menu-item (click)="sendEmail(invoice)">
-                      <mat-icon>email</mat-icon>
-                      <span>إرسال بالبريد</span>
-                    </button>
+
+                    @if (canCancelInvoice(invoice)) {
                     <mat-divider></mat-divider>
                     <button
                       mat-menu-item
-                      (click)="deleteInvoice(invoice)"
-                      [disabled]="!hasPermission(['ADMIN', 'SYSTEM_ADMIN'])"
+                      (click)="onDeleteInvoice(invoice)"
                       class="delete-action"
                     >
-                      <mat-icon>delete</mat-icon>
-                      <span>حذف</span>
+                      <mat-icon color="warn">cancel</mat-icon>
+                      <span>إلغاء الفاتورة</span>
                     </button>
+                    }
                   </mat-menu>
                 </td>
               </ng-container>
@@ -474,8 +359,7 @@
               <tr
                 mat-row
                 *matRowDef="let row; columns: displayedColumns"
-                [class.selected]="selectedInvoices().includes(row)"
-                (click)="navigateToDetails(row)"
+                class="invoice-row"
               ></tr>
             </table>
           </div>
@@ -484,32 +368,112 @@
           <mat-paginator
             [length]="totalInvoices()"
             [pageSize]="pageSize()"
-            [pageSizeOptions]="[10, 25, 50, 100]"
-            [pageIndex]="currentPage()"
+            [pageSizeOptions]="[5, 10, 25, 50, 100]"
             (page)="onPageChange($event)"
             showFirstLastButtons
           >
           </mat-paginator>
-          }
+        </mat-card>
+      </div>
+      }
 
-          <!-- Empty State -->
-          @if (!loading() && invoices().length === 0) {
-          <div class="empty-state">
-            <mat-icon class="empty-icon">receipt_long</mat-icon>
-            <h3>لا توجد فواتير</h3>
-            <p>لم يتم العثور على أي فواتير. ابدأ بإنشاء فاتورة جديدة.</p>
-            <button
-              mat-raised-button
-              color="primary"
-              (click)="navigateToCreate()"
-            >
-              <mat-icon>add</mat-icon>
-              إنشاء فاتورة جديدة
+      <!-- Cards View -->
+      @if (!loading() && viewMode() === 'cards') {
+      <div class="cards-container">
+        @for (invoice of invoices(); track invoice.id) {
+        <mat-card class="invoice-card">
+          <mat-card-header>
+            <div class="invoice-header">
+              <div class="invoice-title">
+                <h3>{{ invoice.invoiceNumber }}</h3>
+                <span class="invoice-date">{{
+                  invoice.invoiceDate | date : "dd/MM/yyyy"
+                }}</span>
+              </div>
+              <mat-chip [color]="getStatusColor(invoice.status)">
+                {{ statusLabels[invoice.status] }}
+              </mat-chip>
+            </div>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="invoice-info">
+              <div class="info-row">
+                <mat-icon>person</mat-icon>
+                <span>{{ invoice.patientName }}</span>
+              </div>
+
+              <div class="info-row">
+                <mat-icon>account_balance_wallet</mat-icon>
+                <span>{{ formatCurrency(invoice.totalAmount) }}</span>
+              </div>
+
+              <div class="info-row">
+                <mat-icon>paid</mat-icon>
+                <span>المدفوع: {{ formatCurrency(invoice.paidAmount) }}</span>
+              </div>
+
+              @if (invoice.balanceDue > 0) {
+              <div class="info-row balance-due">
+                <mat-icon>warning</mat-icon>
+                <span>المتبقي: {{ formatCurrency(invoice.balanceDue) }}</span>
+              </div>
+              }
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions>
+            <button mat-button (click)="onViewInvoice(invoice)">
+              <mat-icon>visibility</mat-icon>
+              عرض
             </button>
-          </div>
-          }
-        </mat-card-content>
+
+            @if (canAddPayment(invoice)) {
+            <button mat-button color="primary" (click)="onAddPayment(invoice)">
+              <mat-icon>payment</mat-icon>
+              دفع
+            </button>
+            }
+
+            <button mat-icon-button [matMenuTriggerFor]="cardMenu">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #cardMenu="matMenu">
+              @if (canEditInvoice(invoice)) {
+              <button mat-menu-item (click)="onEditInvoice(invoice)">
+                <mat-icon>edit</mat-icon>
+                <span>تعديل</span>
+              </button>
+              }
+              <button mat-menu-item (click)="onSendInvoice(invoice)">
+                <mat-icon>send</mat-icon>
+                <span>إرسال</span>
+              </button>
+              <button mat-menu-item (click)="onPrintInvoice(invoice)">
+                <mat-icon>print</mat-icon>
+                <span>طباعة</span>
+              </button>
+            </mat-menu>
+          </mat-card-actions>
+        </mat-card>
+        }
+      </div>
+      }
+
+      <!-- Empty State -->
+      @if (!loading() && invoices().length === 0) {
+      <mat-card class="empty-state">
+        <mat-icon>receipt_long</mat-icon>
+        <h3>لا توجد فواتير</h3>
+        <p>لم يتم العثور على أي فواتير بناءً على معايير البحث المحددة</p>
+        @if (canCreateInvoice()) {
+        <button mat-raised-button color="primary" (click)="onCreateInvoice()">
+          <mat-icon>add</mat-icon>
+          إنشاء فاتورة جديدة
+        </button>
+        }
       </mat-card>
+      }
     </div>
-  </app-sidebar>
-</div>
+  </div>
+</app-sidebar>

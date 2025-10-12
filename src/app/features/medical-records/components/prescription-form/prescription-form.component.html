@@ -1,214 +1,335 @@
-<mat-card class="prescription-card">
-  <mat-card-header>
-    <mat-card-title>
+<div class="prescription-form">
+  <div class="form-header">
+    <h3 class="form-title">
       <mat-icon>medication</mat-icon>
-      الوصفة الطبية
-    </mat-card-title>
-    <button
-      mat-icon-button
-      (click)="addPrescription()"
-      matTooltip="إضافة دواء جديد"
-    >
-      <mat-icon>add_circle</mat-icon>
+      الوصفات الطبية
+    </h3>
+    <button type="button" mat-button color="primary" (click)="addPrescription()">
+      <mat-icon>add</mat-icon>
+      إضافة وصفة
     </button>
-  </mat-card-header>
-  <mat-card-content>
-    <form [formGroup]="prescriptionForm">
-      <div formArrayName="prescriptions">
-        @for (prescription of prescriptionsArray.controls; track $index; let i =
-        $index) {
-        <div class="prescription-item" [formGroupName]="i">
-          <div class="prescription-header">
-            <h4>دواء #{{ i + 1 }}</h4>
+  </div>
+
+  <!-- Prescriptions List -->
+  <div class="prescriptions-list">
+    @if (prescriptions.length === 0) {
+    <div class="empty-state">
+      <mat-icon>medication_liquid</mat-icon>
+      <p>لا توجد وصفات طبية مضافة</p>
+      <p class="hint">اضغط على "إضافة وصفة" لإضافة دواء جديد</p>
+    </div>
+    } @for (prescription of prescriptions; track prescription; let i = $index) {
+    <mat-card class="prescription-card">
+      <mat-card-content>
+        <div class="prescription-header">
+          <div class="medication-info">
+            @if (!editMode()[i]) {
+            <h4 class="medication-name">
+              {{ prescription.medicationName }}
+            </h4>
+            @if (prescription.genericName) {
+            <span class="generic-name">({{ prescription.genericName }})</span>
+            } }
+          </div>
+
+          <div class="prescription-actions">
+            @if (!editMode()[i]) {
+            <button mat-icon-button (click)="toggleEdit(i)" matTooltip="تعديل">
+              <mat-icon>edit</mat-icon>
+            </button>
+            }
             <button
               mat-icon-button
               color="warn"
               (click)="removePrescription(i)"
-              matTooltip="حذف الدواء"
+              matTooltip="حذف"
             >
               <mat-icon>delete</mat-icon>
             </button>
           </div>
+        </div>
 
-          <div class="prescription-grid">
-            <!-- Medication Name -->
-            <mat-form-field appearance="outline" class="medication-name">
+        @if (editMode()[i]) {
+        <!-- Edit Mode -->
+        <div class="prescription-edit">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-2">
               <mat-label>اسم الدواء</mat-label>
               <input
                 matInput
-                formControlName="medicationName"
-                [matAutocomplete]="auto"
-                placeholder="اكتب اسم الدواء..."
+                [(ngModel)]="prescription.medicationName"
+                (ngModelChange)="emitChanges()"
+                placeholder="مثال: Amoxicillin"
+                required
+                (input)="searchMedication($event, i)"
               />
               <mat-icon matPrefix>medication</mat-icon>
-              <mat-autocomplete #auto="matAutocomplete">
-                @for (suggestion of getMedicationSuggestions(i) | async; track
-                suggestion) {
-                <mat-option [value]="suggestion">{{ suggestion }}</mat-option>
-                }
-              </mat-autocomplete>
-              <mat-error>اسم الدواء مطلوب</mat-error>
             </mat-form-field>
 
-            <!-- Generic Name -->
-            <mat-form-field appearance="outline">
-              <mat-label>الاسم العلمي (اختياري)</mat-label>
-              <input matInput formControlName="genericName" />
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>الاسم العلمي</mat-label>
+              <input
+                matInput
+                [(ngModel)]="prescription.genericName"
+                (ngModelChange)="emitChanges()"
+                placeholder="اختياري"
+              />
             </mat-form-field>
+          </div>
 
-            <!-- Dosage -->
-            <mat-form-field appearance="outline">
+          <!-- Medication Suggestions -->
+          @if (showSuggestions()[i] && medicationSuggestions().length > 0) {
+          <div class="medication-suggestions">
+            @for (med of medicationSuggestions(); track med.name) {
+            <div class="suggestion-item" (click)="selectMedication(med, i)">
+              <span class="med-name">{{ med.name }}</span>
+              @if (med.genericName) {
+              <span class="med-generic">{{ med.genericName }}</span>
+              }
+            </div>
+            }
+          </div>
+          }
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1">
               <mat-label>الجرعة</mat-label>
               <input
                 matInput
-                formControlName="dosage"
+                [(ngModel)]="prescription.dosage"
+                (ngModelChange)="emitChanges()"
                 placeholder="مثال: 500mg"
+                required
               />
-              <mat-error>الجرعة مطلوبة</mat-error>
+              <mat-icon matPrefix>straighten</mat-icon>
             </mat-form-field>
 
-            <!-- Frequency -->
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" class="flex-1">
               <mat-label>التكرار</mat-label>
-              <mat-select formControlName="frequency">
+              <mat-select
+                [(ngModel)]="prescription.frequency"
+                (ngModelChange)="emitChanges()"
+              >
                 <mat-option value="مرة واحدة يومياً"
                   >مرة واحدة يومياً</mat-option
                 >
                 <mat-option value="مرتين يومياً">مرتين يومياً</mat-option>
-                <mat-option value="ثلاث مرات يومياً"
-                  >ثلاث مرات يومياً</mat-option
-                >
-                <mat-option value="أربع مرات يومياً"
-                  >أربع مرات يومياً</mat-option
-                >
+                <mat-option value="3 مرات يومياً">3 مرات يومياً</mat-option>
+                <mat-option value="4 مرات يومياً">4 مرات يومياً</mat-option>
+                <mat-option value="كل 4 ساعات">كل 4 ساعات</mat-option>
                 <mat-option value="كل 6 ساعات">كل 6 ساعات</mat-option>
                 <mat-option value="كل 8 ساعات">كل 8 ساعات</mat-option>
                 <mat-option value="كل 12 ساعة">كل 12 ساعة</mat-option>
                 <mat-option value="عند الحاجة">عند الحاجة</mat-option>
+                <mat-option value="قبل النوم">قبل النوم</mat-option>
               </mat-select>
-              <mat-error>التكرار مطلوب</mat-error>
+              <mat-icon matPrefix>schedule</mat-icon>
             </mat-form-field>
 
-            <!-- Duration -->
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" class="flex-1">
               <mat-label>المدة</mat-label>
               <input
                 matInput
-                formControlName="duration"
+                [(ngModel)]="prescription.duration"
+                (ngModelChange)="emitChanges()"
                 placeholder="مثال: 7 أيام"
               />
-              <mat-error>المدة مطلوبة</mat-error>
+              <mat-icon matPrefix>date_range</mat-icon>
             </mat-form-field>
+          </div>
 
-            <!-- Route -->
-            <mat-form-field appearance="outline">
-              <mat-label>طريقة الإعطاء</mat-label>
-              <mat-select formControlName="route">
-                <mat-option [value]="MedicationRoute.ORAL">
-                  <mat-icon>medication_liquid</mat-icon> فموي
-                </mat-option>
-                <mat-option [value]="MedicationRoute.INTRAVENOUS">
-                  <mat-icon>vaccines</mat-icon> وريدي
-                </mat-option>
-                <mat-option [value]="MedicationRoute.INTRAMUSCULAR">
-                  <mat-icon>vaccines</mat-icon> عضلي
-                </mat-option>
-                <mat-option [value]="MedicationRoute.SUBCUTANEOUS">
-                  <mat-icon>vaccines</mat-icon> تحت الجلد
-                </mat-option>
-                <mat-option [value]="MedicationRoute.TOPICAL">
-                  <mat-icon>spa</mat-icon> موضعي
-                </mat-option>
-                <mat-option [value]="MedicationRoute.INHALATION">
-                  <mat-icon>air</mat-icon> استنشاق
-                </mat-option>
-                <mat-option [value]="MedicationRoute.OPHTHALMIC">
-                  <mat-icon>visibility</mat-icon> قطرة عين
-                </mat-option>
-                <mat-option [value]="MedicationRoute.OTIC">
-                  <mat-icon>hearing</mat-icon> قطرة أذن
-                </mat-option>
-                <mat-option [value]="MedicationRoute.NASAL">
-                  <mat-icon>air</mat-icon> أنفي
-                </mat-option>
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>طريق الإعطاء</mat-label>
+              <mat-select
+                [(ngModel)]="prescription.route"
+                (ngModelChange)="emitChanges()"
+              >
+                <mat-option value="ORAL">فموي</mat-option>
+                <mat-option value="INJECTION">حقن</mat-option>
+                <mat-option value="TOPICAL">موضعي</mat-option>
+                <mat-option value="INHALATION">استنشاق</mat-option>
+                <mat-option value="RECTAL">شرجي</mat-option>
+                <mat-option value="SUBLINGUAL">تحت اللسان</mat-option>
+                <mat-option value="TRANSDERMAL">عبر الجلد</mat-option>
+                <mat-option value="OPHTHALMIC">للعين</mat-option>
+                <mat-option value="OTIC">للأذن</mat-option>
+                <mat-option value="NASAL">للأنف</mat-option>
               </mat-select>
-              <mat-error>طريقة الإعطاء مطلوبة</mat-error>
+              <mat-icon matPrefix>medical_services</mat-icon>
             </mat-form-field>
 
-            <!-- Quantity -->
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" class="flex-1">
               <mat-label>الكمية</mat-label>
               <input
                 matInput
                 type="number"
-                formControlName="quantity"
-                placeholder="عدد الحبات/العبوات"
+                [(ngModel)]="prescription.quantity"
+                (ngModelChange)="onQuantityChange(prescription)"
+                placeholder="مثال: 21"
+                min="1"
               />
+              <mat-icon matPrefix>inventory_2</mat-icon>
+              <mat-hint>الحد الأدنى: 1</mat-hint>
+              @if (prescription.quantity && prescription.quantity < 1) {
+              <mat-error>الكمية يجب أن تكون 1 على الأقل</mat-error>
+              }
             </mat-form-field>
 
-            <!-- Refills -->
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" class="flex-1">
               <mat-label>إعادة الصرف</mat-label>
               <input
                 matInput
                 type="number"
-                formControlName="refills"
-                placeholder="عدد المرات"
+                [(ngModel)]="prescription.refills"
+                (ngModelChange)="onRefillsChange(prescription)"
+                placeholder="مثال: 2"
+                min="0"
+                max="12"
               />
+              <mat-icon matPrefix>replay</mat-icon>
+              <mat-hint>الحد الأقصى: 12</mat-hint>
+              @if (prescription.refills && prescription.refills > 12) {
+              <mat-error
+                >عدد التجديدات يجب أن يكون أقل من أو يساوي 12</mat-error
+              >
+              } @if (prescription.refills && prescription.refills < 0) {
+              <mat-error>عدد التجديدات يجب أن يكون 0 أو أكثر</mat-error>
+              }
             </mat-form-field>
+          </div>
 
-            <!-- Instructions -->
-            <mat-form-field appearance="outline" class="full-width">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1">
               <mat-label>التعليمات</mat-label>
               <textarea
                 matInput
-                formControlName="instructions"
+                [(ngModel)]="prescription.instructions"
+                (ngModelChange)="emitChanges()"
                 rows="2"
-                placeholder="تعليمات خاصة للمريض..."
+                placeholder="تعليمات خاصة للمريض"
               ></textarea>
+              <mat-icon matPrefix>info</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row dates-row">
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>تاريخ البدء</mat-label>
+              <input
+                matInput
+                [matDatepicker]="startPicker"
+                [(ngModel)]="prescription.startDate"
+                (ngModelChange)="emitChanges()"
+              />
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="startPicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #startPicker></mat-datepicker>
             </mat-form-field>
 
-            <!-- PRN Checkbox -->
-            <div class="checkbox-field">
-              <mat-checkbox formControlName="isPRN">
-                عند الحاجة (PRN)
-              </mat-checkbox>
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>تاريخ الانتهاء</mat-label>
+              <input
+                matInput
+                [matDatepicker]="endPicker"
+                [(ngModel)]="prescription.endDate"
+                (ngModelChange)="emitChanges()"
+              />
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="endPicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #endPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-checkbox
+              [(ngModel)]="prescription.isPrn"
+              (ngModelChange)="emitChanges()"
+              class="prn-checkbox"
+            >
+              عند الحاجة (PRN)
+            </mat-checkbox>
+          </div>
+
+          <!-- Save Button -->
+          <div class="form-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="savePrescription(i)"
+              [disabled]="!isPrescriptionValid(prescription)"
+            >
+              <mat-icon>check</mat-icon>
+              حفظ الوصفة
+            </button>
+            <button mat-button (click)="cancelEdit(i)">
+              <mat-icon>close</mat-icon>
+              إلغاء
+            </button>
+          </div>
+        </div>
+        } @else {
+        <!-- Display Mode -->
+        <div class="prescription-display">
+          <div class="prescription-details">
+            <div class="detail-item">
+              <mat-icon>straighten</mat-icon>
+              <span>{{ prescription.dosage }}</span>
+            </div>
+            <div class="detail-item">
+              <mat-icon>schedule</mat-icon>
+              <span>{{ prescription.frequency }}</span>
+            </div>
+            @if (prescription.duration) {
+            <div class="detail-item">
+              <mat-icon>date_range</mat-icon>
+              <span>{{ prescription.duration }}</span>
+            </div>
+            }
+            <div class="detail-item">
+              <mat-icon>medical_services</mat-icon>
+              <span>{{ getRouteLabel(prescription.route) }}</span>
             </div>
           </div>
 
-          @if (i < prescriptions!.length - 1) {
-          <mat-divider></mat-divider>
+          @if (prescription.instructions) {
+          <div class="instructions">
+            <mat-icon>info</mat-icon>
+            {{ prescription.instructions }}
+          </div>
           }
-        </div>
-        } @if (prescriptions!.length === 0) {
-        <div class="empty-state">
-          <mat-icon>medication</mat-icon>
-          <p>لم يتم إضافة أي أدوية بعد</p>
-          <button mat-raised-button color="primary" (click)="addPrescription()">
-            <mat-icon>add</mat-icon>
-            إضافة دواء
-          </button>
+
+          <div class="prescription-meta">
+            @if (prescription.quantity) {
+            <span class="meta-item">الكمية: {{ prescription.quantity }}</span>
+            } @if (prescription.refills) {
+            <span class="meta-item"
+              >إعادة الصرف: {{ prescription.refills }}</span
+            >
+            } @if (prescription.isPrn) {
+            <span class="meta-item prn">عند الحاجة</span>
+            }
+          </div>
         </div>
         }
-      </div>
-    </form>
-
-    @if (prescriptions!.length > 0) {
-    <div class="form-actions">
-      <button
-        mat-raised-button
-        color="primary"
-        (click)="onSave()"
-        [disabled]="prescriptionForm.invalid"
-      >
-        <mat-icon>save</mat-icon>
-        حفظ الوصفة الطبية
-      </button>
-      <button mat-stroked-button (click)="onPrint()">
-        <mat-icon>print</mat-icon>
-        طباعة الوصفة
-      </button>
-    </div>
+      </mat-card-content>
+    </mat-card>
     }
-  </mat-card-content>
-</mat-card>
+  </div>
+
+  <!-- Quick Templates -->
+  @if (showTemplates()) {
+  <div class="templates-section">
+    <h4>وصفات شائعة:</h4>
+    <div class="templates-chips">
+      @for (template of commonPrescriptions; track template.medicationName) {
+      <mat-chip-option (click)="addFromTemplate(template)">
+        {{ template.medicationName }}
+      </mat-chip-option>
+      }
+    </div>
+  </div>
+  }
+</div>

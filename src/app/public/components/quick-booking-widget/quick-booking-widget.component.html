@@ -1,0 +1,106 @@
+<!-- src/app/public/components/quick-booking-widget/quick-booking-widget.component.html -->
+
+<mat-card class="quick-booking-widget">
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon>flash_on</mat-icon>
+      <span>حجز سريع</span>
+    </mat-card-title>
+    <p class="subtitle">ابدأ حجز موعدك الآن</p>
+  </mat-card-header>
+
+  <mat-card-content>
+    <form [formGroup]="quickBookingForm">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>اختر العيادة</mat-label>
+        <mat-select formControlName="clinicId" required>
+          <mat-option>-- اختر العيادة --</mat-option>
+          @for (clinic of clinics(); track clinic.id) {
+          <mat-option [value]="clinic.id">
+            {{ clinic.name }}
+            @if (clinic.address) {
+            <span class="option-hint"> - {{ clinic.address }}</span>
+            }
+          </mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix>local_hospital</mat-icon>
+      </mat-form-field>
+
+      @if (loadingClinics()) {
+      <div class="loading-indicator">
+        <mat-spinner diameter="24"></mat-spinner>
+        <span>جارٍ تحميل العيادات...</span>
+      </div>
+      } @if (quickBookingForm.get('clinicId')?.value) {
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>اختر الطبيب (اختياري)</mat-label>
+        <mat-select formControlName="doctorId">
+          <mat-option value="">-- جميع الأطباء --</mat-option>
+          @for (doctor of doctors(); track doctor.doctorId) {
+          <mat-option [value]="doctor.doctorId">
+            {{ doctor.fullName }}
+            @if (doctor.specialization) {
+            <span class="option-hint"> - {{ doctor.specialization }}</span>
+            }
+          </mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix>person</mat-icon>
+      </mat-form-field>
+
+      @if (loadingDoctors()) {
+      <div class="loading-indicator">
+        <mat-spinner diameter="24"></mat-spinner>
+        <span>جارٍ تحميل الأطباء...</span>
+      </div>
+      } @if (!loadingDoctors() && doctors().length === 0) {
+      <div class="info-message">
+        <mat-icon>info</mat-icon>
+        <span>لا يوجد أطباء متاحون في هذه العيادة</span>
+      </div>
+      } }
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>التاريخ المفضل (اختياري)</mat-label>
+        <input
+          matInput
+          [matDatepicker]="picker"
+          formControlName="appointmentDate"
+          [min]="minDate"
+          [max]="maxDate"
+        />
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+        <mat-icon matPrefix>calendar_today</mat-icon>
+      </mat-form-field>
+
+      @if (getSelectedClinic()) {
+      <div class="selected-clinic-info">
+        <div class="clinic-badge">
+          <mat-icon>local_hospital</mat-icon>
+          <div class="clinic-details">
+            <strong>{{ getSelectedClinic()?.name }}</strong>
+            @if (getSelectedClinic()?.address) {
+            <span class="address">{{ getSelectedClinic()?.address }}</span>
+            }
+          </div>
+        </div>
+      </div>
+      }
+    </form>
+  </mat-card-content>
+
+  <mat-card-actions>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="onQuickBook()"
+      [disabled]="quickBookingForm.get('clinicId')?.invalid"
+      class="book-button"
+    >
+      <mat-icon>arrow_back</mat-icon>
+      <span>متابعة الحجز</span>
+    </button>
+  </mat-card-actions>
+</mat-card>

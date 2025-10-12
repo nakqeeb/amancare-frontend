@@ -1,7 +1,8 @@
 // ===================================================================
 // src/app/features/patients/components/patient-list/patient-list.component.ts
+// Updated to use integrated PatientService with Spring Boot APIs
 // ===================================================================
-import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, signal, OnInit, ViewChild, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -13,8 +14,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { PageEvent } from '@angular/material/paginator';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 // Shared Components
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -25,9 +31,17 @@ import { ConfirmationDialogComponent } from '../../../../shared/components/confi
 // Services & Models
 import { PatientService } from '../../services/patient.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { LoadingService } from '../../../../core/services/loading.service';
-import { Patient, PatientSearchCriteria } from '../../models/patient.model';
-import { MatDividerModule } from '@angular/material/divider';
+import {
+  Patient,
+  PatientSearchCriteria,
+  Gender,
+  BloodType,
+  PatientStatistics
+} from '../../models/patient.model';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatTableModule } from '@angular/material/table';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-patient-list',
@@ -44,72 +58,91 @@ import { MatDividerModule } from '@angular/material/divider';
     MatCheckboxModule,
     MatMenuModule,
     MatDialogModule,
+    MatProgressSpinnerModule,
+    MatPaginatorModule,
     MatDividerModule,
+    MatChipsModule,
+    MatBadgeModule,
+    MatTooltipModule,
+    MatSlideToggleModule,
+    MatDatepickerModule,
+    MatTableModule,
+    MatProgressBarModule,
     HeaderComponent,
-    SidebarComponent,
-    DataTableComponent
+    SidebarComponent
   ],
   templateUrl: './patient-list.component.html',
   styleUrl: './patient-list.component.scss'
 })
-
 export class PatientListComponent implements OnInit {
   @ViewChild('dataTable') dataTable!: DataTableComponent;
 
   // Services
   private patientService = inject(PatientService);
   private notificationService = inject(NotificationService);
-  private loadingService = inject(LoadingService);
+  private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private dialog = inject(MatDialog);
-  private snackBar = inject(MatSnackBar);
   private fb = inject(FormBuilder);
+  private dialog = inject(MatDialog);
 
-  // Signals
-  patients = signal<Patient[]>([]);
-  loading = signal(false);
+  // ===================================================================
+  // STATE MANAGEMENT
+  // ===================================================================
+
+  // Data signals
+  patients = this.patientService.patients;
+  loading = this.patientService.loading;
+  statistics = this.patientService.statistics;
+
+  // UI State signals
   viewMode = signal<'table' | 'cards'>('table');
-  showAdvancedSearch = signal(false);
-  searchPerformed = signal(false);
-  selectedPatient = signal<Patient | null>(null);
-
-  // Pagination
   currentPage = signal(0);
   pageSize = signal(10);
   totalPatients = signal(0);
   totalPages = signal(0);
-  originalTotal = signal(0);
+  searchPerformed = signal(false);
+  showAdvancedSearch = signal(false);
+  selectedPatients = signal<Patient[]>([]);
+  userRole = computed(() => this.authService.currentUser()?.role || '');
 
-  // Form
+  // Search Form
   searchForm: FormGroup;
 
-  // Table Configuration
+  // ===================================================================
+  // TABLE CONFIGURATION
+  // ===================================================================
+
   tableColumns: TableColumn[] = [
     {
       key: 'patientNumber',
       label: 'رقم المريض',
       sortable: true,
-      width: '120px'
+      width: '120px',
+      format: (value) => value || '-'
     },
     {
       key: 'fullName',
-      label: 'الاسم الكامل',
-      sortable: true
+      label: 'اسم المريض',
+      sortable: true,
+      width: '200px'
     },
     {
       key: 'age',
       label: 'العمر',
-      type: 'number',
-      sortable: true,
       width: '80px',
-      format: (value) => value ? `${value} سنة` : '-'
+      format: (value, row) => {
+        if (row.dateOfBirth) {
+          return `${this.patientService.calculateAge(row.dateOfBirth)} سنة`;
+        }
+        return value ? `${value} سنة` : '-';
+      }
     },
     {
       key: 'gender',
       label: 'الجنس',
       width: '80px',
-      format: (value) => value === 'MALE' ? 'ذكر' : 'أنثى'
+      format: (value) => this.patientService.formatGender(value)
     },
     {
       key: 'phone',
@@ -120,7 +153,7 @@ export class PatientListComponent implements OnInit {
       key: 'bloodType',
       label: 'فصيلة الدم',
       width: '100px',
-      format: (value) => this.getBloodTypeLabel(value)
+      format: (value) => value ? this.patientService.formatBloodType(value) : '-'
     },
     {
       key: 'lastVisit',
@@ -134,13 +167,14 @@ export class PatientListComponent implements OnInit {
       key: 'isActive',
       label: 'الحالة',
       type: 'boolean',
-      width: '80px'
+      width: '80px',
+      format: (value) => value ? 'نشط' : 'غير نشط'
     },
     {
       key: 'actions',
       label: 'الإجراءات',
       type: 'actions',
-      width: '120px'
+      width: '150px'
     }
   ];
 
@@ -162,30 +196,152 @@ export class PatientListComponent implements OnInit {
       color: 'warn',
       action: (patient) => this.onDeletePatient(patient),
       visible: (patient) => patient.isActive
+    },
+    {
+      label: 'إعادة تفعيل',
+      icon: 'restore',
+      color: 'accent',
+      action: (patient) => this.onReactivatePatient(patient),
+      visible: (patient) => !patient.isActive
     }
   ];
 
-  // Data
+  // Dropdown Data
   bloodTypes = this.patientService.getBloodTypes();
   genders = this.patientService.getGenders();
+
+  // ===================================================================
+  // LIFECYCLE HOOKS
+  // ===================================================================
 
   constructor() {
     this.searchForm = this.fb.group({
       searchTerm: [''],
       gender: [''],
       bloodType: [''],
-      ageFrom: [''],
-      ageTo: [''],
+      // ageFrom: [''],
+      // ageTo: [''],
       showInactive: [false],
-      city: [''],
-      lastVisitFrom: [''],
-      lastVisitTo: ['']
+      // city: [''],
+      // lastVisitFrom: [''],
+      // lastVisitTo: ['']
+    });
+
+    // Watch for search form changes
+    this.searchForm.valueChanges.subscribe(() => {
+      // Debounce search
+      setTimeout(() => this.onSearch(), 300);
     });
   }
 
   ngOnInit(): void {
     this.loadPatients();
+    if (this.userRole() === 'SYSTEM_ADMIN' || this.userRole() === 'ADMIN') {
+      this.loadStatistics();
+    }
     this.checkRouteParams();
+  }
+
+  // ===================================================================
+  // DATA LOADING METHODS
+  // ===================================================================
+
+  /**
+   * Load patients using the integrated service
+   */
+  private loadPatients(): void {
+    const searchCriteria = this.buildSearchCriteria();
+
+    if (this.hasSearchCriteria(searchCriteria)) {
+      // Use search endpoint
+      this.patientService.searchPatients(
+        searchCriteria,
+        this.currentPage(),
+        this.pageSize()
+      ).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.totalPatients.set(response.data!.totalElements);
+            this.totalPages.set(response.data!.totalPages);
+            this.searchPerformed.set(true);
+          }
+        },
+        error: (error) => {
+          this.notificationService.error('حدث خطأ في البحث عن المرضى');
+        }
+      });
+    } else {
+      // Use get all patients endpoint
+      this.patientService.getAllPatients(
+        this.currentPage(),
+        this.pageSize(),
+        'firstName',
+        'asc'
+      ).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.totalPatients.set(response.data!.totalElements);
+            this.totalPages.set(response.data!.totalPages);
+            this.searchPerformed.set(false);
+          }
+        },
+        error: (error) => {
+          this.notificationService.error('حدث خطأ في تحميل بيانات المرضى');
+        }
+      });
+    }
+  }
+
+  /**
+   * Load patient statistics
+   */
+  private loadStatistics(): void {
+    this.patientService.getPatientStatistics().subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Statistics are automatically set in the service
+        }
+      },
+      error: (error) => {
+        console.warn('Could not load patient statistics:', error);
+      }
+    });
+  }
+
+  /**
+   * Build search criteria from form
+   */
+  private buildSearchCriteria(): PatientSearchCriteria {
+    const formValue = this.searchForm.value;
+
+    return {
+      searchTerm: formValue.searchTerm?.trim() || undefined,
+      gender: formValue.gender || undefined,
+      bloodType: formValue.bloodType || undefined,
+      // ageFrom: formValue.ageFrom || undefined,
+      // ageTo: formValue.ageTo || undefined,
+      isActive: formValue.showInactive ? false : true,
+      // city: formValue.city?.trim() || undefined,
+      // lastVisitFrom: formValue.lastVisitFrom || undefined,
+      // lastVisitTo: formValue.lastVisitTo || undefined,
+    };
+  }
+
+  /**
+   * Check if search criteria has any filters
+   */
+  private hasSearchCriteria(criteria: PatientSearchCriteria): boolean {
+    return !!(
+      criteria.searchTerm ||
+      criteria.gender ||
+      criteria.bloodType ||
+      criteria.ageFrom ||
+      criteria.ageTo ||
+      criteria.city ||
+      criteria.lastVisitFrom ||
+      criteria.lastVisitTo ||
+      criteria.isActive === false
+    );
   }
 
   private checkRouteParams(): void {
@@ -200,214 +356,357 @@ export class PatientListComponent implements OnInit {
     });
   }
 
-  private loadPatients(): void {
-    this.loading.set(true);
+  // ===================================================================
+  // EVENT HANDLERS
+  // ===================================================================
 
-    const searchCriteria = this.buildSearchCriteria();
-
-    this.patientService.searchPatients(
-      searchCriteria,
-      this.currentPage(),
-      this.pageSize()
-    ).subscribe({
-      next: (response) => {
-        this.patients.set(response.content);
-        this.totalPatients.set(response.totalElements);
-        this.totalPages.set(response.totalPages);
-        this.loading.set(false);
-
-        if (!this.searchPerformed()) {
-          this.originalTotal.set(response.totalElements);
-        }
-
-        // Update data table if in table view
-        if (this.viewMode() === 'table' && this.dataTable) {
-          this.dataTable.setData(response.content);
-          this.dataTable.setTotalItems(response.totalElements);
-          this.dataTable.setLoading(false);
-        }
-      },
-      error: (error) => {
-        this.loading.set(false);
-        this.notificationService.error('حدث خطأ في تحميل بيانات المرضى');
-      }
-    });
-  }
-
-  private buildSearchCriteria(): PatientSearchCriteria {
-    const formValue = this.searchForm.value;
-
-    return {
-      searchTerm: formValue.searchTerm?.trim(),
-      gender: formValue.gender || undefined,
-      bloodType: formValue.bloodType || undefined,
-      ageFrom: formValue.ageFrom || undefined,
-      ageTo: formValue.ageTo || undefined,
-      isActive: formValue.showInactive ? undefined : true
-    };
-  }
-
+  /**
+   * Handle search button click
+   */
   onSearch(): void {
     this.currentPage.set(0);
-    this.searchPerformed.set(true);
     this.loadPatients();
   }
 
+  /**
+   * Clear search filters
+   */
   onClearSearch(): void {
     this.searchForm.reset({
-      showInactive: false
+      searchTerm: '',
+      gender: '',
+      bloodType: '',
+      // ageFrom: '',
+      // ageTo: '',
+      showInactive: false,
+      // city: '',
+      // lastVisitFrom: '',
+      // lastVisitTo: ''
     });
     this.currentPage.set(0);
-    this.searchPerformed.set(false);
     this.loadPatients();
   }
 
-  toggleAdvancedSearch(): void {
-    this.showAdvancedSearch.update(show => !show);
+  /**
+   * Toggle advanced search
+   */
+  onToggleAdvancedSearch(): void {
+    this.showAdvancedSearch.set(!this.showAdvancedSearch());
   }
 
+  /**
+   * Handle pagination
+   */
   onPageChange(event: PageEvent): void {
     this.currentPage.set(event.pageIndex);
     this.pageSize.set(event.pageSize);
     this.loadPatients();
   }
 
-  goToPage(page: number): void {
-    if (page >= 0 && page < this.totalPages()) {
-      this.currentPage.set(page);
-      this.loadPatients();
+  /**
+   * Toggle view mode
+   */
+  onToggleViewMode(): void {
+    this.viewMode.set(this.viewMode() === 'table' ? 'cards' : 'table');
+  }
+
+  /**
+   * Refresh data
+   */
+  onRefresh(): void {
+    this.loadPatients();
+    if (this.userRole() === 'SYSTEM_ADMIN' || this.userRole() === 'ADMIN') {
+      this.loadStatistics();
     }
   }
 
-  setViewMode(mode: 'table' | 'cards'): void {
-    this.viewMode.set(mode);
-  }
+  // ===================================================================
+  // PATIENT ACTIONS
+  // ===================================================================
 
-  onAddPatient(): void {
-    this.router.navigate(['/patients/new']);
-  }
-
+  /**
+   * View patient details
+   */
   onViewPatient(patient: Patient): void {
     this.router.navigate(['/patients', patient.id]);
   }
 
+  /**
+   * Edit patient
+   */
   onEditPatient(patient: Patient): void {
     this.router.navigate(['/patients', patient.id, 'edit']);
   }
 
+  /**
+   * Delete patient (soft delete)
+   */
   onDeletePatient(patient: Patient): void {
     const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '400px',
       data: {
-        title: 'حذف المريض',
-        message: `هل أنت متأكد من حذف المريض "${patient.fullName}"؟\n\nسيتم إلغاء تفعيل المريض وإخفاء بياناته من النظام.`,
+        title: 'تأكيد الحذف',
+        message: `هل أنت متأكد من حذف المريض "${patient.fullName}"؟ سيتم إلغاء تفعيل المريض فقط.`,
         confirmText: 'حذف',
         cancelText: 'إلغاء',
-        type: 'danger'
+        type: 'warn'
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.patientService.deletePatient(patient.id!).subscribe({
-          next: () => {
-            this.notificationService.success('تم حذف المريض بنجاح');
-            this.loadPatients();
+        this.patientService.deletePatient(patient.id).subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.loadPatients(); // Refresh the list
+            }
           },
-          error: () => {
-            this.notificationService.error('حدث خطأ في حذف المريض');
+          error: (error) => {
+            this.notificationService.error('فشل في حذف المريض');
           }
         });
       }
     });
   }
 
-  onRestorePatient(patient: Patient): void {
-    this.patientService.restorePatient(patient.id!).subscribe({
-      next: () => {
-        this.notificationService.success('تم إعادة تفعيل المريض بنجاح');
-        this.loadPatients();
-      },
-      error: () => {
-        this.notificationService.error('حدث خطأ في إعادة تفعيل المريض');
-      }
-    });
-  }
-
-  onBookAppointment(patient: Patient): void {
-    this.router.navigate(['/appointments/new'], {
-      queryParams: { patientId: patient.id }
-    });
-  }
-
-  onCreateInvoice(patient: Patient): void {
-    this.router.navigate(['/invoices/new'], {
-      queryParams: { patientId: patient.id }
-    });
-  }
-
-  onBulkDelete(patients: Patient[]): void {
+  /**
+   * Reactivate patient
+   */
+  onReactivatePatient(patient: Patient): void {
     const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '400px',
       data: {
-        title: 'حذف متعدد',
-        message: `هل أنت متأكد من حذف ${patients.length} مريض؟`,
-        confirmText: 'حذف الكل',
+        title: 'تأكيد إعادة التفعيل',
+        message: `هل أنت متأكد من إعادة تفعيل المريض "${patient.fullName}"؟`,
+        confirmText: 'إعادة تفعيل',
         cancelText: 'إلغاء',
-        type: 'danger'
+        type: 'primary'
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        // Implement bulk delete logic
-        this.notificationService.success(`تم حذف ${patients.length} مريض بنجاح`);
-        this.loadPatients();
+        this.patientService.reactivatePatient(patient.id).subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.loadPatients(); // Refresh the list
+            }
+          },
+          error: (error) => {
+            this.notificationService.error('فشل في إعادة تفعيل المريض');
+          }
+        });
       }
     });
   }
 
-  onExport(event: { format: string }): void {
-    this.loadingService.startLoading();
-
-    this.patientService.exportPatients(event.format as 'excel' | 'pdf').subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `patients.${event.format === 'excel' ? 'xlsx' : 'pdf'}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        this.loadingService.stopLoading();
-        this.notificationService.success('تم تصدير البيانات بنجاح');
-      },
-      error: () => {
-        this.loadingService.stopLoading();
-        this.notificationService.error('حدث خطأ في تصدير البيانات');
-      }
-    });
+  /**
+   * Add new patient
+   */
+  onAddPatient(): void {
+    this.router.navigate(['/patients/new']);
   }
 
-  onRefresh(): void {
+  /**
+   * Export patients data
+   */
+  onExportPatients(format: 'excel' | 'pdf' | 'csv'): void {
+    // TODO: Implement export functionality
+    this.notificationService.info(`تصدير البيانات بتنسيق ${format} قريباً...`);
+  }
+
+  /**
+   * Import patients data
+   */
+  onImportPatients(): void {
+    // TODO: Implement import functionality
+    this.notificationService.info('استيراد البيانات قريباً...');
+  }
+
+  // ===================================================================
+  // UTILITY METHODS
+  // ===================================================================
+
+  /**
+   * Format date for display
+   */
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ar-SA');
+  }
+
+  /**
+   * Get patient age (this method can be removed if you prefer the pre-calculated approach)
+   */
+  getPatientAge(patient: Patient): number {
+    if (patient.age) {
+      return patient.age; // Use pre-calculated age
+    }
+    if (patient.dateOfBirth) {
+      return this.patientService.calculateAge(patient.dateOfBirth);
+    }
+    return 0;
+  }
+
+  /**
+   * Format gender for display
+   */
+  formatGender(gender: Gender): string {
+    return this.patientService.formatGender(gender);
+  }
+
+  /**
+   * Format blood type for display
+   */
+  formatBloodType(bloodType: BloodType): string {
+    return this.patientService.formatBloodType(bloodType);
+  }
+
+  /**
+   * Get statistics summary text
+   */
+  getStatisticsSummary(): string {
+    const stats = this.statistics();
+    if (!stats) return '';
+
+    return `المجموع: ${stats.totalPatients} | النشط: ${stats.activePatients} | الجدد هذا الشهر: ${stats.newPatientsThisMonth}`;
+  }
+
+  /**
+   * Format number with Arabic numerals
+   */
+  formatNumber(value: number | undefined): string {
+    if (value === undefined || value === null) return '0';
+    return Math.round(value).toLocaleString('ar-SA');
+  }
+
+  /**
+   * Format percentage with one decimal place
+   */
+  formatPercentage(value: number | undefined): string {
+    if (value === undefined || value === null) return '0';
+    return Number(value.toFixed(1)).toLocaleString('ar-SA');
+  }
+
+  /**
+   * Format currency in SAR
+   */
+  formatCurrency(value: number | undefined): string {
+    if (value === undefined || value === null) return '0 ريال';
+    return new Intl.NumberFormat('ar-SA', {
+      style: 'currency',
+      currency: 'YER',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(value);
+  }
+
+  /**
+   * Get blood types for dropdown
+   * This method already exists but verify it returns the correct format
+   */
+  getBloodTypes(): { value: string; label: string }[] {
+    return this.patientService.getBloodTypes();
+  }
+
+  /**
+   * Toggle advanced search visibility
+   */
+  toggleAdvancedSearch(): void {
+    this.showAdvancedSearch.update(value => !value);
+  }
+
+  /**
+   * Clear search term
+   */
+  clearSearch(): void {
+    this.searchForm.get('searchTerm')?.setValue('');
+    this.onSearch();
+  }
+
+  /**
+   * Reset all search filters
+   */
+  resetSearch(): void {
+    this.searchForm.reset({
+      searchTerm: '',
+      gender: '',
+      bloodType: '',
+      showInactive: false
+    });
+    this.searchPerformed.set(false);
     this.loadPatients();
   }
 
-  // Helper methods
-  trackByPatient(index: number, patient: Patient): number {
-    return patient.id!;
+  /**
+   * Get search results summary with statistics
+   */
+  getSearchSummary(): string {
+    const total = this.totalPatients();
+    const hasFilters = this.searchPerformed();
+    const stats = this.statistics();
+
+    if (hasFilters) {
+      return `تم العثور على ${this.formatNumber(total)} مريض من أصل ${this.formatNumber(stats?.totalPatients || 0)}`;
+    }
+    return `إجمالي المرضى: ${this.formatNumber(total)}`;
   }
 
-  getBloodTypeLabel(bloodType: string): string {
-    const type = this.bloodTypes.find(bt => bt.value === bloodType);
-    return type ? type.label : '-';
+  /**
+   * Calculate gender percentage
+   */
+  getGenderPercentage(gender: 'male' | 'female'): number {
+    const stats = this.statistics();
+    if (!stats || stats.totalPatients === 0) return 0;
+
+    const count = gender === 'male' ? stats.malePatients : stats.femalePatients;
+    return (count / stats.totalPatients) * 100;
   }
 
-  getAgeText(age?: number): string {
-    return age ? `${age} سنة` : 'غير محدد';
+  /**
+   * Get statistics tooltip
+   */
+  getStatisticsTooltip(): string {
+    const stats = this.statistics();
+    if (!stats) return '';
+
+    return `
+      المرضى النشطون: ${stats.activePatients} (${this.formatPercentage(stats.activePercentage)}%)
+      المرضى غير النشطين: ${stats.inactivePatients} (${this.formatPercentage(stats.inactivePercentage)}%)
+      نسبة الذكور إلى الإناث: ${this.formatPercentage(stats.genderRatio || 0)}
+      متوسط العمر: ${this.formatNumber(stats.averageAge)} سنة
+    `.trim();
   }
 
-  formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('ar-SA');
+  /**
+   * Check if statistics are fully loaded
+   */
+  hasCompleteStatistics(): boolean {
+    const stats = this.statistics();
+    return stats !== null && stats.totalPatients > 0;
+  }
+
+  /**
+   * Refresh statistics
+   */
+  refreshStatistics(): void {
+    this.loadStatistics();
+  }
+
+
+  /**
+   * Check if user can delete patients
+   */
+  canDeletePatients(): boolean {
+    // TODO: Implement role-based permissions
+    return true;
+  }
+
+  /**
+   * Check if user can reactivate patients
+   */
+  canReactivatePatients(): boolean {
+    // TODO: Implement role-based permissions
+    return true;
   }
 }

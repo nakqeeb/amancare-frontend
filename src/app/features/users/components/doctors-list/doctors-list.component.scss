@@ -1,0 +1,920 @@
+/* ===================================================================
+   src/app/features/users/components/doctors-list/doctors-list.component.scss
+   Styles for Doctors List Component
+   =================================================================== */
+
+/* ===================================================================
+   LAYOUT STRUCTURE
+   =================================================================== */
+
+.layout-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--background-color, #f5f5f5);
+}
+
+.layout-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background-color: var(--surface-color, #ffffff);
+
+  &.rtl {
+    direction: rtl;
+    text-align: right;
+  }
+}
+
+/* ===================================================================
+   PAGE HEADER SECTION
+   =================================================================== */
+
+.page-header {
+  margin-bottom: 32px;
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+
+    .title-section {
+      .page-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 8px 0;
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--primary-color, #1976d2);
+
+        mat-icon {
+          font-size: 2rem;
+          width: 2rem;
+          height: 2rem;
+        }
+      }
+
+      .page-subtitle {
+        margin: 0;
+        font-size: 1rem;
+        color: var(--text-secondary, #666);
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+
+      button {
+        min-width: 120px;
+
+        mat-icon {
+          margin-left: 8px;
+        }
+      }
+    }
+  }
+}
+
+/* ===================================================================
+   STATISTICS OVERVIEW
+   =================================================================== */
+
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+
+  .stat-card {
+    border-radius: 12px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    &.total {
+      background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+      color: white;
+
+      .stat-icon {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+      }
+    }
+
+    &.active {
+      background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+      color: white;
+
+      .stat-icon {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+      }
+    }
+
+    &.inactive {
+      background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+      color: white;
+
+      .stat-icon {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+      }
+    }
+
+    &.specializations {
+      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+      color: white;
+
+      .stat-icon {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+      }
+    }
+
+    .stat-content {
+      display: flex;
+      align-items: center;
+      padding: 20px;
+      gap: 16px;
+
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(25, 118, 210, 0.1);
+        color: var(--primary-color, #1976d2);
+      }
+
+      .stat-info {
+        display: flex;
+        flex-direction: column;
+
+        .stat-number {
+          font-size: 2rem;
+          font-weight: 700;
+          line-height: 1;
+          margin-bottom: 4px;
+        }
+
+        .stat-label {
+          font-size: 0.875rem;
+          opacity: 0.9;
+        }
+      }
+    }
+  }
+}
+
+/* ===================================================================
+   CONTENT CONTAINER
+   =================================================================== */
+
+.content-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ===================================================================
+   CONTROLS CARD
+   =================================================================== */
+
+.controls-card {
+  .controls-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+
+    .view-toggle {
+      display: flex;
+      gap: 8px;
+
+      button {
+        border-radius: 8px;
+
+        &[color="primary"] {
+          background: var(--primary-color, #1976d2);
+          color: white;
+        }
+      }
+    }
+  }
+
+  .filters-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+
+    .filters-form {
+      .filters-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+
+        @media (max-width: 768px) {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+
+        .search-field {
+          mat-icon {
+            color: var(--text-secondary, #666);
+          }
+        }
+
+        mat-form-field {
+          width: 100%;
+        }
+      }
+
+      .filter-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .results-count {
+          font-size: 0.875rem;
+          color: var(--text-secondary, #666);
+          font-weight: 500;
+        }
+      }
+    }
+  }
+}
+
+/* ===================================================================
+   SPECIALIZATIONS FILTER
+   =================================================================== */
+
+.specializations-filter {
+  h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--text-primary, #212121);
+  }
+
+  .specialization-chips {
+    .mat-chip-set {
+      gap: 8px;
+    }
+
+    mat-chip {
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background-color: rgba(25, 118, 210, 0.1);
+      }
+
+      &[selected="true"] {
+        background-color: var(--primary-color, #1976d2);
+        color: white;
+      }
+    }
+  }
+}
+
+/* ===================================================================
+   BULK ACTIONS
+   =================================================================== */
+
+.bulk-actions {
+  .bulk-actions-card {
+    background: linear-gradient(90deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-left: 4px solid var(--primary-color, #1976d2);
+
+    .bulk-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+
+      .selection-info {
+        font-weight: 500;
+        color: var(--primary-color, #1976d2);
+      }
+
+      .bulk-buttons {
+        display: flex;
+        gap: 12px;
+
+        button {
+          min-width: 140px;
+
+          mat-icon {
+            margin-left: 8px;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* ===================================================================
+   TABLE VIEW
+   =================================================================== */
+
+.table-view {
+  .table-card {
+    border-radius: 12px;
+
+    .table-container {
+      .doctors-table {
+        width: 100%;
+        background: #ffffff;
+
+        // Header Styles
+        .mat-header-cell {
+          background: #fafafa;
+          border-bottom: 2px solid var(--primary-color, #1976d2);
+          font-weight: 600;
+          color: var(--text-primary, #212121);
+          font-size: 0.875rem;
+        }
+
+        // Row Styles
+        .mat-row {
+          &.doctor-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+
+            &:hover {
+              background-color: #f5f5f5;
+            }
+
+            &.selected {
+              background-color: rgba(25, 118, 210, 0.08);
+            }
+          }
+        }
+
+        // Cell Styles
+        .mat-cell {
+          border-bottom: 1px solid #e0e0e0;
+          padding: 16px 12px;
+
+          // Doctor Information Cell
+          &.doctor-cell {
+            .doctor-info {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+
+              .doctor-avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #4caf50, #2e7d32);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                .avatar-text {
+                  color: white;
+                  font-weight: 600;
+                  font-size: 0.875rem;
+                }
+              }
+
+              .doctor-details {
+                .doctor-name {
+                  font-weight: 500;
+                  color: var(--text-primary, #212121);
+                  margin-bottom: 4px;
+                }
+
+                .doctor-username {
+                  font-size: 0.75rem;
+                  color: var(--text-secondary, #999);
+                  font-family: monospace;
+                }
+              }
+            }
+          }
+
+          // Contact Information Cell
+          .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+
+            .contact-item {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+
+              button {
+                width: 32px;
+                height: 32px;
+                line-height: 32px;
+
+                mat-icon {
+                  font-size: 16px;
+                  width: 16px;
+                  height: 16px;
+                }
+              }
+
+              .contact-text {
+                font-size: 0.875rem;
+                color: var(--text-primary, #212121);
+              }
+            }
+          }
+
+          // Actions Cell
+          .actions-cell {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+
+            button {
+              &:hover {
+                background-color: rgba(0, 0, 0, 0.04);
+              }
+            }
+          }
+
+          // Clinic Name
+          .clinic-name {
+            font-size: 0.875rem;
+            color: var(--text-secondary, #666);
+          }
+
+          // No Data Text
+          .no-data {
+            color: var(--text-secondary, #999);
+            font-style: italic;
+          }
+        }
+      }
+
+      // No Data Row
+      .no-data-row {
+        .no-data-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 48px 24px;
+          text-align: center;
+
+          .no-data-icon {
+            font-size: 4rem;
+            width: 4rem;
+            height: 4rem;
+            color: #bdbdbd;
+            margin-bottom: 16px;
+          }
+
+          .no-data-message {
+            margin: 0 0 24px 0;
+            font-size: 1rem;
+            color: var(--text-secondary, #666);
+          }
+        }
+      }
+    }
+  }
+}
+
+/* ===================================================================
+   CARDS VIEW
+   =================================================================== */
+
+.cards-view {
+  .doctors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+
+    .doctor-card {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+      border: 1px solid #e0e0e0;
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+        border-color: var(--primary-color, #1976d2);
+      }
+
+      &.inactive {
+        opacity: 0.7;
+        background-color: #fafafa;
+      }
+
+      mat-card-header {
+        padding: 20px 20px 16px 20px;
+
+        .doctor-avatar-large {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #4caf50, #2e7d32);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          span {
+            color: white;
+            font-weight: 600;
+            font-size: 1.125rem;
+          }
+        }
+
+        mat-card-title {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: var(--text-primary, #212121);
+          margin-bottom: 4px;
+        }
+
+        mat-card-subtitle {
+          color: var(--text-secondary, #666);
+          font-size: 0.875rem;
+        }
+
+        .card-menu {
+          margin-left: auto;
+        }
+      }
+
+      mat-card-content {
+        flex: 1;
+        padding: 0 20px 16px 20px;
+
+        .card-details {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+
+          .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.875rem;
+
+            mat-icon {
+              width: 20px;
+              height: 20px;
+              font-size: 20px;
+              color: var(--text-secondary, #666);
+            }
+
+            span {
+              color: var(--text-primary, #212121);
+            }
+          }
+        }
+      }
+
+      mat-card-actions {
+        padding: 12px 20px 20px 20px;
+        margin: 0;
+
+        button {
+          mat-icon {
+            margin-left: 6px;
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* ===================================================================
+   CHIPS AND BADGES
+   =================================================================== */
+
+.mat-chip {
+  &.status-chip {
+    min-height: 28px;
+    font-weight: 500;
+
+    .mat-chip-avatar {
+      margin: 0 -4px 0 8px;
+    }
+  }
+}
+
+/* ===================================================================
+   LOADING AND ERROR STATES
+   =================================================================== */
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px;
+
+  p {
+    margin-top: 16px;
+    font-size: 1rem;
+    color: var(--text-secondary, #666);
+  }
+}
+
+.error-card {
+  margin-bottom: 24px;
+
+  .error-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 32px;
+
+    mat-icon {
+      font-size: 3rem;
+      width: 3rem;
+      height: 3rem;
+      margin-bottom: 16px;
+    }
+
+    p {
+      margin: 0 0 24px 0;
+      font-size: 1.125rem;
+    }
+  }
+}
+
+/* ===================================================================
+   ANIMATIONS
+   =================================================================== */
+
+@keyframes expandCollapse {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    max-height: 1000px;
+    transform: translateY(0);
+  }
+}
+
+.filters-section {
+  animation: expandCollapse 0.3s ease-out;
+}
+
+/* ===================================================================
+   RESPONSIVE DESIGN
+   =================================================================== */
+
+@media (max-width: 1200px) {
+  .stats-overview {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .doctors-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 16px;
+  }
+
+  .page-header {
+    .header-content {
+      flex-direction: column;
+      gap: 20px;
+
+      .header-actions {
+        width: 100%;
+        justify-content: stretch;
+
+        button {
+          flex: 1;
+        }
+      }
+    }
+  }
+
+  .stats-overview {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+
+    .stat-card {
+      .stat-content {
+        padding: 16px;
+
+        .stat-icon {
+          width: 36px;
+          height: 36px;
+          font-size: 36px;
+        }
+
+        .stat-info {
+          .stat-number {
+            font-size: 1.5rem;
+          }
+        }
+      }
+    }
+  }
+
+  .controls-card {
+    .controls-header {
+      flex-direction: column;
+      gap: 16px;
+      align-items: stretch;
+
+      .view-toggle {
+        justify-content: center;
+      }
+    }
+  }
+
+  .bulk-actions {
+    .bulk-actions-card {
+      .bulk-content {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+
+        .bulk-buttons {
+          justify-content: stretch;
+
+          button {
+            flex: 1;
+          }
+        }
+      }
+    }
+  }
+
+  .table-container {
+    overflow-x: auto;
+
+    .doctors-table {
+      min-width: 800px;
+    }
+  }
+
+  .doctors-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-overview {
+    grid-template-columns: 1fr 1fr;
+
+    .stat-card {
+      .stat-content {
+        padding: 12px;
+        gap: 12px;
+
+        .stat-icon {
+          width: 32px;
+          height: 32px;
+          font-size: 32px;
+        }
+
+        .stat-info {
+          .stat-number {
+            font-size: 1.25rem;
+          }
+
+          .stat-label {
+            font-size: 0.75rem;
+          }
+        }
+      }
+    }
+  }
+
+  .specializations-filter {
+    .specialization-chips {
+      .mat-chip-set {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      mat-chip {
+        font-size: 0.75rem;
+        min-height: 24px;
+      }
+    }
+  }
+}
+
+/* ===================================================================
+   DARK THEME ADAPTATIONS
+   =================================================================== */
+
+.dark-theme {
+  .main-content {
+    background-color: #303030;
+    color: #ffffff;
+  }
+
+  .stat-card {
+    &:not(.total):not(.active):not(.inactive):not(.specializations) {
+      background: linear-gradient(135deg, #424242 0%, #303030 100%);
+      border-color: #616161;
+    }
+  }
+
+  .doctor-card {
+    background-color: #424242;
+    border-color: #616161;
+
+    &:hover {
+      background-color: #484848;
+    }
+  }
+
+  .doctors-table {
+    background: #424242;
+
+    .mat-header-cell {
+      background: #303030;
+      color: #ffffff;
+    }
+
+    .mat-row {
+      &:hover {
+        background-color: #616161;
+      }
+    }
+
+    .mat-cell {
+      border-bottom-color: #616161;
+      color: #ffffff;
+    }
+  }
+}
+
+/* ===================================================================
+   ACCESSIBILITY IMPROVEMENTS
+   =================================================================== */
+
+// Focus styles
+.doctors-table {
+  .mat-row:focus {
+    outline: 2px solid var(--primary-color, #1976d2);
+    outline-offset: -2px;
+  }
+}
+
+.doctor-card:focus {
+  outline: 2px solid var(--primary-color, #1976d2);
+  outline-offset: 2px;
+}
+
+// High contrast support
+@media (prefers-contrast: high) {
+  .doctor-card {
+    border-width: 2px;
+    border-color: #000000;
+  }
+
+  .mat-chip {
+    border: 1px solid currentColor;
+  }
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+
+  .doctor-card,
+  .stat-card {
+    transition: none;
+  }
+
+  .filters-section {
+    animation: none;
+  }
+}

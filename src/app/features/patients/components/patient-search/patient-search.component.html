@@ -1,0 +1,338 @@
+<!-- ===================================================================
+// src/app/features/patients/components/patient-search/patient-search.component.html
+// Patient Search Template
+// =================================================================== -->
+<app-header />
+<app-sidebar>
+<mat-card class="search-card">
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon>search</mat-icon>
+      البحث عن المرضى
+    </mat-card-title>
+    <div class="search-summary" *ngIf="searchPerformed()">
+      {{ getSearchSummary() }}
+    </div>
+  </mat-card-header>
+
+  <mat-card-content>
+    <form [formGroup]="searchForm" class="search-form">
+      <!-- Quick Search Row -->
+      <div class="quick-search-row">
+        <!-- Main Search Input -->
+        <mat-form-field appearance="outline" class="search-input">
+          <mat-label>البحث السريع</mat-label>
+          <input
+            matInput
+            formControlName="searchTerm"
+            placeholder="اسم المريض، رقم الهاتف، أو رقم المريض..."
+            (keyup.enter)="onSearch()"
+          />
+          <mat-icon matSuffix>search</mat-icon>
+          <mat-hint>يمكنك البحث بالاسم أو رقم الهاتف أو رقم المريض</mat-hint>
+        </mat-form-field>
+
+        <!-- Search Actions -->
+        <div class="search-actions">
+          <button
+            mat-raised-button
+            color="primary"
+            type="button"
+            (click)="onSearch()"
+            [disabled]="loading()"
+          >
+            <mat-icon>search</mat-icon>
+            بحث
+          </button>
+
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="onClear()"
+            [disabled]="loading()"
+          >
+            <mat-icon>clear</mat-icon>
+            مسح
+          </button>
+
+          <button
+            mat-icon-button
+            type="button"
+            (click)="onToggleAdvanced()"
+            [matTooltip]="
+              expanded() ? 'إخفاء البحث المتقدم' : 'إظهار البحث المتقدم'
+            "
+            *ngIf="showAdvanced"
+          >
+            <mat-icon>{{
+              expanded() ? "expand_less" : "expand_more"
+            }}</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Search Presets -->
+      <div class="quick-presets">
+        <mat-chip-listbox class="preset-chips">
+          <mat-chip-option (click)="onQuickSearch('all')">
+            <mat-icon>people</mat-icon>
+            جميع المرضى
+          </mat-chip-option>
+
+          <mat-chip-option (click)="onQuickSearch('active')">
+            <mat-icon>check_circle</mat-icon>
+            النشط
+          </mat-chip-option>
+
+          <mat-chip-option (click)="onQuickSearch('inactive')">
+            <mat-icon>cancel</mat-icon>
+            غير النشط
+          </mat-chip-option>
+
+          <mat-chip-option (click)="onQuickSearch('male')">
+            <mat-icon>person</mat-icon>
+            الذكور
+          </mat-chip-option>
+
+          <mat-chip-option (click)="onQuickSearch('female')">
+            <mat-icon>person_outline</mat-icon>
+            الإناث
+          </mat-chip-option>
+
+          <mat-chip-option (click)="onQuickSearch('pediatric')">
+            <mat-icon>child_care</mat-icon>
+            الأطفال
+          </mat-chip-option>
+
+          <mat-chip-option (click)="onQuickSearch('adult')">
+            <mat-icon>person</mat-icon>
+            البالغون
+          </mat-chip-option>
+
+          <mat-chip-option (click)="onQuickSearch('senior')">
+            <mat-icon>elderly</mat-icon>
+            كبار السن
+          </mat-chip-option>
+        </mat-chip-listbox>
+      </div>
+
+      <!-- Advanced Search Panel -->
+      <mat-expansion-panel
+        *ngIf="showAdvanced"
+        [expanded]="expanded()"
+        class="advanced-panel"
+      >
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>tune</mat-icon>
+            البحث المتقدم
+          </mat-panel-title>
+          <mat-panel-description *ngIf="getActiveFiltersCount() > 0">
+            {{ getActiveFiltersCount() }} فلتر نشط
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="advanced-form">
+          <!-- Demographics Row -->
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>الجنس</mat-label>
+              <mat-select formControlName="gender">
+                <mat-option value="">الكل</mat-option>
+                <mat-option
+                  *ngFor="let gender of genders"
+                  [value]="gender.value"
+                >
+                  <mat-icon>{{ gender.icon }}</mat-icon>
+                  {{ gender.arabic }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>فصيلة الدم</mat-label>
+              <mat-select formControlName="bloodType">
+                <mat-option value="">الكل</mat-option>
+                <mat-option
+                  *ngFor="let bloodType of bloodTypes"
+                  [value]="bloodType.value"
+                >
+                  {{ bloodType.arabic }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>المدينة</mat-label>
+              <mat-select formControlName="city">
+                <mat-option value="">الكل</mat-option>
+                <mat-option *ngFor="let city of cities()" [value]="city">
+                  {{ city }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Age Range Row -->
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>العمر من</mat-label>
+              <input
+                matInput
+                type="number"
+                formControlName="ageFrom"
+                placeholder="0"
+                min="0"
+                max="150"
+              />
+              <mat-hint>سنة</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>العمر إلى</mat-label>
+              <input
+                matInput
+                type="number"
+                formControlName="ageTo"
+                placeholder="150"
+                min="0"
+                max="150"
+              />
+              <mat-hint>سنة</mat-hint>
+              <mat-error *ngIf="!isAgeRangeValid()">
+                العمر "من" يجب أن يكون أقل من أو يساوي العمر "إلى"
+              </mat-error>
+            </mat-form-field>
+
+            <div class="status-checkboxes">
+              <mat-checkbox formControlName="showInactive">
+                تضمين المرضى غير النشطين
+              </mat-checkbox>
+            </div>
+          </div>
+
+          <!-- Date Range Row -->
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>آخر زيارة من</mat-label>
+              <input
+                matInput
+                [matDatepicker]="fromDatePicker"
+                formControlName="lastVisitFrom"
+                readonly
+              />
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="fromDatePicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #fromDatePicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>آخر زيارة إلى</mat-label>
+              <input
+                matInput
+                [matDatepicker]="toDatePicker"
+                formControlName="lastVisitTo"
+                readonly
+              />
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="toDatePicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #toDatePicker></mat-datepicker>
+              <mat-error *ngIf="!isDateRangeValid()">
+                تاريخ "من" يجب أن يكون قبل أو يساوي تاريخ "إلى"
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Advanced Actions -->
+          <div class="advanced-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              type="button"
+              (click)="onSearch()"
+              [disabled]="
+                loading() || !isAgeRangeValid() || !isDateRangeValid()
+              "
+            >
+              <mat-icon>search</mat-icon>
+              بحث متقدم
+            </button>
+
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="onClear()"
+              [disabled]="loading()"
+            >
+              <mat-icon>clear_all</mat-icon>
+              مسح جميع الفلاتر
+            </button>
+          </div>
+        </div>
+      </mat-expansion-panel>
+
+      <!-- Loading Indicator -->
+      <div class="loading-indicator" *ngIf="loading()">
+        <mat-spinner diameter="24"></mat-spinner>
+        <span>جاري البحث...</span>
+      </div>
+
+      <!-- Search Results Summary -->
+      <div class="results-summary" *ngIf="searchPerformed() && !loading()">
+        <div class="summary-info">
+          <mat-icon [color]="hasResults() ? 'primary' : 'warn'">
+            {{ hasResults() ? "check_circle" : "info" }}
+          </mat-icon>
+          <span>{{ getSearchSummary() }}</span>
+        </div>
+
+        <div class="active-filters" *ngIf="getActiveFiltersCount() > 0">
+          <mat-chip-listbox>
+            <mat-chip-option *ngIf="lastSearchCriteria().searchTerm" disabled>
+              <mat-icon>search</mat-icon>
+              البحث: {{ lastSearchCriteria().searchTerm }}
+            </mat-chip-option>
+
+            <mat-chip-option *ngIf="lastSearchCriteria().gender" disabled>
+              <mat-icon>person</mat-icon>
+              {{ getGenderLabel(lastSearchCriteria().gender!) }}
+            </mat-chip-option>
+
+            <mat-chip-option *ngIf="lastSearchCriteria().bloodType" disabled>
+              <mat-icon>colorize</mat-icon>
+              {{ getBloodTypeLabel(lastSearchCriteria().bloodType!) }}
+            </mat-chip-option>
+
+            <mat-chip-option
+              *ngIf="lastSearchCriteria().ageFrom || lastSearchCriteria().ageTo"
+              disabled
+            >
+              <mat-icon>cake</mat-icon>
+              العمر:
+              {{ lastSearchCriteria().ageFrom || "0" }} -
+              {{ lastSearchCriteria().ageTo || "∞" }}
+            </mat-chip-option>
+
+            <mat-chip-option *ngIf="lastSearchCriteria().city" disabled>
+              <mat-icon>location_city</mat-icon>
+              {{ lastSearchCriteria().city }}
+            </mat-chip-option>
+
+            <mat-chip-option
+              *ngIf="lastSearchCriteria().isActive === false"
+              disabled
+            >
+              <mat-icon>cancel</mat-icon>
+              غير نشط
+            </mat-chip-option>
+          </mat-chip-listbox>
+        </div>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+</app-sidebar>

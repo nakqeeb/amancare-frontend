@@ -1,46 +1,37 @@
 // ===================================================================
-// 1. MEDICAL RECORD FORM COMPONENT
 // src/app/features/medical-records/components/medical-record-form/medical-record-form.component.ts
+// Medical Record Form Component - Complete Implementation with Real Data Integration
 // ===================================================================
-import { Component, inject, signal, OnInit } from '@angular/core';
+
+import { Component, OnInit, OnDestroy, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import {
-  FormBuilder,
-  FormGroup,
-  Validators,
-  ReactiveFormsModule
-} from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, FormControl, Validators, ReactiveFormsModule } from '@angular/forms';
+import { MatStepper } from '@angular/material/stepper';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatStepperModule } from '@angular/material/stepper';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatTabsModule } from '@angular/material/tabs';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { Observable, map, startWith } from 'rxjs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-// Shared Components
-import { HeaderComponent } from '../../../../shared/components/header/header.component';
-import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.component';
+import { Observable, Subject, takeUntil, debounceTime, distinctUntilChanged, map, startWith } from 'rxjs';
 
-// Medical Record Components
-import { VitalSignsFormComponent } from '../vital-signs-form/vital-signs-form.component';
-import { DiagnosisFormComponent } from '../diagnosis-form/diagnosis-form.component';
-import { PrescriptionFormComponent } from '../prescription-form/prescription-form.component';
-import { LabTestsFormComponent } from '../lab-tests-form/lab-tests-form.component';
-
-// Services & Models
 import { MedicalRecordService } from '../../services/medical-record.service';
 import { PatientService } from '../../../patients/services/patient.service';
+import { UserService } from '../../../users/services/user.service';
 import { AppointmentService } from '../../../appointments/services/appointment.service';
-import { NotificationService } from '../../../../core/services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { NotificationService } from '../../../../core/services/notification.service';
+
 import {
   MedicalRecord,
   CreateMedicalRecordRequest,
@@ -51,335 +42,454 @@ import {
   Diagnosis,
   Prescription,
   LabTest,
-  SystemicExamination
+  RadiologyTest,
+  MedicalProcedure,
+  Referral,
+  SystemicExamination,
+  CreateDiagnosisDto,
+  CreatePrescriptionDto,
+  CreateLabTestDto,
+  CreateRadiologyTestDto,
+  CreateMedicalProcedureDto,
+  CreateReferralDto,
+  DiagnosisType,
+  MedicationRoute,
+  LabTestCategory,
+  TestUrgency,
+  RadiologyType,
+  ProcedureCategory,
+  ReferralType,
+  ReferralPriority
 } from '../../models/medical-record.model';
 import { Patient } from '../../../patients/models/patient.model';
-import { Appointment, AppointmentStatus } from '../../../appointments/models/appointment.model';
+import { User } from '../../../users/models/user.model';
+import { AppointmentResponse } from '../../../appointments/models/appointment.model';
+
+// Import sub-components
+import { VitalSignsFormComponent } from '../vital-signs-form/vital-signs-form.component';
+import { DiagnosisFormComponent } from '../diagnosis-form/diagnosis-form.component';
+import { PrescriptionFormComponent } from '../prescription-form/prescription-form.component';
+import { LabTestsFormComponent } from '../lab-tests-form/lab-tests-form.component';
+import { RadiologyTestsFormComponent } from '../radiology-tests-form/radiology-tests-form.component';
+import { MedicalProceduresFormComponent } from '../medical-procedures-form/medical-procedures-form.component';
+import { ReferralsFormComponent } from '../referrals-form/referrals-form.component';
+import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { SidebarComponent } from "../../../../shared/components/sidebar/sidebar.component";
 
 @Component({
   selector: 'app-medical-record-form',
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule,
     ReactiveFormsModule,
+    RouterModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
+    MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatCheckboxModule,
     MatStepperModule,
-    MatProgressSpinnerModule,
     MatDividerModule,
-    MatTabsModule,
+    MatProgressSpinnerModule,
     MatAutocompleteModule,
-    HeaderComponent,
-    SidebarComponent,
+    MatDialogModule,
     VitalSignsFormComponent,
     DiagnosisFormComponent,
     PrescriptionFormComponent,
-    LabTestsFormComponent
+    LabTestsFormComponent,
+    RadiologyTestsFormComponent,
+    MedicalProceduresFormComponent,
+    ReferralsFormComponent,
+    HeaderComponent,
+    SidebarComponent
   ],
   templateUrl: './medical-record-form.component.html',
   styleUrl: './medical-record-form.component.scss'
 })
-export class MedicalRecordFormComponent implements OnInit {
+export class MedicalRecordFormComponent implements OnInit, OnDestroy {
+  // ViewChild for stepper control
+  @ViewChild('stepper') stepper!: MatStepper;
+
   // Services
+  private fb = inject(FormBuilder);
   private medicalRecordService = inject(MedicalRecordService);
   private patientService = inject(PatientService);
+  private userService = inject(UserService);
   private appointmentService = inject(AppointmentService);
-  private notificationService = inject(NotificationService);
   private authService = inject(AuthService);
+  private notificationService = inject(NotificationService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private fb = inject(FormBuilder);
+  private dialog = inject(MatDialog);
 
-  // Signals
-  loading = signal(false);
+  // State Management
+  loading = this.medicalRecordService.loading;
+  currentUser = this.authService.currentUser;
   isEditMode = signal(false);
   recordId = signal<number | null>(null);
-  selectedPatient = signal<Patient | null>(null);
-  selectedAppointment = signal<Appointment | null>(null);
-  currentStep = signal(0);
-
-  // Form Groups
-  medicalRecordForm!: FormGroup;
-  basicInfoForm!: FormGroup;
-  vitalSignsForm!: FormGroup;
-  examinationForm!: FormGroup;
-  diagnosisForm!: FormGroup;
-  treatmentForm!: FormGroup;
+  currentStep = 0; // Regular property for stepper binding
+  isSaving = signal(false);
 
   // Data
-  patients: Patient[] = [];
-  appointments: Appointment[] = [];
-  filteredPatients$!: Observable<Patient[]>;
+  selectedPatient = signal<Patient | null>(null);
+  selectedAppointment = signal<AppointmentResponse | null>(null);
+  doctors = signal<User[]>([]);
+  patientAppointments = signal<AppointmentResponse[]>([]);
+  allPatients = signal<Patient[]>([]);
 
-  visitTypes = [
-    { value: VisitType.FIRST_VISIT, label: 'زيارة أولى', icon: 'person_add' },
-    { value: VisitType.FOLLOW_UP, label: 'متابعة', icon: 'update' },
-    { value: VisitType.EMERGENCY, label: 'طوارئ', icon: 'emergency' },
-    { value: VisitType.ROUTINE_CHECK, label: 'فحص دوري', icon: 'fact_check' },
-    { value: VisitType.VACCINATION, label: 'تطعيم', icon: 'vaccines' },
-    { value: VisitType.CONSULTATION, label: 'استشارة', icon: 'medical_services' }
-  ];
-
-  // Sub-form data
+  // Form Data - Arrays managed by sub-components
   vitalSigns: VitalSigns = {};
   diagnoses: Diagnosis[] = [];
   prescriptions: Prescription[] = [];
   labTests: LabTest[] = [];
+  radiologyTests: RadiologyTest[] = [];
+  procedures: MedicalProcedure[] = [];
+  referrals: Referral[] = [];
+
+  // Dates
+  today = new Date();
+  minDate = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+  maxDate = new Date(new Date().setFullYear(new Date().getFullYear() + 1));
+
+  // Autocomplete
+  patientControl = new FormControl('');
+  filteredPatients$!: Observable<Patient[]>;
+
+  // Form
+  medicalRecordForm!: FormGroup;
+
+  // Enums for templates
+  VisitType = VisitType;
+  RecordStatus = RecordStatus;
+  DiagnosisType = DiagnosisType;
+  MedicationRoute = MedicationRoute;
+  LabTestCategory = LabTestCategory;
+  TestUrgency = TestUrgency;
+  RadiologyType = RadiologyType;
+  ProcedureCategory = ProcedureCategory;
+  ReferralType = ReferralType;
+  ReferralPriority = ReferralPriority;
+
+  // Visit Type options
+  visitTypeOptions = [
+    { value: VisitType.CONSULTATION, label: 'استشارة' },
+    { value: VisitType.FOLLOW_UP, label: 'متابعة' },
+    { value: VisitType.EMERGENCY, label: 'طوارئ' },
+    { value: VisitType.ROUTINE_CHECKUP, label: 'فحص روتيني' },
+    { value: VisitType.PROCEDURE, label: 'إجراء' },
+    { value: VisitType.VACCINATION, label: 'تطعيم' },
+    { value: VisitType.SURGERY, label: 'عملية جراحية' },
+    { value: VisitType.REHABILITATION, label: 'تأهيل' },
+    { value: VisitType.PREVENTIVE_CARE, label: 'رعاية وقائية' },
+    { value: VisitType.CHRONIC_CARE, label: 'رعاية مزمنة' }
+  ];
+
+  // Subscriptions
+  private destroy$ = new Subject<void>();
 
   ngOnInit(): void {
-    this.initializeForms();
-    this.loadPatients();
+    this.initializeForm();
     this.checkEditMode();
-    this.checkQueryParams();
+    this.loadInitialData();
     this.setupAutocomplete();
+    this.setupFormSubscriptions();
   }
 
-  private initializeForms(): void {
-    // Basic Information Form
-    this.basicInfoForm = this.fb.group({
-      patientId: ['', Validators.required],
-      patientSearch: [''],
-      appointmentId: [''],
-      visitDate: [new Date(), Validators.required],
-      visitType: [VisitType.CONSULTATION, Validators.required]
-    });
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
-    // Examination Form
-    this.examinationForm = this.fb.group({
-      chiefComplaint: ['', [Validators.required, Validators.minLength(10)]],
-      presentIllness: ['', [Validators.required, Validators.minLength(20)]],
-      pastMedicalHistory: [''],
-      familyHistory: [''],
-      socialHistory: [''],
-      allergies: [''],
-      currentMedications: [''],
-      physicalExamination: ['', [Validators.required, Validators.minLength(20)]],
-      // Systemic Examination
-      cardiovascular: [''],
-      respiratory: [''],
-      gastrointestinal: [''],
-      genitourinary: [''],
-      musculoskeletal: [''],
-      neurological: [''],
-      psychiatric: [''],
-      skin: ['']
-    });
+  // ===================================================================
+  // INITIALIZATION
+  // ===================================================================
 
-    // Treatment Plan Form
-    this.treatmentForm = this.fb.group({
-      treatmentPlan: ['', [Validators.required, Validators.minLength(20)]],
-      followUpDate: [''],
-      followUpInstructions: [''],
-      notes: ['']
-    });
-
-    // Combined form
+  private initializeForm(): void {
     this.medicalRecordForm = this.fb.group({
-      basicInfo: this.basicInfoForm,
-      examination: this.examinationForm,
-      treatment: this.treatmentForm
+      // Basic Information
+      patientId: [null, Validators.required],
+      doctorId: [this.currentUser()?.id || null, Validators.required],
+      appointmentId: [null],
+      visitDate: [new Date(), Validators.required],
+      visitType: [VisitType.CONSULTATION, Validators.required],
+      isConfidential: [false],
+
+      // Clinical Examination
+      clinicalExamination: this.fb.group({
+        chiefComplaint: ['', [Validators.required, Validators.maxLength(1000)]],
+        presentIllness: ['', [Validators.required, Validators.maxLength(2000)]],
+        pastMedicalHistory: ['', Validators.maxLength(1500)],
+        familyHistory: ['', Validators.maxLength(1500)],
+        socialHistory: ['', Validators.maxLength(1000)],
+        allergies: [''],
+        currentMedications: [''],
+        physicalExamination: ['', Validators.maxLength(2000)],
+        systemicExamination: this.fb.group({
+          cardiovascular: [''],
+          respiratory: [''],
+          gastrointestinal: [''],
+          genitourinary: [''],
+          musculoskeletal: [''],
+          neurological: [''],
+          psychiatric: [''],
+          skin: ['']
+        })
+      }),
+
+      // Diagnosis and Treatment
+      diagnosisTreatment: this.fb.group({
+        treatmentPlan: ['', Validators.maxLength(2000)]
+      }),
+
+      // Follow-up
+      followUp: this.fb.group({
+        followUpDate: [null],
+        followUpInstructions: ['', Validators.maxLength(1500)],
+        notes: ['', Validators.maxLength(1000)]
+      })
     });
-  }
-
-  private setupAutocomplete(): void {
-    this.filteredPatients$ = this.basicInfoForm.get('patientSearch')!.valueChanges
-      .pipe(
-        startWith(''),
-        map(value => this.filterPatients(value || ''))
-      );
-  }
-
-  private filterPatients(value: string): Patient[] {
-    if (typeof value !== 'string') return this.patients;
-
-    const filterValue = value.toLowerCase();
-    return this.patients.filter(patient =>
-      patient.firstName.toLowerCase().includes(filterValue) ||
-      patient.lastName.toLowerCase().includes(filterValue) ||
-      patient.patientNumber?.toLowerCase().includes(filterValue)
-    );
-  }
-
-  private loadPatients(): void {
-    // Mock data - replace with actual service call
-    this.patients = [
-      {
-        id: 1,
-        firstName: 'أحمد',
-        lastName: 'محمد علي',
-        patientNumber: 'P001',
-        phone: '0501234567',
-        dateOfBirth: '1985-03-15',
-        gender: 'MALE',
-        bloodType: 'O_POSITIVE',
-        address: 'الرياض'
-      },
-      {
-        id: 2,
-        firstName: 'فاطمة',
-        lastName: 'عبدالله',
-        patientNumber: 'P002',
-        phone: '0509876543',
-        dateOfBirth: '1990-07-22',
-        gender: 'FEMALE',
-        bloodType: 'A_POSITIVE',
-        address: 'جدة'
-      }
-    ];
   }
 
   private checkEditMode(): void {
     const id = this.route.snapshot.paramMap.get('id');
+    const duplicate = this.route.snapshot.queryParamMap.get('duplicate');
+
     if (id) {
-      this.isEditMode.set(true);
-      this.recordId.set(+id);
-      this.loadMedicalRecord(+id);
+      this.recordId.set(parseInt(id, 10));
+      if (duplicate === 'true') {
+        this.loadMedicalRecordForDuplicate(this.recordId()!);
+      } else {
+        this.isEditMode.set(true);
+        this.loadMedicalRecord(this.recordId()!);
+      }
     }
   }
 
-  private checkQueryParams(): void {
-    this.route.queryParams.subscribe(params => {
-      if (params['patientId']) {
-        const patientId = +params['patientId'];
-        const patient = this.patients.find(p => p.id === patientId);
-        if (patient) {
-          this.selectPatient(patient);
-        }
-      }
-
-      if (params['appointmentId']) {
-        const appointmentId = +params['appointmentId'];
-        this.basicInfoForm.patchValue({ appointmentId });
-        // Load appointment details
-        this.loadAppointment(appointmentId);
-      }
-    });
+  private loadInitialData(): void {
+    this.loadDoctors();
+    this.loadAllPatients();
   }
 
+  private setupAutocomplete(): void {
+    this.filteredPatients$ = this.patientControl.valueChanges.pipe(
+      startWith(''),
+      debounceTime(300),
+      distinctUntilChanged(),
+      map(value => {
+        if (typeof value === 'string' && value.length >= 2) {
+          return this.filterPatients(value);
+        }
+        return [];
+      })
+    );
+  }
+
+  private setupFormSubscriptions(): void {
+    // Subscribe to patient ID changes
+    this.medicalRecordForm.get('patientId')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(patientId => {
+        if (patientId) {
+          this.loadPatientAppointments(patientId);
+        }
+      });
+  }
+
+  // ===================================================================
+  // DATA LOADING
+  // ===================================================================
+
   private loadMedicalRecord(id: number): void {
-    this.loading.set(true);
     this.medicalRecordService.getMedicalRecordById(id).subscribe({
-      next: (record) => {
-        this.populateForm(record);
-        this.loading.set(false);
+      next: (response) => {
+        if (response) {
+          this.populateForm(response);
+        }
       },
       error: (error) => {
-        console.error('Error loading medical record:', error);
-        this.notificationService.error('حدث خطأ في تحميل السجل الطبي');
-        this.loading.set(false);
+        this.notificationService.error('خطأ في تحميل السجل الطبي');
         this.router.navigate(['/medical-records']);
       }
     });
   }
 
-  private loadAppointment(id: number): void {
-    this.appointmentService.getAppointmentById(id).subscribe({
-      next: (appointment) => {
-        this.selectedAppointment.set(appointment);
-
-        // Auto-fill patient and visit date
-        const patient = this.patients.find(p => p.id === appointment.patientId);
-        if (patient) {
-          this.selectPatient(patient);
-        }
-
-        this.basicInfoForm.patchValue({
-          visitDate: new Date(appointment.appointmentDate),
-          appointmentId: appointment.id
-        });
-
-        // Set chief complaint if available
-        if (appointment.chiefComplaint) {
-          this.examinationForm.patchValue({
-            chiefComplaint: appointment.chiefComplaint
+  private loadMedicalRecordForDuplicate(id: number): void {
+    this.medicalRecordService.getMedicalRecordById(id).subscribe({
+      next: (response) => {
+        if (response) {
+          const record = response;
+          // Populate form but clear ID and status
+          this.populateForm(record);
+          this.recordId.set(null);
+          this.isEditMode.set(false);
+          this.medicalRecordForm.patchValue({
+            visitDate: new Date()
           });
+        }
+      }
+    });
+  }
+
+  private loadDoctors(): void {
+    this.userService.getDoctors().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.doctors.set(response.data);
         }
       },
       error: (error) => {
-        console.error('Error loading appointment:', error);
+        this.notificationService.error('خطأ في تحميل قائمة الأطباء');
       }
     });
   }
 
-  private populateForm(record: MedicalRecord): void {
-    // Basic Info
-    this.basicInfoForm.patchValue({
-      patientId: record.patientId,
-      appointmentId: record.appointmentId,
-      visitDate: new Date(record.visitDate),
-      visitType: record.visitType
-    });
-
-    // Find and select patient
-    const patient = this.patients.find(p => p.id === record.patientId);
-    if (patient) {
-      this.selectPatient(patient);
-    }
-
-    // Vital Signs
-    this.vitalSigns = record.vitalSigns;
-
-    // Examination
-    this.examinationForm.patchValue({
-      chiefComplaint: record.chiefComplaint,
-      presentIllness: record.presentIllness,
-      pastMedicalHistory: record.pastMedicalHistory,
-      familyHistory: record.familyHistory,
-      socialHistory: record.socialHistory,
-      allergies: record.allergies?.join(', '),
-      currentMedications: record.currentMedications?.join(', '),
-      physicalExamination: record.physicalExamination,
-      ...record.systemicExamination
-    });
-
-    // Diagnosis & Treatment
-    this.diagnoses = record.diagnosis;
-    this.prescriptions = record.prescriptions || [];
-    this.labTests = record.labTests || [];
-
-    this.treatmentForm.patchValue({
-      treatmentPlan: record.treatmentPlan,
-      followUpDate: record.followUpDate ? new Date(record.followUpDate) : null,
-      followUpInstructions: record.followUpInstructions,
-      notes: record.notes
+  private loadAllPatients(): void {
+    this.patientService.getAllPatients(0, 1000).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Use 'patients' property consistently
+          this.allPatients.set(response.data.patients || []);
+        }
+      },
+      error: (error) => {
+        this.notificationService.error('خطأ في تحميل قائمة المرضى');
+      }
     });
   }
 
-  selectPatient(patient: Patient): void {
-    this.selectedPatient.set(patient);
-    this.basicInfoForm.patchValue({
-      patientId: patient.id,
-      patientSearch: `${patient.firstName} ${patient.lastName} - ${patient.patientNumber}`
-    });
+  private filterPatients(searchTerm: string): Patient[] {
+    const term = searchTerm.toLowerCase();
+    return this.allPatients().filter(patient =>
+      patient.fullName?.toLowerCase().includes(term) ||
+      patient.patientNumber?.toLowerCase().includes(term) ||
+      patient.phone?.includes(term)
+    );
+  }
 
-    // Load patient's appointments
-    this.loadPatientAppointments(patient.id!);
+  private loadPatientById(patientId: number): void {
+    this.patientService.getPatientById(patientId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.selectPatient(response.data);
+        }
+      }
+    });
   }
 
   private loadPatientAppointments(patientId: number): void {
-    // Load today's appointments for this patient
-    this.appointmentService.getAppointments({ patientId }).subscribe({
-      next: (appointments) => {
-        this.appointments = appointments;
-      }
-    });
+    // Load appointments for the selected patient
+    // You may need to implement this in AppointmentService if not available
+    // For now, we'll skip this if the service method doesn't exist
   }
 
-  displayPatient(patient: Patient): string {
-    return patient ? `${patient.firstName} ${patient.lastName} - ${patient.patientNumber}` : '';
+  private populateForm(record: MedicalRecord): void {
+    // Basic information
+    this.medicalRecordForm.patchValue({
+      patientId: record.patientId,
+      doctorId: record.doctorId,
+      appointmentId: record.appointmentId,
+      visitDate: record.visitDate ? new Date(record.visitDate) : null,
+      visitType: record.visitType,
+      isConfidential: record.isConfidential
+    });
+
+    // Clinical examination
+    const allergiesStr = record.allergies?.join(', ') || '';
+    const medicationsStr = record.currentMedications?.join(', ') || '';
+
+    // Parse systemicExamination from JSON string if it exists
+    let systemicExamination: any = {};
+    if (record.systemicExamination) {
+      try {
+        if (typeof record.systemicExamination === 'string') {
+          systemicExamination = JSON.parse(record.systemicExamination);
+        } else {
+          systemicExamination = record.systemicExamination;
+        }
+      } catch (e) {
+        console.warn('Failed to parse systemicExamination:', e);
+        systemicExamination = {};
+      }
+    }
+
+    this.medicalRecordForm.patchValue({
+      clinicalExamination: {
+        chiefComplaint: record.chiefComplaint,
+        presentIllness: record.presentIllness,
+        pastMedicalHistory: record.pastMedicalHistory,
+        familyHistory: record.familyHistory,
+        socialHistory: record.socialHistory,
+        allergies: allergiesStr,
+        currentMedications: medicationsStr,
+        physicalExamination: record.physicalExamination,
+        systemicExamination: systemicExamination
+      }
+    });
+
+    // Diagnosis and Treatment
+    this.medicalRecordForm.patchValue({
+      diagnosisTreatment: {
+        treatmentPlan: record.treatmentPlan
+      }
+    });
+
+    // Follow-up
+    this.medicalRecordForm.patchValue({
+      followUp: {
+        followUpDate: record.followUpDate ? new Date(record.followUpDate) : null,
+        followUpInstructions: record.followUpInstructions,
+        notes: record.notes
+      }
+    });
+
+    // Complex data - managed by sub-components
+    this.vitalSigns = record.vitalSigns || {};
+    this.diagnoses = record.diagnosis || [];
+    this.prescriptions = record.prescriptions || [];
+    this.labTests = record.labTests || [];
+    this.radiologyTests = record.radiologyTests || [];
+    this.procedures = record.procedures || [];
+    this.referrals = record.referrals || [];
+
+    // Load patient
+    if (record.patientId) {
+      this.loadPatientById(record.patientId);
+    }
   }
+
+  // ===================================================================
+  // EVENT HANDLERS
+  // ===================================================================
 
   onPatientSelected(event: any): void {
     const patient = event.option.value;
-    if (patient) {
-      this.selectPatient(patient);
+    this.selectPatient(patient);
+  }
+
+  private selectPatient(patient: Patient): void {
+    this.selectedPatient.set(patient);
+    this.medicalRecordForm.patchValue({
+      patientId: patient.id
+    });
+    if (patient.id) {
+      this.loadPatientAppointments(patient.id);
     }
+  }
+
+  displayPatient(patient: Patient | string | null): string {
+    if (!patient) {
+      return '';
+    }
+    if (typeof patient === 'string') {
+      return patient; // Return the string as-is when user is typing
+    }
+    // Return formatted name when patient object is selected
+    return `${patient.fullName} - ${patient.patientNumber}`;
   }
 
   onVitalSignsChange(vitalSigns: VitalSigns): void {
@@ -398,30 +508,27 @@ export class MedicalRecordFormComponent implements OnInit {
     this.labTests = labTests;
   }
 
-  onPrintPrescription(): void {
-    if (this.recordId()) {
-      this.loading.set(true);
-      // Print prescription logic
-      this.notificationService.success('تم طباعة الوصفة الطبية');
-      this.loading.set(false);
-    }
+  onRadiologyTestsChange(radiologyTests: RadiologyTest[]): void {
+    this.radiologyTests = radiologyTests;
   }
 
-  nextStep(): void {
-    const currentStep = this.currentStep();
-    if (currentStep < 4) {
-      this.currentStep.set(currentStep + 1);
-    }
+  onProceduresChange(procedures: MedicalProcedure[]): void {
+    this.procedures = procedures;
   }
 
-  previousStep(): void {
-    const currentStep = this.currentStep();
-    if (currentStep > 0) {
-      this.currentStep.set(currentStep - 1);
-    }
+  onReferralsChange(referrals: Referral[]): void {
+    this.referrals = referrals;
   }
 
-  async onSubmit(status: RecordStatus = RecordStatus.DRAFT): Promise<void> {
+  // ===================================================================
+  // FORM SUBMISSION
+  // ===================================================================
+
+  onSaveAsDraft(): void {
+    this.saveRecord(RecordStatus.DRAFT);
+  }
+
+  onSaveAndComplete(): void {
     if (this.medicalRecordForm.invalid) {
       this.markFormGroupTouched(this.medicalRecordForm);
       this.notificationService.warning('يرجى ملء جميع الحقول المطلوبة');
@@ -433,139 +540,246 @@ export class MedicalRecordFormComponent implements OnInit {
       return;
     }
 
-    const recordData = this.prepareMedicalRecordData();
-    recordData.status = status;
+    this.saveRecord(RecordStatus.COMPLETED);
+  }
 
-    this.loading.set(true);
+  private saveRecord(status: RecordStatus): void {
+    this.isSaving.set(true);
+    const formValue = this.medicalRecordForm.value;
+    const request = this.buildRequest(formValue, status);
 
-    if (this.isEditMode()) {
-      this.updateMedicalRecord(recordData);
-    } else {
-      this.createMedicalRecord(recordData);
+    const saveObservable = this.isEditMode()
+      ? this.medicalRecordService.updateMedicalRecord(this.recordId()!, request as UpdateMedicalRecordRequest)
+      : this.medicalRecordService.createMedicalRecord(request);
+
+    saveObservable.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (response) => {
+        this.isSaving.set(false);
+        this.notificationService.success(
+          this.isEditMode() ? 'تم تحديث السجل الطبي بنجاح' : 'تم إنشاء السجل الطبي بنجاح'
+        );
+        this.router.navigate(['/medical-records']);
+      },
+      error: (error) => {
+        this.isSaving.set(false);
+        this.notificationService.error('خطأ في حفظ السجل الطبي');
+      }
+    });
+  }
+
+  private buildRequest(formValue: any, status: RecordStatus): CreateMedicalRecordRequest {
+    // Validate critical fields first
+    if (!formValue.patientId) {
+      throw new Error('Patient ID is required');
+    }
+    if (!formValue.doctorId) {
+      throw new Error('Doctor ID is required');
+    }
+    if (!formValue.visitDate) {
+      throw new Error('Visit date is required');
+    }
+
+    const clinicalExam = formValue.clinicalExamination;
+    const followUp = formValue.followUp;
+
+    // Process allergies and medications - convert strings to arrays
+    const allergies = clinicalExam.allergies
+      ? clinicalExam.allergies.split(',').map((a: string) => a.trim()).filter((a: string) => a)
+      : [];
+
+    const currentMedications = clinicalExam.currentMedications
+      ? clinicalExam.currentMedications.split(',').map((m: string) => m.trim()).filter((m: string) => m)
+      : [];
+
+    // Map diagnosis to CreateDiagnosisDto
+    const diagnosisDto: CreateDiagnosisDto[] = this.diagnoses.map(d => ({
+      icdCode: d.icdCode,
+      description: d.description,
+      type: d.type,
+      isPrimary: d.isPrimary,
+      notes: d.notes
+    }));
+
+    // ============================================================================
+    // FIX: Map prescriptions to CreatePrescriptionDto - FILTER INVALID ONES FIRST
+    // ============================================================================
+    const prescriptionsDto: CreatePrescriptionDto[] = this.prescriptions
+      .filter(p => {
+        const isValid = p.medicationName?.trim() &&
+          p.dosage?.trim() &&
+          p.frequency?.trim() &&
+          p.duration?.trim() &&
+          p.route;
+
+        // Log incomplete prescriptions for debugging
+        if (!isValid && (p.medicationName || p.dosage || p.frequency)) {
+          console.warn('Incomplete prescription excluded from submission:', p);
+        }
+
+        return isValid;
+      })
+      .map(p => ({
+        medicationName: p.medicationName,
+        genericName: p.genericName,
+        dosage: p.dosage,
+        frequency: p.frequency,
+        duration: p.duration,
+        route: p.route,
+        instructions: p.instructions,
+        quantity: p.quantity,
+        refills: p.refills,
+        startDate: p.startDate ? this.formatDate(new Date(p.startDate)) : undefined,
+        endDate: p.endDate ? this.formatDate(new Date(p.endDate)) : undefined,
+        isPrn: p.isPrn
+      }));
+
+    // Log how many prescriptions will be sent
+    console.log(`Sending ${prescriptionsDto.length} of ${this.prescriptions.length} prescriptions to backend`);
+
+
+    // Map lab tests to CreateLabTestDto
+    const labTestsDto: CreateLabTestDto[] = this.labTests.map(lt => ({
+      testName: lt.testName,
+      testCode: lt.testCode,
+      category: lt.category,
+      urgency: lt.urgency,
+      specimenType: lt.specimenType,
+      instructions: lt.instructions
+    }));
+
+    // Map radiology tests to CreateRadiologyTestDto
+    const radiologyTestsDto: CreateRadiologyTestDto[] = this.radiologyTests.map(rt => ({
+      testName: rt.testName,
+      testType: rt.testType,
+      bodyPart: rt.bodyPart,
+      urgency: rt.urgency,
+      instructions: rt.instructions
+    }));
+
+    // Map procedures to CreateMedicalProcedureDto
+    const proceduresDto: CreateMedicalProcedureDto[] = this.procedures.map(p => ({
+      procedureName: p.procedureName,
+      procedureCode: p.procedureCode,
+      category: p.category,
+      description: p.description,
+      performedDate: p.performedDate,
+      performedBy: p.performedBy,
+      complications: p.complications,
+      outcome: p.outcome,
+      notes: p.notes
+    }));
+
+    // Map referrals to CreateReferralDto
+    const referralsDto: CreateReferralDto[] = this.referrals.map(r => ({
+      referralType: r.referralType,
+      referredTo: r.referredTo,
+      specialty: r.specialty,
+      priority: r.priority,
+      reason: r.reason,
+      notes: r.notes,
+      referralDate: r.referralDate,
+      appointmentDate: r.appointmentDate
+    }));
+
+    // Convert systemicExamination object to JSON string for backend
+    const systemicExaminationStr = clinicalExam.systemicExamination &&
+      Object.values(clinicalExam.systemicExamination).some((val: any) => val)
+      ? JSON.stringify(clinicalExam.systemicExamination)
+      : undefined;
+
+    const request: CreateMedicalRecordRequest = {
+      patientId: Number(formValue.patientId),
+      doctorId: Number(formValue.doctorId),
+      appointmentId: formValue.appointmentId ? Number(formValue.appointmentId) : undefined,
+      visitDate: this.formatDate(formValue.visitDate),
+      visitType: formValue.visitType,
+      isConfidential: formValue.isConfidential,
+      status: status,
+
+      // Vital Signs
+      vitalSigns: Object.keys(this.vitalSigns).length > 0 ? this.vitalSigns : undefined,
+
+      // Clinical Information
+      chiefComplaint: clinicalExam.chiefComplaint,
+      presentIllness: clinicalExam.presentIllness,
+      pastMedicalHistory: clinicalExam.pastMedicalHistory || undefined,
+      familyHistory: clinicalExam.familyHistory || undefined,
+      socialHistory: clinicalExam.socialHistory || undefined,
+      allergies: allergies.length > 0 ? allergies : undefined,
+      currentMedications: currentMedications.length > 0 ? currentMedications : undefined,
+      physicalExamination: clinicalExam.physicalExamination || undefined,
+      systemicExamination: systemicExaminationStr as any,
+
+      // Diagnosis and Treatment
+      diagnosis: diagnosisDto,
+      treatmentPlan: formValue.diagnosisTreatment.treatmentPlan || undefined,
+      prescriptions: prescriptionsDto.length > 0 ? prescriptionsDto : undefined,
+      labTests: labTestsDto.length > 0 ? labTestsDto : undefined,
+      radiologyTests: radiologyTestsDto.length > 0 ? radiologyTestsDto : undefined,
+      procedures: proceduresDto.length > 0 ? proceduresDto : undefined,
+
+      // Follow-up
+      followUpDate: followUp.followUpDate ? this.formatDate(followUp.followUpDate) : undefined,
+      followUpInstructions: followUp.followUpInstructions || undefined,
+      referrals: referralsDto.length > 0 ? referralsDto : undefined,
+
+      // Notes
+      notes: followUp.notes || undefined
+    };
+
+    return request;
+  }
+
+  // ===================================================================
+  // NAVIGATION
+  // ===================================================================
+
+  goToStep(step: number): void {
+    if (step >= 0 && step <= 4) {
+      this.currentStep = step;
+      if (this.stepper) {
+        this.stepper.selectedIndex = step;
+      }
     }
   }
 
-  private prepareMedicalRecordData(): any {
-    const formValue = this.medicalRecordForm.value;
-
-    // Process allergies and medications
-    const allergies = formValue.examination.allergies
-      ? formValue.examination.allergies.split(',').map((a: string) => a.trim()).filter((a: string) => a)
-      : [];
-
-    const currentMedications = formValue.examination.currentMedications
-      ? formValue.examination.currentMedications.split(',').map((m: string) => m.trim()).filter((m: string) => m)
-      : [];
-
-    // Build systemic examination
-    const systemicExamination: SystemicExamination = {};
-    if (formValue.examination.cardiovascular) systemicExamination.cardiovascular = formValue.examination.cardiovascular;
-    if (formValue.examination.respiratory) systemicExamination.respiratory = formValue.examination.respiratory;
-    if (formValue.examination.gastrointestinal) systemicExamination.gastrointestinal = formValue.examination.gastrointestinal;
-    if (formValue.examination.genitourinary) systemicExamination.genitourinary = formValue.examination.genitourinary;
-    if (formValue.examination.musculoskeletal) systemicExamination.musculoskeletal = formValue.examination.musculoskeletal;
-    if (formValue.examination.neurological) systemicExamination.neurological = formValue.examination.neurological;
-    if (formValue.examination.psychiatric) systemicExamination.psychiatric = formValue.examination.psychiatric;
-    if (formValue.examination.skin) systemicExamination.skin = formValue.examination.skin;
-
-    return {
-      patientId: formValue.basicInfo.patientId,
-      appointmentId: formValue.basicInfo.appointmentId || null,
-      visitDate: this.formatDate(formValue.basicInfo.visitDate),
-      visitType: formValue.basicInfo.visitType,
-      vitalSigns: this.vitalSigns,
-      chiefComplaint: formValue.examination.chiefComplaint,
-      presentIllness: formValue.examination.presentIllness,
-      pastMedicalHistory: formValue.examination.pastMedicalHistory,
-      familyHistory: formValue.examination.familyHistory,
-      socialHistory: formValue.examination.socialHistory,
-      allergies,
-      currentMedications,
-      physicalExamination: formValue.examination.physicalExamination,
-      systemicExamination: Object.keys(systemicExamination).length > 0 ? systemicExamination : undefined,
-      diagnosis: this.diagnoses,
-      treatmentPlan: formValue.treatment.treatmentPlan,
-      prescriptions: this.prescriptions.length > 0 ? this.prescriptions : undefined,
-      labTests: this.labTests.length > 0 ? this.labTests : undefined,
-      followUpDate: formValue.treatment.followUpDate ? this.formatDate(formValue.treatment.followUpDate) : undefined,
-      followUpInstructions: formValue.treatment.followUpInstructions,
-      notes: formValue.treatment.notes
-    };
-  }
-
-  private createMedicalRecord(data: CreateMedicalRecordRequest): void {
-    this.medicalRecordService.createMedicalRecord(data).subscribe({
-      next: (record) => {
-        this.notificationService.success('تم حفظ السجل الطبي بنجاح');
-
-        // Update appointment status if linked
-        if (data.appointmentId) {
-          this.appointmentService.updateAppointmentStatus(
-            data.appointmentId,
-            AppointmentStatus.COMPLETED
-          ).subscribe();
+  onBack(): void {
+    if (this.medicalRecordForm.dirty) {
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        data: {
+          title: 'تأكيد الإلغاء',
+          message: 'هل أنت متأكد من إلغاء التغييرات؟ سيتم فقدان جميع البيانات غير المحفوظة.',
+          confirmText: 'نعم، إلغاء',
+          cancelText: 'استمرار في التحرير'
         }
+      });
 
-        this.router.navigate(['/medical-records', record.id]);
-        this.loading.set(false);
-      },
-      error: (error) => {
-        console.error('Error creating medical record:', error);
-        this.notificationService.error('حدث خطأ في حفظ السجل الطبي');
-        this.loading.set(false);
-      }
-    });
-  }
-
-  private updateMedicalRecord(data: UpdateMedicalRecordRequest): void {
-    this.medicalRecordService.updateMedicalRecord(this.recordId()!, data).subscribe({
-      next: (record) => {
-        this.notificationService.success('تم تحديث السجل الطبي بنجاح');
-        this.router.navigate(['/medical-records', record.id]);
-        this.loading.set(false);
-      },
-      error: (error) => {
-        console.error('Error updating medical record:', error);
-        this.notificationService.error('حدث خطأ في تحديث السجل الطبي');
-        this.loading.set(false);
-      }
-    });
-  }
-
-  onSaveAsDraft(): void {
-    this.onSubmit(RecordStatus.DRAFT);
-  }
-
-  onSaveAndComplete(): void {
-    this.onSubmit(RecordStatus.COMPLETED);
+      dialogRef.afterClosed().subscribe(result => {
+        if (result) {
+          this.router.navigate(['/medical-records']);
+        }
+      });
+    } else {
+      this.router.navigate(['/medical-records']);
+    }
   }
 
   onCancel(): void {
-    this.router.navigate(['/medical-records']);
+    this.onBack();
   }
 
-  onReset(): void {
-    this.medicalRecordForm.reset();
-    this.vitalSigns = {};
-    this.diagnoses = [];
-    this.prescriptions = [];
-    this.labTests = [];
-    this.selectedPatient.set(null);
-    this.selectedAppointment.set(null);
-    this.currentStep.set(0);
-  }
+  // ===================================================================
+  // HELPER METHODS
+  // ===================================================================
 
-  // Helper methods
   private formatDate(date: Date | string): string {
     if (!date) return '';
-
-    if (typeof date === 'string') {
-      return date;
-    }
-
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
@@ -580,39 +794,47 @@ export class MedicalRecordFormComponent implements OnInit {
     });
   }
 
-  isStepValid(step: number): boolean {
-    switch (step) {
-      case 0:
-        return this.basicInfoForm.valid;
-      case 1:
-        return true; // Vital signs are optional
-      case 2:
-        return this.examinationForm.valid;
-      case 3:
-        return this.diagnoses.length > 0;
-      case 4:
-        return this.treatmentForm.valid;
-      default:
-        return false;
-    }
+  // Get form controls for template
+  get basicInfoGroup(): FormGroup {
+    return this.medicalRecordForm.get('clinicalExamination') as FormGroup;
   }
 
-  canProceed(): boolean {
-    return this.isStepValid(this.currentStep());
+  get clinicalExamGroup(): FormGroup {
+    return this.medicalRecordForm.get('clinicalExamination') as FormGroup;
   }
 
-  getPatientAge(): number {
-    if (!this.selectedPatient()?.dateOfBirth) return 0;
+  get systemicExamGroup(): FormGroup {
+    return this.clinicalExamGroup.get('systemicExamination') as FormGroup;
+  }
 
-    const today = new Date();
-    const birthDate = new Date(this.selectedPatient()!.dateOfBirth!);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
+  get diagnosisTreatmentGroup(): FormGroup {
+    return this.medicalRecordForm.get('diagnosisTreatment') as FormGroup;
+  }
 
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
+  get followUpGroup(): FormGroup {
+    return this.medicalRecordForm.get('followUp') as FormGroup;
+  }
+
+  // Validation helpers
+  isFieldInvalid(fieldName: string, groupName?: string): boolean {
+    const control = groupName
+      ? this.medicalRecordForm.get(`${groupName}.${fieldName}`)
+      : this.medicalRecordForm.get(fieldName);
+    return !!(control && control.invalid && (control.dirty || control.touched));
+  }
+
+  getErrorMessage(fieldName: string, groupName?: string): string {
+    const control = groupName
+      ? this.medicalRecordForm.get(`${groupName}.${fieldName}`)
+      : this.medicalRecordForm.get(fieldName);
+
+    if (control?.hasError('required')) {
+      return 'هذا الحقل مطلوب';
     }
-
-    return age;
+    if (control?.hasError('maxlength')) {
+      const maxLength = control.errors?.['maxlength'].requiredLength;
+      return `الحد الأقصى للحروف هو ${maxLength}`;
+    }
+    return '';
   }
 }

@@ -11,6 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+import { AuthService } from '../../../../core/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
@@ -29,14 +30,15 @@ import { NotificationService } from '../../../../core/services/notification.serv
   templateUrl: './forgot-password.component.html',
   styleUrl: './forgot-password.component.scss'
 })
-
 export class ForgotPasswordComponent {
   private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
 
   // Signals
   isLoading = signal(false);
   emailSent = signal(false);
+  sentEmail = signal('');
 
   forgotForm: FormGroup;
 
@@ -46,19 +48,25 @@ export class ForgotPasswordComponent {
     });
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     if (this.forgotForm.invalid) {
       return;
     }
 
+    const email = this.forgotForm.value.email;
     this.isLoading.set(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await this.authService.forgotPassword(email).toPromise();
+
+      // Success - show confirmation
       this.emailSent.set(true);
+      this.sentEmail.set(email);
       this.isLoading.set(false);
-      this.notificationService.success('تم إرسال رابط إعادة تعيين كلمة المرور');
-    }, 2000);
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      this.isLoading.set(false);
+    }
   }
 
   resendEmail(): void {

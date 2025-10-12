@@ -1,47 +1,49 @@
 // ===================================================================
 // src/app/features/invoices/components/invoice-list/invoice-list.component.ts
+// Invoice List Component - Complete Implementation
 // ===================================================================
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatSortModule } from '@angular/material/sort';
+import { RouterModule, Router } from '@angular/router';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+
+// Angular Material
+import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
+import { MatSortModule } from '@angular/material/sort';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 // Shared Components
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.component';
-import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
-import { DataTableComponent } from '../../../../shared/components/data-table/data-table.component';
 
 // Services & Models
 import { InvoiceService } from '../../services/invoice.service';
-import { NotificationService } from '../../../../core/services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 import {
-  Invoice,
+  InvoiceResponse,
   InvoiceStatus,
-  PaymentStatus,
-  InvoicePriority,
-  InvoiceSearchCriteria
+  InvoiceSearchCriteria,
+  INVOICE_STATUS_LABELS,
+  PAYMENT_STATUS_LABELS,
+  Invoice,
+  PaymentStatus
 } from '../../models/invoice.model';
-import { MatNativeDateModule } from '@angular/material/core';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDivider } from "@angular/material/divider";
 
 @Component({
   selector: 'app-invoice-list',
@@ -50,179 +52,173 @@ import { MatDivider } from "@angular/material/divider";
     CommonModule,
     RouterModule,
     ReactiveFormsModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
+    MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatInputModule,
     MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatCardModule,
-    MatChipsModule,
-    MatMenuModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
     MatProgressSpinnerModule,
-    MatDialogModule,
+    MatMenuModule,
     MatTooltipModule,
+    MatChipsModule,
     MatBadgeModule,
-    MatCheckboxModule,
+    MatDividerModule,
+    MatDialogModule,
+    MatSlideToggleModule,
     HeaderComponent,
-    SidebarComponent,
-    DataTableComponent,
-    MatDivider
-],
+    SidebarComponent
+  ],
   templateUrl: './invoice-list.component.html',
   styleUrl: './invoice-list.component.scss'
 })
 export class InvoiceListComponent implements OnInit {
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+
   // Services
   private invoiceService = inject(InvoiceService);
-  private notificationService = inject(NotificationService);
   private authService = inject(AuthService);
+  private notificationService = inject(NotificationService);
   private router = inject(Router);
-  private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
-  private snackBar = inject(MatSnackBar);
 
-  // Signals
-  loading = signal(false);
+  // ===================================================================
+  // STATE MANAGEMENT
+  // ===================================================================
+
+  // Data signals
   invoices = this.invoiceService.invoices;
-  selectedInvoices = signal<Invoice[]>([]);
-  showFilters = signal(false);
+  loading = this.invoiceService.loading;
+  statistics = this.invoiceService.statistics;
+  currentUser = this.authService.currentUser;
+
+  // UI State signals
+  viewMode = signal<'table' | 'cards'>('table');
   currentPage = signal(0);
   pageSize = signal(10);
+  totalInvoices = signal(0);
+  totalPages = signal(0);
+  showAdvancedSearch = signal(false);
+  selectedInvoices = signal<Invoice[]>([]);
 
-  // Computed signals
-  totalInvoices = computed(() => this.invoices().length);
-  totalAmount = computed(() =>
-    this.invoices().reduce((sum, inv) => sum + inv.totalAmount, 0)
-  );
-  pendingAmount = computed(() =>
-    this.invoices()
-      .filter(inv => inv.paymentStatus === PaymentStatus.PENDING)
-      .reduce((sum, inv) => sum + (inv.remainingAmount || 0), 0)
-  );
+  // Search Form
+  searchForm: FormGroup;
 
-  // Form
-  searchForm!: FormGroup;
+  // ===================================================================
+  // TABLE CONFIGURATION
+  // ===================================================================
 
-  // Table configuration
-  displayedColumns = [
-    'select',
+  displayedColumns: string[] = [
     'invoiceNumber',
-    'patientName',
-    'issueDate',
-    'dueDate',
+    'invoiceDate',
+    'patient',
     'totalAmount',
-    'paidAmount',
-    'remainingAmount',
+    'amountPaid',
+    'balanceDue',
     'status',
     'paymentStatus',
-    'priority',
     'actions'
   ];
 
-  // Enums for templates
-  InvoiceStatus = InvoiceStatus;
-  PaymentStatus = PaymentStatus;
-  InvoicePriority = InvoicePriority;
+  // Status labels
+  statusLabels = INVOICE_STATUS_LABELS;
+  paymentStatusLabels = PAYMENT_STATUS_LABELS;
 
-  // Status configurations
-  statusConfig = {
-    [InvoiceStatus.DRAFT]: { color: 'secondary', icon: 'edit' },
-    [InvoiceStatus.PENDING]: { color: 'warn', icon: 'schedule' },
-    [InvoiceStatus.SENT]: { color: 'primary', icon: 'send' },
-    [InvoiceStatus.VIEWED]: { color: 'accent', icon: 'visibility' },
-    [InvoiceStatus.PAID]: { color: 'primary', icon: 'check_circle' },
-    [InvoiceStatus.PARTIALLY_PAID]: { color: 'accent', icon: 'payment' },
-    [InvoiceStatus.OVERDUE]: { color: 'warn', icon: 'error' },
-    [InvoiceStatus.CANCELLED]: { color: 'secondary', icon: 'cancel' },
-    [InvoiceStatus.REFUNDED]: { color: 'secondary', icon: 'undo' }
-  };
-
-  paymentStatusConfig = {
-    [PaymentStatus.PENDING]: { color: 'warn', icon: 'schedule' },
-    [PaymentStatus.COMPLETED]: { color: 'primary', icon: 'check_circle' },
-    [PaymentStatus.FAILED]: { color: 'warn', icon: 'error' },
-    [PaymentStatus.CANCELLED]: { color: 'secondary', icon: 'cancel' },
-    [PaymentStatus.REFUNDED]: { color: 'secondary', icon: 'undo' }
-  };
-
-  ngOnInit(): void {
-    this.initializeSearchForm();
-    this.loadInvoices();
-    this.checkRouteParams();
+  getInvoiceStatusLabel(status: string | InvoiceStatus): string {
+    return INVOICE_STATUS_LABELS[status as InvoiceStatus] || '';
   }
 
-  private initializeSearchForm(): void {
+  getPaymentStatusLabel(status: string | PaymentStatus): string {
+    return PAYMENT_STATUS_LABELS[status as PaymentStatus] || '';
+  }
+
+  // ===================================================================
+  // LIFECYCLE HOOKS
+  // ===================================================================
+
+  constructor() {
     this.searchForm = this.fb.group({
-      searchQuery: [''],
+      searchTerm: [''],
       status: [''],
-      paymentStatus: [''],
-      priority: [''],
-      fromDate: [''],
-      toDate: [''],
+      fromDate: [null],
+      toDate: [null],
       minAmount: [''],
       maxAmount: ['']
     });
-
-    // Auto-search on form changes
-    this.searchForm.valueChanges.subscribe(() => {
-      this.searchInvoices();
-    });
   }
 
-  private checkRouteParams(): void {
-    this.route.params.subscribe(params => {
-      if (params['patientId']) {
-        // Filter by patient ID
-        this.searchForm.patchValue({
-          patientId: +params['patientId']
-        });
-      }
-    });
+  ngOnInit(): void {
+    this.loadInvoices();
+    this.loadStatistics();
   }
 
-  loadInvoices(): void {
-    this.loading.set(true);
+  // ===================================================================
+  // DATA LOADING
+  // ===================================================================
 
-    const criteria: InvoiceSearchCriteria = {
-      page: this.currentPage(),
-      pageSize: this.pageSize()
-    };
+  private loadInvoices(): void {
+    const criteria = this.buildSearchCriteria();
 
-    this.invoiceService.getInvoices(criteria).subscribe({
-      next: () => {
-        this.loading.set(false);
+    this.invoiceService.getAllInvoices(criteria).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.totalInvoices.set(response.data.totalElements);
+          this.totalPages.set(response.data.totalPages);
+        }
       },
       error: (error) => {
-        this.loading.set(false);
-        this.notificationService.error('خطأ في تحميل الفواتير: ' + error.message);
+        console.error('Error loading invoices:', error);
       }
     });
   }
 
-  searchInvoices(): void {
-    const formValue = this.searchForm.value;
-    const criteria: InvoiceSearchCriteria = {
-      ...formValue,
-      page: 0, // Reset to first page
-      pageSize: this.pageSize()
-    };
-
-    this.currentPage.set(0);
-    this.invoiceService.getInvoices(criteria).subscribe();
+  private loadStatistics(): void {
+    this.invoiceService.getInvoiceStatistics().subscribe();
   }
 
-  clearFilters(): void {
-    this.searchForm.reset();
+  private buildSearchCriteria(): InvoiceSearchCriteria {
+    const formValue = this.searchForm.value;
+
+    return {
+      status: formValue.status || undefined,
+      fromDate: formValue.fromDate ? this.formatDate(formValue.fromDate) : undefined,
+      toDate: formValue.toDate ? this.formatDate(formValue.toDate) : undefined,
+      minAmount: formValue.minAmount || undefined,
+      maxAmount: formValue.maxAmount || undefined,
+      sortBy: 'invoiceDate',
+      sortDirection: 'DESC'
+    };
+  }
+
+  // ===================================================================
+  // EVENT HANDLERS
+  // ===================================================================
+
+  onSearch(): void {
+    this.currentPage.set(0);
     this.loadInvoices();
   }
 
-  toggleFilters(): void {
-    this.showFilters.update(show => !show);
+  onClearSearch(): void {
+    this.searchForm.reset({
+      searchTerm: '',
+      status: '',
+      fromDate: null,
+      toDate: null,
+      minAmount: '',
+      maxAmount: ''
+    });
+    this.currentPage.set(0);
+    this.loadInvoices();
+  }
+
+  onToggleAdvancedSearch(): void {
+    this.showAdvancedSearch.set(!this.showAdvancedSearch());
   }
 
   onPageChange(event: PageEvent): void {
@@ -231,195 +227,157 @@ export class InvoiceListComponent implements OnInit {
     this.loadInvoices();
   }
 
-  onInvoiceSelectionChange(checked: boolean, invoice: Invoice) {
-    this.selectedInvoices.update(s =>
-      checked ? [...s, invoice] : s.filter(i => i !== invoice)
-    );
+  onToggleViewMode(): void {
+    this.viewMode.set(this.viewMode() === 'table' ? 'cards' : 'table');
   }
 
-  // Navigation methods
-  navigateToCreate(): void {
-    this.router.navigate(['/invoices/new']);
+  onRefresh(): void {
+    this.loadInvoices();
+    this.loadStatistics();
   }
 
-  navigateToDetails(invoice: Invoice): void {
+  // ===================================================================
+  // INVOICE ACTIONS
+  // ===================================================================
+
+  onCreateInvoice(): void {
+    this.router.navigate(['/invoices/create']);
+  }
+
+  onViewInvoice(invoice: InvoiceResponse): void {
     this.router.navigate(['/invoices', invoice.id]);
   }
 
-  navigateToEdit(invoice: Invoice): void {
+  onEditInvoice(invoice: InvoiceResponse): void {
+    if (!this.invoiceService.isInvoiceEditable(invoice)) {
+      this.notificationService.warning('لا يمكن تعديل الفواتير المدفوعة أو الملغية');
+      return;
+    }
     this.router.navigate(['/invoices', invoice.id, 'edit']);
   }
 
-  navigateToPreview(invoice: Invoice): void {
-    this.router.navigate(['/invoices', invoice.id, 'preview']);
-  }
+  onDeleteInvoice(invoice: InvoiceResponse): void {
+    if (!this.canCancelInvoice(invoice)) {
+      this.notificationService.warning('لا يمكن إلغاء هذه الفاتورة');
+      return;
+    }
 
-  navigateToPayments(invoice: Invoice): void {
-    this.router.navigate(['/invoices', invoice.id, 'payments']);
-  }
-
-  // Action methods
-  updateStatus(invoice: Invoice, status: InvoiceStatus): void {
-    this.invoiceService.updateInvoiceStatus(invoice.id!, status).subscribe({
-      next: () => {
-        this.notificationService.success('تم تحديث حالة الفاتورة بنجاح');
-      },
-      error: (error) => {
-        this.notificationService.error('خطأ في تحديث الحالة: ' + error.message);
-      }
-    });
-  }
-
-  deleteInvoice(invoice: Invoice): void {
-    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
-      data: {
-        title: 'تأكيد الحذف',
-        message: `هل أنت متأكد من حذف الفاتورة ${invoice.invoiceNumber}؟`,
-        confirmText: 'حذف',
-        cancelText: 'إلغاء'
-      }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.invoiceService.deleteInvoice(invoice.id!).subscribe({
+    const confirmed = confirm(`هل تريد إلغاء الفاتورة رقم ${invoice.invoiceNumber}؟`);
+    if (confirmed) {
+      const reason = prompt('الرجاء إدخال سبب الإلغاء:');
+      if (reason) {
+        this.invoiceService.cancelInvoice(invoice.id, reason).subscribe({
           next: () => {
-            this.notificationService.success('تم حذف الفاتورة بنجاح');
-          },
-          error: (error) => {
-            this.notificationService.error('خطأ في حذف الفاتورة: ' + error.message);
+            this.loadInvoices();
           }
         });
       }
-    });
+    }
   }
 
-  duplicateInvoice(invoice: Invoice): void {
-    // Create a duplicate invoice
-    const duplicateData = {
-      patientId: invoice.patientId,
-      doctorId: invoice.doctorId,
-      clinicId: invoice.clinicId,
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
-      items: invoice.items.map(item => ({
-        serviceName: item.serviceName,
-        category: item.category,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice
-      })),
-      notes: invoice.notes,
-      terms: invoice.terms,
-      taxPercentage: invoice.taxPercentage
-    };
-
-    this.invoiceService.createInvoice(duplicateData).subscribe({
-      next: (newInvoice) => {
-        this.notificationService.success('تم إنشاء نسخة من الفاتورة بنجاح');
-        this.navigateToEdit(newInvoice);
-      },
-      error: (error) => {
-        this.notificationService.error('خطأ في إنشاء نسخة من الفاتورة: ' + error.message);
-      }
-    });
+  onAddPayment(invoice: InvoiceResponse): void {
+    if (invoice.balanceDue <= 0) {
+      this.notificationService.info('الفاتورة مدفوعة بالكامل');
+      return;
+    }
+    this.router.navigate(['/invoices', invoice.id, 'payment']);
   }
 
-  generatePDF(invoice: Invoice): void {
-    this.invoiceService.generateInvoicePDF(invoice.id!).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${invoice.invoiceNumber}.pdf`;
-        link.click();
-        window.URL.revokeObjectURL(url);
-      },
-      error: (error) => {
-        this.notificationService.error('خطأ في تحميل ملف PDF: ' + error.message);
-      }
-    });
+  onSendInvoice(invoice: InvoiceResponse): void {
+    const confirmed = confirm(`هل تريد إرسال الفاتورة رقم ${invoice.invoiceNumber} للمريض؟`);
+    if (confirmed) {
+      this.invoiceService.sendInvoice(invoice.id).subscribe();
+    }
   }
 
-  sendEmail(invoice: Invoice): void {
-    this.invoiceService.sendInvoiceEmail(invoice.id!).subscribe({
-      next: () => {
-        this.notificationService.success('تم إرسال الفاتورة بالبريد الإلكتروني بنجاح');
-      },
-      error: (error) => {
-        this.notificationService.error('خطأ في إرسال البريد الإلكتروني: ' + error.message);
-      }
-    });
+  onPrintInvoice(invoice: InvoiceResponse): void {
+    this.notificationService.info('جاري تحضير الفاتورة للطباعة...');
+    // TODO: Implement PDF generation when backend endpoint is ready
+    // window.open(`/invoices/${invoice.id}/pdf`, '_blank');
   }
 
-  // Bulk operations
-  selectAllInvoices(): void {
-    this.selectedInvoices.set([...this.invoices()]);
+  // ===================================================================
+  // PERMISSION CHECKS
+  // ===================================================================
+
+  canCreateInvoice(): boolean {
+    const user = this.currentUser();
+    return ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'RECEPTIONIST'].includes(user?.role || '');
   }
 
-  clearSelection(): void {
-    this.selectedInvoices.set([]);
+  canEditInvoice(invoice: InvoiceResponse): boolean {
+    const user = this.currentUser();
+    return ['SYSTEM_ADMIN', 'ADMIN', 'RECEPTIONIST'].includes(user?.role || '') &&
+      this.invoiceService.isInvoiceEditable(invoice);
   }
 
-  bulkDelete(): void {
-    const selected = this.selectedInvoices();
-    if (selected.length === 0) return;
-
-    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
-      data: {
-        title: 'تأكيد الحذف المتعدد',
-        message: `هل أنت متأكد من حذف ${selected.length} فاتورة؟`,
-        confirmText: 'حذف',
-        cancelText: 'إلغاء'
-      }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        // Delete selected invoices
-        selected.forEach(invoice => {
-          this.invoiceService.deleteInvoice(invoice.id!).subscribe();
-        });
-        this.clearSelection();
-        this.notificationService.success(`تم حذف ${selected.length} فاتورة بنجاح`);
-      }
-    });
+  canCancelInvoice(invoice: InvoiceResponse): boolean {
+    const user = this.currentUser();
+    return ['SYSTEM_ADMIN', 'ADMIN'].includes(user?.role || '') &&
+      this.invoiceService.canCancelInvoice(invoice);
   }
 
-  // Utility methods
+  canAddPayment(invoice: InvoiceResponse): boolean {
+    const user = this.currentUser();
+    return ['SYSTEM_ADMIN', 'ADMIN', 'RECEPTIONIST'].includes(user?.role || '') &&
+      invoice.balanceDue > 0;
+  }
+
+  // ===================================================================
+  // UI HELPERS
+  // ===================================================================
+
   getStatusColor(status: InvoiceStatus): string {
-    return this.statusConfig[status]?.color || 'primary';
+    const colors: Record<InvoiceStatus, string> = {
+      [InvoiceStatus.DRAFT]: 'default',
+      [InvoiceStatus.PENDING]: 'accent',
+      [InvoiceStatus.SENT]: 'primary',
+      [InvoiceStatus.VIEWED]: 'primary',
+      [InvoiceStatus.PAID]: 'primary',
+      [InvoiceStatus.PARTIALLY_PAID]: 'accent',
+      [InvoiceStatus.OVERDUE]: 'warn',
+      [InvoiceStatus.CANCELLED]: 'warn',
+      [InvoiceStatus.REFUNDED]: 'accent'
+    };
+    return colors[status] || '';
   }
 
   getStatusIcon(status: InvoiceStatus): string {
-    return this.statusConfig[status]?.icon || 'info';
-  }
-
-  getPaymentStatusColor(status: PaymentStatus): string {
-    return this.paymentStatusConfig[status]?.color || 'primary';
-  }
-
-  getPaymentStatusIcon(status: PaymentStatus): string {
-    return this.paymentStatusConfig[status]?.icon || 'info';
+    const icons: Record<InvoiceStatus, string> = {
+      [InvoiceStatus.DRAFT]: 'edit',
+      [InvoiceStatus.PENDING]: 'schedule',
+      [InvoiceStatus.SENT]: 'send',
+      [InvoiceStatus.VIEWED]: 'visibility',
+      [InvoiceStatus.PAID]: 'check_circle',
+      [InvoiceStatus.PARTIALLY_PAID]: 'donut_small',
+      [InvoiceStatus.OVERDUE]: 'warning',
+      [InvoiceStatus.CANCELLED]: 'cancel',
+      [InvoiceStatus.REFUNDED]: 'undo'
+    };
+    return icons[status] || 'help';
   }
 
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR'
-    }).format(amount);
+    return this.invoiceService.formatCurrency(amount);
   }
 
-  formatDate(date: string): string {
-    return new Date(date).toLocaleDateString('ar-SA');
+  formatDate(date: Date | string): string {
+    if (typeof date === 'string') {
+      date = new Date(date);
+    }
+    return date.toISOString().split('T')[0];
   }
 
-  isOverdue(invoice: Invoice): boolean {
-    const today = new Date();
-    const dueDate = new Date(invoice.dueDate);
-    return dueDate < today && invoice.status !== InvoiceStatus.PAID;
+  getInvoiceStatusOptions(): { value: string; label: string }[] {
+    return Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => ({
+      value,
+      label
+    }));
   }
 
-  hasPermission(roles: string[]): boolean {
-    return this.authService.hasRole(roles);
+  getSearchSummary(): string {
+    const total = this.totalInvoices();
+    const showing = this.invoices().length;
+    return `عرض ${showing} من ${total} فاتورة`;
   }
 }

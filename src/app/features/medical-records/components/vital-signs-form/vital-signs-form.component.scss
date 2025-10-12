@@ -1,130 +1,322 @@
-.vital-signs-card {
-  margin-bottom: 2rem;
+// ===================================================================
+// src/app/features/medical-records/components/vital-signs-form/vital-signs-form.component.scss
+// Vital Signs Form Component Styles
+// ===================================================================
 
-  mat-card-header {
-    margin-bottom: 1.5rem;
-
-    mat-card-title {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 1.25rem;
-
-      mat-icon {
-        color: var(--primary-color);
-      }
-    }
-  }
-}
+@import '../../../../../styles.scss';
 
 .vital-signs-form {
-  .form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+  .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+
+    .form-title {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      font-size: var(--font-size-md);
+      font-weight: var(--font-weight-medium);
+      color: var(--text-primary);
+      margin: 0;
+
+      mat-icon {
+        color: var(--primary);
+      }
+    }
   }
 
-  .vital-item {
-    &.bp-item {
-      grid-column: span 2;
+  .vital-signs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-md);
 
-      @media (max-width: 768px) {
-        grid-column: span 1;
+    mat-form-field {
+      width: 100%;
+
+      .warning {
+        color: var(--warning);
+      }
+
+      .inline-select {
+        display: inline-block;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: var(--font-size-sm);
       }
     }
 
-    .bp-label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-
-    .bp-inputs {
+    .blood-pressure-group {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: var(--spacing-sm);
+      grid-column: span 2;
 
       mat-form-field {
         flex: 1;
       }
 
-      .bp-separator {
-        font-size: 1.5rem;
-        font-weight: 300;
-        color: var(--text-muted);
+      .separator {
+        font-size: var(--font-size-lg);
+        color: var(--text-secondary);
+        padding: 0 var(--spacing-xs);
       }
     }
 
-    .bp-hint {
-      display: block;
-      margin-top: -0.5rem;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    &.pain-scale {
+    .bp-classification {
       grid-column: span 2;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: var(--background-secondary);
+      border-radius: var(--border-radius-md);
 
-      @media (max-width: 768px) {
-        grid-column: span 1;
-      }
-
-      label {
-        display: block;
-        margin-bottom: 1rem;
-        font-size: 0.9rem;
-        font-weight: 500;
+      .classification-label {
+        font-weight: var(--font-weight-medium);
         color: var(--text-secondary);
       }
 
-      .pain-slider {
-        padding: 0 1rem;
+      .classification-value {
+        font-weight: var(--font-weight-medium);
 
-        mat-slider {
-          width: 100%;
+        &.normal {
+          color: var(--success);
         }
 
-        .pain-labels {
-          display: flex;
-          justify-content: space-between;
-          margin-top: 0.5rem;
-          font-size: 0.85rem;
-          color: var(--text-muted);
+        &.elevated {
+          color: var(--info);
         }
+
+        &.stage-1 {
+          color: var(--warning);
+        }
+
+        &.stage-2 {
+          color: var(--error);
+        }
+
+        &.crisis {
+          color: var(--error);
+          font-weight: var(--font-weight-bold);
+        }
+      }
+    }
+
+    .bmi-display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-md);
+      background: var(--background-secondary);
+      border-radius: var(--border-radius-md);
+      text-align: center;
+
+      .bmi-header {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        color: var(--text-secondary);
+        font-size: var(--font-size-sm);
+        margin-bottom: var(--spacing-sm);
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
+
+      .bmi-value {
+        font-size: var(--font-size-2xl);
+        font-weight: var(--font-weight-bold);
+        margin-bottom: var(--spacing-xs);
+
+        &.bmi-underweight {
+          color: var(--info);
+        }
+
+        &.bmi-normal {
+          color: var(--success);
+        }
+
+        &.bmi-overweight {
+          color: var(--warning);
+        }
+
+        &.bmi-obese-1,
+        &.bmi-obese-2,
+        &.bmi-obese-3 {
+          color: var(--error);
+        }
+      }
+
+      .bmi-classification {
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+      }
+    }
+
+    .pain-scale-container {
+      grid-column: span 2;
+      padding: var(--spacing-md);
+      background: var(--background-secondary);
+      border-radius: var(--border-radius-md);
+
+      .pain-label {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+        font-weight: var(--font-weight-medium);
+        color: var(--text-primary);
+
+        mat-icon {
+          color: var(--primary);
+        }
+      }
+
+      .pain-scale {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-sm);
+
+        button {
+          transition: var(--transition-base);
+
+          &:hover {
+            transform: scale(1.2);
+          }
+
+          &.selected {
+            transform: scale(1.3);
+            background: var(--surface);
+            box-shadow: var(--shadow-sm);
+          }
+
+          mat-icon {
+            font-size: 28px;
+            width: 28px;
+            height: 28px;
+          }
+        }
+      }
+
+      .pain-value {
+        text-align: center;
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+        margin-top: var(--spacing-sm);
       }
     }
   }
 
-  mat-form-field {
-    width: 100%;
-
-    input {
-      &.normal {
-        color: var(--success-color);
-      }
-
-      &.warning {
-        color: var(--warning-color);
-      }
-
-      &.danger {
-        color: var(--error-color);
-      }
-    }
-  }
-
-  .form-actions {
+  .quick-actions {
     display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-color);
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--divider);
 
     button {
-      gap: 0.5rem;
+      flex: 1;
+
+      mat-icon {
+        margin-right: var(--spacing-xs);
+      }
+    }
+  }
+
+  .abnormal-summary {
+    margin-top: var(--spacing-lg);
+    background: rgba(var(--warning-rgb), 0.05);
+    border: 1px solid rgba(var(--warning-rgb), 0.2);
+
+    mat-card-header {
+      mat-card-title {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        color: var(--warning-dark);
+        font-size: var(--font-size-md);
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+
+    .abnormal-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+
+      li {
+        padding: var(--spacing-sm) 0;
+        border-bottom: 1px solid var(--divider);
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        strong {
+          color: var(--text-primary);
+        }
+
+        .normal-range {
+          font-size: var(--font-size-sm);
+          color: var(--text-secondary);
+          margin-left: var(--spacing-sm);
+        }
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .vital-signs-form {
+    .vital-signs-grid {
+      grid-template-columns: 1fr;
+
+      .blood-pressure-group,
+      .bp-classification,
+      .pain-scale-container {
+        grid-column: 1;
+      }
+    }
+
+    .quick-actions {
+      flex-direction: column;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+}
+
+// Dark Theme Support
+@media (prefers-color-scheme: dark) {
+  .vital-signs-form {
+    .vital-signs-grid {
+
+      .bp-classification,
+      .bmi-display,
+      .pain-scale-container {
+        background: var(--background-secondary-dark);
+      }
+    }
+
+    .abnormal-summary {
+      background: rgba(var(--warning-rgb), 0.1);
+      border-color: rgba(var(--warning-rgb), 0.3);
     }
   }
 }

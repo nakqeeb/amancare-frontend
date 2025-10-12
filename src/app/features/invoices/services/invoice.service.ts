@@ -1,25 +1,28 @@
 // ===================================================================
 // src/app/features/invoices/services/invoice.service.ts
+// Invoice Service - Complete API Integration (Updated)
 // ===================================================================
-import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, BehaviorSubject } from 'rxjs';
-import { delay, tap, map } from 'rxjs/operators';
+import { Injectable, inject, signal } from '@angular/core';
+import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { tap, catchError, finalize, map } from 'rxjs/operators';
 
+import { environment } from '../../../../environments/environment';
+import { NotificationService } from '../../../core/services/notification.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { SystemAdminService } from '../../../core/services/system-admin.service';
+import { ApiResponse, PageResponse } from '../../../core/models/api-response.model';
 import {
   Invoice,
-  InvoiceItem,
+  InvoiceResponse,
   Payment,
-  InvoiceSummary,
-  InvoiceStatus,
-  PaymentStatus,
-  PaymentMethod,
-  ServiceCategory,
   CreateInvoiceRequest,
   UpdateInvoiceRequest,
-  InvoiceSearchCriteria,
   CreatePaymentRequest,
-  InvoicePriority
+  InvoiceSearchCriteria,
+  InvoiceStatistics,
+  InvoiceStatus,
+  PaymentResponse
 } from '../models/invoice.model';
 
 @Injectable({
@@ -27,438 +30,638 @@ import {
 })
 export class InvoiceService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8080/api/v1/invoices';
+  private notificationService = inject(NotificationService);
+  private authService = inject(AuthService);
+  private systemAdminService = inject(SystemAdminService);
+
+  private readonly apiUrl = `${environment.apiUrl}/invoices`;
+
+  // ===================================================================
+  // STATE MANAGEMENT
+  // ===================================================================
 
   // Signals for reactive state management
-  invoices = signal<Invoice[]>([]);
-  selectedInvoice = signal<Invoice | null>(null);
+  invoices = signal<InvoiceResponse[]>([]);
+  selectedInvoice = signal<InvoiceResponse | null>(null);
   loading = signal(false);
-  error = signal<string | null>(null);
+  statistics = signal<InvoiceStatistics | null>(null);
+  overdueInvoices = signal<InvoiceResponse[]>([]);
 
-  // Computed signals
-  totalInvoices = computed(() => this.invoices().length);
-  pendingInvoices = computed(() =>
-    this.invoices().filter(inv => inv.status === InvoiceStatus.PENDING).length
-  );
-  overdueInvoices = computed(() =>
-    this.invoices().filter(inv => inv.status === InvoiceStatus.OVERDUE).length
-  );
+  // BehaviorSubject for compatibility
+  private invoicesSubject = new BehaviorSubject<InvoiceResponse[]>([]);
+  public invoices$ = this.invoicesSubject.asObservable();
 
-  // Mock data for development
-  private mockInvoices: Invoice[] = [
-    {
-      id: 1,
-      invoiceNumber: 'INV-2025-001',
-      patientId: 1,
-      patientName: 'أحمد محمد علي',
-      patientPhone: '+966501234567',
-      appointmentId: 1,
-      doctorId: 1,
-      doctorName: 'د. سارة أحمد',
-      clinicId: 1,
-      clinicName: 'عيادة الأسنان',
-      issueDate: '2025-08-25',
-      dueDate: '2025-09-25',
-      status: InvoiceStatus.PENDING,
-      priority: 'NORMAL' as any,
-      items: [
-        {
-          id: 1,
-          serviceName: 'فحص أسنان شامل',
-          category: ServiceCategory.CONSULTATION,
-          quantity: 1,
-          unitPrice: 200,
-          totalPrice: 200,
-          procedureDate: '2025-08-25',
-          performedBy: 'د. سارة أحمد'
-        },
-        {
-          id: 2,
-          serviceName: 'تنظيف أسنان',
-          category: ServiceCategory.PROCEDURE,
-          quantity: 1,
-          unitPrice: 150,
-          totalPrice: 150,
-          procedureDate: '2025-08-25',
-          performedBy: 'د. سارة أحمد'
-        }
-      ],
-      subtotal: 350,
-      taxAmount: 52.5,
-      taxPercentage: 15,
-      totalAmount: 402.5,
-      paidAmount: 0,
-      remainingAmount: 402.5,
-      paymentStatus: PaymentStatus.PENDING,
-      notes: 'فحص دوري للأسنان مع التنظيف',
-      createdAt: '2025-08-25T10:00:00Z',
-      createdBy: 'admin'
-    },
-    {
-      id: 2,
-      invoiceNumber: 'INV-2025-002',
-      patientId: 2,
-      patientName: 'فاطمة سالم',
-      patientPhone: '+966507654321',
-      doctorId: 2,
-      doctorName: 'د. محمد خالد',
-      clinicId: 1,
-      clinicName: 'العيادة العامة',
-      issueDate: '2025-08-20',
-      dueDate: '2025-09-20',
-      status: InvoiceStatus.PAID,
-      priority: 'NORMAL' as any,
-      items: [
-        {
-          id: 3,
-          serviceName: 'استشارة طبية',
-          category: ServiceCategory.CONSULTATION,
-          quantity: 1,
-          unitPrice: 250,
-          totalPrice: 250
-        }
-      ],
-      subtotal: 250,
-      taxAmount: 37.5,
-      taxPercentage: 15,
-      totalAmount: 287.5,
-      paidAmount: 287.5,
-      remainingAmount: 0,
-      paymentStatus: PaymentStatus.COMPLETED,
-      paymentMethod: PaymentMethod.CASH,
-      createdAt: '2025-08-20T14:30:00Z',
-      createdBy: 'admin'
+  // ===================================================================
+  // INVOICE OPERATIONS
+  // ===================================================================
+
+  /**
+   * 1. POST /invoices - Create new invoice
+   */
+  createInvoice(request: CreateInvoiceRequest): Observable<ApiResponse<InvoiceResponse>> {
+    // Validate SYSTEM_ADMIN context
+    const currentUser = this.authService.currentUser();
+    if (currentUser?.role === 'SYSTEM_ADMIN') {
+      if (!this.systemAdminService.canPerformWriteOperation()) {
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل إنشاء فاتورة جديدة'));
+      }
+      const actingClinicId = this.systemAdminService.getActingClinicId();
+      if (actingClinicId && !request.clinicId) {
+        request.clinicId = actingClinicId;
+      }
     }
-  ];
 
-  constructor() {
-    // Initialize with mock data
-    this.invoices.set(this.mockInvoices);
-  }
-
-  // Get all invoices with optional criteria
-  getInvoices(criteria?: InvoiceSearchCriteria): Observable<Invoice[]> {
     this.loading.set(true);
-    this.error.set(null);
 
-    // Mock implementation with filtering
-    return of(this.mockInvoices).pipe(
-      delay(500),
-      map(invoices => {
-        let filtered = [...invoices];
-
-        if (criteria) {
-          if (criteria.patientId) {
-            filtered = filtered.filter(inv => inv.patientId === criteria.patientId);
-          }
-          if (criteria.status) {
-            filtered = filtered.filter(inv => inv.status === criteria.status);
-          }
-          if (criteria.paymentStatus) {
-            filtered = filtered.filter(inv => inv.paymentStatus === criteria.paymentStatus);
-          }
-          if (criteria.fromDate) {
-            filtered = filtered.filter(inv => inv.issueDate >= criteria.fromDate!);
-          }
-          if (criteria.toDate) {
-            filtered = filtered.filter(inv => inv.issueDate <= criteria.toDate!);
-          }
-          if (criteria.searchQuery) {
-            const query = criteria.searchQuery.toLowerCase();
-            filtered = filtered.filter(inv =>
-              inv.invoiceNumber.toLowerCase().includes(query) ||
-              inv.patientName?.toLowerCase().includes(query) ||
-              inv.doctorName?.toLowerCase().includes(query)
-            );
-          }
+    return this.http.post<ApiResponse<InvoiceResponse>>(`${this.apiUrl}`, request).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          const currentInvoices = this.invoices();
+          this.invoices.set([response.data, ...currentInvoices]);
+          this.invoicesSubject.next([response.data, ...currentInvoices]);
+          this.selectedInvoice.set(response.data);
+          this.notificationService.success('تم إنشاء الفاتورة بنجاح');
         }
-
-        return filtered;
       }),
-      tap(invoices => {
-        this.invoices.set(invoices);
-        this.loading.set(false);
-      })
+      catchError(error => this.handleError('خطأ في إنشاء الفاتورة', error)),
+      finalize(() => this.loading.set(false))
     );
-
-    // Real implementation
-    // let params = new HttpParams();
-    // if (criteria) {
-    //   Object.keys(criteria).forEach(key => {
-    //     const value = (criteria as any)[key];
-    //     if (value !== undefined && value !== null) {
-    //       params = params.set(key, value.toString());
-    //     }
-    //   });
-    // }
-    // return this.http.get<Invoice[]>(this.apiUrl, { params })
-    //   .pipe(tap(invoices => this.invoices.set(invoices)));
   }
 
-  // Get invoice by ID
-  getInvoiceById(id: number): Observable<Invoice> {
-    // Mock implementation
-    const invoice = this.mockInvoices.find(inv => inv.id === id);
-    return of(invoice!).pipe(
-      delay(300),
-      tap(invoice => this.selectedInvoice.set(invoice))
-    );
-
-    // Real implementation
-    // return this.http.get<Invoice>(`${this.apiUrl}/${id}`)
-    //   .pipe(tap(invoice => this.selectedInvoice.set(invoice)));
-  }
-
-  // Create new invoice
-  createInvoice(request: CreateInvoiceRequest): Observable<Invoice> {
+  /**
+   * 2. GET /invoices - Get all invoices with pagination and filters
+   */
+  getAllInvoices(criteria: InvoiceSearchCriteria = {}): Observable<ApiResponse<PageResponse<InvoiceResponse>>> {
     this.loading.set(true);
 
-    // Mock implementation
-    const newInvoice: Invoice = {
-      ...request,
-      id: Math.floor(Math.random() * 10000),
-      invoiceNumber: this.generateInvoiceNumber(),
-      issueDate: new Date().toISOString().split('T')[0],
-      status: InvoiceStatus.DRAFT,
-      subtotal: this.calculateSubtotal(request.items),
-      taxAmount: this.calculateTax(this.calculateSubtotal(request.items), request.taxPercentage || 15),
-      totalAmount: this.calculateTotal(request.items, request.taxPercentage || 15, request.discountAmount),
-      remainingAmount: this.calculateTotal(request.items, request.taxPercentage || 15, request.discountAmount),
-      paymentStatus: PaymentStatus.PENDING,
-      createdAt: new Date().toISOString(),
-      createdBy: 'current_user',
-      priority: InvoicePriority.NORMAL // 👈 default value
-    };
-
-    this.mockInvoices.push(newInvoice);
-    return of(newInvoice).pipe(
-      delay(500),
-      tap(() => {
-        this.loading.set(false);
-        this.invoices.set([...this.mockInvoices]);
-      })
-    );
-
-    // Real implementation
-    // return this.http.post<Invoice>(this.apiUrl, request)
-    //   .pipe(tap(invoice => {
-    //     this.invoices.update(invoices => [...invoices, invoice]);
-    //     this.loading.set(false);
-    //   }));
-  }
-
-  // Update invoice
-  updateInvoice(id: number, request: UpdateInvoiceRequest): Observable<Invoice> {
-    this.loading.set(true);
-
-    // Mock implementation
-    const index = this.mockInvoices.findIndex(inv => inv.id === id);
-    if (index !== -1) {
-      const updatedInvoice = {
-        ...this.mockInvoices[index],
-        ...request,
-        updatedAt: new Date().toISOString(),
-        updatedBy: 'current_user'
-      };
-
-      // Recalculate totals if items changed
-      if (request.items) {
-        updatedInvoice.subtotal = this.calculateSubtotal(request.items);
-        updatedInvoice.taxAmount = this.calculateTax(updatedInvoice.subtotal, updatedInvoice.taxPercentage || 15);
-        updatedInvoice.totalAmount = this.calculateTotal(request.items, updatedInvoice.taxPercentage || 15, updatedInvoice.discountAmount);
-      }
-
-      this.mockInvoices[index] = updatedInvoice;
-      return of(updatedInvoice).pipe(
-        delay(500),
-        tap(() => {
-          this.loading.set(false);
-          this.invoices.set([...this.mockInvoices]);
-          this.selectedInvoice.set(updatedInvoice);
-        })
-      );
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
     }
-    throw new Error('Invoice not found');
 
-    // Real implementation
-    // return this.http.put<Invoice>(`${this.apiUrl}/${id}`, request)
-    //   .pipe(tap(invoice => {
-    //     this.invoices.update(invoices =>
-    //       invoices.map(inv => inv.id === id ? invoice : inv)
-    //     );
-    //     this.selectedInvoice.set(invoice);
-    //     this.loading.set(false);
-    //   }));
-  }
+    let params = new HttpParams();
 
-  // Update invoice status
-  updateInvoiceStatus(id: number, status: InvoiceStatus): Observable<Invoice> {
-    return this.updateInvoice(id, { status });
-  }
-
-  // Delete invoice
-  deleteInvoice(id: number): Observable<boolean> {
-    this.loading.set(true);
-
-    // Mock implementation
-    const index = this.mockInvoices.findIndex(inv => inv.id === id);
-    if (index !== -1) {
-      this.mockInvoices.splice(index, 1);
-      return of(true).pipe(
-        delay(300),
-        tap(() => {
-          this.loading.set(false);
-          this.invoices.set([...this.mockInvoices]);
-        })
-      );
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
     }
-    return of(false);
+    if (criteria.patientId) params = params.set('patientId', criteria.patientId.toString());
+    if (criteria.doctorId) params = params.set('doctorId', criteria.doctorId.toString());
+    if (criteria.clinicId) params = params.set('clinicId', criteria.clinicId.toString());
+    if (criteria.status) params = params.set('status', criteria.status);
+    if (criteria.paymentStatus) params = params.set('paymentStatus', criteria.paymentStatus);
+    if (criteria.fromDate) params = params.set('fromDate', criteria.fromDate);
+    if (criteria.toDate) params = params.set('toDate', criteria.toDate);
+    if (criteria.minAmount) params = params.set('minAmount', criteria.minAmount.toString());
+    if (criteria.maxAmount) params = params.set('maxAmount', criteria.maxAmount.toString());
+    if (criteria.searchQuery) params = params.set('searchQuery', criteria.searchQuery);
 
-    // Real implementation
-    // return this.http.delete<boolean>(`${this.apiUrl}/${id}`)
-    //   .pipe(tap(() => {
-    //     this.invoices.update(invoices => invoices.filter(inv => inv.id !== id));
-    //     this.loading.set(false);
-    //   }));
+    params = params.set('sortBy', criteria.sortBy ?? 'invoiceDate');
+    params = params.set('sortDirection', criteria.sortDirection ?? 'DESC');
+
+    return this.http.get<ApiResponse<PageResponse<InvoiceResponse>>>(`${this.apiUrl}`, { params }).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.invoices.set(response.data.content);
+          this.invoicesSubject.next(response.data.content);
+        }
+      }),
+      catchError(error => this.handleError('خطأ في جلب الفواتير', error)),
+      finalize(() => this.loading.set(false))
+    );
   }
 
-  // Add payment to invoice
-  addPayment(request: CreatePaymentRequest): Observable<Payment> {
+  /**
+   * 3. GET /invoices/{id} - Get invoice by ID
+   */
+  getInvoiceById(id: number): Observable<ApiResponse<InvoiceResponse>> {
     this.loading.set(true);
 
-    // Mock implementation
-    const newPayment: Payment = {
-      ...request,
-      id: Math.floor(Math.random() * 10000),
-      paymentDate: new Date().toISOString().split('T')[0],
-      status: PaymentStatus.COMPLETED,
-      processedBy: 'current_user'
-    };
+    return this.http.get<ApiResponse<InvoiceResponse>>(`${this.apiUrl}/${id}`).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.selectedInvoice.set(response.data);
+        }
+      }),
+      catchError(error => this.handleError('خطأ في جلب تفاصيل الفاتورة', error)),
+      finalize(() => this.loading.set(false))
+    );
+  }
 
-    // Update invoice payment status
-    const invoice = this.mockInvoices.find(inv => inv.id === request.invoiceId);
-    if (invoice) {
-      if (!invoice.payments) {
-        invoice.payments = [];
-      }
-      invoice.payments.push(newPayment);
-      invoice.paidAmount = (invoice.paidAmount || 0) + request.amount;
-      invoice.remainingAmount = invoice.totalAmount - invoice.paidAmount;
-
-      if (invoice.remainingAmount <= 0) {
-        invoice.paymentStatus = PaymentStatus.COMPLETED;
-        invoice.status = InvoiceStatus.PAID;
-      } else {
-        invoice.paymentStatus = PaymentStatus.PENDING;
-        invoice.status = InvoiceStatus.PARTIALLY_PAID;
+  /**
+   * 4. PUT /invoices/{id} - Update invoice
+   */
+  updateInvoice(id: number, request: UpdateInvoiceRequest): Observable<ApiResponse<InvoiceResponse>> {
+    // Validate SYSTEM_ADMIN context
+    const currentUser = this.authService.currentUser();
+    if (currentUser?.role === 'SYSTEM_ADMIN') {
+      if (!this.systemAdminService.canPerformWriteOperation()) {
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل تحديث الفاتورة'));
       }
     }
 
-    return of(newPayment).pipe(
-      delay(500),
-      tap(() => {
-        this.loading.set(false);
-        this.invoices.set([...this.mockInvoices]);
-      })
+    this.loading.set(true);
+
+    return this.http.put<ApiResponse<InvoiceResponse>>(`${this.apiUrl}/${id}`, request).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          const currentInvoices = this.invoices();
+          const index = currentInvoices.findIndex(inv => inv.id === id);
+          if (index !== -1) {
+            currentInvoices[index] = response.data;
+            this.invoices.set([...currentInvoices]);
+            this.invoicesSubject.next([...currentInvoices]);
+          }
+          this.selectedInvoice.set(response.data);
+          this.notificationService.success('تم تحديث الفاتورة بنجاح');
+        }
+      }),
+      catchError(error => this.handleError('خطأ في تحديث الفاتورة', error)),
+      finalize(() => this.loading.set(false))
     );
-
-    // Real implementation
-    // return this.http.post<Payment>(`${this.apiUrl}/${request.invoiceId}/payments`, request)
-    //   .pipe(tap(() => {
-    //     this.loading.set(false);
-    //     // Refresh invoice data
-    //     this.getInvoiceById(request.invoiceId).subscribe();
-    //   }));
   }
 
-  // Get invoice summary
-  getInvoiceSummary(): Observable<InvoiceSummary> {
-    const summary: InvoiceSummary = {
-      totalInvoices: this.mockInvoices.length,
-      totalAmount: this.mockInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0),
-      paidAmount: this.mockInvoices.reduce((sum, inv) => sum + (inv.paidAmount || 0), 0),
-      pendingAmount: this.mockInvoices.reduce((sum, inv) => sum + (inv.remainingAmount || 0), 0),
-      overdueAmount: this.mockInvoices
-        .filter(inv => inv.status === InvoiceStatus.OVERDUE)
-        .reduce((sum, inv) => sum + (inv.remainingAmount || 0), 0),
-      averageInvoiceValue: this.mockInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0) / this.mockInvoices.length
-    };
-
-    return of(summary).pipe(delay(300));
-
-    // Real implementation
-    // return this.http.get<InvoiceSummary>(`${this.apiUrl}/summary`);
-  }
-
-  // Generate invoice PDF
-  generateInvoicePDF(id: number): Observable<Blob> {
-    // Mock implementation - return empty blob
-    return of(new Blob(['PDF content'], { type: 'application/pdf' })).pipe(delay(1000));
-
-    // Real implementation
-    // return this.http.get(`${this.apiUrl}/${id}/pdf`, { responseType: 'blob' });
-  }
-
-  // Send invoice via email
-  sendInvoiceEmail(id: number, email?: string): Observable<boolean> {
-    // Mock implementation
-    return of(true).pipe(delay(1000));
-
-    // Real implementation
-    // return this.http.post<boolean>(`${this.apiUrl}/${id}/send-email`, { email });
-  }
-
-  // Helper methods
-  private generateInvoiceNumber(): string {
-    const year = new Date().getFullYear();
-    const sequence = this.mockInvoices.length + 1;
-    return `INV-${year}-${sequence.toString().padStart(3, '0')}`;
-  }
-
-  private calculateSubtotal(items: InvoiceItem[]): number {
-    return items.reduce((sum, item) => sum + item.totalPrice, 0);
-  }
-
-  private calculateTax(subtotal: number, taxPercentage: number): number {
-    return (subtotal * taxPercentage) / 100;
-  }
-
-  private calculateTotal(items: InvoiceItem[], taxPercentage: number = 15, discountAmount: number = 0): number {
-    const subtotal = this.calculateSubtotal(items);
-    const taxAmount = this.calculateTax(subtotal, taxPercentage);
-    return subtotal + taxAmount - discountAmount;
-  }
-
-  // Get predefined services
-  getPredefinedServices(): Observable<InvoiceItem[]> {
-    const services: Omit<InvoiceItem, 'id' | 'quantity' | 'totalPrice'>[] = [
-      {
-        serviceName: 'استشارة طبية عامة',
-        category: ServiceCategory.CONSULTATION,
-        unitPrice: 200
-      },
-      {
-        serviceName: 'فحص أسنان شامل',
-        category: ServiceCategory.CONSULTATION,
-        unitPrice: 250
-      },
-      {
-        serviceName: 'تنظيف أسنان',
-        category: ServiceCategory.PROCEDURE,
-        unitPrice: 150
-      },
-      {
-        serviceName: 'حشو أسنان',
-        category: ServiceCategory.PROCEDURE,
-        unitPrice: 300
-      },
-      {
-        serviceName: 'تحليل دم شامل',
-        category: ServiceCategory.LAB_TEST,
-        unitPrice: 100
+  /**
+   * 5. PUT /invoices/{id}/cancel - Cancel invoice
+   */
+  cancelInvoice(id: number, reason: string): Observable<ApiResponse<InvoiceResponse>> {
+    // Validate SYSTEM_ADMIN context
+    const currentUser = this.authService.currentUser();
+    if (currentUser?.role === 'SYSTEM_ADMIN') {
+      if (!this.systemAdminService.canPerformWriteOperation()) {
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل إلغاء الفاتورة'));
       }
-    ];
+    }
 
-    return of(services as InvoiceItem[]).pipe(delay(200));
+    this.loading.set(true);
+
+    const params = new HttpParams().set('reason', reason);
+
+    return this.http.put<ApiResponse<InvoiceResponse>>(`${this.apiUrl}/${id}/cancel`, null, { params }).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          const currentInvoices = this.invoices();
+          const index = currentInvoices.findIndex(inv => inv.id === id);
+          if (index !== -1) {
+            currentInvoices[index] = response.data;
+            this.invoices.set([...currentInvoices]);
+            this.invoicesSubject.next([...currentInvoices]);
+          }
+          this.selectedInvoice.set(response.data);
+          this.notificationService.success('تم إلغاء الفاتورة بنجاح');
+        }
+      }),
+      catchError(error => this.handleError('خطأ في إلغاء الفاتورة', error)),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  /**
+   * 6. POST /invoices/{id}/send - Send invoice to patient
+   */
+  sendInvoice(id: number): Observable<ApiResponse<InvoiceResponse>> {
+    this.loading.set(true);
+
+    return this.http.post<ApiResponse<InvoiceResponse>>(`${this.apiUrl}/${id}/send`, null).pipe(
+      tap(response => {
+        if (response.success) {
+          this.notificationService.success('تم إرسال الفاتورة بنجاح');
+        }
+      }),
+      catchError(error => this.handleError('خطأ في إرسال الفاتورة', error)),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  // ===================================================================
+  // PAYMENT OPERATIONS
+  // ===================================================================
+
+  /**
+   * 7. POST /invoices/{id}/payments - Add payment to invoice
+   */
+  addPayment(id: number, request: CreatePaymentRequest): Observable<ApiResponse<PaymentResponse>> {
+    // Validate SYSTEM_ADMIN context
+    const currentUser = this.authService.currentUser();
+    if (currentUser?.role === 'SYSTEM_ADMIN') {
+      if (!this.systemAdminService.canPerformWriteOperation()) {
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل إضافة دفعة'));
+      }
+    }
+
+    this.loading.set(true);
+    request.invoiceId = id;
+
+    return this.http.post<ApiResponse<PaymentResponse>>(`${this.apiUrl}/${id}/payments`, request).pipe(
+      tap(response => {
+        if (response.success) {
+          // Refresh invoice to get updated amounts
+          this.getInvoiceById(id).subscribe();
+          this.notificationService.success('تم إضافة الدفعة بنجاح');
+        }
+      }),
+      catchError(error => this.handleError('خطأ في إضافة الدفعة', error)),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  /**
+   * 8. GET /invoices/{id}/payments - Get invoice payments
+   */
+  getInvoicePayments(id: number): Observable<ApiResponse<PaymentResponse[]>> {
+    this.loading.set(true);
+
+    return this.http.get<ApiResponse<PaymentResponse[]>>(`${this.apiUrl}/${id}/payments`).pipe(
+      catchError(error => this.handleError('خطأ في جلب المدفوعات', error)),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  // ===================================================================
+  // STATISTICS AND REPORTS
+  // ===================================================================
+
+  /**
+   * 9. GET /invoices/statistics - Get invoice statistics
+   */
+  getInvoiceStatistics(): Observable<ApiResponse<InvoiceStatistics>> {
+    this.loading.set(true);
+
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
+    let params = new HttpParams();
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
+
+    return this.http.get<ApiResponse<InvoiceStatistics>>(`${this.apiUrl}/statistics`, { params }).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.statistics.set(response.data);
+        }
+      }),
+      catchError(error => this.handleError('خطأ في جلب الإحصائيات', error)),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  /**
+   * 10. GET /invoices/overdue - Get overdue invoices
+   */
+  getOverdueInvoices(clinicId?: number): Observable<ApiResponse<InvoiceResponse[]>> {
+    this.loading.set(true);
+
+    let params = new HttpParams();
+    if (clinicId) {
+      params = params.set('clinicId', clinicId.toString());
+    }
+
+    return this.http.get<ApiResponse<InvoiceResponse[]>>(`${this.apiUrl}/overdue`, { params }).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.overdueInvoices.set(response.data);
+        }
+      }),
+      catchError(error => this.handleError('خطأ في جلب الفواتير المتأخرة', error)),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  /**
+   * 11. GET /invoices/patient/{patientId} - Get patient invoices
+   */
+  getPatientInvoices(patientId: number): Observable<ApiResponse<InvoiceResponse[]>> {
+    this.loading.set(true);
+
+    return this.http.get<ApiResponse<InvoiceResponse[]>>(`${this.apiUrl}/patient/${patientId}`).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.invoices.set(response.data);
+          this.invoicesSubject.next(response.data);
+        }
+      }),
+      catchError(error => this.handleError('خطأ في جلب فواتير المريض', error)),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  // ===================================================================
+  // UTILITY METHODS
+  // ===================================================================
+
+  /**
+   * Clear selected invoice
+   */
+  clearSelection(): void {
+    this.selectedInvoice.set(null);
+  }
+
+  /**
+   * Refresh invoices list
+   */
+  refreshInvoices(criteria?: InvoiceSearchCriteria): void {
+    this.getAllInvoices(criteria).subscribe();
+  }
+
+  /**
+   * Calculate invoice total with tax and discount
+   */
+  calculateInvoiceTotal(
+    subtotal: number,
+    taxPercentage: number,
+    discountAmount: number,
+    discountPercentage?: number
+  ): { taxAmount: number; totalAmount: number; discountTotal: number } {
+    // Calculate discount
+    const percentageDiscount = discountPercentage ? (subtotal * discountPercentage) / 100 : 0;
+    const discountTotal = (discountAmount || 0) + percentageDiscount;
+
+    // Calculate after discount
+    const afterDiscount = subtotal - discountTotal;
+
+    // Calculate tax
+    const taxAmount = (afterDiscount * taxPercentage) / 100;
+
+    // Calculate final total
+    const totalAmount = afterDiscount + taxAmount;
+
+    return { taxAmount, totalAmount, discountTotal };
+  }
+
+  /**
+   * Calculate item total price
+   */
+  calculateItemTotal(
+    quantity: number,
+    unitPrice: number,
+    discountAmount?: number,
+    discountPercentage?: number
+  ): number {
+    const subtotal = quantity * unitPrice;
+    const percentageDiscount = discountPercentage ? (subtotal * discountPercentage) / 100 : 0;
+    const totalDiscount = (discountAmount || 0) + percentageDiscount;
+    return Math.max(0, subtotal - totalDiscount);
+  }
+
+  /**
+   * Format currency
+   */
+  formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('ar-YE', {
+      style: 'currency',
+      currency: 'YER'
+    }).format(amount);
+  }
+
+  /**
+   * Get status badge color
+   */
+  getStatusColor(status: InvoiceStatus): string {
+    const colors: Record<InvoiceStatus, string> = {
+      [InvoiceStatus.DRAFT]: '#718096',
+      [InvoiceStatus.PENDING]: '#ed8936',
+      [InvoiceStatus.SENT]: '#4299e1',
+      [InvoiceStatus.VIEWED]: '#4299e1',
+      [InvoiceStatus.PAID]: '#48bb78',
+      [InvoiceStatus.PARTIALLY_PAID]: '#4299e1',
+      [InvoiceStatus.OVERDUE]: '#c53030',
+      [InvoiceStatus.CANCELLED]: '#e53e3e',
+      [InvoiceStatus.REFUNDED]: '#9f7aea'
+    };
+    return colors[status] || '#718096';
+  }
+
+  /**
+   * Check if invoice is editable
+   */
+  isInvoiceEditable(invoice: InvoiceResponse): boolean {
+    return invoice.status !== InvoiceStatus.PAID &&
+      invoice.status !== InvoiceStatus.CANCELLED &&
+      invoice.status !== InvoiceStatus.REFUNDED;
+  }
+
+  /**
+   * Check if invoice can be cancelled
+   */
+  canCancelInvoice(invoice: InvoiceResponse): boolean {
+    return invoice.status !== InvoiceStatus.PAID &&
+      invoice.status !== InvoiceStatus.CANCELLED &&
+      invoice.status !== InvoiceStatus.REFUNDED;
+  }
+
+  /**
+   * Check if invoice can accept payments
+   */
+  canAddPayment(invoice: InvoiceResponse): boolean {
+    return invoice.balanceDue > 0 &&
+      invoice.status !== InvoiceStatus.CANCELLED &&
+      invoice.status !== InvoiceStatus.REFUNDED;
+  }
+
+  /**
+   * Calculate days overdue
+   */
+  calculateDaysOverdue(dueDate: string): number {
+    const due = new Date(dueDate);
+    const today = new Date();
+    const diffTime = today.getTime() - due.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  }
+
+  /**
+   * Check if invoice is overdue
+   */
+  isOverdue(invoice: InvoiceResponse): boolean {
+    return invoice.isOverdue ||
+      (invoice.balanceDue > 0 && new Date(invoice.dueDate) < new Date());
+  }
+
+  // ===================================================================
+  // PDF EXPORT OPERATIONS - NEW
+  // ===================================================================
+
+  /**
+   * NEW: Export invoice as PDF
+   * تصدير الفاتورة كملف PDF
+   */
+  exportInvoicePdf(id: number): Observable<Blob> {
+    this.loading.set(true);
+
+    // NEW: Build URL with clinic context for SYSTEM_ADMIN
+    let params = new HttpParams();
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      const clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+      if (clinicId) {
+        params = params.set('clinicId', clinicId.toString());
+      }
+    }
+
+    // NEW: Return blob for file download
+    return this.http.get(`${this.apiUrl}/${id}/export/pdf`, {
+      params,
+      responseType: 'blob',
+      observe: 'response'
+    }).pipe(
+      map(response => {
+        // NEW: Extract filename from Content-Disposition header if available
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `invoice_${id}.pdf`;
+
+        if (contentDisposition) {
+          const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+          if (matches != null && matches[1]) {
+            filename = matches[1].replace(/['"]/g, '');
+          }
+        }
+
+        // NEW: Trigger download
+        this.downloadFile(response.body!, filename);
+        this.notificationService.success('تم تصدير الفاتورة بنجاح');
+        return response.body!;
+      }),
+      catchError(error => {
+        this.notificationService.error('فشل تصدير الفاتورة');
+        return this.handleError('خطأ في تصدير الفاتورة', error);
+      }),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  /**
+   * NEW: Export invoice receipt as PDF
+   * تصدير إيصال الدفع كملف PDF
+   */
+  exportInvoiceReceipt(id: number): Observable<Blob> {
+    this.loading.set(true);
+
+    // NEW: Build URL with clinic context for SYSTEM_ADMIN
+    let params = new HttpParams();
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      const clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+      if (clinicId) {
+        params = params.set('clinicId', clinicId.toString());
+      }
+    }
+
+    // NEW: Return blob for file download
+    return this.http.get(`${this.apiUrl}/${id}/export/receipt`, {
+      params,
+      responseType: 'blob',
+      observe: 'response'
+    }).pipe(
+      map(response => {
+        // NEW: Extract filename from Content-Disposition header
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `receipt_${id}.pdf`;
+
+        if (contentDisposition) {
+          const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+          if (matches != null && matches[1]) {
+            filename = matches[1].replace(/['"]/g, '');
+          }
+        }
+
+        // NEW: Trigger download
+        this.downloadFile(response.body!, filename);
+        this.notificationService.success('تم تصدير الإيصال بنجاح');
+        return response.body!;
+      }),
+      catchError(error => {
+        this.notificationService.error('فشل تصدير الإيصال');
+        return this.handleError('خطأ في تصدير الإيصال', error);
+      }),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  /**
+   * NEW: Preview invoice PDF in browser
+   * معاينة الفاتورة PDF في المتصفح
+   */
+  previewInvoicePdf(id: number): Observable<void> {
+    this.loading.set(true);
+
+    // NEW: Build URL with clinic context for SYSTEM_ADMIN
+    let params = new HttpParams();
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      const clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+      if (clinicId) {
+        params = params.set('clinicId', clinicId.toString());
+      }
+    }
+
+    // NEW: Get PDF as blob and open in new tab
+    return this.http.get(`${this.apiUrl}/${id}/preview/pdf`, {
+      params,
+      responseType: 'blob'
+    }).pipe(
+      map(blob => {
+        // NEW: Create object URL and open in new tab
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+
+        // NEW: Clean up object URL after a delay
+        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+
+        this.notificationService.success('تم فتح الفاتورة في نافذة جديدة');
+      }),
+      catchError(error => {
+        this.notificationService.error('فشل معاينة الفاتورة');
+        return this.handleError('خطأ في معاينة الفاتورة', error);
+      }),
+      finalize(() => this.loading.set(false))
+    );
+  }
+
+  // ===================================================================
+  // UTILITY METHODS - NEW
+  // ===================================================================
+
+  /**
+   * NEW: Download file helper
+   * مساعد لتحميل الملفات
+   */
+  private downloadFile(blob: Blob, filename: string): void {
+    // NEW: Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+
+    // NEW: Trigger download
+    document.body.appendChild(link);
+    link.click();
+
+    // NEW: Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  // ===================================================================
+  // ERROR HANDLING
+  // ===================================================================
+
+  private handleError(message: string, error: HttpErrorResponse): Observable<never> {
+    console.error(`${message}:`, error);
+
+    let errorMessage = message;
+    if (error.error?.message) {
+      errorMessage = error.error.message;
+    } else if (error.status === 0) {
+      errorMessage = 'خطأ في الاتصال بالخادم';
+    } else if (error.status === 404) {
+      errorMessage = 'الفاتورة غير موجودة';
+    } else if (error.status === 403) {
+      errorMessage = 'ليس لديك صلاحية للقيام بهذا الإجراء';
+    } else if (error.status === 400) {
+      errorMessage = error.error?.message || 'بيانات غير صحيحة';
+    }
+
+    this.notificationService.error(errorMessage);
+    return throwError(() => error);
   }
 }

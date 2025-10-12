@@ -1,110 +1,129 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head>
-  <meta charset="utf-8">
-  <title>نظام أمان كير - إدارة العيادات الطبية</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="نظام شامل لإدارة العيادات الطبية والمستشفيات">
-  <meta name="keywords" content="عيادة، مستشفى، إدارة طبية، مواعيد، مرضى">
-  <meta name="author" content="فريق أمان كير">
+  <head>
+    <meta charset="utf-8" />
+    <title>نظام أمان كير - Amancare System</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#4c51bf" />
+    <meta
+      name="description"
+      content="نظام أمان كير الطبي - إدارة العيادات والمرضى"
+    />
 
-  <!-- Theme Color -->
-  <meta name="theme-color" content="#4c51bf">
-  <meta name="msapplication-TileColor" content="#4c51bf">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
-  <!-- Icons -->
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
-  <link rel="manifest" href="manifest.json">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
 
-  <!-- Preconnect to fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Theme Preload Script - IMPORTANT: Must be in head before any styles -->
+    <script>
+      (function () {
+        try {
+          const savedTheme = localStorage.getItem("amancare_theme");
+          const savedPreference = localStorage.getItem(
+            "amancare_theme_preference"
+          );
+          let theme = "light";
 
-  <!-- Arabic Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+          if (savedPreference === "auto") {
+            const systemPrefersDark =
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches;
+            theme = systemPrefersDark ? "dark" : "light";
+          } else if (savedTheme === "dark" || savedPreference === "dark") {
+            theme = "dark";
+          }
 
-  <!-- Material Icons -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
-  <!-- RTL Support -->
-  <style>
-    html[dir="rtl"] {
-      direction: rtl;
-      text-align: right;
-    }
-
-    body {
-      font-family: 'Noto Sans Arabic', 'Cairo', sans-serif !important;
-      margin: 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-    }
-
-    /* Loading Spinner */
-    .initial-loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-
-    .loader-content {
-      text-align: center;
-      color: white;
-    }
-
-    .spinner {
-      width: 50px;
-      height: 50px;
-      border: 4px solid rgba(255,255,255,0.2);
-      border-top: 4px solid white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 1rem;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .loader-text {
-      font-size: 1.2rem;
-      font-weight: 600;
-    }
-  </style>
-</head>
-<body>
-  <app-root>
-    <!-- Loading Screen -->
-    <div class="initial-loader" id="initial-loader">
-      <div class="loader-content">
-        <div class="spinner"></div>
-        <div class="loader-text">جاري تحميل نظام أمان كير...</div>
-      </div>
-    </div>
-  </app-root>
-
-  <script>
-    // Remove initial loader after app loads
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(() => {
-        const loader = document.getElementById('initial-loader');
-        if (loader) {
-          loader.style.opacity = '0';
-          loader.style.transition = 'opacity 0.5s ease';
-          setTimeout(() => loader.remove(), 500);
+          if (theme === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+            document.documentElement.classList.add("dark-theme");
+            if (document.body) {
+              document.body.classList.add("dark-theme");
+            } else {
+              const observer = new MutationObserver(function (mutations, obs) {
+                if (document.body) {
+                  document.body.classList.add("dark-theme");
+                  obs.disconnect();
+                }
+              });
+              observer.observe(document.documentElement, {
+                childList: true,
+                subtree: true,
+              });
+            }
+          }
+        } catch (e) {
+          console.warn("Theme preload failed:", e);
         }
-      }, 2000);
-    });
-  </script>
-</body>
+      })();
+    </script>
+
+    <!-- Critical CSS for theme (optional - for even better performance) -->
+    <style>
+      /* Minimal critical CSS to prevent layout shift */
+      :root {
+        --primary-color: #4c51bf;
+        --bg-primary: #ffffff;
+        --text-primary: #2d3748;
+      }
+
+      [data-theme="dark"],
+      .dark-theme {
+        --primary-color: #7986cb;
+        --bg-primary: #1e1e1e;
+        --text-primary: #ffffff;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Noto Sans Arabic", "Cairo", sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      /* Prevent flash during load */
+      body:not(.theme-transition) * {
+        transition: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <app-root></app-root>
+
+    <!-- Loading indicator (optional) -->
+    <style>
+      app-root:empty::after {
+        content: "جاري التحميل...";
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.2rem;
+        color: var(--text-primary);
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+    </style>
+  </body>
 </html>

@@ -1,418 +1,0 @@
-<app-header></app-header>
-<app-sidebar>
-  <div class="settings-container">
-    <div class="page-header">
-      <button mat-icon-button routerLink="/profile/overview">
-        <mat-icon>arrow_forward</mat-icon>
-      </button>
-      <h1>الإعدادات</h1>
-    </div>
-
-    <mat-accordion multi="true">
-      <!-- Appearance Settings -->
-      <mat-expansion-panel expanded>
-        <mat-expansion-panel-header>
-          <mat-panel-title>
-            <mat-icon>palette</mat-icon>
-            المظهر
-          </mat-panel-title>
-          <mat-panel-description> تخصيص مظهر التطبيق </mat-panel-description>
-        </mat-expansion-panel-header>
-
-        <form [formGroup]="appearanceForm">
-          <div class="settings-section">
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>السمة</h3>
-                <p>اختر سمة التطبيق المفضلة</p>
-              </div>
-              <mat-radio-group formControlName="theme" (change)="updateTheme()">
-                <mat-radio-button value="light">
-                  <mat-icon>light_mode</mat-icon>
-                  فاتح
-                </mat-radio-button>
-                <mat-radio-button value="dark">
-                  <mat-icon>dark_mode</mat-icon>
-                  داكن
-                </mat-radio-button>
-                <mat-radio-button value="auto">
-                  <mat-icon>brightness_auto</mat-icon>
-                  تلقائي
-                </mat-radio-button>
-              </mat-radio-group>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>اللغة</h3>
-                <p>اختر لغة واجهة التطبيق</p>
-              </div>
-              <mat-form-field>
-                <mat-select
-                  formControlName="language"
-                  (selectionChange)="updateLanguage()"
-                >
-                  <mat-option value="ar">
-                    <span class="flag">🇸🇦</span>
-                    العربية
-                  </mat-option>
-                  <mat-option value="en">
-                    <span class="flag">🇬🇧</span>
-                    English
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>حجم الخط</h3>
-                <p>تعديل حجم النص في التطبيق</p>
-              </div>
-              <mat-radio-group formControlName="fontSize">
-                <mat-radio-button value="small">صغير</mat-radio-button>
-                <mat-radio-button value="medium">متوسط</mat-radio-button>
-                <mat-radio-button value="large">كبير</mat-radio-button>
-              </mat-radio-group>
-            </div>
-          </div>
-        </form>
-      </mat-expansion-panel>
-
-      <!-- Regional Settings -->
-      <mat-expansion-panel>
-        <mat-expansion-panel-header>
-          <mat-panel-title>
-            <mat-icon>public</mat-icon>
-            الإعدادات الإقليمية
-          </mat-panel-title>
-          <mat-panel-description>
-            المنطقة الزمنية وتنسيقات التاريخ
-          </mat-panel-description>
-        </mat-expansion-panel-header>
-
-        <form [formGroup]="regionalForm">
-          <div class="settings-section">
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>المنطقة الزمنية</h3>
-                <p>اختر منطقتك الزمنية</p>
-              </div>
-              <mat-form-field>
-                <mat-select formControlName="timezone">
-                  <mat-option value="Asia/Riyadh">الرياض (GMT+3)</mat-option>
-                  <mat-option value="Asia/Dubai">دبي (GMT+4)</mat-option>
-                  <mat-option value="Asia/Kuwait">الكويت (GMT+3)</mat-option>
-                  <mat-option value="Africa/Cairo">القاهرة (GMT+2)</mat-option>
-                  <mat-option value="Asia/Beirut">بيروت (GMT+2)</mat-option>
-                  <mat-option value="Asia/Amman">عمان (GMT+2)</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>تنسيق التاريخ</h3>
-                <p>اختر طريقة عرض التاريخ</p>
-              </div>
-              <mat-form-field>
-                <mat-select formControlName="dateFormat">
-                  <mat-option value="DD/MM/YYYY">31/12/2024</mat-option>
-                  <mat-option value="MM/DD/YYYY">12/31/2024</mat-option>
-                  <mat-option value="YYYY-MM-DD">2024-12-31</mat-option>
-                  <mat-option value="DD-MM-YYYY">31-12-2024</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>تنسيق الوقت</h3>
-                <p>12 ساعة أو 24 ساعة</p>
-              </div>
-              <mat-radio-group formControlName="timeFormat">
-                <mat-radio-button value="12h">
-                  12 ساعة (2:30 م)
-                </mat-radio-button>
-                <mat-radio-button value="24h">
-                  24 ساعة (14:30)
-                </mat-radio-button>
-              </mat-radio-group>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>أول يوم في الأسبوع</h3>
-                <p>اختر بداية الأسبوع في التقويم</p>
-              </div>
-              <mat-radio-group formControlName="firstDayOfWeek">
-                <mat-radio-button value="6">السبت</mat-radio-button>
-                <mat-radio-button value="0">الأحد</mat-radio-button>
-                <mat-radio-button value="1">الإثنين</mat-radio-button>
-              </mat-radio-group>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>العملة</h3>
-                <p>العملة الافتراضية للفواتير</p>
-              </div>
-              <mat-form-field>
-                <mat-select formControlName="currency">
-                  <mat-option value="SAR">ريال سعودي (SAR)</mat-option>
-                  <mat-option value="AED">درهم إماراتي (AED)</mat-option>
-                  <mat-option value="KWD">دينار كويتي (KWD)</mat-option>
-                  <mat-option value="QAR">ريال قطري (QAR)</mat-option>
-                  <mat-option value="BHD">دينار بحريني (BHD)</mat-option>
-                  <mat-option value="OMR">ريال عماني (OMR)</mat-option>
-                  <mat-option value="EGP">جنيه مصري (EGP)</mat-option>
-                  <mat-option value="JOD">دينار أردني (JOD)</mat-option>
-                  <mat-option value="LBP">ليرة لبنانية (LBP)</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-          </div>
-        </form>
-      </mat-expansion-panel>
-
-      <!-- Dashboard Settings -->
-      <mat-expansion-panel>
-        <mat-expansion-panel-header>
-          <mat-panel-title>
-            <mat-icon>dashboard</mat-icon>
-            لوحة التحكم
-          </mat-panel-title>
-          <mat-panel-description> تخصيص لوحة التحكم </mat-panel-description>
-        </mat-expansion-panel-header>
-
-        <form [formGroup]="dashboardForm">
-          <div class="settings-section">
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>تخطيط لوحة التحكم</h3>
-                <p>اختر طريقة عرض لوحة التحكم</p>
-              </div>
-              <mat-radio-group formControlName="dashboardLayout">
-                <mat-radio-button value="compact">مضغوط</mat-radio-button>
-                <mat-radio-button value="expanded">موسع</mat-radio-button>
-                <mat-radio-button value="custom">مخصص</mat-radio-button>
-              </mat-radio-group>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>الصفحة الافتراضية</h3>
-                <p>الصفحة التي تظهر بعد تسجيل الدخول</p>
-              </div>
-              <mat-form-field>
-                <mat-select formControlName="defaultLandingPage">
-                  <mat-option value="/dashboard">لوحة التحكم</mat-option>
-                  <mat-option value="/appointments">المواعيد</mat-option>
-                  <mat-option value="/patients">المرضى</mat-option>
-                  <mat-option value="/profile">الملف الشخصي</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>الوحدات المفضلة</h3>
-                <p>الوحدات التي تظهر في الوصول السريع</p>
-              </div>
-              <div class="favorite-modules">
-                @for (module of availableModules; track module.id) {
-                <mat-chip
-                  [selected]="isModuleFavorite(module.id)"
-                  (click)="toggleFavoriteModule(module.id)"
-                >
-                  <mat-icon>{{ module.icon }}</mat-icon>
-                  {{ module.name }}
-                </mat-chip>
-                }
-              </div>
-            </div>
-          </div>
-        </form>
-      </mat-expansion-panel>
-
-      <!-- Privacy Settings -->
-      <mat-expansion-panel>
-        <mat-expansion-panel-header>
-          <mat-panel-title>
-            <mat-icon>security</mat-icon>
-            الخصوصية
-          </mat-panel-title>
-          <mat-panel-description>
-            إعدادات الخصوصية والظهور
-          </mat-panel-description>
-        </mat-expansion-panel-header>
-
-        <form [formGroup]="privacyForm">
-          <div class="settings-section">
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>ظهور الملف الشخصي</h3>
-                <p>من يمكنه رؤية ملفك الشخصي</p>
-              </div>
-              <mat-radio-group formControlName="profileVisibility">
-                <mat-radio-button value="public">الجميع</mat-radio-button>
-                <mat-radio-button value="clinic">العيادة فقط</mat-radio-button>
-                <mat-radio-button value="private">خاص</mat-radio-button>
-              </mat-radio-group>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>حالة الاتصال</h3>
-                <p>إظهار حالة الاتصال للآخرين</p>
-              </div>
-              <mat-slide-toggle formControlName="showOnlineStatus">
-                {{
-                  privacyForm.get("showOnlineStatus")?.value ? "مفعل" : "معطل"
-                }}
-              </mat-slide-toggle>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>استقبال الرسائل</h3>
-                <p>السماح للآخرين بإرسال رسائل</p>
-              </div>
-              <mat-slide-toggle formControlName="allowMessages">
-                {{ privacyForm.get("allowMessages")?.value ? "مفعل" : "معطل" }}
-              </mat-slide-toggle>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>مشاركة النشاط</h3>
-                <p>السماح بمشاركة حالة النشاط</p>
-              </div>
-              <mat-slide-toggle formControlName="shareActivityStatus">
-                {{
-                  privacyForm.get("shareActivityStatus")?.value
-                    ? "مفعل"
-                    : "معطل"
-                }}
-              </mat-slide-toggle>
-            </div>
-          </div>
-        </form>
-      </mat-expansion-panel>
-
-      <!-- Accessibility Settings -->
-      <mat-expansion-panel>
-        <mat-expansion-panel-header>
-          <mat-panel-title>
-            <mat-icon>accessibility</mat-icon>
-            إمكانية الوصول
-          </mat-panel-title>
-          <mat-panel-description>
-            إعدادات لتسهيل الاستخدام
-          </mat-panel-description>
-        </mat-expansion-panel-header>
-
-        <form [formGroup]="accessibilityForm">
-          <div class="settings-section">
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>التباين العالي</h3>
-                <p>زيادة تباين الألوان لسهولة القراءة</p>
-              </div>
-              <mat-slide-toggle formControlName="highContrast">
-                {{
-                  accessibilityForm.get("highContrast")?.value ? "مفعل" : "معطل"
-                }}
-              </mat-slide-toggle>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>تقليل الحركة</h3>
-                <p>تقليل الحركات والانتقالات</p>
-              </div>
-              <mat-slide-toggle formControlName="reduceMotion">
-                {{
-                  accessibilityForm.get("reduceMotion")?.value ? "مفعل" : "معطل"
-                }}
-              </mat-slide-toggle>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>وضع قارئ الشاشة</h3>
-                <p>تحسينات لقارئات الشاشة</p>
-              </div>
-              <mat-slide-toggle formControlName="screenReaderMode">
-                {{
-                  accessibilityForm.get("screenReaderMode")?.value
-                    ? "مفعل"
-                    : "معطل"
-                }}
-              </mat-slide-toggle>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <div class="setting-item">
-              <div class="setting-info">
-                <h3>اختصارات لوحة المفاتيح</h3>
-                <p>تفعيل اختصارات لوحة المفاتيح</p>
-              </div>
-              <mat-slide-toggle formControlName="keyboardShortcuts">
-                {{
-                  accessibilityForm.get("keyboardShortcuts")?.value
-                    ? "مفعل"
-                    : "معطل"
-                }}
-              </mat-slide-toggle>
-            </div>
-          </div>
-        </form>
-      </mat-expansion-panel>
-    </mat-accordion>
-
-    <!-- Save Button -->
-    <div class="save-section">
-      <button
-        mat-raised-button
-        color="primary"
-        (click)="saveAllSettings()"
-        [disabled]="loading()"
-      >
-        @if (loading()) {
-        <mat-spinner diameter="20"></mat-spinner>
-        } @else {
-        <mat-icon>save</mat-icon>
-        } حفظ جميع الإعدادات
-      </button>
-      <button mat-button routerLink="/profile/overview">إلغاء</button>
-    </div>
-  </div>
-</app-sidebar>

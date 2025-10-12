@@ -1,0 +1,129 @@
+<!-- src/app/public/components/announcements/announcements.component.html -->
+<!-- UPDATED: Added image display support -->
+
+<div class="announcements-container">
+  @if (loading() && announcements().length === 0) {
+  <div class="loading-state">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>جارٍ تحميل الإعلانات...</p>
+  </div>
+  } @if (announcements().length > 0) {
+  <div class="announcements-carousel">
+    @for (announcement of announcements(); track announcement.id; let i =
+    $index) { @if (i === currentIndex()) {
+    <!-- Updated: Added conditional class for image layout -->
+    <mat-card
+      class="announcement-card"
+      [class.has-image]="announcement.imageUrl"
+      [style.border-right-color]="getTypeColor(announcement.type)"
+    >
+      <div class="announcement-header">
+        <div class="announcement-type">
+          <mat-icon [style.color]="getTypeColor(announcement.type)">
+            {{ getTypeIcon(announcement.type) }}
+          </mat-icon>
+          <mat-chip [style.background-color]="getTypeColor(announcement.type)">
+            {{ getTypeLabel(announcement.type) }}
+          </mat-chip>
+        </div>
+
+        @if (announcement.priority === 'URGENT') {
+        <mat-chip class="urgent-badge">
+          <mat-icon>priority_high</mat-icon>
+          عاجل
+        </mat-chip>
+        }
+      </div>
+
+      <!-- New: Content wrapper for image + text layout -->
+      <div class="announcement-body">
+        <!-- New: Image section (only shown if imageUrl exists) -->
+        @if (announcement.imageUrl) {
+        <div class="announcement-image">
+          <img
+            [src]="announcement.imageUrl"
+            [alt]="announcement.title"
+            (error)="onImageError($event)"
+          />
+        </div>
+        }
+
+        <!-- Updated: Content section with responsive sizing -->
+        <div class="announcement-content">
+          <mat-card-content>
+            <h3>{{ announcement.title }}</h3>
+            <p>{{ announcement.message }}</p>
+
+            <!-- New: Info container for clinic and doctor details -->
+            <div class="announcement-info">
+              @if (announcement.clinicName) {
+              <div class="clinic-info">
+                <mat-icon>local_hospital</mat-icon>
+                <span>{{ announcement.clinicName }}</span>
+              </div>
+              } @if (announcement.doctorName) {
+              <div class="doctor-info">
+                <mat-icon>person</mat-icon>
+                <span>{{ announcement.doctorName }}</span>
+                @if (announcement.specialization) {
+                <span class="specialization"
+                  >- {{ announcement.specialization }}</span
+                >
+                }
+              </div>
+              }
+            </div>
+          </mat-card-content>
+
+          @if (announcement.actionUrl && announcement.actionText) {
+          <mat-card-actions>
+            <a
+              mat-raised-button
+              target="_blank"
+              [href]="announcement.actionUrl"
+              [style.background-color]="getTypeColor(announcement.type)"
+            >
+              {{ announcement.actionText }}
+              <mat-icon>arrow_back</mat-icon>
+            </a>
+          </mat-card-actions>
+          }
+        </div>
+      </div>
+    </mat-card>
+    } } @if (announcements().length > 1) {
+    <div class="carousel-controls">
+      <button
+        mat-icon-button
+        (click)="previousAnnouncement()"
+        class="nav-button"
+        [attr.aria-label]="'الإعلان السابق'"
+      >
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+
+      <div class="carousel-dots">
+        @for (announcement of announcements(); track announcement.id; let i =
+        $index) {
+        <button
+          class="dot"
+          [class.active]="i === currentIndex()"
+          (click)="goToAnnouncement(i)"
+          [attr.aria-label]="'الإعلان ' + (i + 1)"
+        ></button>
+        }
+      </div>
+
+      <button
+        mat-icon-button
+        (click)="nextAnnouncement()"
+        class="nav-button"
+        [attr.aria-label]="'الإعلان التالي'"
+      >
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+    </div>
+    }
+  </div>
+  }
+</div>

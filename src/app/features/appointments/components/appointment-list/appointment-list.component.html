@@ -1,227 +1,262 @@
-<div class="appointments-container">
+<!-- src/app/features/appointments/components/appointment-list/appointment-list.component.html -->
+<div class="appointment-list-container">
   <app-header></app-header>
-  <app-sidebar></app-sidebar>
 
-  <main class="main-content">
-    <!-- Page Header -->
-    <div class="page-header">
-      <div class="header-content">
-        <h1>إدارة المواعيد</h1>
-        <p class="subtitle">عرض وإدارة جميع المواعيد الطبية</p>
-      </div>
-      <div class="header-actions">
-        <button
-          mat-raised-button
-          color="primary"
-          routerLink="/appointments/new"
-          class="add-btn"
-        >
-          <mat-icon>add</mat-icon>
-          حجز موعد جديد
-        </button>
-        <button
-          mat-stroked-button
-          routerLink="/appointments/calendar"
-          class="calendar-btn"
-        >
-          <mat-icon>calendar_month</mat-icon>
-          عرض التقويم
-        </button>
-      </div>
-    </div>
-
-    <!-- Statistics Cards -->
-    <div class="stats-row">
-      <mat-card class="stat-card">
-        <mat-card-content>
-          <div class="stat-icon scheduled">
-            <mat-icon>event</mat-icon>
+  <app-sidebar>
+    <div class="main-content">
+      <div class="content-area">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="header-content">
+            <h1 class="page-title">
+              <mat-icon>calendar_today</mat-icon>
+              إدارة المواعيد
+            </h1>
+            <p class="page-description">عرض وإدارة جميع المواعيد الطبية</p>
           </div>
-          <div class="stat-info">
-            <span class="stat-value">{{ getTodayCount("SCHEDULED") }}</span>
-            <span class="stat-label">مواعيد مجدولة</span>
-          </div>
-        </mat-card-content>
-      </mat-card>
 
-      <mat-card class="stat-card">
-        <mat-card-content>
-          <div class="stat-icon confirmed">
-            <mat-icon>check_circle</mat-icon>
-          </div>
-          <div class="stat-info">
-            <span class="stat-value">{{ getTodayCount("CONFIRMED") }}</span>
-            <span class="stat-label">مواعيد مؤكدة</span>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="stat-card">
-        <mat-card-content>
-          <div class="stat-icon in-progress">
-            <mat-icon>pending</mat-icon>
-          </div>
-          <div class="stat-info">
-            <span class="stat-value">{{ getTodayCount("IN_PROGRESS") }}</span>
-            <span class="stat-label">قيد التنفيذ</span>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="stat-card">
-        <mat-card-content>
-          <div class="stat-icon completed">
-            <mat-icon>task_alt</mat-icon>
-          </div>
-          <div class="stat-info">
-            <span class="stat-value">{{ getTodayCount("COMPLETED") }}</span>
-            <span class="stat-label">مكتملة اليوم</span>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-
-    <!-- Filters Card -->
-    <mat-card class="filters-card">
-      <mat-card-header>
-        <mat-card-title>تصفية المواعيد</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formGroup]="filterForm" class="filter-form">
-          <div class="filter-row">
-            <!-- Date Range -->
-            <mat-form-field appearance="outline">
-              <mat-label>من تاريخ</mat-label>
-              <input
-                matInput
-                [matDatepicker]="fromPicker"
-                formControlName="fromDate"
-              />
-              <mat-datepicker-toggle
-                matSuffix
-                [for]="fromPicker"
-              ></mat-datepicker-toggle>
-              <mat-datepicker #fromPicker></mat-datepicker>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>إلى تاريخ</mat-label>
-              <input
-                matInput
-                [matDatepicker]="toPicker"
-                formControlName="toDate"
-              />
-              <mat-datepicker-toggle
-                matSuffix
-                [for]="toPicker"
-              ></mat-datepicker-toggle>
-              <mat-datepicker #toPicker></mat-datepicker>
-            </mat-form-field>
-
-            <!-- Status Filter -->
-            <mat-form-field appearance="outline">
-              <mat-label>الحالة</mat-label>
-              <mat-select formControlName="status">
-                @for (status of statusOptions; track status.value) {
-                <mat-option [value]="status.value">{{
-                  status.label
-                }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            <!-- Type Filter -->
-            <mat-form-field appearance="outline">
-              <mat-label>نوع الموعد</mat-label>
-              <mat-select formControlName="type">
-                @for (type of typeOptions; track type.value) {
-                <mat-option [value]="type.value">{{ type.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            <!-- Search -->
-            <mat-form-field appearance="outline" class="search-field">
-              <mat-label>البحث</mat-label>
-              <input
-                matInput
-                formControlName="searchQuery"
-                placeholder="اسم المريض أو الطبيب..."
-              />
-              <mat-icon matSuffix>search</mat-icon>
-            </mat-form-field>
-
-            <!-- Reset Button -->
+          <div class="header-actions">
             <button
-              mat-stroked-button
-              type="button"
-              (click)="onResetFilters()"
-              class="reset-btn"
+              mat-raised-button
+              color="primary"
+              routerLink="/appointments/new"
             >
-              <mat-icon>clear</mat-icon>
-              مسح الفلاتر
+              <mat-icon>add</mat-icon>
+              موعد جديد
+            </button>
+            <button mat-button (click)="exportAppointments()">
+              <mat-icon>download</mat-icon>
+              تصدير
             </button>
           </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
-
-    <!-- Appointments Table -->
-    <mat-card class="table-card">
-      <mat-card-header>
-        <mat-card-title>
-          قائمة المواعيد
-          <span class="count-badge">{{ totalAppointments() }}</span>
-        </mat-card-title>
-        <div class="table-actions">
-          <button mat-icon-button (click)="onRefresh()">
-            <mat-icon>refresh</mat-icon>
-          </button>
-          <button mat-icon-button [matMenuTriggerFor]="exportMenu">
-            <mat-icon>download</mat-icon>
-          </button>
-          <mat-menu #exportMenu="matMenu">
-            <button mat-menu-item (click)="onExport({ format: 'excel' })">
-              <mat-icon>table_chart</mat-icon>
-              تصدير Excel
-            </button>
-            <button mat-menu-item (click)="onExport({ format: 'pdf' })">
-              <mat-icon>picture_as_pdf</mat-icon>
-              تصدير PDF
-            </button>
-          </mat-menu>
         </div>
-      </mat-card-header>
 
-      <mat-card-content>
-        <!-- <app-data-table
-          #dataTable
-          [data]="appointments()"
-          [columns]="columns"
-          [actions]="actions"
-          [loading]="loading()"
-          [pageSize]="10"
-          [pageSizeOptions]="[5, 10, 25, 50]"
-          [showCheckbox]="true"
-          [showPagination]="true"
-          [showFilter]="false"
-          [emptyMessage]="'لا توجد مواعيد'"
-          [rowClass]="getRowClass"
-          (refresh)="onRefresh()"
-          (bulkAction)="onBulkAction($event)"
-        ></app-data-table> -->
-        <app-data-table
-          #dataTable
-          [columns]="columns"
-          [actions]="actions"
-          [selectable]="true"
-          [showPaginator]="true"
-          [pageSizeOptions]="[5, 10, 25, 50]"
-          [emptyMessage]="'لا توجد مواعيد'"
-          (refresh)="onRefresh()"
-          (bulkDelete)="onBulkDelete($event)"
-        ></app-data-table>
-      </mat-card-content>
-    </mat-card>
-  </main>
+        <!-- Filters Card -->
+        <mat-card class="filters-card">
+          <mat-card-content>
+            <form [formGroup]="filterForm" class="filter-form">
+              <mat-form-field appearance="outline">
+                <mat-label>التاريخ</mat-label>
+                <input
+                  matInput
+                  [matDatepicker]="picker"
+                  formControlName="date"
+                />
+                <mat-datepicker-toggle
+                  matSuffix
+                  [for]="picker"
+                ></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>الطبيب</mat-label>
+                <mat-select formControlName="doctorId">
+                  <mat-option [value]="null">جميع الأطباء</mat-option>
+                  @for (doctor of doctors(); track doctor.id) {
+                  <mat-option [value]="doctor.id">
+                    {{ doctor.fullName }}
+                  </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>الحالة</mat-label>
+                <mat-select formControlName="status">
+                  <mat-option [value]="null">جميع الحالات</mat-option>
+                  @for (status of statusOptions; track status) {
+                  <mat-option [value]="status">
+                    {{ statusLabels[status] }}
+                  </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <button mat-button type="button" (click)="clearFilters()">
+                <mat-icon>clear</mat-icon>
+                مسح الفلاتر
+              </button>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Appointments Table -->
+        <mat-card class="table-card">
+          <mat-card-content>
+            @if (loading()) {
+            <div class="loading-container">
+              <mat-spinner></mat-spinner>
+            </div>
+            } @else if (!appointments() || appointments().length === 0) {
+            <!-- FIXED: Call appointments() as a signal function -->
+            <div class="empty-state">
+              <mat-icon>event_busy</mat-icon>
+              <h3>لا توجد مواعيد</h3>
+              <p>لم يتم العثور على أي مواعيد بناءً على معايير البحث</p>
+              <button
+                mat-raised-button
+                color="primary"
+                routerLink="/appointments/new"
+              >
+                إضافة موعد جديد
+              </button>
+            </div>
+            } @else {
+            <table
+              mat-table
+              [dataSource]="appointments()"
+              class="appointments-table"
+            >
+              <!-- FIXED: Use appointments() to get the signal value -->
+
+              <!-- Patient Column -->
+              <ng-container matColumnDef="patientName">
+                <th mat-header-cell *matHeaderCellDef>المريض</th>
+                <td mat-cell *matCellDef="let appointment">
+                  <div class="patient-info">
+                    <strong>{{ appointment.patient.fullName }}</strong>
+                    <span class="patient-number">{{
+                      appointment.patientNumber
+                    }}</span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Doctor Column -->
+              <ng-container matColumnDef="doctorName">
+                <th mat-header-cell *matHeaderCellDef>الطبيب</th>
+                <td mat-cell *matCellDef="let appointment">
+                  <div class="doctor-info">
+                    <strong>{{ appointment.doctor.fullName }}</strong>
+                    @if (appointment.doctorSpecialization) {
+                    <span class="specialization">{{
+                      appointment.doctorSpecialization
+                    }}</span>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Date Time Column -->
+              <ng-container matColumnDef="dateTime">
+                <th mat-header-cell *matHeaderCellDef>التاريخ والوقت</th>
+                <td mat-cell *matCellDef="let appointment">
+                  <div class="datetime-info">
+                    <mat-icon>event</mat-icon>
+                    <div>
+                      <div>{{ appointment.appointmentDate }}</div>
+                      <div class="time">{{ appointment.appointmentTime }}</div>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Type Column -->
+              <ng-container matColumnDef="type">
+                <th mat-header-cell *matHeaderCellDef>النوع</th>
+                <td mat-cell *matCellDef="let appointment">
+                  <mat-chip>{{
+                    getTypeLabel(appointment.appointmentType)
+                  }}</mat-chip>
+                </td>
+              </ng-container>
+
+              <!-- Status Column -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>الحالة</th>
+                <td mat-cell *matCellDef="let appointment">
+                  <mat-chip [color]="getStatusColor(appointment.status)">
+                    {{ getStatusLabel(appointment.status) }}
+                  </mat-chip>
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+                <td mat-cell *matCellDef="let appointment">
+                  <button mat-icon-button [matMenuTriggerFor]="menu">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #menu="matMenu">
+                    <button
+                      mat-menu-item
+                      (click)="viewAppointment(appointment)"
+                    >
+                      <mat-icon>visibility</mat-icon>
+                      <span>عرض</span>
+                    </button>
+                    <button
+                      mat-menu-item
+                      (click)="editAppointment(appointment)"
+                    >
+                      <mat-icon>edit</mat-icon>
+                      <span>تعديل</span>
+                    </button>
+                    <mat-divider></mat-divider>
+                    @if (appointment.status === 'SCHEDULED') {
+                    <button
+                      mat-menu-item
+                      (click)="
+                        updateStatus(appointment, appointmentStatus.CONFIRMED)
+                      "
+                    >
+                      <mat-icon>check_circle</mat-icon>
+                      <span>تأكيد</span>
+                    </button>
+                    } @if (appointment.status === 'CONFIRMED') {
+                    <button
+                      mat-menu-item
+                      (click)="
+                        updateStatus(appointment, appointmentStatus.IN_PROGRESS)
+                      "
+                    >
+                      <mat-icon>play_arrow</mat-icon>
+                      <span>بدء</span>
+                    </button>
+                    } @if (appointment.status === 'IN_PROGRESS') {
+                    <button
+                      mat-menu-item
+                      (click)="
+                        updateStatus(appointment, appointmentStatus.COMPLETED)
+                      "
+                    >
+                      <mat-icon>done_all</mat-icon>
+                      <span>إكمال</span>
+                    </button>
+                    } @if (appointment.status !== 'CANCELLED' &&
+                    appointment.status !== 'COMPLETED') {
+                    <button
+                      mat-menu-item
+                      (click)="cancelAppointment(appointment)"
+                      class="danger-action"
+                    >
+                      <mat-icon>cancel</mat-icon>
+                      <span>إلغاء</span>
+                    </button>
+                    }
+                  </mat-menu>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+            </table>
+
+            <mat-paginator
+              [length]="totalElements()"
+              [pageSize]="pageSize()"
+              [pageSizeOptions]="[5, 10, 25, 50]"
+              [pageIndex]="currentPage()"
+              (page)="onPageChange($event)"
+              showFirstLastButtons
+            >
+            </mat-paginator>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </app-sidebar>
 </div>

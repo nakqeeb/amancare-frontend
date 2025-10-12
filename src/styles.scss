@@ -1,4 +1,3 @@
-
 // Include theming for Angular Material with `mat.theme()`.
 // This Sass mixin will define CSS variables that are used for styling Angular Material
 // components according to the Material 3 design spec.
@@ -6,6 +5,8 @@
 // custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 @import 'ngx-toastr/toastr';
+// AOS Animation Library
+@import 'aos/dist/aos.css';
 
 /* ===================================================================
    المتغيرات الأساسية - SCSS Variables
@@ -72,6 +73,610 @@
   --transition-fast: 0.15s ease;
   --transition-base: 0.3s ease;
   --transition-slow: 0.5s ease;
+
+  // Z-index
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal: 1040;
+  --z-tooltip: 1050;
+}
+
+/* ===================================================================
+   DARK THEME VARIABLES
+   =================================================================== */
+[data-theme="dark"],
+.dark-theme {
+  // Core colors - carefully selected for dark mode
+  --primary-color: #7986cb;
+  --primary-dark: #5c6bc0;
+  --primary-light: #9fa8da;
+  --secondary-color: #9575cd;
+  --accent-color: #ce93d8;
+
+  // Status colors - adjusted for dark backgrounds
+  --success-color: #66bb6a;
+  --warning-color: #ffa726;
+  --error-color: #ef5350;
+  --info-color: #42a5f5;
+
+  // Text colors - optimized for readability on dark backgrounds
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.87);
+  --text-muted: rgba(255, 255, 255, 0.60);
+  --text-disabled: rgba(255, 255, 255, 0.38);
+  --text-white: #ffffff;
+
+  // Background colors - dark mode palette
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #2d2d2d;
+  --bg-light: #424242;
+  --bg-dark: #121212;
+  --bg-elevated: #2a2a2a;
+  --bg-surface: #262626;
+
+  // Borders and dividers
+  --border-color: rgba(255, 255, 255, 0.12);
+  --border-light: rgba(255, 255, 255, 0.08);
+  --divider-color: rgba(255, 255, 255, 0.12);
+
+  // Shadows - subtle for dark mode
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+  --shadow-elevated: 0 8px 16px rgba(0, 0, 0, 0.4);
+
+  // Overlay colors
+  --overlay-light: rgba(255, 255, 255, 0.05);
+  --overlay-medium: rgba(255, 255, 255, 0.08);
+  --overlay-heavy: rgba(255, 255, 255, 0.12);
+
+  // Component-specific colors
+  --card-bg: #2a2a2a;
+  --card-hover: #333333;
+  --input-bg: #333333;
+  --input-border: rgba(255, 255, 255, 0.23);
+  --input-border-hover: rgba(255, 255, 255, 0.40);
+  --input-border-focus: var(--primary-color);
+  --button-hover: rgba(255, 255, 255, 0.08);
+  --button-pressed: rgba(255, 255, 255, 0.12);
+  --chip-bg: rgba(255, 255, 255, 0.08);
+  --tooltip-bg: #616161;
+  --snackbar-bg: #323232;
+}
+
+/* ===================================================================
+   DARK THEME BASE STYLES
+   =================================================================== */
+.dark-theme {
+
+  body,
+  & {
+    background: var(--bg-dark);
+    color: var(--text-primary);
+  }
+
+  // Smooth transition when switching themes
+  * {
+    transition: background-color 0.3s ease,
+      color 0.3s ease,
+      border-color 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+
+  // Links
+  a {
+    color: var(--primary-light);
+
+    &:hover {
+      color: var(--primary-color);
+    }
+  }
+
+  // Selection
+  ::selection {
+    background-color: rgba(121, 134, 203, 0.3);
+    color: var(--text-primary);
+  }
+
+  // Scrollbar
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--bg-light);
+    border-radius: 6px;
+
+    &:hover {
+      background: #555;
+    }
+  }
+}
+
+/* ===================================================================
+   MATERIAL COMPONENTS - DARK THEME
+   =================================================================== */
+.dark-theme {
+
+  // Cards
+  .mat-mdc-card,
+  mat-card {
+    background: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color);
+
+    &:hover {
+      box-shadow: var(--shadow-elevated) !important;
+    }
+  }
+
+  // Toolbar
+  .mat-toolbar,
+  mat-toolbar {
+    background: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  // Buttons
+  .mat-mdc-button,
+  .mat-mdc-stroked-button {
+    &:hover:not([disabled]) {
+      background-color: var(--button-hover) !important;
+    }
+  }
+
+  .mat-mdc-raised-button:not(.mat-primary):not(.mat-accent):not(.mat-warn) {
+    background-color: var(--bg-light) !important;
+    color: var(--text-primary) !important;
+
+    &:hover:not([disabled]) {
+      background-color: #555 !important;
+    }
+  }
+
+  .mat-mdc-icon-button {
+    &:hover:not([disabled]) {
+      background-color: var(--button-hover) !important;
+    }
+  }
+
+  // Form Fields
+  .mat-mdc-form-field {
+    .mat-mdc-text-field-wrapper {
+      background-color: var(--input-bg) !important;
+    }
+
+    .mdc-text-field--outlined:not(.mdc-text-field--disabled) {
+
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__notch,
+      .mdc-notched-outline__trailing {
+        border-color: var(--input-border) !important;
+      }
+
+      &:hover .mdc-notched-outline__leading,
+      &:hover .mdc-notched-outline__notch,
+      &:hover .mdc-notched-outline__trailing {
+        border-color: var(--input-border-hover) !important;
+      }
+    }
+
+    .mat-mdc-form-field-hint,
+    .mat-mdc-form-field-error {
+      color: var(--text-muted) !important;
+    }
+  }
+
+  // Input fields
+  .mat-mdc-input-element,
+  input,
+  textarea,
+  select {
+    background-color: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--input-border) !important;
+
+    &::placeholder {
+      color: var(--text-muted) !important;
+    }
+
+    &:focus {
+      border-color: var(--input-border-focus) !important;
+    }
+  }
+
+  // Select and Autocomplete panels
+  .mat-mdc-select-panel,
+  .mat-mdc-autocomplete-panel {
+    background-color: var(--bg-elevated) !important;
+    border: 1px solid var(--border-color) !important;
+  }
+
+  .mat-mdc-option {
+    background-color: transparent !important;
+    color: var(--text-primary) !important;
+
+    &:hover:not(.mat-mdc-option-disabled) {
+      background-color: var(--overlay-medium) !important;
+    }
+
+    &.mdc-list-item--selected {
+      background-color: var(--overlay-heavy) !important;
+    }
+  }
+
+  // Menu
+  .mat-mdc-menu-panel,
+  .mat-mdc-menu-content {
+    background-color: var(--bg-elevated) !important;
+    border: 1px solid var(--border-color) !important;
+  }
+
+  .mat-mdc-menu-item {
+    color: var(--text-primary) !important;
+
+    &:hover:not([disabled]) {
+      background-color: var(--overlay-medium) !important;
+    }
+
+    .mat-icon {
+      color: var(--text-secondary) !important;
+    }
+  }
+
+  // Dialog
+  .mat-mdc-dialog-container {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+  }
+
+  // Table
+  .mat-mdc-table,
+  mat-table {
+    background-color: var(--card-bg) !important;
+  }
+
+  .mat-mdc-header-cell {
+    color: var(--text-secondary) !important;
+    border-bottom-color: var(--border-color) !important;
+  }
+
+  .mat-mdc-cell {
+    color: var(--text-primary) !important;
+    border-bottom-color: var(--border-color) !important;
+  }
+
+  .mat-mdc-row:hover {
+    background-color: var(--overlay-light) !important;
+  }
+
+  // Tabs
+  .mat-mdc-tab-group {
+    background-color: transparent !important;
+  }
+
+  .mat-mdc-tab {
+    color: var(--text-secondary) !important;
+
+    &.mat-mdc-tab-active {
+      color: var(--primary-color) !important;
+    }
+  }
+
+  .mat-mdc-tab-body-content {
+    background-color: transparent !important;
+  }
+
+  // Sidenav
+  .mat-drawer,
+  .mat-sidenav {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+    border-right: 1px solid var(--border-color) !important;
+  }
+
+  .mat-drawer-container,
+  .mat-sidenav-container {
+    background-color: var(--bg-dark) !important;
+    color: var(--text-primary) !important;
+  }
+
+  // Chips
+  .mat-mdc-chip {
+    background-color: var(--chip-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+  }
+
+  // Progress bars and spinners
+  .mat-mdc-progress-bar {
+    .mdc-linear-progress__buffer {
+      background-color: var(--bg-light) !important;
+    }
+  }
+
+  .mat-mdc-progress-spinner circle,
+  .mat-spinner circle {
+    stroke: var(--primary-color) !important;
+  }
+
+  // Tooltips
+  .mat-mdc-tooltip {
+    background-color: var(--tooltip-bg) !important;
+    color: var(--text-primary) !important;
+  }
+
+  // Snackbar
+  .mat-mdc-snack-bar-container {
+    background-color: var(--snackbar-bg) !important;
+    color: var(--text-primary) !important;
+  }
+
+  // Date picker
+  .mat-datepicker-content {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .mat-calendar {
+    background-color: var(--bg-elevated) !important;
+  }
+
+  .mat-calendar-body-cell {
+    color: var(--text-primary) !important;
+  }
+
+  .mat-calendar-body-cell-content:hover {
+    background-color: var(--overlay-medium) !important;
+  }
+
+  // Badges
+  .mat-badge-content {
+    background-color: var(--error-color) !important;
+    color: white !important;
+  }
+
+  // Divider
+  .mat-divider {
+    border-top-color: var(--divider-color) !important;
+  }
+
+  // Expansion panel
+  .mat-expansion-panel {
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .mat-expansion-panel-header {
+    background-color: transparent !important;
+
+    &:hover:not([aria-disabled="true"]) {
+      background-color: var(--overlay-light) !important;
+    }
+  }
+}
+
+/* ===================================================================
+   CUSTOM COMPONENTS - DARK THEME
+   =================================================================== */
+.dark-theme {
+
+  // Headers and navigation
+  .page-header {
+    background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-secondary) 100%);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  // Sidebar
+  .sidebar {
+    background: var(--bg-elevated);
+    border-right: 1px solid var(--border-color);
+
+    .nav-item {
+      &:hover {
+        background: var(--overlay-medium);
+      }
+
+      &.active {
+        background: var(--overlay-heavy);
+        border-left-color: var(--primary-color);
+      }
+    }
+  }
+
+  // Forms
+  .form-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+  }
+
+  .form-actions {
+    border-top-color: var(--border-color);
+  }
+
+  // Tables
+  .table-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+  }
+
+  .table-header {
+    background: var(--bg-elevated);
+    border-bottom-color: var(--border-color);
+  }
+
+  // Stats cards
+  .stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+
+    &:hover {
+      background: var(--card-hover);
+      box-shadow: var(--shadow-elevated);
+    }
+  }
+
+  // Loading states
+  .loading-container {
+    background: var(--bg-dark);
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg,
+        var(--bg-light) 25%,
+        var(--bg-elevated) 50%,
+        var(--bg-light) 75%);
+  }
+
+  // Empty states
+  .empty-state {
+    color: var(--text-muted);
+
+    .empty-icon {
+      color: var(--text-disabled);
+    }
+  }
+
+  // Alerts and notifications
+  .alert {
+    &.alert-info {
+      background: rgba(66, 165, 245, 0.1);
+      border-color: #42a5f5;
+      color: #42a5f5;
+    }
+
+    &.alert-success {
+      background: rgba(102, 187, 106, 0.1);
+      border-color: #66bb6a;
+      color: #66bb6a;
+    }
+
+    &.alert-warning {
+      background: rgba(255, 167, 38, 0.1);
+      border-color: #ffa726;
+      color: #ffa726;
+    }
+
+    &.alert-error {
+      background: rgba(239, 83, 80, 0.1);
+      border-color: #ef5350;
+      color: #ef5350;
+    }
+  }
+
+  // Modals and overlays
+  .cdk-overlay-dark-backdrop {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .modal-content {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+  }
+
+  // Code blocks
+  pre,
+  code {
+    background: var(--bg-dark);
+    color: #aed581;
+    border: 1px solid var(--border-color);
+  }
+
+  // Charts (if using chart libraries)
+  .chart-container {
+    background: var(--card-bg);
+
+    .chart-legend {
+      color: var(--text-secondary);
+    }
+  }
+}
+
+/* ===================================================================
+   TOASTR NOTIFICATIONS - DARK THEME
+   =================================================================== */
+.dark-theme {
+  #toast-container {
+    .toast-success {
+      background-color: #2e7d32;
+    }
+
+    .toast-error {
+      background-color: #c62828;
+    }
+
+    .toast-info {
+      background-color: #0277bd;
+    }
+
+    .toast-warning {
+      background-color: #f57c00;
+    }
+
+    .toast {
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+    }
+  }
+}
+
+/* ===================================================================
+   TRANSITIONS FOR THEME SWITCHING
+   =================================================================== */
+.theme-transition {
+  transition: background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease !important;
+}
+
+/* ===================================================================
+   ACCESSIBILITY IMPROVEMENTS FOR DARK THEME
+   =================================================================== */
+.dark-theme {
+
+  // Focus indicators
+  *:focus-visible {
+    outline: 2px solid var(--primary-light);
+    outline-offset: 2px;
+  }
+
+  // High contrast mode adjustments
+  @media (prefers-contrast: high) {
+    --text-primary: #ffffff;
+    --text-secondary: #f5f5f5;
+    --border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  // Reduced motion
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}
+
+/* ===================================================================
+   PRINT STYLES FOR DARK THEME
+   =================================================================== */
+@media print {
+  .dark-theme {
+    --bg-primary: white !important;
+    --text-primary: black !important;
+    --bg-secondary: #f5f5f5 !important;
+    --text-secondary: #333 !important;
+
+    background: white !important;
+    color: black !important;
+  }
 }
 
 /* ===================================================================
@@ -149,28 +754,77 @@ body {
 /* ===================================================================
    فئات الأدوات المساعدة
    =================================================================== */
-.text-primary { color: var(--primary-color) !important; }
-.text-secondary { color: var(--text-secondary) !important; }
-.text-muted { color: var(--text-muted) !important; }
-.text-success { color: var(--success-color) !important; }
-.text-warning { color: var(--warning-color) !important; }
-.text-error { color: var(--error-color) !important; }
-.text-white { color: var(--text-white) !important; }
+.text-primary {
+  color: var(--primary-color) !important;
+}
 
-.bg-primary { background-color: var(--primary-color) !important; }
-.bg-secondary { background-color: var(--bg-secondary) !important; }
-.bg-light { background-color: var(--bg-light) !important; }
-.bg-white { background-color: var(--bg-primary) !important; }
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
 
-.border-radius-sm { border-radius: var(--radius-sm) !important; }
-.border-radius-md { border-radius: var(--radius-md) !important; }
-.border-radius-lg { border-radius: var(--radius-lg) !important; }
+.text-muted {
+  color: var(--text-muted) !important;
+}
 
-.shadow-sm { box-shadow: var(--shadow-sm) !important; }
-.shadow-md { box-shadow: var(--shadow-md) !important; }
-.shadow-lg { box-shadow: var(--shadow-lg) !important; }
+.text-success {
+  color: var(--success-color) !important;
+}
 
-.transition-all { transition: all var(--transition-base) !important; }
+.text-warning {
+  color: var(--warning-color) !important;
+}
+
+.text-error {
+  color: var(--error-color) !important;
+}
+
+.text-white {
+  color: var(--text-white) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.bg-secondary {
+  background-color: var(--bg-secondary) !important;
+}
+
+.bg-light {
+  background-color: var(--bg-light) !important;
+}
+
+.bg-white {
+  background-color: var(--bg-primary) !important;
+}
+
+.border-radius-sm {
+  border-radius: var(--radius-sm) !important;
+}
+
+.border-radius-md {
+  border-radius: var(--radius-md) !important;
+}
+
+.border-radius-lg {
+  border-radius: var(--radius-lg) !important;
+}
+
+.shadow-sm {
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.shadow-md {
+  box-shadow: var(--shadow-md) !important;
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.transition-all {
+  transition: all var(--transition-base) !important;
+}
 
 /* ===================================================================
    أنماط التحميل والتفاعل
@@ -196,8 +850,13 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* ===================================================================
@@ -330,3 +989,144 @@ body {
     justify-content: center;
   }
 }
+
+
+
+// ======================
+// styles to fix transparent dropdown backgrounds
+// START
+// Mat-Select dropdown panel
+.mat-mdc-select-panel {
+  background-color: white !important;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2),
+    0 4px 5px 0 rgba(0, 0, 0, 0.14),
+    0 1px 10px 0 rgba(0, 0, 0, 0.12) !important;
+}
+
+// Mat-Select options
+.mat-mdc-option {
+  background-color: white !important;
+
+  &:hover:not(.mat-mdc-option-disabled) {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+
+  &.mat-mdc-option-active {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+
+  &.mdc-list-item--selected {
+    background-color: rgba(25, 118, 210, 0.12) !important;
+  }
+}
+
+// Mat-Autocomplete panel
+.mat-mdc-autocomplete-panel {
+  background-color: white !important;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2),
+    0 4px 5px 0 rgba(0, 0, 0, 0.14),
+    0 1px 10px 0 rgba(0, 0, 0, 0.12) !important;
+
+  .mat-mdc-option {
+    background-color: white !important;
+  }
+}
+
+// Mat-Menu panel
+.mat-mdc-menu-panel {
+  background-color: white !important;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2),
+    0 4px 5px 0 rgba(0, 0, 0, 0.14),
+    0 1px 10px 0 rgba(0, 0, 0, 0.12) !important;
+}
+
+.mat-mdc-menu-content {
+  background-color: white !important;
+}
+
+.mat-mdc-menu-item {
+  background-color: transparent !important;
+
+  &:hover:not([disabled]) {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+}
+
+// Date picker calendar
+.mat-datepicker-content {
+  background-color: white !important;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2),
+    0 4px 5px 0 rgba(0, 0, 0, 0.14),
+    0 1px 10px 0 rgba(0, 0, 0, 0.12) !important;
+}
+
+.mat-calendar {
+  background-color: white !important;
+}
+
+// Dialog panels
+.mat-mdc-dialog-container {
+  background-color: white !important;
+}
+
+// For older Material versions (if you're using them)
+.mat-select-panel {
+  background-color: white !important;
+}
+
+.mat-option {
+  background-color: white !important;
+
+  &:hover:not(.mat-option-disabled) {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+}
+
+.mat-autocomplete-panel {
+  background-color: white !important;
+}
+
+.mat-menu-panel {
+  background-color: white !important;
+}
+
+// Fix for any custom dropdowns
+.dropdown-panel,
+.custom-select-panel {
+  background-color: white !important;
+}
+
+// Additional fix for Material 15+ if needed
+.mdc-menu-surface {
+  background-color: white !important;
+}
+
+.mdc-list {
+  background-color: transparent !important; // Let parent handle background
+}
+
+// Ensure proper contrast for dark themes (if you support theme switching)
+.dark-theme {
+
+  .mat-mdc-select-panel,
+  .mat-mdc-autocomplete-panel,
+  .mat-mdc-menu-panel,
+  .mat-datepicker-content,
+  .mat-mdc-dialog-container {
+    background-color: #424242 !important;
+  }
+
+  .mat-mdc-option {
+    background-color: #424242 !important;
+
+    &:hover:not(.mat-mdc-option-disabled) {
+      background-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    &.mdc-list-item--selected {
+      background-color: rgba(255, 255, 255, 0.12) !important;
+    }
+  }
+}
+
+// END

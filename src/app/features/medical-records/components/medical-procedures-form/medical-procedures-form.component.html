@@ -1,0 +1,185 @@
+<div class="medical-procedures-form">
+  <div class="form-header">
+    <h3 class="form-title">
+      <mat-icon>medical_services</mat-icon>
+      الإجراءات الطبية
+    </h3>
+    <button mat-button color="primary" (click)="addProcedure()">
+      <mat-icon>add</mat-icon>
+      إضافة إجراء طبي
+    </button>
+  </div>
+
+  <!-- Procedures List -->
+  <div class="procedures-list">
+    @if (procedures.length === 0) {
+    <div class="empty-state">
+      <mat-icon>healing</mat-icon>
+      <p>لا توجد إجراءات طبية مضافة</p>
+      <p class="hint">اضغط على "إضافة إجراء طبي" لتسجيل إجراء جديد</p>
+    </div>
+    } @for (procedure of procedures; track procedure; let i = $index) {
+    <mat-expansion-panel
+      class="procedure-panel"
+      [expanded]="expandedIndex() === i"
+    >
+      <mat-expansion-panel-header (click)="setExpanded(i)">
+        <mat-panel-title>
+          <div class="procedure-title">
+            <mat-icon>{{ getCategoryIcon(procedure.category) }}</mat-icon>
+            <span>{{ procedure.procedureName || "إجراء طبي جديد" }}</span>
+            @if (procedure.procedureCode) {
+            <span class="procedure-code">[{{ procedure.procedureCode }}]</span>
+            }
+          </div>
+        </mat-panel-title>
+        <mat-panel-description>
+          <div class="procedure-info">
+            <span class="category-badge">{{
+              getCategoryLabel(procedure.category)
+            }}</span>
+            @if (procedure.performedDate) {
+            <span class="date">
+              <mat-icon>event</mat-icon>
+              {{ formatDate(procedure.performedDate) }}
+            </span>
+            }
+          </div>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <div class="procedure-content">
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="flex-2">
+            <mat-label>اسم الإجراء</mat-label>
+            <input
+              matInput
+              [(ngModel)]="procedure.procedureName"
+              placeholder="مثال: خياطة جرح، تركيب قسطرة"
+              required
+            />
+            <mat-icon matPrefix>healing</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>رمز الإجراء</mat-label>
+            <input
+              matInput
+              [(ngModel)]="procedure.procedureCode"
+              placeholder="الرمز الطبي (اختياري)"
+            />
+            <mat-icon matPrefix>qr_code</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>الفئة</mat-label>
+            <mat-select [(ngModel)]="procedure.category">
+              <mat-option value="DIAGNOSTIC">تشخيصي</mat-option>
+              <mat-option value="THERAPEUTIC">علاجي</mat-option>
+              <mat-option value="SURGICAL">جراحي</mat-option>
+              <mat-option value="PREVENTIVE">وقائي</mat-option>
+              <mat-option value="EMERGENCY">طارئ</mat-option>
+              <mat-option value="OTHER">أخرى</mat-option>
+            </mat-select>
+            <mat-icon matPrefix>category</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>تاريخ الإجراء</mat-label>
+            <input
+              matInput
+              [matDatepicker]="datePicker"
+              [(ngModel)]="procedure.performedDate"
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="datePicker"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #datePicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>أجرى العملية</mat-label>
+            <input
+              matInput
+              [(ngModel)]="procedure.performedBy"
+              placeholder="اسم الطبيب/الممارس"
+            />
+            <mat-icon matPrefix>person</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>وصف الإجراء</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="procedure.description"
+            rows="3"
+            placeholder="وصف تفصيلي للإجراء الطبي"
+          ></textarea>
+          <mat-icon matPrefix>description</mat-icon>
+        </mat-form-field>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>المضاعفات</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="procedure.complications"
+              rows="2"
+              placeholder="أي مضاعفات حدثت (إن وجدت)"
+            ></textarea>
+            <mat-icon matPrefix>warning</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>النتيجة</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="procedure.outcome"
+              rows="2"
+              placeholder="نتيجة الإجراء"
+            ></textarea>
+            <mat-icon matPrefix>check_circle</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>ملاحظات</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="procedure.notes"
+            rows="2"
+            placeholder="أي ملاحظات إضافية"
+          ></textarea>
+          <mat-icon matPrefix>note</mat-icon>
+        </mat-form-field>
+
+        <div class="procedure-actions">
+          <button mat-button color="warn" (click)="removeProcedure(i)">
+            <mat-icon>delete</mat-icon>
+            حذف الإجراء
+          </button>
+        </div>
+      </div>
+    </mat-expansion-panel>
+    }
+  </div>
+
+  <!-- Quick Templates -->
+  @if (showTemplates()) {
+  <div class="templates-section">
+    <h4>إجراءات شائعة:</h4>
+    <mat-chip-set>
+      @for (template of commonProcedures; track template.procedureName) {
+      <mat-chip (click)="addFromTemplate(template)">
+        <mat-icon>{{ getCategoryIcon(template.category!) }}</mat-icon>
+        {{ template.procedureName }}
+      </mat-chip>
+      }
+    </mat-chip-set>
+  </div>
+  }
+</div>

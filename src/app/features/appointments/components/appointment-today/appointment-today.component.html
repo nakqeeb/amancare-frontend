@@ -1,0 +1,312 @@
+<!-- src/app/features/appointments/components/appointment-today/appointment-today.component.html -->
+<div class="appointment-today-container">
+  <app-header></app-header>
+
+  <app-sidebar>
+    <div class="main-content">
+      <div class="content-area">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="header-content">
+            <h1 class="page-title">
+              <mat-icon>today</mat-icon>
+              مواعيد اليوم
+            </h1>
+            <p class="page-description">
+              {{ todayDate }}
+            </p>
+          </div>
+
+          <div class="header-actions">
+            <span class="last-refresh">
+              آخر تحديث: {{ formatLastRefreshTime() }}
+            </span>
+            <button mat-button (click)="refresh()">
+              <mat-icon>refresh</mat-icon>
+              تحديث
+            </button>
+            <button
+              mat-raised-button
+              color="primary"
+              routerLink="/appointments/new"
+            >
+              <mat-icon>add</mat-icon>
+              موعد جديد
+            </button>
+          </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+          <mat-card class="stat-card total">
+            <mat-card-content>
+              <div class="stat-content">
+                <mat-icon>event</mat-icon>
+                <div class="stat-info">
+                  <h3>{{ totalCount() }}</h3>
+                  <p>إجمالي المواعيد</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card pending">
+            <mat-card-content>
+              <div class="stat-content">
+                <mat-icon>pending</mat-icon>
+                <div class="stat-info">
+                  <h3>{{ pendingCount() }}</h3>
+                  <p>في الانتظار</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card completed">
+            <mat-card-content>
+              <div class="stat-content">
+                <mat-icon>check_circle</mat-icon>
+                <div class="stat-info">
+                  <h3>{{ completedCount() }}</h3>
+                  <p>مكتمل</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card cancelled">
+            <mat-card-content>
+              <div class="stat-content">
+                <mat-icon>cancel</mat-icon>
+                <div class="stat-info">
+                  <h3>{{ cancelledCount() }}</h3>
+                  <p>ملغي</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <!-- Appointments by Status -->
+        @if (loading()) {
+        <mat-card>
+          <mat-card-content>
+            <div class="loading-container">
+              <mat-spinner></mat-spinner>
+              <p>جاري تحميل المواعيد...</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+        } @else if (todayAppointments().length === 0) {
+        <mat-card>
+          <mat-card-content>
+            <div class="empty-state">
+              <mat-icon>event_busy</mat-icon>
+              <h3>لا توجد مواعيد لليوم</h3>
+              <p>لم يتم جدولة أي مواعيد لهذا اليوم</p>
+              <button
+                mat-raised-button
+                color="primary"
+                routerLink="/appointments/new"
+              >
+                إضافة موعد جديد
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+        } @else {
+        <!-- In Progress Appointments -->
+        @if (groupedAppointments().inProgress.length > 0) {
+        <mat-card class="status-section in-progress">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>play_circle</mat-icon>
+              قيد التنفيذ
+              <!-- <mat-badge [content]="groupedAppointments().inProgress.length"></mat-badge> -->
+              <span
+                [matBadge]="groupedAppointments().inProgress.length"
+                matBadgeSize="small"
+              >
+              </span>
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="appointments-grid">
+              @for (appointment of groupedAppointments().inProgress; track
+              appointment.id) {
+              <div
+                class="appointment-card in-progress"
+                (click)="viewAppointment(appointment.id)"
+              >
+                <div class="appointment-header">
+                  <span class="time">{{ appointment.appointmentTime }}</span>
+                  <mat-chip color="warn">جاري الآن</mat-chip>
+                </div>
+                <h4>{{ appointment.patientName }}</h4>
+                <p>د. {{ appointment.doctorName }}</p>
+                <div class="appointment-footer">
+                  <span class="type">{{
+                    typeLabels[appointment.appointmentType]
+                  }}</span>
+                  <button
+                    mat-icon-button
+                    (click)="
+                      completeAppointment(appointment.id);
+                      $event.stopPropagation()
+                    "
+                  >
+                    <mat-icon>done</mat-icon>
+                  </button>
+                </div>
+              </div>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+        }
+
+        <!-- Confirmed Appointments -->
+        @if (groupedAppointments().confirmed.length > 0) {
+        <mat-card class="status-section confirmed">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>verified</mat-icon>
+              مؤكد
+              <!-- <mat-badge
+                [content]="groupedAppointments().confirmed.length"
+              ></mat-badge> -->
+              <span
+                [matBadge]="groupedAppointments().confirmed.length"
+                matBadgeSize="small"
+              >
+              </span>
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="appointments-grid">
+              @for (appointment of groupedAppointments().confirmed; track
+              appointment.id) {
+              <div
+                class="appointment-card confirmed"
+                (click)="viewAppointment(appointment.id)"
+              >
+                <div class="appointment-header">
+                  <span class="time">{{ appointment.appointmentTime }}</span>
+                  <button
+                    mat-icon-button
+                    color="primary"
+                    (click)="
+                      startAppointment(appointment.id); $event.stopPropagation()
+                    "
+                    matTooltip="بدء الموعد"
+                  >
+                    <mat-icon>play_arrow</mat-icon>
+                  </button>
+                </div>
+                <h4>{{ appointment.patientName }}</h4>
+                <p>د. {{ appointment.doctorName }}</p>
+                <span class="type">{{
+                  typeLabels[appointment.appointmentType]
+                }}</span>
+              </div>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+        }
+
+        <!-- Scheduled Appointments -->
+        @if (groupedAppointments().scheduled.length > 0) {
+        <mat-card class="status-section scheduled">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>schedule</mat-icon>
+              مجدول
+              <!-- <mat-badge
+                [content]="groupedAppointments().scheduled.length"
+              ></mat-badge> -->
+              <span
+                [matBadge]="groupedAppointments().scheduled.length"
+                matBadgeSize="small"
+              >
+              </span>
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="appointments-grid">
+              @for (appointment of groupedAppointments().scheduled; track
+              appointment.id) {
+              <div
+                class="appointment-card scheduled"
+                (click)="viewAppointment(appointment.id)"
+              >
+                <div class="appointment-header">
+                  <span class="time">{{ appointment.appointmentTime }}</span>
+                  <button
+                    mat-icon-button
+                    color="accent"
+                    (click)="
+                      confirmAppointment(appointment.id);
+                      $event.stopPropagation()
+                    "
+                    matTooltip="تأكيد الموعد"
+                  >
+                    <mat-icon>check</mat-icon>
+                  </button>
+                </div>
+                <h4>{{ appointment.patientName }}</h4>
+                <p>د. {{ appointment.doctorName }}</p>
+                <span class="type">{{
+                  typeLabels[appointment.appointmentType]
+                }}</span>
+              </div>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+        }
+
+        <!-- Completed Appointments -->
+        @if (groupedAppointments().completed.length > 0) {
+        <mat-card class="status-section completed">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>check_circle</mat-icon>
+              مكتمل
+              <!-- <mat-badge
+                [content]="groupedAppointments().completed.length"
+              ></mat-badge> -->
+              <span
+                [matBadge]="groupedAppointments().completed.length"
+                matBadgeSize="small"
+              >
+              </span>
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="appointments-grid">
+              @for (appointment of groupedAppointments().completed; track
+              appointment.id) {
+              <div
+                class="appointment-card completed"
+                (click)="viewAppointment(appointment.id)"
+              >
+                <div class="appointment-header">
+                  <span class="time">{{ appointment.appointmentTime }}</span>
+                  <mat-icon color="primary">done_all</mat-icon>
+                </div>
+                <h4>{{ appointment.patientName }}</h4>
+                <p>د. {{ appointment.doctorName }}</p>
+                <span class="type">{{
+                  typeLabels[appointment.appointmentType]
+                }}</span>
+              </div>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+        } }
+      </div>
+    </div>
+  </app-sidebar>
+</div>

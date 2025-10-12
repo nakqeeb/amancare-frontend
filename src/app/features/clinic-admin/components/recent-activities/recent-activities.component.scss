@@ -1,0 +1,346 @@
+// =============================================================================
+// Recent Activities Component Styles
+// src/app/features/admin/components/recent-activities/recent-activities.component.scss
+// =============================================================================
+
+.activities-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  mat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+
+      .title-icon {
+        color: var(--primary-color, #1976d2);
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+
+      .spinning {
+        animation: spin 1s linear infinite;
+      }
+    }
+  }
+
+  mat-card-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+}
+
+// =============================================================================
+// LOADING, ERROR, AND EMPTY STATES
+// =============================================================================
+
+.loading-state,
+.error-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 8px 0;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  small {
+    color: rgba(0, 0, 0, 0.4);
+    font-size: 12px;
+  }
+}
+
+.error-state {
+  mat-icon {
+    color: var(--warn-color, #f44336);
+  }
+}
+
+// =============================================================================
+// ACTIVITIES LIST
+// =============================================================================
+
+.activities-list {
+  display: flex;
+  flex-direction: column;
+
+  .activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    position: relative;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &.failed {
+      background-color: rgba(244, 67, 54, 0.05);
+      border-left: 3px solid var(--warn-color, #f44336);
+
+      &:hover {
+        background-color: rgba(244, 67, 54, 0.08);
+      }
+    }
+
+    // Edited: Added style for non-clickable authentication activities
+    &.non-clickable {
+      cursor: default;
+
+      &:hover {
+        background-color: transparent;
+      }
+
+      &.failed:hover {
+        background-color: rgba(244, 67, 54, 0.05);
+      }
+    }
+
+    // End of edit
+  }
+}
+
+// =============================================================================
+// ACTIVITY ICON
+// =============================================================================
+
+.activity-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  &.success {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: var(--success-color, #4caf50);
+  }
+
+  &.primary {
+    background-color: rgba(25, 118, 210, 0.1);
+    color: var(--primary-color, #1976d2);
+  }
+
+  &.accent {
+    background-color: rgba(255, 152, 0, 0.1);
+    color: var(--accent-color, #ff9800);
+  }
+
+  &.warn {
+    background-color: rgba(244, 67, 54, 0.1);
+    color: var(--warn-color, #f44336);
+  }
+}
+
+// =============================================================================
+// ACTIVITY CONTENT
+// =============================================================================
+
+.activity-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+
+  .activity-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    .activity-description {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .action-chip {
+      height: 24px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 0 8px;
+      flex-shrink: 0;
+    }
+  }
+
+  .activity-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+
+      .meta-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+        opacity: 0.7;
+      }
+
+      &.status-icon {
+        margin-left: auto;
+      }
+    }
+  }
+
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background-color: rgba(244, 67, 54, 0.1);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--warn-color, #f44336);
+
+    .error-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+
+    span {
+      flex: 1;
+    }
+  }
+}
+
+// =============================================================================
+// DURATION BADGE
+// =============================================================================
+
+.duration-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: var(--bg-light);
+  color: var(--text-secondary);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+// =============================================================================
+// ANIMATIONS
+// =============================================================================
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// =============================================================================
+// RESPONSIVE DESIGN
+// =============================================================================
+
+@media (max-width: 768px) {
+  .activities-card {
+    mat-card-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+
+      .header-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+  }
+
+  .activity-item {
+    .activity-content {
+      .activity-meta {
+        gap: 12px;
+        font-size: 11px;
+      }
+    }
+  }
+
+  .duration-badge {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .activity-item {
+    gap: 12px;
+    padding: 12px;
+
+    .activity-icon {
+      width: 32px;
+      height: 32px;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .activity-content {
+      .activity-meta {
+        flex-direction: column;
+        gap: 4px;
+      }
+    }
+  }
+}

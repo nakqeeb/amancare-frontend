@@ -1,5 +1,5 @@
 // ===================================================================
-// src/app/core/interceptors/auth.interceptor.ts - مقاطع المصادقة
+// src/app/core/interceptors/auth.interceptor.ts - مقاطع المصادقة المُحدث
 // ===================================================================
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpEvent, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
@@ -15,12 +15,28 @@ const refreshTokenSubject: BehaviorSubject<string | null> = new BehaviorSubject<
 export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: HttpHandlerFn): Observable<HttpEvent<any>> => {
   const authService = inject(AuthService);
 
-  // تجاهل طلبات المصادقة
-  if (req.url.includes('/auth/')) {
+  // قائمة endpoints التي لا تحتاج إلى authentication token
+  const publicAuthEndpoints = [
+    '/auth/login',
+    '/auth/register',
+    '/auth/register-clinic',
+    '/auth/refresh',
+    '/auth/forgot-password',
+    '/auth/validate',
+    '/auth/reset-password'
+  ];
+
+  // التحقق من كون الطلب لا يحتاج authentication
+  const isPublicAuthEndpoint = publicAuthEndpoints.some(endpoint =>
+    req.url.includes(endpoint)
+  );
+
+  // إذا كان طلب عام، أرسله بدون token
+  if (isPublicAuthEndpoint) {
     return next(req);
   }
 
-  // إضافة الرمز المميز للطلب
+  // إضافة الرمز المميز للطلبات الأخرى (بما في ذلك auth endpoints المحمية)
   const token = authService.getToken();
   if (token) {
     req = addTokenToRequest(req, token);
@@ -29,7 +45,7 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       // التعامل مع خطأ 401 (Unauthorized)
-      if (error.status === 401 && token) {
+      if (error.status === 401 && token && !isPublicAuthEndpoint) {
         return handle401Error(req, next, authService);
       }
 
@@ -57,6 +73,12 @@ function handle401Error(
   next: HttpHandlerFn,
   authService: AuthService
 ): Observable<HttpEvent<any>> {
+
+  // تجنب محاولة refresh للطلبات العامة
+  if (request.url.includes('/auth/refresh')) {
+    authService.logout();
+    return throwError(() => new Error('Refresh token expired'));
+  }
 
   if (!isRefreshing) {
     isRefreshing = true;

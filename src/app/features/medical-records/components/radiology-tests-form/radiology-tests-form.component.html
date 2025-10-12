@@ -1,0 +1,235 @@
+<div class="radiology-tests-form">
+  <div class="form-header">
+    <h3 class="form-title">
+      <mat-icon>radiology</mat-icon>
+      فحوصات الأشعة
+    </h3>
+    <button mat-button color="primary" (click)="addRadiologyTest()">
+      <mat-icon>add</mat-icon>
+      إضافة فحص أشعة
+    </button>
+  </div>
+
+  <!-- Radiology Tests List -->
+  <div class="radiology-tests-list">
+    @if (radiologyTests.length === 0) {
+    <div class="empty-state">
+      <mat-icon>medical_information</mat-icon>
+      <p>لا توجد فحوصات أشعة مضافة</p>
+      <p class="hint">اضغط على "إضافة فحص أشعة" لطلب فحص جديد</p>
+    </div>
+    } @for (test of radiologyTests; track test; let i = $index) {
+    <mat-expansion-panel
+      class="radiology-test-panel"
+      [expanded]="expandedIndex() === i"
+    >
+      <mat-expansion-panel-header (click)="setExpanded(i)">
+        <mat-panel-title>
+          <div class="test-title">
+            <mat-icon>{{ getTypeIcon(test.testType) }}</mat-icon>
+            <span>{{ test.testName || "فحص أشعة جديد" }}</span>
+            @if (test.bodyPart) {
+            <span class="body-part">({{ test.bodyPart }})</span>
+            }
+          </div>
+        </mat-panel-title>
+        <mat-panel-description>
+          <div class="test-badges">
+            <span class="badge type-badge">
+              {{ getTypeLabel(test.testType) }}
+            </span>
+            <span class="badge urgency-{{ test.urgency?.toLowerCase() }}">
+              {{ getUrgencyLabel(test.urgency) }}
+            </span>
+            @if (test.status) {
+            <span class="badge status-{{ test.status.toLowerCase() }}">
+              {{ getStatusLabel(test.status) }}
+            </span>
+            }
+          </div>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <div class="test-content">
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="flex-2">
+            <mat-label>اسم الفحص</mat-label>
+            <input
+              matInput
+              [(ngModel)]="test.testName"
+              placeholder="مثال: أشعة الصدر"
+              required
+            />
+            <mat-icon matPrefix>medical_information</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>نوع الفحص</mat-label>
+            <mat-select [(ngModel)]="test.testType">
+              <mat-option value="XRAY">أشعة سينية</mat-option>
+              <mat-option value="CT">الأشعة المقطعية</mat-option>
+              <mat-option value="MRI">الرنين المغناطيسي</mat-option>
+              <mat-option value="ULTRASOUND">الموجات فوق الصوتية</mat-option>
+              <mat-option value="PET"
+                >التصوير المقطعي بالإصدار البوزيتروني</mat-option
+              >
+              <mat-option value="MAMMOGRAPHY">تصوير الثدي الشعاعي</mat-option>
+              <mat-option value="FLUOROSCOPY">التنظير التألقي</mat-option>
+              <mat-option value="OTHER">أخرى</mat-option>
+            </mat-select>
+            <mat-icon matPrefix>category</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>المنطقة/العضو</mat-label>
+            <input
+              matInput
+              [(ngModel)]="test.bodyPart"
+              placeholder="مثال: الصدر، الرأس، البطن"
+            />
+            <mat-icon matPrefix>accessibility</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>الأولوية</mat-label>
+            <mat-select [(ngModel)]="test.urgency">
+              <mat-option value="ROUTINE">روتيني</mat-option>
+              <mat-option value="URGENT">عاجل</mat-option>
+              <mat-option value="STAT">فوري</mat-option>
+            </mat-select>
+            <mat-icon matPrefix>priority_high</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>الحالة</mat-label>
+            <mat-select [(ngModel)]="test.status">
+              <mat-option value="ORDERED">مطلوب</mat-option>
+              <mat-option value="PENDING">قيد الانتظار</mat-option>
+              <mat-option value="IN_PROGRESS">قيد التنفيذ</mat-option>
+              <mat-option value="COMPLETED">مكتمل</mat-option>
+              <mat-option value="CANCELLED">ملغى</mat-option>
+            </mat-select>
+            <mat-icon matPrefix>pending</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>تعليمات خاصة</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="test.instructions"
+            rows="2"
+            placeholder="مثال: مع حبس النفس، مع المادة الظليلة"
+          ></textarea>
+          <mat-icon matPrefix>info</mat-icon>
+        </mat-form-field>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>تاريخ الطلب</mat-label>
+            <input
+              matInput
+              [matDatepicker]="orderPicker"
+              [(ngModel)]="test.orderedDate"
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="orderPicker"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #orderPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>تاريخ إجراء الفحص</mat-label>
+            <input
+              matInput
+              [matDatepicker]="resultPicker"
+              [(ngModel)]="test.resultDate"
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="resultPicker"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #resultPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <!-- Results Section -->
+        @if (test.status === 'COMPLETED') {
+        <div class="results-section">
+          <h4>نتائج الفحص</h4>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>الموجودات</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="test.findings"
+              rows="3"
+              placeholder="وصف ما تم العثور عليه في الفحص"
+            ></textarea>
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>الانطباع/التشخيص</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="test.impression"
+              rows="2"
+              placeholder="الانطباع التشخيصي بناء على النتائج"
+            ></textarea>
+            <mat-icon matPrefix>psychology</mat-icon>
+          </mat-form-field>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>أجرى الفحص</mat-label>
+              <input
+                matInput
+                [(ngModel)]="test.performedBy"
+                placeholder="اسم الفني"
+              />
+              <mat-icon matPrefix>person</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>أخصائي الأشعة</mat-label>
+              <input
+                matInput
+                [(ngModel)]="test.radiologistName"
+                placeholder="اسم الطبيب المختص"
+              />
+              <mat-icon matPrefix>medical_services</mat-icon>
+            </mat-form-field>
+          </div>
+        </div>
+        }
+
+        <div class="test-actions">
+          <button mat-button color="warn" (click)="removeRadiologyTest(i)">
+            <mat-icon>delete</mat-icon>
+            حذف الفحص
+          </button>
+        </div>
+      </div>
+    </mat-expansion-panel>
+    }
+  </div>
+
+  <!-- Quick Templates -->
+  @if (showTemplates()) {
+  <div class="templates-section">
+    <h4>فحوصات شائعة:</h4>
+    <mat-chip-set>
+      @for (template of commonTests; track template.testName) {
+      <mat-chip (click)="addFromTemplate(template)">
+        <mat-icon>{{ getTypeIcon(template.testType!) }}</mat-icon>
+        {{ template.testName }}
+      </mat-chip>
+      }
+    </mat-chip-set>
+  </div>
+  }
+</div>

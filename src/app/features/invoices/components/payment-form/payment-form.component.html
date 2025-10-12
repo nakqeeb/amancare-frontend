@@ -1,0 +1,265 @@
+<!-- ===================================================================
+  src/app/features/invoices/components/payment-form/payment-form.component.html
+  Payment Form Template
+  =================================================================== -->
+
+<app-header></app-header>
+<app-sidebar>
+  <div class="main-content">
+    <div class="payment-form-container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="header-content">
+          <div class="title-section">
+            <button mat-icon-button (click)="onCancel()" matTooltip="رجوع">
+              <mat-icon>arrow_back</mat-icon>
+            </button>
+            <h1 class="page-title">
+              <mat-icon>payment</mat-icon>
+              إضافة دفعة
+            </h1>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>جاري تحميل بيانات الفاتورة...</p>
+      </div>
+      }
+
+      <!-- Payment Form -->
+      @if (!loading() && invoice(); as invoice) {
+
+      <!-- Invoice Summary Card -->
+      <mat-card class="summary-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>receipt_long</mat-icon>
+            ملخص الفاتورة
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="summary-label">رقم الفاتورة:</span>
+              <span class="summary-value">{{ invoice.invoiceNumber }}</span>
+            </div>
+
+            <div class="summary-item">
+              <span class="summary-label">المريض:</span>
+              <span class="summary-value">{{ invoice.patientName }}</span>
+            </div>
+
+            <div class="summary-item">
+              <span class="summary-label">المبلغ الإجمالي:</span>
+              <span class="summary-value">{{
+                formatCurrency(invoice.totalAmount)
+              }}</span>
+            </div>
+
+            <div class="summary-item">
+              <span class="summary-label">المدفوع:</span>
+              <span class="summary-value paid">{{
+                formatCurrency(invoice.paidAmount)
+              }}</span>
+            </div>
+
+            <div class="summary-item highlight">
+              <span class="summary-label">المبلغ المتبقي:</span>
+              <span class="summary-value balance">{{
+                formatCurrency(invoice.balanceDue)
+              }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Payment Form Card -->
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>account_balance_wallet</mat-icon>
+            تفاصيل الدفعة
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
+            <!-- Amount Field -->
+            <div class="amount-section">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>مبلغ الدفعة</mat-label>
+                <mat-icon matPrefix>attach_money</mat-icon>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="amount"
+                  min="0.01"
+                  [max]="invoice.balanceDue"
+                  step="0.01"
+                />
+                <span matSuffix>ريال</span>
+                @if (isFieldInvalid('amount')) {
+                <mat-error>{{ getFieldError("amount") }}</mat-error>
+                }
+                <mat-hint
+                  >الحد الأقصى:
+                  {{ formatCurrency(invoice.balanceDue) }}</mat-hint
+                >
+              </mat-form-field>
+
+              <!-- Quick Amount Buttons -->
+              <div class="quick-amount-buttons">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="setCustomAmount(25)"
+                >
+                  25%
+                </button>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="setHalfAmount()"
+                >
+                  50%
+                </button>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="setCustomAmount(75)"
+                >
+                  75%
+                </button>
+                <button
+                  mat-raised-button
+                  color="primary"
+                  type="button"
+                  (click)="setFullAmount()"
+                >
+                  <mat-icon>done_all</mat-icon>
+                  دفع كامل
+                </button>
+              </div>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <!-- Payment Method -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>طريقة الدفع</mat-label>
+              <mat-icon matPrefix>credit_card</mat-icon>
+              <mat-select formControlName="paymentMethod">
+                @for (method of paymentMethodOptions; track method.value) {
+                <mat-option [value]="method.value">
+                  {{ method.label }}
+                </mat-option>
+                }
+              </mat-select>
+              @if (isFieldInvalid('paymentMethod')) {
+              <mat-error>{{ getFieldError("paymentMethod") }}</mat-error>
+              }
+            </mat-form-field>
+
+            <!-- Reference Number -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>الرقم المرجعي (اختياري)</mat-label>
+              <mat-icon matPrefix>confirmation_number</mat-icon>
+              <input
+                matInput
+                formControlName="referenceNumber"
+                placeholder="رقم الإيصال أو التحويل"
+              />
+              <mat-hint>مثال: إيصال رقم 123456 أو رقم التحويل البنكي</mat-hint>
+            </mat-form-field>
+
+            <!-- Notes -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>ملاحظات (اختياري)</mat-label>
+              <mat-icon matPrefix>note</mat-icon>
+              <textarea
+                matInput
+                formControlName="notes"
+                rows="3"
+                placeholder="أي ملاحظات إضافية..."
+              ></textarea>
+            </mat-form-field>
+
+            <mat-divider></mat-divider>
+
+            <!-- Payment Summary -->
+            <div class="payment-summary">
+              <div class="summary-row">
+                <span class="summary-label">مبلغ الدفعة:</span>
+                <span class="summary-value">{{
+                  formatCurrency(paymentForm.get("amount")?.value || 0)
+                }}</span>
+              </div>
+
+              <div class="summary-row">
+                <span class="summary-label">المبلغ المتبقي بعد الدفع:</span>
+                <span class="summary-value remaining">{{
+                  formatCurrency(getRemainingAmount())
+                }}</span>
+              </div>
+
+              @if (getRemainingAmount() === 0) {
+              <div class="payment-complete-notice">
+                <mat-icon>check_circle</mat-icon>
+                <span>سيتم دفع الفاتورة بالكامل</span>
+              </div>
+              }
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                type="submit"
+                [disabled]="submitting() || paymentForm.invalid"
+              >
+                <mat-icon>check</mat-icon>
+                @if (submitting()) {
+                <mat-spinner diameter="20"></mat-spinner>
+                } @else { تأكيد الدفعة }
+              </button>
+
+              <button
+                mat-button
+                type="button"
+                (click)="onCancel()"
+                [disabled]="submitting()"
+              >
+                <mat-icon>close</mat-icon>
+                إلغاء
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Help Card -->
+      <mat-card class="help-card">
+        <mat-card-content>
+          <div class="help-content">
+            <mat-icon>info</mat-icon>
+            <div class="help-text">
+              <h4>تعليمات الدفع</h4>
+              <ul>
+                <li>يمكنك إضافة دفعة جزئية أو دفع المبلغ بالكامل</li>
+                <li>اختر طريقة الدفع المناسبة</li>
+                <li>أدخل الرقم المرجعي للإيصال أو التحويل البنكي</li>
+                <li>يمكن إضافة عدة دفعات حتى يتم دفع الفاتورة بالكامل</li>
+              </ul>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      }
+    </div>
+  </div>
+</app-sidebar>

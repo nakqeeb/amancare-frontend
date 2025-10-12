@@ -22,14 +22,14 @@ import {
   ClinicStatus
 } from '../models/clinic.model';
 
-import { PageResponse } from '../../../core/models/api-response.model';
+import { ApiResponse, PageResponse } from '../../../core/models/api-response.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ClinicService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/clinics`;
+  private apiUrl = `${environment.apiUrl}/users/clinics`;
 
   // Signals for reactive state management
   clinics = signal<Clinic[]>([]);
@@ -115,74 +115,14 @@ export class ClinicService {
   // ===================================================================
 
   // Get all clinics with filters and pagination
-  getClinics(
-    page: number = 0,
-    size: number = 10,
-    filters?: ClinicFilters
-  ): Observable<PageResponse<Clinic>> {
-    this.loading.set(true);
-
-    // Mock implementation
-    let filteredClinics = [...this.mockClinics];
-
-    // Apply filters
-    if (filters) {
-      if (filters.name) {
-        filteredClinics = filteredClinics.filter(clinic =>
-          clinic.name.toLowerCase().includes(filters.name!.toLowerCase())
-        );
-      }
-      if (filters.subscriptionPlan) {
-        filteredClinics = filteredClinics.filter(clinic =>
-          clinic.subscriptionPlan === filters.subscriptionPlan
-        );
-      }
-    }
-
-    // Simulate pagination
-    const start = page * size;
-    const end = start + size;
-    const paginatedClinics = filteredClinics.slice(start, end);
-
-    const response: PageResponse<Clinic> = {
-      content: paginatedClinics,
-      totalElements: filteredClinics.length,
-      totalPages: Math.ceil(filteredClinics.length / size),
-      size: size,
-      number: page,
-      first: page === 0,
-      last: page >= Math.ceil(filteredClinics.length / size) - 1,
-      empty: filteredClinics.length == 0,
-      // numberOfElements: paginatedClinics.length
-    };
-
-    return of(response).pipe(
-      delay(800),
-      tap(() => {
-        this.clinics.set(paginatedClinics);
-        this.loading.set(false);
-      })
-    );
-
-    // Real implementation
-    // let params = new HttpParams()
-    //   .set('page', page.toString())
-    //   .set('size', size.toString());
-
-    // if (filters) {
-    //   Object.keys(filters).forEach(key => {
-    //     const value = (filters as any)[key];
-    //     if (value) params = params.set(key, value);
-    //   });
-    // }
-
-    // return this.http.get<PaginatedResponse<Clinic>>(this.apiUrl, { params })
-    //   .pipe(
-    //     tap(response => {
-    //       this.clinics.set(response.content);
-    //       this.loading.set(false);
-    //     })
-    //   );
+  getClinics(): Observable<ApiResponse<Clinic[]>> {
+    return this.http.get<ApiResponse<Clinic[]>>(this.apiUrl)
+      .pipe(
+        tap(response => {
+          this.clinics.set(response.data!);
+          this.loading.set(false);
+        })
+      );
   }
 
   // Get clinic by ID

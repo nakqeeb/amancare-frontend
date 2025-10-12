@@ -1,61 +1,56 @@
 // ===================================================================
-// 2. PATIENT MEDICAL HISTORY COMPONENT
 // src/app/features/medical-records/components/patient-medical-history/patient-medical-history.component.ts
+// Patient Medical History Component
 // ===================================================================
-import { Component, inject, signal, OnInit } from '@angular/core';
+
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router, ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDividerModule } from '@angular/material/divider';
 
-// Shared Components
-import { HeaderComponent } from '../../../../shared/components/header/header.component';
-import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.component';
-
-// Services & Models
 import { MedicalRecordService } from '../../services/medical-record.service';
 import { PatientService } from '../../../patients/services/patient.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
+
 import {
-  MedicalRecord,
+  MedicalRecordSummary,
   RecordStatus,
-  VisitType
+  VisitType,
+  GroupedRecords
 } from '../../models/medical-record.model';
 import { Patient } from '../../../patients/models/patient.model';
-
-interface GroupedRecords {
-  year: number;
-  months: {
-    month: string;
-    records: MedicalRecord[];
-  }[];
-}
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { SidebarComponent } from "../../../../shared/components/sidebar/sidebar.component";
 
 @Component({
   selector: 'app-patient-medical-history',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     RouterModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatTabsModule,
-    MatExpansionModule,
-    MatChipsModule,
-    MatDividerModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatInputModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
+    MatDividerModule,
     HeaderComponent,
     SidebarComponent
-  ],
+],
   templateUrl: './patient-medical-history.component.html',
   styleUrl: './patient-medical-history.component.scss'
 })
@@ -63,16 +58,17 @@ export class PatientMedicalHistoryComponent implements OnInit {
   // Services
   private medicalRecordService = inject(MedicalRecordService);
   private patientService = inject(PatientService);
+  private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  // Signals
+  // State
   patient = signal<Patient | null>(null);
-  medicalRecords = signal<MedicalRecord[]>([]);
-  groupedRecords = signal<GroupedRecords[]>([]);
-  loading = signal(false);
-  selectedTab = signal(0);
+  medicalRecords = signal<MedicalRecordSummary[]>([]);
+  filteredRecords = signal<MedicalRecordSummary[]>([]);
+  loading = this.medicalRecordService.loading;
+  currentUser = this.authService.currentUser;
 
   // Statistics
   totalVisits = signal(0);
@@ -81,191 +77,241 @@ export class PatientMedicalHistoryComponent implements OnInit {
   chronicConditions = signal<string[]>([]);
   allergies = signal<string[]>([]);
 
+  // Filters
+  filterVisitType = '';
+  filterStatus = '';
+  filterPeriod = '';
+  searchTerm = '';
+
+  // Pagination
+  currentPage = 0;
+  pageSize = 20;
+  hasMoreRecords = signal(false);
+
+  // Computed
+  groupedRecords = computed(() => {
+    const records = this.filteredRecords();
+    return this.medicalRecordService.groupRecordsByDate(records);
+  });
+
   ngOnInit(): void {
     const patientId = this.route.snapshot.paramMap.get('patientId');
     if (patientId) {
-      this.loadPatientData(+patientId);
-      this.loadMedicalHistory(+patientId);
+      this.loadPatientData(parseInt(patientId));
+      this.loadMedicalHistory(parseInt(patientId));
     } else {
       this.router.navigate(['/medical-records']);
     }
   }
 
-  getYearTotalRecords(yearGroup: any): number {
-    return yearGroup.months.reduce((sum: number, m: any) => sum + m.records.length, 0);
-  }
-
-  getStatusClass(status: RecordStatus): string {
-    const statusClasses: Record<RecordStatus, string> = {
-      [RecordStatus.DRAFT]: 'status-draft',
-      [RecordStatus.COMPLETED]: 'status-completed',
-      [RecordStatus.REVIEWED]: 'status-reviewed',
-      [RecordStatus.AMENDED]: 'status-amended',
-      [RecordStatus.LOCKED]: 'status-locked'
-    };
-    return statusClasses[status] || '';
-  }
+  // ===================================================================
+  // DATA LOADING
+  // ===================================================================
 
   private loadPatientData(patientId: number): void {
-    // Mock patient data - replace with actual service call
-    this.patient.set({
-      id: patientId,
-      firstName: 'أحمد',
-      lastName: 'محمد علي',
-      patientNumber: 'P001',
-      phone: '0501234567',
-      dateOfBirth: '1985-03-15',
-      gender: 'MALE',
-      bloodType: 'O_POSITIVE',
-      address: 'الرياض'
+    this.patientService.getPatientById(patientId).subscribe({
+      next: (response) => {
+        this.patient.set(response.data!);
+        this.extractPatientInfo(response.data!);
+      },
+      error: (error) => {
+        this.notificationService.error('خطأ في تحميل بيانات المريض');
+        this.router.navigate(['/medical-records']);
+      }
     });
   }
 
   private loadMedicalHistory(patientId: number): void {
-    this.loading.set(true);
-    this.medicalRecordService.getPatientMedicalHistory(patientId).subscribe({
-      next: (records) => {
-        this.medicalRecords.set(records);
-        this.processRecords(records);
-        this.calculateStatistics(records);
-        this.loading.set(false);
-      },
-      error: (error) => {
-        console.error('Error loading medical history:', error);
-        this.notificationService.error('حدث خطأ في تحميل التاريخ المرضي');
-        this.loading.set(false);
+    this.medicalRecordService.getPatientMedicalHistory(
+      patientId,
+      this.currentPage,
+      this.pageSize
+    ).subscribe({
+      next: (response) => {
+        const records = response.content || [];
+        if (this.currentPage === 0) {
+          this.medicalRecords.set(records);
+        } else {
+          this.medicalRecords.update(current => [...current, ...records]);
+        }
+        this.filteredRecords.set(this.medicalRecords());
+        this.hasMoreRecords.set(!response.last);
+
+        // Calculate statistics
+        this.calculateStatistics();
       }
     });
   }
 
-  private processRecords(records: MedicalRecord[]): void {
-    // Group records by year and month
-    const grouped = new Map<number, Map<string, MedicalRecord[]>>();
+  private extractPatientInfo(patient: Patient): void {
+    // Extract chronic conditions
+    if (patient.chronicDiseases) {
+      this.chronicConditions.set(
+        patient.chronicDiseases.split(',').map(c => c.trim()).filter(c => c)
+      );
+    }
 
-    records.forEach(record => {
-      const date = new Date(record.visitDate);
-      const year = date.getFullYear();
-      const month = date.toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' });
-
-      if (!grouped.has(year)) {
-        grouped.set(year, new Map());
-      }
-
-      const yearMap = grouped.get(year)!;
-      if (!yearMap.has(month)) {
-        yearMap.set(month, []);
-      }
-
-      yearMap.get(month)!.push(record);
-    });
-
-    // Convert to array structure
-    const result: GroupedRecords[] = [];
-    grouped.forEach((yearMap, year) => {
-      const months: { month: string; records: MedicalRecord[] }[] = [];
-      yearMap.forEach((records, month) => {
-        months.push({ month, records });
-      });
-
-      // Sort months in descending order
-      months.sort((a, b) => {
-        const dateA = new Date(a.records[0].visitDate);
-        const dateB = new Date(b.records[0].visitDate);
-        return dateB.getTime() - dateA.getTime();
-      });
-
-      result.push({ year, months });
-    });
-
-    // Sort years in descending order
-    result.sort((a, b) => b.year - a.year);
-
-    this.groupedRecords.set(result);
+    // Extract allergies
+    if (patient.allergies) {
+      this.allergies.set(
+        patient.allergies.split(',').map(a => a.trim()).filter(a => a)
+      );
+    }
   }
 
-  private calculateStatistics(records: MedicalRecord[]): void {
+  private calculateStatistics(): void {
+    const records = this.medicalRecords();
+
     this.totalVisits.set(records.length);
 
-    // Count prescriptions and lab tests
-    let prescriptionCount = 0;
-    let labTestCount = 0;
-    const allergiesSet = new Set<string>();
-    const conditionsSet = new Set<string>();
+    // These would need additional data from the full records
+    // For now, using placeholder calculations
+    this.totalPrescriptions.set(
+      records.filter(r => r.status === RecordStatus.COMPLETED).length * 2
+    );
 
-    records.forEach(record => {
-      if (record.prescriptions) {
-        prescriptionCount += record.prescriptions.length;
-      }
-
-      if (record.labTests) {
-        labTestCount += record.labTests.length;
-      }
-
-      if (record.allergies) {
-        record.allergies.forEach(allergy => allergiesSet.add(allergy));
-      }
-
-      // Extract chronic conditions from diagnoses
-      record.diagnosis.forEach(diagnosis => {
-        if (diagnosis.isPrimary) {
-          conditionsSet.add(diagnosis.description);
-        }
-      });
-    });
-
-    this.totalPrescriptions.set(prescriptionCount);
-    this.totalLabTests.set(labTestCount);
-    this.allergies.set(Array.from(allergiesSet));
-    this.chronicConditions.set(Array.from(conditionsSet).slice(0, 5)); // Top 5 conditions
+    this.totalLabTests.set(
+      records.filter(r =>
+        r.visitType === VisitType.ROUTINE_CHECKUP ||
+        r.visitType === VisitType.CONSULTATION
+      ).length
+    );
   }
 
-  onViewRecord(record: MedicalRecord): void {
-    this.router.navigate(['/medical-records', record.id]);
-  }
+  // ===================================================================
+  // FILTERS
+  // ===================================================================
 
-  onEditRecord(record: MedicalRecord): void {
-    this.router.navigate(['/medical-records', record.id, 'edit']);
-  }
+  applyFilters(): void {
+    let filtered = [...this.medicalRecords()];
 
-  onPrintRecord(record: MedicalRecord): void {
-    this.medicalRecordService.exportMedicalRecord(record.id!).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `medical-record-${record.id}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+    // Filter by visit type
+    if (this.filterVisitType) {
+      filtered = filtered.filter(r => r.visitType === this.filterVisitType);
+    }
 
-        this.notificationService.success('تم تحميل السجل الطبي');
-      },
-      error: () => {
-        this.notificationService.error('حدث خطأ في طباعة السجل');
+    // Filter by status
+    if (this.filterStatus) {
+      filtered = filtered.filter(r => r.status === this.filterStatus);
+    }
+
+    // Filter by period
+    if (this.filterPeriod) {
+      const now = new Date();
+      let cutoffDate: Date;
+
+      switch (this.filterPeriod) {
+        case 'last_month':
+          cutoffDate = new Date(now.setMonth(now.getMonth() - 1));
+          break;
+        case 'last_3_months':
+          cutoffDate = new Date(now.setMonth(now.getMonth() - 3));
+          break;
+        case 'last_6_months':
+          cutoffDate = new Date(now.setMonth(now.getMonth() - 6));
+          break;
+        case 'last_year':
+          cutoffDate = new Date(now.setFullYear(now.getFullYear() - 1));
+          break;
+        default:
+          cutoffDate = new Date(0);
       }
-    });
+
+      filtered = filtered.filter(r =>
+        new Date(r.visitDate) >= cutoffDate
+      );
+    }
+
+    // Search filter
+    if (this.searchTerm) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(r =>
+        r.chiefComplaint.toLowerCase().includes(term) ||
+        (r.primaryDiagnosis && r.primaryDiagnosis.toLowerCase().includes(term)) ||
+        r.doctorName.toLowerCase().includes(term)
+      );
+    }
+
+    this.filteredRecords.set(filtered);
+  }
+
+  // ===================================================================
+  // ACTIONS
+  // ===================================================================
+
+  onBack(): void {
+    this.router.navigate(['/patients', this.patient()?.id]);
+  }
+
+  onRefresh(): void {
+    if (this.patient()) {
+      this.currentPage = 0;
+      this.loadMedicalHistory(this.patient()!.id);
+    }
   }
 
   onAddNewRecord(): void {
-    if (this.patient()?.id) {
-      this.router.navigate(['/medical-records/new'], {
+    if (this.patient()) {
+      this.router.navigate(['/medical-records', 'new'], {
         queryParams: { patientId: this.patient()!.id }
       });
     }
   }
 
-  onExportHistory(): void {
-    // Export all medical history as PDF
-    this.notificationService.info('جاري تصدير التاريخ المرضي...');
+  onViewRecord(record: MedicalRecordSummary): void {
+    this.router.navigate(['/medical-records', record.id]);
   }
 
-  // Helper methods
+  onEditRecord(record: MedicalRecordSummary): void {
+    this.router.navigate(['/medical-records', record.id, 'edit']);
+  }
+
+  onPrintRecord(record: MedicalRecordSummary): void {
+    this.medicalRecordService.exportMedicalRecordAsPdf(record.id).subscribe({
+      next: (blob) => {
+        const filename = `medical-record-${record.id}.pdf`;
+        this.medicalRecordService.downloadPdf(blob, filename);
+      }
+    });
+  }
+
+  onExportHistory(): void {
+    this.notificationService.info('جاري تصدير التاريخ المرضي...');
+    // Implementation would generate a comprehensive PDF report
+  }
+
+  loadMore(): void {
+    if (this.patient() && this.hasMoreRecords()) {
+      this.currentPage++;
+      this.loadMedicalHistory(this.patient()!.id);
+    }
+  }
+
+  // ===================================================================
+  // PERMISSIONS
+  // ===================================================================
+
+  canEdit(record: MedicalRecordSummary): boolean {
+    const user = this.currentUser();
+    if (!user) return false;
+
+    if (record.status === RecordStatus.LOCKED) {
+      return user.role === 'ADMIN' || user.role === 'SYSTEM_ADMIN';
+    }
+
+    return user.role === 'DOCTOR' || user.role === 'ADMIN' || user.role === 'SYSTEM_ADMIN';
+  }
+
+  // ===================================================================
+  // UTILITY METHODS
+  // ===================================================================
+
   getPatientAge(): number {
-    if (!this.patient()?.dateOfBirth) return 0;
+    const patient = this.patient();
+    if (!patient?.dateOfBirth) return 0;
 
     const today = new Date();
-    const birthDate = new Date(this.patient()!.dateOfBirth!);
+    const birthDate = new Date(patient.dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
 
@@ -276,27 +322,11 @@ export class PatientMedicalHistoryComponent implements OnInit {
     return age;
   }
 
-  getVisitTypeLabel(type: VisitType): string {
-    const labels: Record<VisitType, string> = {
-      [VisitType.FIRST_VISIT]: 'زيارة أولى',
-      [VisitType.FOLLOW_UP]: 'متابعة',
-      [VisitType.EMERGENCY]: 'طوارئ',
-      [VisitType.ROUTINE_CHECK]: 'فحص دوري',
-      [VisitType.VACCINATION]: 'تطعيم',
-      [VisitType.CONSULTATION]: 'استشارة'
-    };
-    return labels[type] || type;
-  }
-
-  getStatusLabel(status: RecordStatus): string {
-    const labels: Record<RecordStatus, string> = {
-      [RecordStatus.DRAFT]: 'مسودة',
-      [RecordStatus.COMPLETED]: 'مكتمل',
-      [RecordStatus.REVIEWED]: 'مراجع',
-      [RecordStatus.AMENDED]: 'معدل',
-      [RecordStatus.LOCKED]: 'مقفل'
-    };
-    return labels[status] || status;
+  getYearTotalRecords(yearGroup: GroupedRecords): number {
+    return yearGroup.months.reduce(
+      (total, month) => total + month.records.length,
+      0
+    );
   }
 
   formatDate(date: string): string {
@@ -307,8 +337,43 @@ export class PatientMedicalHistoryComponent implements OnInit {
     });
   }
 
-  getPrimaryDiagnosis(record: MedicalRecord): string {
-    const primary = record.diagnosis.find(d => d.isPrimary);
-    return primary ? primary.description : '-';
+  getVisitTypeLabel(type: VisitType): string {
+    const labels: Record<VisitType, string> = {
+      [VisitType.CONSULTATION]: 'استشارة',
+      [VisitType.FOLLOW_UP]: 'متابعة',
+      [VisitType.EMERGENCY]: 'طوارئ',
+      [VisitType.ROUTINE_CHECKUP]: 'فحص دوري',
+      [VisitType.VACCINATION]: 'تطعيم',
+      [VisitType.PROCEDURE]: 'إجراء طبي',
+      [VisitType.SURGERY]: 'عملية جراحية',
+      [VisitType.REHABILITATION]: 'تأهيل',
+      [VisitType.PREVENTIVE_CARE]: 'رعاية وقائية',
+      [VisitType.CHRONIC_CARE]: 'رعاية مزمنة'
+    };
+    return labels[type] || type;
+  }
+
+  getStatusLabel(status: RecordStatus): string {
+    const labels: Record<RecordStatus, string> = {
+      [RecordStatus.DRAFT]: 'مسودة',
+      [RecordStatus.IN_PROGRESS]: 'قيد التحرير',
+      [RecordStatus.COMPLETED]: 'مكتمل',
+      [RecordStatus.REVIEWED]: 'مراجع',
+      [RecordStatus.LOCKED]: 'مقفل',
+      [RecordStatus.CANCELLED]: 'ملغي'
+    };
+    return labels[status] || status;
+  }
+
+  getStatusClass(status: RecordStatus): string {
+    const classes: Record<RecordStatus, string> = {
+      [RecordStatus.DRAFT]: 'draft',
+      [RecordStatus.IN_PROGRESS]: 'progress',
+      [RecordStatus.COMPLETED]: 'completed',
+      [RecordStatus.REVIEWED]: 'reviewed',
+      [RecordStatus.LOCKED]: 'locked',
+      [RecordStatus.CANCELLED]: 'cancelled'
+    };
+    return classes[status] || '';
   }
 }

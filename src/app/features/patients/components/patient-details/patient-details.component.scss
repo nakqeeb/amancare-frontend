@@ -1,693 +1,1389 @@
+// src/app/features/patients/components/patient-details/patient-details.component.scss
+
+// Variables
+$primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$card-hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
 .patient-details-container {
   padding: 2rem;
-  background: var(--bg-secondary);
+  background: var(--bg-secondary, #f7fafc);
   min-height: calc(100vh - 64px);
+
+  // Loading Container
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    gap: 1rem;
+
+    mat-spinner {
+      ::ng-deep .mat-progress-spinner circle {
+        stroke: #667eea;
+      }
+    }
+
+    p {
+      color: var(--text-secondary, #64748b);
+      margin: 0;
+      font-size: 18px;
+      font-weight: 500;
+    }
+  }
+
+  // Patient Content
+  .patient-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    animation: fadeInUp 0.5s ease;
+  }
+
+  // Header Section
+  .patient-header {
+    margin-bottom: 2rem;
+
+    .header-actions {
+      margin-bottom: 1rem;
+
+      button {
+        color: var(--text-secondary, #64748b);
+        transition: color 0.3s ease;
+
+        &:hover {
+          color: var(--primary-color, #667eea);
+        }
+      }
+    }
+
+    .patient-summary-card {
+      border-radius: 20px;
+      box-shadow: $card-shadow;
+      background: white;
+      overflow: hidden;
+
+      .patient-summary {
+        display: flex;
+        align-items: flex-start;
+        gap: 2rem;
+        padding: 1.5rem;
+      }
+    }
+
+    // Patient Avatar
+    .patient-avatar {
+      position: relative;
+      flex-shrink: 0;
+
+      .avatar-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 600;
+        color: white;
+
+        &.avatar-male {
+          background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+
+        &.avatar-female {
+          background: linear-gradient(135deg, #E91E63, #C2185B);
+        }
+      }
+
+      .status-badge {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: white;
+        border-radius: 50%;
+        padding: 4px;
+        box-shadow: $card-shadow;
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+
+    // Basic Info
+    .patient-basic-info {
+      flex: 1;
+      min-width: 0;
+
+      .patient-name {
+        font-size: 2rem;
+        font-weight: 700;
+        background: $primary-gradient;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0 0 0.5rem 0;
+        letter-spacing: -0.5px;
+      }
+
+      .patient-number {
+        color: #64748b;
+        font-size: 1.1rem;
+        margin: 0 0 1rem 0;
+      }
+
+      .patient-details-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        margin-bottom: 1.5rem;
+
+        .detail-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: #64748b;
+
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+            color: #667eea;
+          }
+
+          span {
+            font-size: 0.9rem;
+          }
+        }
+      }
+
+      .patient-stats {
+        display: flex;
+        gap: 2rem;
+
+        .stat-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+
+          .stat-number {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: $primary-gradient;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+
+            &.balance-warning {
+              color: #ef4444;
+              -webkit-text-fill-color: #ef4444;
+            }
+          }
+
+          .stat-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+          }
+        }
+      }
+    }
+
+    // Action Buttons
+    .patient-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+
+      button {
+        min-width: 160px;
+        height: 44px;
+        border-radius: 12px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+
+        &.mat-mdc-raised-button[color="primary"] {
+          background: $primary-gradient;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+          }
+        }
+
+        &.mat-mdc-button {
+          border: 1px solid #e2e8f0;
+
+          &:hover {
+            background: #f8fafc;
+          }
+        }
+      }
+    }
+  }
+
+  // Tabs Card
+  .tabs-card {
+    border-radius: 20px;
+    box-shadow: $card-shadow;
+    background: white;
+    overflow: hidden;
+
+    ::ng-deep .mat-mdc-tab-group {
+      .mat-mdc-tab-header {
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 8px 24px 0;
+      }
+
+      .mat-mdc-tab {
+        min-width: 120px;
+        height: 56px;
+
+        &.mdc-tab--active {
+          .mdc-tab__text-label {
+            font-weight: 600;
+            color: #667eea;
+          }
+
+          mat-icon {
+            color: #667eea;
+          }
+        }
+
+        &:hover:not(.mdc-tab--active) {
+          background: rgba(102, 126, 234, 0.05);
+          border-radius: 12px 12px 0 0;
+        }
+      }
+
+      .mdc-tab__content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        mat-icon {
+          font-size: 18px;
+        }
+      }
+    }
+
+    .tab-badge {
+      background: $primary-gradient;
+      color: white;
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      margin-left: 0.5rem;
+      animation: pulse 2s infinite;
+    }
+  }
+
+  // Tab Content
+  .tab-content {
+    padding: 2rem;
+    min-height: 400px;
+
+    &.overview-tab {
+      padding: 1.5rem;
+    }
+  }
+
+  // Overview Grid
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+
+  // Info Cards
+  .info-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: $card-shadow;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: $primary-gradient;
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: $card-hover-shadow;
+
+      &::before {
+        transform: scaleX(1);
+      }
+    }
+
+    .mat-mdc-card-header {
+      padding: 24px 24px 16px;
+      background: linear-gradient(180deg, #fafbfc 0%, transparent 100%);
+
+      .mat-mdc-card-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e293b;
+
+        mat-icon {
+          width: 28px;
+          height: 28px;
+          font-size: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: $primary-gradient;
+          color: white;
+          border-radius: 8px;
+        }
+      }
+    }
+
+    .mat-mdc-card-content {
+      padding: 0 24px 24px;
+    }
+  }
+
+  // Info Grid
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 12px;
+      background: #f8fafc;
+      border-radius: 10px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        transform: translateX(4px);
+      }
+
+      &.full-width {
+        grid-column: 1 / -1;
+      }
+
+      label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #64748b;
+      }
+
+      span {
+        font-size: 0.95rem;
+        color: #1e293b;
+        font-weight: 600;
+
+        &.no-data {
+          color: #94a3b8;
+          font-style: italic;
+          font-weight: 400;
+        }
+      }
+
+      mat-chip {
+        max-width: fit-content;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 12px;
+        min-height: 28px;
+        border-radius: 100px;
+      }
+    }
+  }
+
+  // Quick Actions
+  .quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    button {
+      flex: 1;
+      min-width: 140px;
+      height: 48px;
+      border-radius: 12px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+
+      &.mat-mdc-raised-button {
+        background: $primary-gradient;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+        }
+      }
+
+      &.mat-mdc-stroked-button {
+        border: 2px solid #e2e8f0;
+
+        &:hover {
+          background: #f8fafc;
+          border-color: #667eea;
+          color: #667eea;
+        }
+      }
+    }
+  }
+
+  // Appointments Section
+  .appointments-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: $card-shadow;
+    overflow: hidden;
+
+    mat-card-header {
+      padding: 24px;
+      background: linear-gradient(180deg, #fafbfc 0%, white 100%);
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      mat-card-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 20px;
+        font-weight: 600;
+        color: #1e293b;
+
+        mat-icon {
+          width: 32px;
+          height: 32px;
+          font-size: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: $primary-gradient;
+          color: white;
+          border-radius: 10px;
+        }
+      }
+
+      button:hover mat-icon {
+        animation: rotate 0.5s ease;
+      }
+    }
+
+    mat-card-content {
+      padding: 0;
+    }
+
+    // Loading State
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 20px;
+
+      mat-spinner ::ng-deep .mat-progress-spinner circle {
+        stroke: #667eea;
+      }
+
+      p {
+        margin-top: 20px;
+        color: #64748b;
+        font-size: 16px;
+      }
+    }
+
+    // Empty State
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 20px;
+      text-align: center;
+
+      mat-icon {
+        font-size: 80px;
+        width: 80px;
+        height: 80px;
+        color: #e2e8f0;
+        margin-bottom: 24px;
+      }
+
+      h3 {
+        font-size: 20px;
+        font-weight: 600;
+        color: #475569;
+        margin: 0 0 12px;
+      }
+
+      p {
+        font-size: 15px;
+        color: #94a3b8;
+        margin: 0 0 32px;
+      }
+
+      button {
+        background: $primary-gradient;
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-size: 15px;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+        }
+      }
+    }
+
+    // Table Container
+    .appointments-table-container {
+      overflow-x: auto;
+      padding: 24px;
+
+      .appointments-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+
+        th {
+          font-weight: 600;
+          font-size: 13px;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          padding: 12px 16px;
+          background: #f8fafc;
+          border: none;
+
+          &:first-child {
+            border-radius: 12px 0 0 12px;
+          }
+
+          &:last-child {
+            border-radius: 0 12px 12px 0;
+          }
+        }
+
+        td {
+          padding: 16px;
+          font-size: 14px;
+          color: #1e293b;
+          background: white;
+          border-top: 1px solid #f1f5f9;
+          border-bottom: 1px solid #f1f5f9;
+
+          &:first-child {
+            border-right: 1px solid #f1f5f9;
+            border-radius: 0 12px 12px 0;
+          }
+
+          &:last-child {
+            border-left: 1px solid #f1f5f9;
+            border-radius: 12px 0 0 12px;
+          }
+
+          mat-chip {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            min-height: 24px;
+            border-radius: 100px;
+
+            &[color="primary"] {
+              background: rgba(102, 126, 234, 0.1);
+              color: #667eea;
+            }
+
+            &[color="accent"] {
+              background: rgba(16, 185, 129, 0.1);
+              color: #10b981;
+            }
+
+            &[color="warn"] {
+              background: rgba(239, 68, 68, 0.1);
+              color: #ef4444;
+            }
+          }
+        }
+
+        tr:hover td {
+          background: #fafbfc;
+          transform: scale(1.01);
+        }
+      }
+
+      .table-footer {
+        display: flex;
+        justify-content: center;
+        padding: 32px 0 8px;
+
+        button {
+          background: $primary-gradient;
+          border-radius: 12px;
+          padding: 12px 24px;
+          font-size: 15px;
+          font-weight: 500;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+          }
+        }
+      }
+    }
+  }
+
+  // Coming Soon
+  .coming-soon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    background: white;
+    border-radius: 20px;
+    box-shadow: $card-shadow;
+
+    mat-icon {
+      font-size: 80px;
+      width: 80px;
+      height: 80px;
+      background: $primary-gradient;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 24px;
+    }
+
+    h3 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 12px;
+    }
+
+    p {
+      font-size: 16px;
+      color: #64748b;
+      margin: 0;
+      max-width: 400px;
+    }
+  }
 }
 
-/* Page Header */
-.page-header {
+// Menu Styles
+::ng-deep .mat-mdc-menu-panel {
+  border-radius: 12px !important;
+  box-shadow: $card-hover-shadow !important;
+  padding: 8px !important;
+
+  .mat-mdc-menu-item {
+    border-radius: 8px;
+    margin: 4px 0;
+    font-size: 14px;
+    height: 40px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #f8fafc;
+    }
+
+    &.cancel-button {
+      color: #ef4444;
+
+      mat-icon {
+        color: #ef4444;
+      }
+
+      &:hover {
+        background: rgba(239, 68, 68, 0.1);
+      }
+    }
+  }
+}
+
+// Danger Menu Items
+.danger-menu-item {
+  color: #f44336 !important;
+
+  &:hover {
+    background-color: #ffebee !important;
+  }
+
+  mat-icon {
+    color: #f44336 !important;
+  }
+}
+
+.permanent-delete-menu-item {
+  background-color: #ffebee;
+
+  &:hover {
+    background-color: #ffcdd2 !important;
+  }
+
+  .danger-icon {
+    color: #d32f2f !important;
+  }
+
+  .danger-text {
+    color: #d32f2f;
+    font-weight: 500;
+  }
+}
+
+// Animations
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .patient-details-container {
+    padding: 1rem;
+
+    .patient-header {
+      .patient-summary {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+
+        .patient-basic-info {
+          .patient-name {
+            font-size: 1.5rem;
+          }
+
+          .patient-details-row {
+            justify-content: center;
+            gap: 1rem;
+          }
+
+          .patient-stats {
+            justify-content: center;
+            gap: 1rem;
+          }
+        }
+      }
+
+      .patient-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+
+        button {
+          min-width: auto;
+          flex: 1;
+        }
+      }
+    }
+
+    .overview-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .tabs-card {
+      ::ng-deep .mat-mdc-tab-header {
+        padding: 4px 12px 0;
+      }
+
+      .mat-mdc-tab {
+        min-width: 100px;
+        height: 48px;
+      }
+    }
+
+    .tab-content {
+      padding: 1rem;
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .quick-actions button {
+      min-width: 120px;
+      font-size: 0.85rem;
+    }
+
+    .appointments-table-container {
+      padding: 16px;
+    }
+  }
+}
+
+// Print Styles
+@media print {
+
+  .header-actions,
+  .patient-actions,
+  .quick-actions,
+  button {
+    display: none !important;
+  }
+
+  .tabs-card,
+  .info-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+
+  .info-card {
+    margin-bottom: 1rem;
+    break-inside: avoid;
+  }
+}
+
+
+// ===================================================================
+// NEW: INVOICES TAB STYLES
+// ===================================================================
+
+// NEW: Invoices Header
+.invoices-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.header-navigation {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.back-button {
-  background: var(--bg-primary);
-  box-shadow: var(--shadow-sm);
-}
-
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.breadcrumb-link {
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: color 0.3s;
-}
-
-.breadcrumb-link:hover {
-  color: var(--primary-color);
-}
-
-.breadcrumb-separator {
-  color: var(--text-muted);
-  font-size: 1rem;
-}
-
-.breadcrumb-current {
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
-}
-
-/* Profile Card */
-.profile-card {
-  margin-bottom: 2rem;
-  border-radius: var(--radius-lg);
-}
-
-.profile-header {
-  display: flex;
-  gap: 2rem;
   align-items: flex-start;
+  padding: 0 0 24px 0;
+  gap: 16px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-info {
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+      color: var(--text-primary);
+
+      mat-icon {
+        color: var(--primary-color);
+        font-size: 24px;
+      }
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+
+    @media (max-width: 768px) {
+      width: 100%;
+
+      button {
+        flex: 1;
+      }
+    }
+  }
 }
 
-.patient-avatar {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: var(--primary-color);
-  color: white;
+// Invoices Table Container
+.invoices-table-container {
+  margin: 24px 0;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+
+  @media (max-width: 768px) {
+    margin: 16px -24px 16px -24px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+}
+
+// Invoices Table
+.invoices-table {
+  width: 100%;
+  background: var(--card-background);
+
+  th.mat-header-cell {
+    background: var(--background-hover);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 16px;
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  td.mat-cell {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+  }
+
+  .invoice-row {
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--background-hover);
+    }
+
+    &.overdue {
+      background-color: rgba(244, 67, 54, 0.05);
+      border-right: 3px solid var(--warn-color);
+    }
+  }
+
+  // Invoice Number Cell
+  .invoice-number {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+
+    .invoice-icon {
+      color: var(--primary-color);
+      font-size: 20px;
+    }
+
+    .number {
+      color: var(--text-primary);
+      font-family: 'Courier New', monospace;
+    }
+  }
+
+  // Date Cell
+  .date-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: var(--text-secondary);
+    }
+  }
+
+  // Amount Cells
+  .amount {
+    display: inline-block;
+    font-weight: 600;
+    font-family: 'Cairo', sans-serif;
+    direction: ltr;
+    text-align: left;
+
+    &.total {
+      color: var(--text-primary);
+      font-size: 15px;
+    }
+
+    &.paid {
+      color: #4caf50;
+    }
+
+    &.balance {
+      color: var(--text-secondary);
+
+      &.overdue {
+        color: var(--warn-color);
+        font-weight: 700;
+      }
+    }
+  }
+
+  // Status Chips
+  .status-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    mat-chip {
+      font-size: 12px;
+      min-height: 28px;
+      padding: 4px 12px;
+
+      &.payment-status {
+        font-size: 11px;
+      }
+    }
+  }
+
+  // Action Buttons
+  .action-buttons {
+    display: flex;
+    gap: 4px;
+
+    button {
+      mat-icon {
+        font-size: 20px;
+      }
+    }
+  }
+}
+
+// Invoices Summary Cards
+.invoices-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .summary-card {
+    mat-card-content {
+      padding: 20px !important;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .summary-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      mat-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+        color: white;
+      }
+
+      &.total {
+        background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+      }
+
+      &.paid {
+        background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+      }
+
+      &.outstanding {
+        background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+      }
+    }
+
+    .summary-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+
+      .label {
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+
+      .value {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary);
+        direction: ltr;
+        text-align: right;
+
+        &.outstanding-value {
+          color: #ff9800;
+        }
+      }
+    }
+  }
+}
+
+// Empty State
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+
+  mat-icon {
+    font-size: 80px;
+    width: 80px;
+    height: 80px;
+    color: var(--text-disabled);
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+  }
+
+  p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0 0 24px 0;
+  }
+}
+
+// Loading Container
+.loading-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-}
-
-.patient-avatar.male {
-  background: var(--info-color);
-}
-
-.patient-avatar mat-icon {
-  font-size: 3rem;
-  width: 3rem;
-  height: 3rem;
-}
-
-.patient-info {
-  flex: 1;
-}
-
-.patient-name-section {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.patient-name {
-  font-size: 2rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.patient-status .status-active {
-  background-color: var(--success-color);
-  color: white;
-}
-
-.patient-status .status-inactive {
-  background-color: var(--error-color);
-  color: white;
-}
-
-.patient-meta {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.meta-item mat-icon {
-  color: var(--text-muted);
-  font-size: 1.2rem;
-}
-
-.meta-label {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-.meta-value {
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.patient-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 1rem;
-  background: var(--bg-light);
-  border-radius: var(--radius-md);
-  min-width: 120px;
-  text-align: center;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.stat-item.warning .stat-number {
-  color: var(--warning-color);
-}
-
-.stat-number {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-top: 0.25rem;
-}
-
-/* Quick Actions */
-.quick-actions {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-}
-
-.quick-action {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--radius-md);
-  transition: all 0.3s ease;
-}
-
-.quick-action:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-/* Tabs */
-.tabs-card {
-  border-radius: var(--radius-lg);
-}
-
-.patient-tabs {
-  min-height: 500px;
-}
-
-.tab-content {
-  padding: 2rem;
-}
-
-/* Info Sections */
-.info-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.info-section {
-  background: var(--bg-light);
-  padding: 1.5rem;
-  border-radius: var(--radius-lg);
-  border-left: 4px solid var(--primary-color);
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 1.5rem 0;
-}
-
-.section-title.warning {
-  color: var(--warning-color);
-}
-
-.section-title.medical {
-  color: var(--success-color);
-}
-
-.section-title mat-icon {
-  color: var(--primary-color);
-}
-
-.section-title.warning mat-icon {
-  color: var(--warning-color);
-}
-
-.section-title.medical mat-icon {
-  color: var(--success-color);
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.info-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--bg-primary);
-  border-radius: var(--radius-md);
-}
-
-.info-item.full-width {
-  grid-column: 1 / -1;
-}
-
-.info-icon {
-  color: var(--text-muted);
-  flex-shrink: 0;
-  margin-top: 0.1rem;
-}
-
-.info-icon.medical {
-  color: var(--success-color);
-}
-
-.info-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.info-label {
-  display: block;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-bottom: 0.25rem;
-}
-
-.info-value {
-  display: block;
-  color: var(--text-primary);
-  font-weight: 500;
-  word-break: break-word;
-}
-
-.info-value.medical-value {
-  color: var(--success-color);
-  font-weight: 600;
-}
-
-.notes-text {
-  white-space: pre-line;
-  line-height: 1.5;
-}
-
-/* Medical Content */
-.medical-content {
-  margin-top: 1rem;
-}
-
-.allergies-list,
-.diseases-list {
-  margin-bottom: 1rem;
-}
-
-.allergy-chip {
-  background-color: rgba(237, 137, 54, 0.1) !important;
-  color: var(--warning-color) !important;
-  border: 1px solid rgba(237, 137, 54, 0.3);
-  margin: 0.25rem;
-}
-
-.disease-chip {
-  background-color: rgba(72, 187, 120, 0.1) !important;
-  color: var(--success-color) !important;
-  border: 1px solid rgba(72, 187, 120, 0.3);
-  margin: 0.25rem;
-}
-
-/* Empty States */
-.empty-medical,
-.empty-appointments {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--text-muted);
-}
-
-.empty-icon {
-  font-size: 4rem;
-  width: 4rem;
-  height: 4rem;
-  opacity: 0.5;
-  margin-bottom: 1rem;
-}
-
-.empty-medical p,
-.empty-appointments p {
-  margin-bottom: 2rem;
-}
-
-/* Appointments */
-.appointments-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.appointments-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.appointments-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.appointment-card {
-  border-left: 4px solid var(--info-color);
-}
-
-.appointment-card.status-completed {
-  border-left-color: var(--success-color);
-}
-
-.appointment-card.status-cancelled {
-  border-left-color: var(--error-color);
-}
-
-.appointment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.appointment-date {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
-}
-
-.appointment-time {
-  color: var(--text-muted);
-  margin-right: 1rem;
-}
-
-.appointment-details p {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-/* Financial */
-.financial-summary {
-  margin-bottom: 2rem;
-}
-
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.summary-card {
-  text-align: center;
-  border-radius: var(--radius-lg);
-}
-
-.summary-card.warning {
-  background-color: rgba(237, 137, 54, 0.1);
-  border: 2px solid var(--warning-color);
-}
-
-.summary-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.summary-header mat-icon {
-  font-size: 2rem;
-  color: var(--primary-color);
-}
-
-.summary-card.warning .summary-header mat-icon {
-  color: var(--warning-color);
-}
-
-.summary-header h4 {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-
-.summary-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.invoices-section {
-  background: var(--bg-light);
-  padding: 1.5rem;
-  border-radius: var(--radius-lg);
-}
-
-.section-header {
+  padding: 60px 20px;
+  gap: 16px;
+
+  p {
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+}
+
+// Responsive Adjustments for Invoices Table
+@media (max-width: 1024px) {
+  .invoices-table {
+
+    th.mat-header-cell,
+    td.mat-cell {
+      padding: 12px 8px;
+      font-size: 13px;
+    }
+
+    .status-chips mat-chip {
+      font-size: 11px;
+      min-height: 24px;
+      padding: 2px 8px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+
+  // Hide some columns on mobile
+  .invoices-table {
+    .mat-column-paidAmount {
+      display: none;
+    }
+
+    th.mat-header-cell,
+    td.mat-cell {
+      padding: 12px 8px;
+      font-size: 12px;
+
+      &:first-child {
+        padding-right: 16px;
+      }
+
+      &:last-child {
+        padding-left: 16px;
+      }
+    }
+
+    .invoice-number {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+
+      .number {
+        font-size: 11px;
+      }
+    }
+
+    .status-chips {
+      flex-direction: column;
+      gap: 4px;
+    }
+  }
+}
+
+
+// NEW: Medical Records Tab Styles
+.medical-records-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
-}
-
-.section-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.invoices-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.invoice-card {
   padding: 1rem;
-}
+  background-color: #f5f5f5;
+  border-radius: 8px;
 
-.invoice-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
+  .header-info {
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0 0 0.5rem 0;
+      font-size: 1.25rem;
+      font-weight: 500;
 
-.invoice-number {
-  font-weight: 600;
-  color: var(--text-primary);
-}
+      mat-icon {
+        color: #2c5aa0;
+      }
+    }
 
-.invoice-details {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-
-.invoice-amount {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.status-paid {
-  background-color: var(--success-color) !important;
-  color: white !important;
-}
-
-.status-pending {
-  background-color: var(--warning-color) !important;
-  color: white !important;
-}
-
-/* Status Chips */
-.status-scheduled {
-  background-color: var(--info-color) !important;
-  color: white !important;
-}
-
-.status-confirmed {
-  background-color: var(--success-color) !important;
-  color: white !important;
-}
-
-.status-completed {
-  background-color: var(--success-color) !important;
-  color: white !important;
-}
-
-.status-cancelled {
-  background-color: var(--error-color) !important;
-  color: white !important;
-}
-
-/* Loading & Error States */
-.loading-container,
-.error-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 60vh;
-}
-
-.loading-card,
-.error-card {
-  max-width: 400px;
-  text-align: center;
-}
-
-.loading-content,
-.error-content {
-  padding: 2rem;
-}
-
-.loading-content p {
-  margin-top: 1rem;
-  color: var(--text-muted);
-}
-
-.error-icon {
-  font-size: 4rem;
-  width: 4rem;
-  height: 4rem;
-  color: var(--error-color);
-  margin-bottom: 1rem;
-}
-
-.error-content h2 {
-  color: var(--text-primary);
-  margin: 0.5rem 0;
-}
-
-.error-content p {
-  color: var(--text-muted);
-  margin-bottom: 2rem;
-}
-
-.text-warn {
-  color: var(--error-color) !important;
-}
-
-/* RTL Adjustments */
-[dir="rtl"] .info-section {
-  border-left: none;
-  border-right: 4px solid var(--primary-color);
-}
-
-[dir="rtl"] .appointment-card {
-  border-left: none;
-  border-right: 4px solid var(--info-color);
-}
-
-[dir="rtl"] .appointment-card.status-completed {
-  border-right-color: var(--success-color);
-}
-
-[dir="rtl"] .appointment-card.status-cancelled {
-  border-right-color: var(--error-color);
-}
-
-/* Mobile Responsive */
-@media (max-width: 768px) {
-  .patient-details-container {
-    padding: 1rem;
-  }
-
-  .page-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
+    .subtitle {
+      margin: 0;
+      color: #666;
+      font-size: 0.875rem;
+    }
   }
 
   .header-actions {
-    justify-content: center;
-  }
-
-  .profile-header {
-    flex-direction: column;
-    gap: 1.5rem;
-    text-align: center;
-  }
-
-  .patient-meta {
-    grid-template-columns: 1fr;
-  }
-
-  .patient-stats {
-    flex-direction: row;
-    justify-content: space-around;
-    min-width: unset;
-  }
-
-  .quick-actions {
-    justify-content: center;
-  }
-
-  .quick-action {
-    flex: 1;
-    justify-content: center;
-    min-width: 120px;
-  }
-
-  .tab-content {
-    padding: 1rem;
-  }
-
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .summary-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .appointments-header,
-  .section-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-  }
-
-  .patient-name {
-    font-size: 1.5rem;
-  }
-
-  .patient-name-section {
-    flex-direction: column;
+    display: flex;
     gap: 0.5rem;
+    align-items: center;
+  }
+}
+
+.medical-records-table {
+  width: 100%;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .medical-record-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #f5f5f5;
+    }
+  }
+
+  .complaint-text {
+    display: block;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .diagnosis-badge {
+    display: inline-block;
+    margin-top: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border-radius: 12px;
+    font-size: 0.75rem;
+  }
+
+  .confidential-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    margin-right: 0.25rem;
+  }
+}
+
+.table-container {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #666;
+
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: #ccc;
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    color: #333;
+  }
+
+  p {
+    margin: 0 0 1.5rem 0;
+    font-size: 1rem;
+  }
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+
+  p {
+    color: #666;
+    font-size: 1rem;
   }
 }

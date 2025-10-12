@@ -1,39 +1,42 @@
 // ===================================================================
 // src/app/features/invoices/components/invoice-details/invoice-details.component.ts
+// Invoice Details Component - View Invoice
 // ===================================================================
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+
+// Angular Material
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTabsModule } from '@angular/material/tabs';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatListModule } from '@angular/material/list';
 import { MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatBadgeModule } from '@angular/material/badge';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 // Shared Components
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.component';
-import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 // Services & Models
 import { InvoiceService } from '../../services/invoice.service';
-import { NotificationService } from '../../../../core/services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 import {
   Invoice,
+  Payment,
   InvoiceStatus,
-  PaymentStatus,
-  PaymentMethod,
-  ServiceCategory
+  INVOICE_STATUS_LABELS,
+  PAYMENT_STATUS_LABELS,
+  PAYMENT_METHOD_LABELS,
+  SERVICE_CATEGORY_LABELS,
+  InvoiceResponse,
+  PaymentResponse
 } from '../../models/invoice.model';
 
 @Component({
@@ -45,17 +48,14 @@ import {
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatTabsModule,
+    MatProgressSpinnerModule,
+    MatMenuModule,
+    MatTooltipModule,
     MatChipsModule,
     MatDividerModule,
-    MatMenuModule,
-    MatDialogModule,
-    MatProgressSpinnerModule,
-    MatExpansionModule,
-    MatListModule,
     MatTableModule,
-    MatTooltipModule,
-    MatBadgeModule,
+    MatExpansionModule,
+    MatDialogModule,
     HeaderComponent,
     SidebarComponent
   ],
@@ -65,267 +65,225 @@ import {
 export class InvoiceDetailsComponent implements OnInit {
   // Services
   private invoiceService = inject(InvoiceService);
-  private notificationService = inject(NotificationService);
   private authService = inject(AuthService);
+  private notificationService = inject(NotificationService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private dialog = inject(MatDialog);
 
-  // Signals
-  loading = signal(false);
-  invoice = signal<Invoice | null>(null);
-  selectedTab = signal(0);
+  // ===================================================================
+  // STATE MANAGEMENT
+  // ===================================================================
+
+  invoice = signal<InvoiceResponse | null>(null);
+  payments = signal<PaymentResponse[]>([]);
+  loading = signal(true);
+  currentUser = this.authService.currentUser;
+
+  // Labels
+  statusLabels = INVOICE_STATUS_LABELS;
+  paymentStatusLabels = PAYMENT_STATUS_LABELS;
+  paymentMethodLabels = PAYMENT_METHOD_LABELS;
+  categoryLabels = SERVICE_CATEGORY_LABELS;
 
   // Table columns
-  itemsColumns = ['serviceName', 'category', 'quantity', 'unitPrice', 'totalPrice'];
-  paymentsColumns = ['paymentDate', 'amount', 'paymentMethod', 'referenceNumber', 'status'];
+  itemColumns: string[] = ['service', 'category', 'quantity', 'unitPrice', 'taxable', 'total'];
+  paymentColumns: string[] = ['date', 'amount', 'method', 'reference', 'notes', 'user'];
 
-  // Enums for template
-  InvoiceStatus = InvoiceStatus;
-  PaymentStatus = PaymentStatus;
-  PaymentMethod = PaymentMethod;
-  ServiceCategory = ServiceCategory;
-
-  // Status configurations
-  statusConfig = {
-    [InvoiceStatus.DRAFT]: { color: 'accent', icon: 'edit', text: 'مسودة' },
-    [InvoiceStatus.PENDING]: { color: 'warn', icon: 'schedule', text: 'معلقة' },
-    [InvoiceStatus.SENT]: { color: 'primary', icon: 'send', text: 'مرسلة' },
-    [InvoiceStatus.VIEWED]: { color: 'accent', icon: 'visibility', text: 'تمت المشاهدة' },
-    [InvoiceStatus.PAID]: { color: 'primary', icon: 'check_circle', text: 'مدفوعة' },
-    [InvoiceStatus.PARTIALLY_PAID]: { color: 'accent', icon: 'payment', text: 'مدفوعة جزئياً' },
-    [InvoiceStatus.OVERDUE]: { color: 'warn', icon: 'error', text: 'متأخرة' },
-    [InvoiceStatus.CANCELLED]: { color: 'basic', icon: 'cancel', text: 'ملغية' },
-    [InvoiceStatus.REFUNDED]: { color: 'basic', icon: 'undo', text: 'مسترد' }
-  };
-
-  paymentStatusConfig = {
-    [PaymentStatus.PENDING]: { color: 'warn', icon: 'schedule', text: 'معلق' },
-    [PaymentStatus.COMPLETED]: { color: 'primary', icon: 'check_circle', text: 'مكتمل' },
-    [PaymentStatus.FAILED]: { color: 'warn', icon: 'error', text: 'فشل' },
-    [PaymentStatus.CANCELLED]: { color: 'basic', icon: 'cancel', text: 'ملغي' },
-    [PaymentStatus.REFUNDED]: { color: 'basic', icon: 'undo', text: 'مسترد' }
-  };
-
-  paymentMethodConfig = {
-    [PaymentMethod.CASH]: { icon: 'money', text: 'نقدي' },
-    [PaymentMethod.CREDIT_CARD]: { icon: 'credit_card', text: 'بطاقة ائتمان' },
-    [PaymentMethod.DEBIT_CARD]: { icon: 'credit_card', text: 'بطاقة مدين' },
-    [PaymentMethod.BANK_TRANSFER]: { icon: 'account_balance', text: 'حوالة بنكية' },
-    [PaymentMethod.CHECK]: { icon: 'receipt', text: 'شيك' },
-    [PaymentMethod.INSURANCE]: { icon: 'local_hospital', text: 'تأمين' },
-    [PaymentMethod.INSTALLMENT]: { icon: 'schedule', text: 'تقسيط' },
-    [PaymentMethod.ONLINE]: { icon: 'computer', text: 'دفع إلكتروني' }
-  };
-
-  serviceCategoryConfig = {
-    [ServiceCategory.CONSULTATION]: { icon: 'medical_services', text: 'استشارة' },
-    [ServiceCategory.PROCEDURE]: { icon: 'healing', text: 'إجراء طبي' },
-    [ServiceCategory.MEDICATION]: { icon: 'medication', text: 'دواء' },
-    [ServiceCategory.LAB_TEST]: { icon: 'biotech', text: 'فحص مختبر' },
-    [ServiceCategory.RADIOLOGY]: { icon: 'scanner', text: 'أشعة' },
-    [ServiceCategory.SURGERY]: { icon: 'surgical', text: 'عملية جراحية' },
-    [ServiceCategory.THERAPY]: { icon: 'spa', text: 'علاج طبيعي' },
-    [ServiceCategory.VACCINATION]: { icon: 'vaccines', text: 'تطعيم' },
-    [ServiceCategory.EQUIPMENT]: { icon: 'medical_information', text: 'معدات' },
-    [ServiceCategory.OTHER]: { icon: 'more_horiz', text: 'أخرى' }
-  };
+  // ===================================================================
+  // LIFECYCLE HOOKS
+  // ===================================================================
 
   ngOnInit(): void {
-    this.loadInvoice();
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.loadInvoice(Number(id));
+      this.loadPayments(Number(id));
+    } else {
+      this.router.navigate(['/invoices']);
+    }
   }
 
-  private loadInvoice(): void {
-    this.route.params.subscribe(params => {
-      const id = +params['id'];
-      if (id) {
-        this.loading.set(true);
+  // ===================================================================
+  // DATA LOADING
+  // ===================================================================
 
-        this.invoiceService.getInvoiceById(id).subscribe({
-          next: (invoice) => {
-            this.invoice.set(invoice);
-            this.loading.set(false);
-          },
-          error: (error) => {
-            this.loading.set(false);
-            this.notificationService.error('خطأ في تحميل الفاتورة: ' + error.message);
-            this.router.navigate(['/invoices']);
-          }
-        });
+  private loadInvoice(id: number): void {
+    this.loading.set(true);
+
+    this.invoiceService.getInvoiceById(id).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.invoice.set(response.data);
+        }
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.router.navigate(['/invoices']);
       }
     });
   }
 
-  // Navigation methods
-  navigateToEdit(): void {
+  private loadPayments(id: number): void {
+    this.invoiceService.getInvoicePayments(id).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.payments.set(response.data);
+        }
+      }
+    });
+  }
+
+  // ===================================================================
+  // INVOICE ACTIONS
+  // ===================================================================
+
+  onEdit(): void {
     const invoice = this.invoice();
-    if (invoice) {
-      this.router.navigate(['/invoices', invoice.id, 'edit']);
+    if (!invoice) return;
+
+    if (!this.invoiceService.isInvoiceEditable(invoice)) {
+      this.notificationService.warning('لا يمكن تعديل الفواتير المدفوعة أو الملغية');
+      return;
+    }
+
+    this.router.navigate(['/invoices', invoice.id, 'edit']);
+  }
+
+  onCancel(): void {
+    const invoice = this.invoice();
+    if (!invoice) return;
+
+    if (!this.invoiceService.canCancelInvoice(invoice)) {
+      this.notificationService.warning('لا يمكن إلغاء هذه الفاتورة');
+      return;
+    }
+
+    const confirmed = confirm(`هل تريد إلغاء الفاتورة رقم ${invoice.invoiceNumber}؟`);
+    if (confirmed) {
+      const reason = prompt('الرجاء إدخال سبب الإلغاء:');
+      if (reason) {
+        this.invoiceService.cancelInvoice(invoice.id, reason).subscribe({
+          next: () => {
+            this.loadInvoice(invoice.id);
+          }
+        });
+      }
     }
   }
 
-  navigateToPreview(): void {
+  onAddPayment(): void {
     const invoice = this.invoice();
-    if (invoice) {
-      this.router.navigate(['/invoices', invoice.id, 'preview']);
+    if (!invoice) return;
+
+    if (invoice.balanceDue <= 0) {
+      this.notificationService.info('الفاتورة مدفوعة بالكامل');
+      return;
+    }
+
+    this.router.navigate(['/invoices', invoice.id, 'payment']);
+  }
+
+  onSendInvoice(): void {
+    const invoice = this.invoice();
+    if (!invoice) return;
+
+    const confirmed = confirm(`هل تريد إرسال الفاتورة رقم ${invoice.invoiceNumber} للمريض؟`);
+    if (confirmed) {
+      this.invoiceService.sendInvoice(invoice.id).subscribe();
     }
   }
 
-  navigateToPayments(): void {
+  onPrintInvoice(): void {
     const invoice = this.invoice();
-    if (invoice) {
-      this.router.navigate(['/invoices', invoice.id, 'payments']);
-    }
+    if (!invoice) return;
+
+    this.notificationService.info('جاري تحضير الفاتورة للطباعة...');
+    // TODO: Implement PDF generation when backend endpoint is ready
+    // window.open(`/invoices/${invoice.id}/pdf`, '_blank');
   }
 
-  navigateToPatient(): void {
+  onViewPatient(): void {
     const invoice = this.invoice();
     if (invoice) {
       this.router.navigate(['/patients', invoice.patientId]);
     }
   }
 
-  navigateBack(): void {
+  onBack(): void {
     this.router.navigate(['/invoices']);
   }
 
-  // Action methods
-  updateStatus(status: InvoiceStatus): void {
+  // ===================================================================
+  // PERMISSION CHECKS
+  // ===================================================================
+
+  canEditInvoice(): boolean {
     const invoice = this.invoice();
-    if (!invoice) return;
+    if (!invoice) return false;
 
-    this.invoiceService.updateInvoiceStatus(invoice.id!, status).subscribe({
-      next: (updatedInvoice) => {
-        this.invoice.set(updatedInvoice);
-        this.notificationService.success('تم تحديث حالة الفاتورة بنجاح');
-      },
-      error: (error) => {
-        this.notificationService.error('خطأ في تحديث الحالة: ' + error.message);
-      }
-    });
+    const user = this.currentUser();
+    return ['SYSTEM_ADMIN', 'ADMIN', 'RECEPTIONIST'].includes(user?.role || '') &&
+      this.invoiceService.isInvoiceEditable(invoice);
   }
 
-  deleteInvoice(): void {
+  canCancelInvoice(): boolean {
     const invoice = this.invoice();
-    if (!invoice) return;
+    if (!invoice) return false;
 
-    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
-      data: {
-        title: 'تأكيد الحذف',
-        message: `هل أنت متأكد من حذف الفاتورة ${invoice.invoiceNumber}؟`,
-        confirmText: 'حذف',
-        cancelText: 'إلغاء'
-      }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.invoiceService.deleteInvoice(invoice.id!).subscribe({
-          next: () => {
-            this.notificationService.success('تم حذف الفاتورة بنجاح');
-            this.router.navigate(['/invoices']);
-          },
-          error: (error) => {
-            this.notificationService.error('خطأ في حذف الفاتورة: ' + error.message);
-          }
-        });
-      }
-    });
+    const user = this.currentUser();
+    return ['SYSTEM_ADMIN', 'ADMIN'].includes(user?.role || '') &&
+      this.invoiceService.canCancelInvoice(invoice);
   }
 
-  duplicateInvoice(): void {
+  canAddPayment(): boolean {
     const invoice = this.invoice();
-    if (!invoice) return;
+    if (!invoice) return false;
 
-    // Create a duplicate invoice
-    const duplicateData = {
-      patientId: invoice.patientId,
-      doctorId: invoice.doctorId,
-      clinicId: invoice.clinicId,
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
-      items: invoice.items.map(item => ({
-        serviceName: item.serviceName,
-        category: item.category,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice
-      })),
-      notes: invoice.notes,
-      terms: invoice.terms,
-      taxPercentage: invoice.taxPercentage
-    };
-
-    this.invoiceService.createInvoice(duplicateData).subscribe({
-      next: (newInvoice) => {
-        this.notificationService.success('تم إنشاء نسخة من الفاتورة بنجاح');
-        this.router.navigate(['/invoices', newInvoice.id, 'edit']);
-      },
-      error: (error) => {
-        this.notificationService.error('خطأ في إنشاء نسخة من الفاتورة: ' + error.message);
-      }
-    });
+    const user = this.currentUser();
+    return ['SYSTEM_ADMIN', 'ADMIN', 'RECEPTIONIST'].includes(user?.role || '') &&
+      invoice.balanceDue > 0;
   }
 
-  generatePDF(): void {
-    const invoice = this.invoice();
-    if (!invoice) return;
+  // ===================================================================
+  // UI HELPERS
+  // ===================================================================
 
-    this.invoiceService.generateInvoicePDF(invoice.id!).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${invoice.invoiceNumber}.pdf`;
-        link.click();
-        window.URL.revokeObjectURL(url);
-        this.notificationService.success('تم تحميل ملف PDF بنجاح');
-      },
-      error: (error) => {
-        this.notificationService.error('خطأ في تحميل ملف PDF: ' + error.message);
-      }
-    });
+  getStatusColor(status: InvoiceStatus): string {
+    switch (status) {
+      case InvoiceStatus.PENDING:
+      case InvoiceStatus.PARTIALLY_PAID:
+        return 'accent';
+      case InvoiceStatus.PAID:
+        return 'primary';
+      case InvoiceStatus.CANCELLED:
+      case InvoiceStatus.OVERDUE:
+        return 'warn';
+      default:
+        return '';
+    }
   }
 
-  sendEmail(): void {
-    const invoice = this.invoice();
-    if (!invoice) return;
-
-    this.invoiceService.sendInvoiceEmail(invoice.id!).subscribe({
-      next: () => {
-        this.notificationService.success('تم إرسال الفاتورة بالبريد الإلكتروني بنجاح');
-      },
-      error: (error) => {
-        this.notificationService.error('خطأ في إرسال البريد الإلكتروني: ' + error.message);
-      }
-    });
-  }
-
-  printInvoice(): void {
-    window.print();
-  }
-
-  // Utility methods
-  getStatusConfig(status: InvoiceStatus) {
-    return this.statusConfig[status] || { color: 'basic', icon: 'info', text: status };
-  }
-
-  getPaymentStatusConfig(status: PaymentStatus) {
-    return this.paymentStatusConfig[status] || { color: 'basic', icon: 'info', text: status };
-  }
-
-  getPaymentMethodConfig(method: PaymentMethod) {
-    return this.paymentMethodConfig[method] || { icon: 'payment', text: method };
-  }
-
-  getServiceCategoryConfig(category: ServiceCategory) {
-    return this.serviceCategoryConfig[category] || { icon: 'category', text: category };
+  getStatusIcon(status: InvoiceStatus): string {
+    switch (status) {
+      case InvoiceStatus.PENDING:
+        return 'schedule';
+      case InvoiceStatus.PAID:
+        return 'check_circle';
+      case InvoiceStatus.PARTIALLY_PAID:
+        return 'donut_small';
+      case InvoiceStatus.CANCELLED:
+        return 'cancel';
+      case InvoiceStatus.OVERDUE:
+        return 'warning';
+      default:
+        return 'help';
+    }
   }
 
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR'
-    }).format(amount);
+    return this.invoiceService.formatCurrency(amount);
   }
 
   formatDate(date: string): string {
@@ -336,50 +294,122 @@ export class InvoiceDetailsComponent implements OnInit {
     });
   }
 
-  formatDateTime(date: string): string {
-    return new Date(date).toLocaleString('ar-SA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+  getPaymentProgress(): number {
+    const invoice = this.invoice();
+    if (!invoice || invoice.totalAmount === 0) return 0;
+    return (invoice.paidAmount / invoice.totalAmount) * 100;
+  }
+
+  getCategoryLabel(category: string): string {
+    return this.categoryLabels[category as keyof typeof this.categoryLabels] || category;
+  }
+
+  getPaymentMethodLabel(method: string): string {
+    return this.paymentMethodLabels[method as keyof typeof this.paymentMethodLabels] || method;
+  }
+
+  /**
+ * Navigate to payment details
+ */
+  onViewPaymentDetails(paymentId: number): void {
+    this.router.navigate(['/invoices/payments', paymentId], {
+      state: {
+        invoiceId: this.invoice()?.id,
+        returnUrl: this.router.url
+      }
     });
   }
 
-  isOverdue(invoice: Invoice): boolean {
-    const today = new Date();
-    const dueDate = new Date(invoice.dueDate);
-    return dueDate < today && invoice.status !== InvoiceStatus.PAID;
+  // ===================================================================
+  // PDF EXPORT ACTIONS - NEW
+  // ===================================================================
+
+  /**
+   * NEW: Export invoice as PDF
+   * تصدير الفاتورة كملف PDF
+   */
+  exportInvoicePdf(): void {
+    const invoiceData = this.invoice();
+    if (!invoiceData) {
+      this.notificationService.error('لا توجد بيانات فاتورة للتصدير');
+      return;
+    }
+
+    // NEW: Call service to export PDF
+    this.invoiceService.exportInvoicePdf(invoiceData.id).subscribe({
+      next: () => {
+        // Success notification is handled in the service
+      },
+      error: (error) => {
+        console.error('Error exporting invoice PDF:', error);
+      }
+    });
   }
 
-  getDaysDue(invoice: Invoice): number {
-    const today = new Date();
-    const dueDate = new Date(invoice.dueDate);
-    const diffTime = today.getTime() - dueDate.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  /**
+   * NEW: Export invoice receipt as PDF
+   * تصدير إيصال الدفع كملف PDF
+   */
+  exportInvoiceReceipt(): void {
+    const invoiceData = this.invoice();
+    if (!invoiceData) {
+      this.notificationService.error('لا توجد بيانات فاتورة للتصدير');
+      return;
+    }
+
+    // NEW: Check if invoice has payments
+    if (!invoiceData.payments || invoiceData.payments.length === 0) {
+      this.notificationService.warning('لا توجد دفعات لهذه الفاتورة');
+      return;
+    }
+
+    // NEW: Call service to export receipt
+    this.invoiceService.exportInvoiceReceipt(invoiceData.id).subscribe({
+      next: () => {
+        // Success notification is handled in the service
+      },
+      error: (error) => {
+        console.error('Error exporting receipt PDF:', error);
+      }
+    });
   }
 
-  hasPermission(roles: string[]): boolean {
-    return this.authService.hasRole(roles);
+  /**
+   * NEW: Preview invoice PDF in browser
+   * معاينة الفاتورة PDF في المتصفح
+   */
+  previewInvoicePdf(): void {
+    const invoiceData = this.invoice();
+    if (!invoiceData) {
+      this.notificationService.error('لا توجد بيانات فاتورة للمعاينة');
+      return;
+    }
+
+    // NEW: Call service to preview PDF
+    this.invoiceService.previewInvoicePdf(invoiceData.id).subscribe({
+      next: () => {
+        // Success notification is handled in the service
+      },
+      error: (error) => {
+        console.error('Error previewing invoice PDF:', error);
+      }
+    });
   }
 
-  canEdit(): boolean {
-    const invoice = this.invoice();
-    if (!invoice) return false;
+  /**
+   * NEW: Print invoice (opens preview and triggers print dialog)
+   * طباعة الفاتورة
+   */
+  printInvoice(): void {
+    const invoiceData = this.invoice();
+    if (!invoiceData) {
+      this.notificationService.error('لا توجد بيانات فاتورة للطباعة');
+      return;
+    }
 
-    return this.hasPermission(['ADMIN', 'SYSTEM_ADMIN', 'RECEPTIONIST']) &&
-      [InvoiceStatus.DRAFT, InvoiceStatus.PENDING].includes(invoice.status);
+    // NEW: Preview PDF which can then be printed
+    this.previewInvoicePdf();
+    this.notificationService.info('استخدم خيار الطباعة من المتصفح (Ctrl+P)');
   }
 
-  canDelete(): boolean {
-    const invoice = this.invoice();
-    if (!invoice) return false;
-
-    return this.hasPermission(['ADMIN', 'SYSTEM_ADMIN']) &&
-      [InvoiceStatus.DRAFT, InvoiceStatus.PENDING].includes(invoice.status);
-  }
-
-  onTabChange(index: number): void {
-    this.selectedTab.set(index);
-  }
 }

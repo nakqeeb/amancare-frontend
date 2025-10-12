@@ -1,19 +1,24 @@
-// ===================================================================
-// 1. APPOINTMENT CALENDAR COMPONENT
 // src/app/features/appointments/components/appointment-calendar/appointment-calendar.component.ts
-// ===================================================================
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatBadgeModule } from '@angular/material/badge';
-import { FormsModule } from '@angular/forms';
+
+// FullCalendar imports
+import { FullCalendarModule } from '@fullcalendar/angular';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import { CalendarOptions, EventClickArg, DateSelectArg } from '@fullcalendar/core';
 
 // Shared Components
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -21,24 +26,25 @@ import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.
 
 // Services & Models
 import { AppointmentService } from '../../services/appointment.service';
+import { UserService } from '../../../users/services/user.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import {
-  Appointment,
+  AppointmentResponse,
   AppointmentStatus,
-  AppointmentType
+  APPOINTMENT_STATUS_LABELS,
+  APPOINTMENT_TYPE_LABELS,
+  APPOINTMENT_STATUS_COLORS
 } from '../../models/appointment.model';
 
-interface CalendarDay {
-  date: Date;
-  day: number;
-  isToday: boolean;
-  isCurrentMonth: boolean;
-  isWeekend: boolean;
-  appointments: Appointment[];
-}
-
-interface CalendarWeek {
-  days: CalendarDay[];
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  color: string;
+  extendedProps: {
+    appointment: AppointmentResponse;
+  };
 }
 
 @Component({
@@ -47,15 +53,17 @@ interface CalendarWeek {
   imports: [
     CommonModule,
     RouterModule,
-    FormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     MatSelectModule,
     MatChipsModule,
+    MatProgressSpinnerModule,
     MatTooltipModule,
-    MatMenuModule,
     MatBadgeModule,
+    FullCalendarModule,
     HeaderComponent,
     SidebarComponent
   ],
@@ -63,243 +71,197 @@ interface CalendarWeek {
   styleUrl: './appointment-calendar.component.scss'
 })
 export class AppointmentCalendarComponent implements OnInit {
-  // Services
-  private appointmentService = inject(AppointmentService);
-  private notificationService = inject(NotificationService);
-  private router = inject(Router);
+  private readonly appointmentService = inject(AppointmentService);
+  private readonly userService = inject(UserService);
+  private readonly router = inject(Router);
+  private readonly notificationService = inject(NotificationService);
 
-  // Signals
-  currentDate = signal(new Date());
-  selectedDate = signal<Date | null>(null);
-  appointments = signal<Appointment[]>([]);
+  // Component state
   loading = signal(false);
-  viewMode = signal<'month' | 'week' | 'day'>('month');
   selectedDoctor = signal<number | null>(null);
+  doctors = signal<any[]>([]);
+  calendarEvents = signal<CalendarEvent[]>([]);
+  selectedDate = signal(new Date());
 
-  // Calendar data
-  calendarWeeks = computed(() => this.generateCalendar());
-  selectedDateAppointments = computed(() => {
-    if (!this.selectedDate()) return [];
-
-    const selected = this.selectedDate()!;
-    return this.appointments().filter(apt => {
-      const aptDate = new Date(apt.appointmentDate);
-      return aptDate.getDate() === selected.getDate() &&
-        aptDate.getMonth() === selected.getMonth() &&
-        aptDate.getFullYear() === selected.getFullYear();
-    });
+  // Calendar configuration
+  calendarOptions = signal<CalendarOptions>({
+    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+    initialView: 'dayGridMonth',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,timeGridDay'
+    },
+    weekends: true,
+    editable: false,
+    selectable: true,
+    selectMirror: true,
+    dayMaxEvents: true,
+    locale: 'ar',
+    direction: 'rtl',
+    events: [],
+    eventClick: this.handleEventClick.bind(this),
+    dateClick: this.handleDateClick.bind(this),
+    select: this.handleDateSelect.bind(this)
   });
 
-  // Data
-  doctors = [
-    { id: null, name: 'جميع الأطباء' },
-    { id: 1, name: 'د. سارة أحمد' },
-    { id: 2, name: 'د. محمد خالد' },
-    { id: 3, name: 'د. فاطمة علي' },
-    { id: 4, name: 'د. أحمد حسن' },
-    { id: 5, name: 'د. ليلى محمود' }
-  ];
-
-  weekDays = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-  monthNames = [
-    'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
-  ];
+  // Statistics
+  todayCount = signal(0);
+  weekCount = signal(0);
+  monthCount = signal(0);
 
   ngOnInit(): void {
+    this.loadDoctors();
     this.loadAppointments();
-    this.selectToday();
   }
 
-  private loadAppointments(): void {
+  private loadDoctors(): void {
+    this.userService.getDoctors().subscribe({
+      next: (res) => {
+        this.doctors.set(res.data!);
+      },
+      error: (error) => {
+        console.error('Error loading doctors:', error);
+      }
+    });
+  }
+
+  loadAppointments(): void {
     this.loading.set(true);
 
-    const startOfMonth = new Date(this.currentDate().getFullYear(), this.currentDate().getMonth(), 1);
-    const endOfMonth = new Date(this.currentDate().getFullYear(), this.currentDate().getMonth() + 1, 0);
-
-    this.appointmentService.getAppointments({
-      fromDate: this.formatDate(startOfMonth),
-      toDate: this.formatDate(endOfMonth),
-      doctorId: this.selectedDoctor() || undefined
-    }).subscribe({
-      next: (appointments) => {
-        this.appointments.set(appointments);
+    this.appointmentService.getAllAppointments(
+      undefined, // date
+      this.selectedDoctor() || undefined,
+      undefined, // status
+      0,
+      1000, // Get more appointments for calendar
+      'appointmentDate',
+      'asc'
+    ).subscribe({
+      next: (response) => {
+        const events = this.convertAppointmentsToEvents(response.appointments);
+        this.calendarEvents.set(events);
+        this.updateCalendarEvents(events);
+        this.calculateStatistics(response.appointments);
         this.loading.set(false);
       },
       error: (error) => {
         console.error('Error loading appointments:', error);
-        this.notificationService.error('حدث خطأ في تحميل المواعيد');
         this.loading.set(false);
       }
     });
   }
 
-  private generateCalendar(): CalendarWeek[] {
-    const year = this.currentDate().getFullYear();
-    const month = this.currentDate().getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const today = new Date();
+  private convertAppointmentsToEvents(appointments: AppointmentResponse[]): CalendarEvent[] {
+    return appointments.map(appointment => {
+      const start = `${appointment.appointmentDate}T${appointment.appointmentTime}`;
+      const [hours, minutes] = appointment.appointmentTime.split(':');
+      const endTime = new Date();
+      endTime.setHours(parseInt(hours));
+      endTime.setMinutes(parseInt(minutes) + appointment.durationMinutes);
+      const endTimeStr = `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+      const end = `${appointment.appointmentDate}T${endTimeStr}`;
 
-    // Get the first day of the calendar (might be from previous month)
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
-
-    const weeks: CalendarWeek[] = [];
-    const currentDateIterator = new Date(startDate);
-
-    while (currentDateIterator <= lastDay || currentDateIterator.getDay() !== 0) {
-      const week: CalendarDay[] = [];
-
-      for (let i = 0; i < 7; i++) {
-        const date = new Date(currentDateIterator);
-        const dayAppointments = this.getAppointmentsForDate(date);
-
-        week.push({
-          date,
-          day: date.getDate(),
-          isToday: this.isSameDate(date, today),
-          isCurrentMonth: date.getMonth() === month,
-          isWeekend: date.getDay() === 5 || date.getDay() === 6,
-          appointments: dayAppointments
-        });
-
-        currentDateIterator.setDate(currentDateIterator.getDate() + 1);
-      }
-
-      weeks.push({ days: week });
-    }
-
-    return weeks;
-  }
-
-  private getAppointmentsForDate(date: Date): Appointment[] {
-    return this.appointments().filter(apt => {
-      const aptDate = new Date(apt.appointmentDate);
-      return this.isSameDate(aptDate, date);
+      return {
+        id: appointment.id.toString(),
+        title: `${appointment.patient.fullName} - ${appointment.doctor.fullName}`,
+        start,
+        end,
+        color: this.getEventColor(appointment.status),
+        extendedProps: {
+          appointment
+        }
+      };
     });
   }
 
-  private isSameDate(date1: Date, date2: Date): boolean {
-    return date1.getDate() === date2.getDate() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getFullYear() === date2.getFullYear();
+  private getEventColor(status: AppointmentStatus): string {
+    const colors: Record<AppointmentStatus, string> = {
+      [AppointmentStatus.SCHEDULED]: '#2196F3',
+      [AppointmentStatus.CONFIRMED]: '#4CAF50',
+      [AppointmentStatus.IN_PROGRESS]: '#FF9800',
+      [AppointmentStatus.COMPLETED]: '#8BC34A',
+      [AppointmentStatus.CANCELLED]: '#F44336',
+      [AppointmentStatus.NO_SHOW]: '#9E9E9E'
+    };
+    return colors[status] || '#2196F3';
   }
 
-  selectToday(): void {
+  private updateCalendarEvents(events: CalendarEvent[]): void {
+    this.calendarOptions.update(options => ({
+      ...options,
+      events: events
+    }));
+  }
+
+  private calculateStatistics(appointments: AppointmentResponse[]): void {
     const today = new Date();
-    this.currentDate.set(today);
-    this.selectedDate.set(today);
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay());
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    this.todayCount.set(
+      appointments.filter(a => a.appointmentDate === this.formatDate(today)).length
+    );
+
+    this.weekCount.set(
+      appointments.filter(a => {
+        const date = new Date(a.appointmentDate);
+        return date >= weekStart && date <= today;
+      }).length
+    );
+
+    this.monthCount.set(
+      appointments.filter(a => {
+        const date = new Date(a.appointmentDate);
+        return date >= monthStart && date <= today;
+      }).length
+    );
   }
 
-  previousMonth(): void {
-    const newDate = new Date(this.currentDate());
-    newDate.setMonth(newDate.getMonth() - 1);
-    this.currentDate.set(newDate);
-    this.loadAppointments();
+  handleEventClick(clickInfo: EventClickArg): void {
+    const appointment = clickInfo.event.extendedProps['appointment'] as AppointmentResponse;
+    this.router.navigate(['/appointments', appointment.id]);
   }
 
-  nextMonth(): void {
-    const newDate = new Date(this.currentDate());
-    newDate.setMonth(newDate.getMonth() + 1);
-    this.currentDate.set(newDate);
-    this.loadAppointments();
+  handleDateClick(arg: any): void {
+    this.router.navigate(['/appointments/new'], {
+      queryParams: { date: arg.dateStr }
+    });
   }
 
-  selectDate(day: CalendarDay): void {
-    if (day.isCurrentMonth) {
-      this.selectedDate.set(day.date);
-    }
+  handleDateSelect(selectInfo: DateSelectArg): void {
+    this.router.navigate(['/appointments/new'], {
+      queryParams: {
+        startDate: selectInfo.startStr,
+        endDate: selectInfo.endStr
+      }
+    });
   }
 
   onDoctorChange(): void {
     this.loadAppointments();
   }
 
-  onViewModeChange(): void {
-    // Implement view mode change logic
-    this.notificationService.info(`تم التبديل إلى عرض ${this.getViewModeLabel()}`);
-  }
-
-  getViewModeLabel(): string {
-    switch (this.viewMode()) {
-      case 'month': return 'الشهر';
-      case 'week': return 'الأسبوع';
-      case 'day': return 'اليوم';
-      default: return '';
+  goToToday(): void {
+    // Reset calendar to today
+    const calendarApi = (document.querySelector('.fc') as any)?.__fullCalendar?.calendar;
+    if (calendarApi) {
+      calendarApi.today();
     }
   }
 
-  onNewAppointment(): void {
-    const queryParams: any = {};
-
-    if (this.selectedDate()) {
-      queryParams.date = this.formatDate(this.selectedDate()!);
+  changeView(view: string): void {
+    const calendarApi = (document.querySelector('.fc') as any)?.__fullCalendar?.calendar;
+    if (calendarApi) {
+      calendarApi.changeView(view);
     }
-
-    if (this.selectedDoctor()) {
-      queryParams.doctorId = this.selectedDoctor();
-    }
-
-    this.router.navigate(['/appointments/new'], { queryParams });
-  }
-
-  onViewAppointment(appointment: Appointment): void {
-    this.router.navigate(['/appointments', appointment.id]);
-  }
-
-  onEditAppointment(appointment: Appointment): void {
-    this.router.navigate(['/appointments', appointment.id, 'edit']);
-  }
-
-  getAppointmentCountForDay(day: CalendarDay): number {
-    return day.appointments.length;
-  }
-
-  getDayClasses(day: CalendarDay): string {
-    const classes = ['calendar-day'];
-
-    if (day.isToday) classes.push('today');
-    if (!day.isCurrentMonth) classes.push('other-month');
-    if (day.isWeekend) classes.push('weekend');
-    if (this.selectedDate() && this.isSameDate(day.date, this.selectedDate()!)) {
-      classes.push('selected');
-    }
-    if (day.appointments.length > 0) classes.push('has-appointments');
-
-    return classes.join(' ');
-  }
-
-  getStatusColor(status: AppointmentStatus): string {
-    const colors: Record<AppointmentStatus, string> = {
-      [AppointmentStatus.SCHEDULED]: '#667eea',
-      [AppointmentStatus.CONFIRMED]: '#48bb78',
-      [AppointmentStatus.CHECKED_IN]: '#4299e1',
-      [AppointmentStatus.IN_PROGRESS]: '#f6ad55',
-      [AppointmentStatus.COMPLETED]: '#48bb78',
-      [AppointmentStatus.CANCELLED]: '#f56565',
-      [AppointmentStatus.NO_SHOW]: '#a0aec0',
-      [AppointmentStatus.RESCHEDULED]: '#ed8936'
-    };
-    return colors[status] || '#718096';
-  }
-
-  formatTime(time: string): string {
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const period = hour >= 12 ? 'م' : 'ص';
-    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-    return `${displayHour}:${minutes} ${period}`;
   }
 
   private formatDate(date: Date): string {
     const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-  }
-
-  getMonthYear(): string {
-    return `${this.monthNames[this.currentDate().getMonth()]} ${this.currentDate().getFullYear()}`;
   }
 }

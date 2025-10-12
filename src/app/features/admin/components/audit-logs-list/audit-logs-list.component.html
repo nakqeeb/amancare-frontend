@@ -1,0 +1,338 @@
+<!-- ===================================================================
+     src/app/features/admin/components/audit-logs-list/audit-logs-list.component.html
+     Audit Logs List Template
+     =================================================================== -->
+
+<app-header />
+<app-sidebar>
+  <div class="main-layout">
+    <div class="content-wrapper">
+      <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="page-header-content">
+            <div class="page-title-section">
+              <mat-icon class="page-icon">security</mat-icon>
+              <div>
+                <h1 class="page-title">سجلات المراجعة</h1>
+                <p class="page-subtitle">
+                  عرض ومتابعة جميع الإجراءات الإدارية في النظام
+                </p>
+              </div>
+            </div>
+
+            <div class="page-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="viewStatistics()"
+                class="action-button"
+              >
+                <mat-icon>bar_chart</mat-icon>
+                الإحصائيات
+              </button>
+              <button
+                mat-raised-button
+                (click)="exportLogs()"
+                class="action-button"
+              >
+                <mat-icon>download</mat-icon>
+                تصدير CSV
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters Section -->
+        <mat-card class="filter-card">
+          <mat-card-header>
+            <mat-card-title>
+              <button mat-icon-button (click)="toggleFilters()">
+                <mat-icon>{{
+                  showFilters() ? "expand_less" : "expand_more"
+                }}</mat-icon>
+              </button>
+              <span>تصفية السجلات</span>
+            </mat-card-title>
+          </mat-card-header>
+
+          <mat-card-content *ngIf="showFilters()">
+            <form [formGroup]="filterForm" class="filter-form">
+              <div class="filter-row">
+                <!-- Admin User ID -->
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>معرف المستخدم المسؤول</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="adminUserId"
+                    placeholder="أدخل معرف المستخدم"
+                  />
+                  <mat-icon matPrefix>person</mat-icon>
+                </mat-form-field>
+
+                <!-- Clinic ID -->
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>معرف العيادة</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="clinicId"
+                    placeholder="أدخل معرف العيادة"
+                  />
+                  <mat-icon matPrefix>local_hospital</mat-icon>
+                </mat-form-field>
+
+                <!-- Action Type -->
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>نوع الإجراء</mat-label>
+                  <mat-select formControlName="actionType">
+                    <mat-option [value]="null">الكل</mat-option>
+                    <mat-option *ngFor="let type of actionTypes" [value]="type">
+                      {{ getActionTypeLabel(type) }}
+                    </mat-option>
+                  </mat-select>
+                  <mat-icon matPrefix>category</mat-icon>
+                </mat-form-field>
+
+                <!-- Resource Type -->
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>نوع المورد</mat-label>
+                  <mat-select formControlName="resourceType">
+                    <mat-option [value]="null">الكل</mat-option>
+                    <mat-option
+                      *ngFor="let type of resourceTypes"
+                      [value]="type"
+                    >
+                      {{ getResourceTypeLabel(type) }}
+                    </mat-option>
+                  </mat-select>
+                  <mat-icon matPrefix>folder</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="filter-row">
+                <!-- Start Date -->
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>تاريخ البداية</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="startPicker"
+                    formControlName="startDate"
+                  />
+                  <mat-datepicker-toggle
+                    matSuffix
+                    [for]="startPicker"
+                  ></mat-datepicker-toggle>
+                  <mat-datepicker #startPicker></mat-datepicker>
+                </mat-form-field>
+
+                <!-- End Date -->
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>تاريخ النهاية</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="endPicker"
+                    formControlName="endDate"
+                  />
+                  <mat-datepicker-toggle
+                    matSuffix
+                    [for]="endPicker"
+                  ></mat-datepicker-toggle>
+                  <mat-datepicker #endPicker></mat-datepicker>
+                </mat-form-field>
+
+                <!-- Sort By -->
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>ترتيب حسب</mat-label>
+                  <mat-select formControlName="sortBy">
+                    <mat-option value="createdAt">التاريخ</mat-option>
+                    <mat-option value="actionType">نوع الإجراء</mat-option>
+                    <mat-option value="adminUserId">المستخدم</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <!-- Sort Direction -->
+                <mat-form-field appearance="outline" class="filter-field">
+                  <mat-label>اتجاه الترتيب</mat-label>
+                  <mat-select formControlName="sortDirection">
+                    <mat-option value="DESC">تنازلي</mat-option>
+                    <mat-option value="ASC">تصاعدي</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <!-- Filter Actions -->
+              <div class="filter-actions">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="applyFilters()"
+                  type="button"
+                >
+                  <mat-icon>search</mat-icon>
+                  تطبيق التصفية
+                </button>
+                <button
+                  mat-stroked-button
+                  (click)="clearFilters()"
+                  type="button"
+                >
+                  <mat-icon>clear</mat-icon>
+                  مسح التصفية
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Audit Logs Table -->
+        <mat-card class="table-card">
+          <!-- Loading Spinner -->
+          <div *ngIf="loading()" class="loading-container">
+            <mat-spinner diameter="50"></mat-spinner>
+            <p>جاري تحميل السجلات...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="isEmpty()" class="empty-state">
+            <mat-icon class="empty-icon">security</mat-icon>
+            <h3>لا توجد سجلات مراجعة</h3>
+            <p>لم يتم العثور على أي سجلات مراجعة بناءً على التصفية المحددة</p>
+          </div>
+
+          <!-- Table -->
+          <div *ngIf="hasData() && !loading()" class="table-container">
+            <table mat-table [dataSource]="auditLogs()" class="audit-table">
+              <!-- Created At Column -->
+              <ng-container matColumnDef="createdAt">
+                <th mat-header-cell *matHeaderCellDef>التاريخ والوقت</th>
+                <td mat-cell *matCellDef="let log">
+                  <div class="date-cell">
+                    <mat-icon class="cell-icon">schedule</mat-icon>
+                    {{ formatDate(log.createdAt) }}
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Admin Full Name Column -->
+              <ng-container matColumnDef="adminFullName">
+                <th mat-header-cell *matHeaderCellDef>المستخدم المسؤول</th>
+                <td mat-cell *matCellDef="let log">
+                  <div class="user-cell">
+                    <mat-icon class="cell-icon">person</mat-icon>
+                    <div>
+                      <div class="user-name">{{ log.adminFullName }}</div>
+                      <div class="user-username">@{{ log.adminUsername }}</div>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Action Type Column -->
+              <ng-container matColumnDef="actionType">
+                <th mat-header-cell *matHeaderCellDef>الإجراء</th>
+                <td mat-cell *matCellDef="let log">
+                  <mat-chip
+                    [class.critical-chip]="isCriticalAction(log.actionType)"
+                    [class.success-chip]="
+                      ['CREATE', 'UPDATE'].includes(log.actionType)
+                    "
+                    [class.warning-chip]="log.actionType.startsWith('FAILED')"
+                    [class.danger-chip]="log.actionType === 'DELETE'"
+                  >
+                    {{ getActionTypeLabel(log.actionType) }}
+                  </mat-chip>
+                </td>
+              </ng-container>
+
+              <!-- Target Clinic Column -->
+              <ng-container matColumnDef="targetClinicName">
+                <th mat-header-cell *matHeaderCellDef>العيادة</th>
+                <td mat-cell *matCellDef="let log">
+                  <div class="clinic-cell" *ngIf="log.targetClinicName">
+                    <mat-icon class="cell-icon">local_hospital</mat-icon>
+                    {{ log.targetClinicName }}
+                  </div>
+                  <span *ngIf="!log.targetClinicName" class="no-data">-</span>
+                </td>
+              </ng-container>
+
+              <!-- Target Resource Column -->
+              <ng-container matColumnDef="targetResourceType">
+                <th mat-header-cell *matHeaderCellDef>المورد</th>
+                <td mat-cell *matCellDef="let log">
+                  <div class="resource-cell" *ngIf="log.targetResourceType">
+                    <mat-icon class="cell-icon">folder</mat-icon>
+                    {{ getResourceDisplay(log) }}
+                  </div>
+                  <span *ngIf="!log.targetResourceType" class="no-data">-</span>
+                </td>
+              </ng-container>
+
+              <!-- IP Address Column -->
+              <ng-container matColumnDef="ipAddress">
+                <th mat-header-cell *matHeaderCellDef>عنوان IP</th>
+                <td mat-cell *matCellDef="let log">
+                  <div class="ip-cell" *ngIf="log.ipAddress">
+                    <mat-icon class="cell-icon">computer</mat-icon>
+                    {{ log.ipAddress }}
+                  </div>
+                  <span *ngIf="!log.ipAddress" class="no-data">-</span>
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>إجراءات</th>
+                <td mat-cell *matCellDef="let log">
+                  <button
+                    mat-icon-button
+                    [matMenuTriggerFor]="menu"
+                    matTooltip="خيارات"
+                  >
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #menu="matMenu">
+                    <button
+                      mat-menu-item
+                      (click)="viewResourceAuditTrail(log)"
+                      [disabled]="
+                        !log.targetResourceType || !log.targetResourceId
+                      "
+                    >
+                      <mat-icon>history</mat-icon>
+                      <span>عرض سجل المورد</span>
+                    </button>
+                    <mat-divider></mat-divider>
+                    <button mat-menu-item>
+                      <mat-icon>info</mat-icon>
+                      <span>التفاصيل</span>
+                    </button>
+                  </mat-menu>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: displayedColumns"
+                class="table-row"
+              ></tr>
+            </table>
+
+            <!-- Paginator -->
+            <mat-paginator
+              [length]="totalElements"
+              [pageSize]="pageSize"
+              [pageSizeOptions]="[10, 20, 50, 100]"
+              (page)="onPageChange($event)"
+              showFirstLastButtons
+            >
+            </mat-paginator>
+          </div>
+        </mat-card>
+      </main>
+    </div>
+  </div>
+</app-sidebar>

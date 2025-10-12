@@ -1,0 +1,331 @@
+<!-- =============================================================================
+Activities List Component Template
+src/app/features/admin/components/activities-list/activities-list.component.html
+============================================================================== -->
+<app-header />
+<app-sidebar>
+  <div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <h1 class="page-title">
+          <mat-icon>history</mat-icon>
+          سجل الأنشطة
+        </h1>
+        <p class="page-subtitle">عرض وتتبع جميع الأنشطة والعمليات في العيادة</p>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button color="accent" (click)="viewStatistics()">
+          <mat-icon>bar_chart</mat-icon>
+          الإحصائيات
+        </button>
+        <button
+          mat-icon-button
+          (click)="refresh()"
+          [disabled]="loading()"
+          matTooltip="تحديث"
+        >
+          <mat-icon [class.spinning]="loading()">refresh</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters Card -->
+    <mat-card class="filters-card">
+      <mat-card-content>
+        <form [formGroup]="filterForm" class="filter-form">
+          <div class="filter-row">
+            <!-- Search -->
+            <mat-form-field appearance="outline" class="filter-field">
+              <mat-label>بحث</mat-label>
+              <input
+                matInput
+                formControlName="searchTerm"
+                placeholder="ابحث في الوصف أو اسم الكيان..."
+              />
+              <mat-icon matPrefix>search</mat-icon>
+            </mat-form-field>
+
+            <!-- Action Type Filter -->
+            <mat-form-field appearance="outline" class="filter-field">
+              <mat-label>نوع الإجراء</mat-label>
+              <mat-select formControlName="actionType">
+                <mat-option [value]="null">الكل</mat-option>
+                @for (type of actionTypes; track type) {
+                <mat-option [value]="type">
+                  {{ actionTypeLabels[type] }}
+                </mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix>category</mat-icon>
+            </mat-form-field>
+
+            <!-- Entity Type Filter -->
+            <mat-form-field appearance="outline" class="filter-field">
+              <mat-label>نوع الكيان</mat-label>
+              <mat-select formControlName="entityType">
+                <mat-option [value]="null">الكل</mat-option>
+                @for (type of entityTypes; track type) {
+                <mat-option [value]="type">
+                  {{ entityTypeLabels[type] }}
+                </mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix>label</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="filter-row">
+            <!-- Start Date -->
+            <mat-form-field appearance="outline" class="filter-field">
+              <mat-label>من تاريخ</mat-label>
+              <input
+                matInput
+                [matDatepicker]="startPicker"
+                formControlName="startDate"
+              />
+              <mat-datepicker-toggle
+                matPrefix
+                [for]="startPicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #startPicker></mat-datepicker>
+            </mat-form-field>
+
+            <!-- End Date -->
+            <mat-form-field appearance="outline" class="filter-field">
+              <mat-label>إلى تاريخ</mat-label>
+              <input
+                matInput
+                [matDatepicker]="endPicker"
+                formControlName="endDate"
+              />
+              <mat-datepicker-toggle
+                matPrefix
+                [for]="endPicker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #endPicker></mat-datepicker>
+            </mat-form-field>
+
+            <!-- Filter Actions -->
+            <div class="filter-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="applyFilters()"
+                [disabled]="loading()"
+              >
+                <mat-icon>filter_list</mat-icon>
+                تطبيق
+              </button>
+              <button
+                mat-stroked-button
+                (click)="clearFilters()"
+                [disabled]="loading()"
+              >
+                <mat-icon>clear</mat-icon>
+                مسح
+              </button>
+            </div>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Progress Bar -->
+    @if (loading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    <!-- Activities Table -->
+    <mat-card class="table-card">
+      <mat-card-content>
+        @if (isEmpty()) {
+        <!-- Empty State -->
+        <div class="empty-state">
+          <mat-icon>history</mat-icon>
+          <h3>لا توجد أنشطة</h3>
+          <p>لم يتم العثور على أنشطة تطابق معايير البحث</p>
+          <button mat-button color="primary" (click)="clearFilters()">
+            مسح الفلاتر
+          </button>
+        </div>
+        } @else {
+        <!-- Activities Table -->
+        <div class="table-container">
+          <table mat-table [dataSource]="activities()" class="activities-table">
+            <!-- Icon Column -->
+            <ng-container matColumnDef="icon">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let activity">
+                <div
+                  class="activity-icon"
+                  [ngClass]="getActionColor(activity.actionType)"
+                >
+                  <mat-icon>{{ getActionIcon(activity.actionType) }}</mat-icon>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Description Column -->
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef>الوصف</th>
+              <td mat-cell *matCellDef="let activity">
+                <div class="description-cell">
+                  <div class="description-text">
+                    {{ activity.description }}
+                  </div>
+                  @if (activity.entityName) {
+                  <div class="entity-name">{{ activity.entityName }}</div>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Action Type Column -->
+            <ng-container matColumnDef="actionType">
+              <th mat-header-cell *matHeaderCellDef>الإجراء</th>
+              <td mat-cell *matCellDef="let activity">
+                <mat-chip
+                  class="action-chip"
+                  [color]="getActionColor(activity.actionType)"
+                >
+                  {{ getActionLabel(activity.actionType) }}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <!-- Entity Type Column -->
+            <ng-container matColumnDef="entityType">
+              <th mat-header-cell *matHeaderCellDef>نوع الكيان</th>
+              <td mat-cell *matCellDef="let activity">
+                @if (activity.entityType) {
+                <span class="entity-type">
+                  {{ getEntityLabel(activity.entityType) }}
+                </span>
+                } @else {
+                <span class="no-data">-</span>
+                }
+              </td>
+            </ng-container>
+
+            <!-- User Column -->
+            <ng-container matColumnDef="user">
+              <th mat-header-cell *matHeaderCellDef>المستخدم</th>
+              <td mat-cell *matCellDef="let activity">
+                <div class="user-cell">
+                  <span class="user-name">{{ activity.userFullName }}</span>
+                  <span class="user-role">{{ activity.userRole }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Timestamp Column -->
+            <ng-container matColumnDef="timestamp">
+              <th mat-header-cell *matHeaderCellDef>الوقت</th>
+              <td mat-cell *matCellDef="let activity">
+                <div class="timestamp-cell">
+                  <span class="timestamp-full">{{
+                    formatTimestamp(activity.timestamp)
+                  }}</span>
+                  <span class="timestamp-relative">{{
+                    getRelativeTime(activity.timestamp)
+                  }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Status Column -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>الحالة</th>
+              <td mat-cell *matCellDef="let activity">
+                <mat-icon
+                  [color]="activity.success ? 'primary' : 'warn'"
+                  [matTooltip]="
+                    activity.success ? 'نجح' : activity.errorMessage || 'فشل'
+                  "
+                >
+                  {{ activity.success ? "check_circle" : "error" }}
+                </mat-icon>
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>إجراءات</th>
+              <td mat-cell *matCellDef="let activity">
+                @if (activity.entityType !== 'Authentication' && activity.entityType !== 'Registration') {
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="menu"
+                  matTooltip="خيارات"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menu="matMenu">
+                  <!-- Edited: Disable view entity for authentication activities -->
+                  <button
+                    mat-menu-item
+                    (click)="viewActivityDetails(activity)"
+                    [disabled]="
+                      !activity.entityType ||
+                      !activity.entityId ||
+                      activity.entityType === 'Authentication' ||
+                      activity.entityType === 'Registration'
+                    "
+                  >
+                    <mat-icon>visibility</mat-icon>
+                    <span>عرض الكيان</span>
+                  </button>
+                  <!-- <button
+                    mat-menu-item
+                    (click)="viewEntityTrail(activity)"
+                    [disabled]="!activity.entityType || !activity.entityId ||
+                               activity.entityType === 'Authentication' ||
+                               activity.entityType === 'Registration'"
+                  >
+                    <mat-icon>history</mat-icon>
+                    <span>سجل الكيان</span>
+                  </button> -->
+                  <!-- End of edit -->
+                  <button
+                    mat-menu-item
+                    (click)="navigateToUserProfile(activity.userId)"
+                    [disabled]="
+                      !activity.entityType ||
+                      !activity.entityId ||
+                      activity.entityType === 'Authentication' ||
+                      activity.entityType === 'Registration'
+                    "
+                  >
+                    <mat-icon>person</mat-icon>
+                    <span>ملف المستخدم</span>
+                  </button>
+                </mat-menu>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              class="table-row"
+              [class.failed-row]="!row.success"
+            ></tr>
+          </table>
+
+          <!-- Paginator -->
+          <mat-paginator
+            [length]="totalElements"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="[10, 20, 50, 100]"
+            (page)="onPageChange($event)"
+            showFirstLastButtons
+          >
+          </mat-paginator>
+        </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+</app-sidebar>

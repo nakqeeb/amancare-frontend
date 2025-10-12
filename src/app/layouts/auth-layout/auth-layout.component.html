@@ -1,0 +1,71 @@
+<!-- ===================================================================
+     src/app/layouts/auth-layout/auth-layout.component.html
+     قالب تخطيط صفحات المصادقة
+     =================================================================== -->
+
+<div class="auth-layout">
+  <!-- Header Toolbar -->
+  <mat-toolbar class="auth-toolbar">
+    <div class="toolbar-content">
+      <!-- Brand -->
+      <div class="brand" (click)="navigateToHome()">
+        <mat-icon class="brand-icon">local_hospital</mat-icon>
+        <span class="brand-text">{{ appName }}</span>
+        <span class="version-badge">{{ appVersion }}</span>
+      </div>
+
+      <!-- Actions -->
+      <div class="toolbar-actions">
+        <!-- Theme Toggle -->
+        <button
+          mat-icon-button
+          class="theme-toggle"
+          (click)="toggleTheme()"
+          [title]="'تبديل المظهر'"
+        >
+          <mat-icon>{{ getCurrentThemeIcon() }}</mat-icon>
+        </button>
+
+        <!-- Language Toggle -->
+        <button mat-icon-button class="language-toggle" [title]="'تغيير اللغة'">
+          <mat-icon>language</mat-icon>
+        </button>
+      </div>
+    </div>
+  </mat-toolbar>
+
+  <!-- Main Content Area -->
+  <div class="auth-content">
+    <!-- Route Header -->
+    <div class="route-header" *ngIf="currentRoute">
+      <div class="route-info">
+        <mat-icon class="route-icon">{{ currentRoute.icon }}</mat-icon>
+        <div class="route-text">
+          <h2 class="route-title">{{ currentRoute.title }}</h2>
+          <p class="route-description">{{ currentRoute.description }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Router Outlet -->
+    <div class="content-wrapper">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="auth-footer">
+    <div class="footer-content">
+      <div class="footer-links">
+        <a href="#" class="footer-link">الشروط والأحكام</a>
+        <span class="separator">•</span>
+        <a href="#" class="footer-link">سياسة الخصوصية</a>
+        <span class="separator">•</span>
+        <a href="#" class="footer-link">الدعم الفني</a>
+      </div>
+      <div class="copyright">
+        <p>&copy; 2024 {{ appName }}. جميع الحقوق محفوظة.</p>
+      </div>
+    </div>
+  </footer>
+</div>

@@ -1,145 +1,187 @@
-<mat-card class="diagnosis-card">
-  <mat-card-header>
-    <mat-card-title>
+<div class="diagnosis-form">
+  <div class="form-header">
+    <h3 class="form-title">
       <mat-icon>medical_information</mat-icon>
-      التشخيص
-    </mat-card-title>
-    <button mat-icon-button (click)="addDiagnosis()" matTooltip="إضافة تشخيص">
-      <mat-icon>add_circle</mat-icon>
+      التشخيص الطبي
+    </h3>
+    <button type="button" mat-button color="primary" (click)="addDiagnosis()">
+      <mat-icon>add</mat-icon>
+      إضافة تشخيص
     </button>
-  </mat-card-header>
-  <mat-card-content>
-    <form [formGroup]="diagnosisForm">
-      <div formArrayName="diagnoses">
-        @for (diagnosis of diagnoses.controls; track $index; let i = $index) {
-        <div class="diagnosis-item" [formGroupName]="i">
-          <div class="diagnosis-header">
-            <div class="diagnosis-title">
-              <h4>تشخيص #{{ i + 1 }}</h4>
-              @if (diagnosis.get('isPrimary')?.value) {
-              <mat-chip color="primary" selected>تشخيص رئيسي</mat-chip>
-              }
-            </div>
+  </div>
+
+  <!-- Diagnoses List -->
+  <div class="diagnoses-list">
+    @if (diagnoses.length === 0) {
+    <div class="empty-state">
+      <mat-icon>medical_services</mat-icon>
+      <p>لا يوجد تشخيصات مضافة</p>
+      <p class="hint">اضغط على "إضافة تشخيص" لإضافة تشخيص جديد</p>
+    </div>
+    } @for (diagnosis of diagnoses; track diagnosis; let i = $index) {
+    <mat-card
+      class="diagnosis-card"
+      [class.primary-diagnosis]="diagnosis.isPrimary"
+    >
+      <mat-card-content>
+        <div class="diagnosis-header">
+          <div class="diagnosis-badges">
+            @if (diagnosis.isPrimary) {
+            <span class="badge primary">تشخيص رئيسي</span>
+            }
+            <span class="badge type">{{
+              getDiagnosisTypeLabel(diagnosis.type)
+            }}</span>
+            @if (diagnosis.icdCode) {
+            <span class="badge icd">{{ diagnosis.icdCode }}</span>
+            }
+          </div>
+
+          <div class="diagnosis-actions">
+            @if (!diagnosis.isPrimary && diagnoses.length > 1) {
             <button
+              type="button"
+              mat-icon-button
+              (click)="setPrimary(i)"
+              matTooltip="تعيين كتشخيص رئيسي"
+            >
+              <mat-icon>star_outline</mat-icon>
+            </button>
+            }
+            <button
+              type="button"
+              mat-icon-button
+              (click)="editMode.set(editMode() === i ? -1 : i)"
+              matTooltip="تعديل"
+            >
+              <mat-icon>{{ editMode() === i ? "close" : "edit" }}</mat-icon>
+            </button>
+            <button
+              type="button"
               mat-icon-button
               color="warn"
               (click)="removeDiagnosis(i)"
-              matTooltip="حذف التشخيص"
+              matTooltip="حذف"
             >
               <mat-icon>delete</mat-icon>
             </button>
           </div>
+        </div>
 
-          <div class="diagnosis-grid">
-            <!-- Diagnosis Description -->
-            <mat-form-field appearance="outline" class="diagnosis-description">
+        @if (editMode() === i) {
+        <!-- Edit Mode -->
+        <div class="diagnosis-edit">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1">
               <mat-label>وصف التشخيص</mat-label>
               <input
                 matInput
-                formControlName="description"
-                [matAutocomplete]="auto"
-                placeholder="اكتب التشخيص أو رمز ICD-10..."
+                [(ngModel)]="diagnosis.description"
+                placeholder="أدخل وصف التشخيص"
+                required
               />
-              <mat-icon matPrefix>medical_information</mat-icon>
-              <mat-autocomplete
-                #auto="matAutocomplete"
-                [displayWith]="displayDiagnosis"
-                (optionSelected)="onDiagnosisSelected($event, i)"
-              >
-                @for (suggestion of getDiagnosisSuggestions(i) | async; track
-                suggestion.code) {
-                <mat-option [value]="suggestion">
-                  <span class="diagnosis-option">
-                    <strong>{{ suggestion.code }}</strong> -
-                    {{ suggestion.description }}
-                  </span>
-                </mat-option>
-                }
-              </mat-autocomplete>
-              <mat-error>وصف التشخيص مطلوب</mat-error>
+              <mat-icon matPrefix>description</mat-icon>
             </mat-form-field>
 
-            <!-- ICD-10 Code -->
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" class="icd-field">
               <mat-label>رمز ICD-10</mat-label>
-              <input matInput formControlName="code" placeholder="مثال: I10" />
-              <mat-icon matPrefix>qr_code</mat-icon>
-            </mat-form-field>
-
-            <!-- Diagnosis Type -->
-            <mat-form-field appearance="outline">
-              <mat-label>نوع التشخيص</mat-label>
-              <mat-select formControlName="type">
-                <mat-option [value]="DiagnosisType.PROVISIONAL">
-                  <mat-icon>help_outline</mat-icon> مؤقت
-                </mat-option>
-                <mat-option [value]="DiagnosisType.DIFFERENTIAL">
-                  <mat-icon>compare_arrows</mat-icon> تفريقي
-                </mat-option>
-                <mat-option [value]="DiagnosisType.CONFIRMED">
-                  <mat-icon>check_circle</mat-icon> مؤكد
-                </mat-option>
-                <mat-option [value]="DiagnosisType.RULED_OUT">
-                  <mat-icon>cancel</mat-icon> مستبعد
-                </mat-option>
-              </mat-select>
-              <mat-error>نوع التشخيص مطلوب</mat-error>
-            </mat-form-field>
-
-            <!-- Primary Diagnosis -->
-            <div class="checkbox-field">
-              <mat-checkbox
-                formControlName="isPrimary"
-                (change)="onPrimaryChange(i)"
-              >
-                تشخيص رئيسي
-              </mat-checkbox>
-            </div>
-
-            <!-- Notes -->
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>ملاحظات</mat-label>
-              <textarea
+              <input
                 matInput
-                formControlName="notes"
-                rows="2"
-                placeholder="ملاحظات إضافية..."
-              ></textarea>
+                [(ngModel)]="diagnosis.icdCode"
+                placeholder="مثال: J06.9"
+                (input)="searchICDCode($event, i)"
+              />
+              <mat-icon matPrefix>qr_code</mat-icon>
             </mat-form-field>
           </div>
 
-          @if (i < diagnoses.length - 1) {
-          <mat-divider></mat-divider>
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="type-field">
+              <mat-label>نوع التشخيص</mat-label>
+              <mat-select formControlName="type">
+                @for (type of diagnosisTypes; track type) {
+                <mat-option [value]="type">
+                  {{ getDiagnosisTypeLabel(type) }}
+                </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-checkbox
+              [(ngModel)]="diagnosis.isPrimary"
+              [disabled]="diagnosis.isPrimary"
+              class="primary-checkbox"
+            >
+              تشخيص رئيسي
+            </mat-checkbox>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>ملاحظات إضافية</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="diagnosis.notes"
+              rows="2"
+              placeholder="أي ملاحظات إضافية حول التشخيص"
+            ></textarea>
+          </mat-form-field>
+
+          <!-- ICD Code Suggestions -->
+          @if (icdSuggestions().length > 0 && activeICDIndex() === i) {
+          <div class="icd-suggestions">
+            <div class="suggestions-header">اقتراحات ICD-10:</div>
+            <div class="suggestions-list">
+              @for (suggestion of icdSuggestions(); track suggestion.code) {
+              <div
+                class="suggestion-item"
+                (click)="selectICDCode(suggestion, i)"
+              >
+                <span class="code">{{ suggestion.code }}</span>
+                <span class="description">{{ suggestion.description }}</span>
+              </div>
+              }
+            </div>
+          </div>
+          }
+
+          <div class="edit-actions">
+            <button mat-button (click)="editMode.set(-1)">
+              <mat-icon>check</mat-icon>
+              حفظ
+            </button>
+          </div>
+        </div>
+        } @else {
+        <!-- View Mode -->
+        <div class="diagnosis-view">
+          <div class="diagnosis-description">
+            {{ diagnosis.description }}
+          </div>
+          @if (diagnosis.notes) {
+          <div class="diagnosis-notes">
+            <mat-icon>note</mat-icon>
+            {{ diagnosis.notes }}
+          </div>
           }
         </div>
-        } @if (diagnoses.length === 0) {
-        <div class="empty-state">
-          <mat-icon>medical_information</mat-icon>
-          <p>لم يتم إضافة أي تشخيص بعد</p>
-          <button mat-raised-button color="primary" (click)="addDiagnosis()">
-            <mat-icon>add</mat-icon>
-            إضافة تشخيص
-          </button>
-        </div>
         }
-      </div>
-    </form>
-
-    @if (diagnoses.length > 0) {
-    <div class="form-actions">
-      <button
-        mat-raised-button
-        color="primary"
-        (click)="onSave()"
-        [disabled]="diagnosisForm.invalid || !hasPrimaryDiagnosis()"
-      >
-        <mat-icon>save</mat-icon>
-        حفظ التشخيص
-      </button>
-      @if (!hasPrimaryDiagnosis()) {
-      <span class="error-message">يجب تحديد تشخيص رئيسي واحد على الأقل</span>
-      }
-    </div>
+      </mat-card-content>
+    </mat-card>
     }
-  </mat-card-content>
-</mat-card>
+  </div>
+
+  <!-- Quick Templates -->
+  @if (showTemplates()) {
+  <div class="templates-section">
+    <h4>تشخيصات شائعة:</h4>
+    <div class="templates-chips">
+      <mat-chip-option
+        *ngFor="let template of commonDiagnoses"
+        (click)="addFromTemplate(template)"
+      >
+        {{ template.description }}
+      </mat-chip-option>
+    </div>
+  </div>
+  }
+</div>

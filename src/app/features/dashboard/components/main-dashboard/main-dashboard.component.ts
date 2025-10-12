@@ -1,31 +1,61 @@
 // ===================================================================
+// Main Dashboard Component - Complete TypeScript
 // src/app/features/dashboard/components/main-dashboard/main-dashboard.component.ts
 // ===================================================================
-import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+
+import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { MatGridListModule } from '@angular/material/grid-list';
+import { Subject, takeUntil, interval, forkJoin, timer, Observable } from 'rxjs';
+
+// Angular Material Modules
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatBadgeModule } from '@angular/material/badge';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatTabsModule } from '@angular/material/tabs';
 
 // Shared Components
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.component';
 
-// Dashboard Components
-import { StatsCardsComponent } from '../stats-cards/stats-cards.component';
-import { RecentActivitiesComponent } from '../recent-activities/recent-activities.component';
-import { QuickActionsComponent } from '../quick-actions/quick-actions.component';
-import { ChartsOverviewComponent } from '../charts-overview/charts-overview.component';
-
 // Services
-import { AuthService } from '../../../../core/services/auth.service';
-import { MatDividerModule } from '@angular/material/divider';
-import { DashboardService } from '../../services/dashboard.service';
+import { AuthService, User } from '../../../../core/services/auth.service';
+import { PatientService } from '../../../patients/services/patient.service';
+import { AppointmentService } from '../../../appointments/services/appointment.service';
+import { NotificationService } from '../../../../core/services/notification.service';
+
+// Models
+import { PatientStatistics } from '../../../patients/models/patient.model';
+import { AppointmentSummaryResponse } from '../../../appointments/models/appointment.model';
+import { SystemAdminContextIndicatorComponent } from "../../../../shared/components/system-admin-context-indicator/system-admin-context-indicator.component";
+import { ActivityService } from '../../../../core/services/activity.service';
+import { ActivityFeedComponent } from "../../../../shared/components/activity-feed/activity-feed.component";
+import { RecentActivitiesComponent } from '../../../clinic-admin/components/recent-activities/recent-activities.component';
+import { ApiResponse } from '../../../../core/models/api-response.model';
+
+// Statistics Interfaces
+interface DashboardStatCard {
+  title: string;
+  value: number | string;
+  icon: string;
+  color: 'primary' | 'accent' | 'warn' | 'success' | 'info';
+  subtitle?: string;
+  trend?: number;
+  loading?: boolean;
+}
+
+interface QuickAction {
+  label: string;
+  icon: string;
+  route: string;
+  color: string;
+}
 
 @Component({
   selector: 'app-main-dashboard',
@@ -33,124 +63,292 @@ import { DashboardService } from '../../services/dashboard.service';
   imports: [
     CommonModule,
     RouterModule,
-    MatGridListModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
+    MatProgressSpinnerModule,
+    MatDividerModule,
+    MatChipsModule,
+    MatTooltipModule,
+    MatBadgeModule,
     MatMenuModule,
     MatProgressBarModule,
-    MatTabsModule,
-    MatDividerModule,
     HeaderComponent,
     SidebarComponent,
-    StatsCardsComponent,
-    RecentActivitiesComponent,
-    QuickActionsComponent,
-    ChartsOverviewComponent
+    SystemAdminContextIndicatorComponent,
+    ActivityFeedComponent,
+    RecentActivitiesComponent
   ],
   templateUrl: './main-dashboard.component.html',
   styleUrl: './main-dashboard.component.scss'
 })
-
 export class MainDashboardComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+
+  // Services
   private authService = inject(AuthService);
-  private dashboardService = inject(DashboardService);
+  private patientService = inject(PatientService);
+  private appointmentService = inject(AppointmentService);
+  private notificationService = inject(NotificationService);
+  private activityService = inject(ActivityService);
 
-  // Signals
-  currentUser = this.authService.currentUser;
-  loading = signal(false);
+
+  // ===================================================================
+  // STATE SIGNALS
+  // ===================================================================
+
+  // User & Auth
+  currentUser = signal<User | null>(null);
+  userRole = computed(() => this.currentUser()?.role || '');
+  userName = computed(() => {
+    const user = this.currentUser();
+    return user ? `${user.fullName}` : '';
+  });
+
+  // Loading States
+  loadingStats = signal(false);
+  loadingAppointments = signal(false);
+  loadingInvoices = signal(false);
+
+  // Date & Time
+  currentHijriDate = signal<string>('');
+  currentGregorianDate = signal<string>('');
   currentTime = signal('');
-  todaysAppointments = signal<any[]>([]);
+  greeting = computed(() => this.getGreeting());
 
-  private timeInterval?: number;
+  // Statistics Data
+  patientStats = signal<PatientStatistics | null>(null);
+  appointmentStats = signal<any | null>(null);
+  // invoiceStats = signal<InvoiceStatistics | null>(null);
+  todayAppointments = signal<AppointmentSummaryResponse[]>([]);
+
+  // Dashboard Cards
+  statsCards = computed<DashboardStatCard[]>(() => {
+    const patient = this.patientStats();
+    const appointment = this.appointmentStats();
+    // const invoice = this.invoiceStats();
+
+    return [
+      {
+        title: 'إجمالي المرضى',
+        value: patient?.totalPatients || 0,
+        icon: 'groups',
+        color: 'primary',
+        subtitle: `${patient?.activePatients || 0} نشط`,
+        trend: this.calculateTrend(patient?.totalPatients || 0, patient?.newPatientsThisMonth || 0)
+      },
+      {
+        title: 'المرضى النشطون',
+        value: patient?.activePatients || 0,
+        icon: 'person_check',
+        color: 'success',
+        subtitle: `${this.formatPercentage(patient?.activePercentage)} من الإجمالي`
+      },
+      {
+        title: 'مواعيد اليوم',
+        value: patient?.patientsWithAppointmentsToday || 0,
+        icon: 'event_available',
+        color: 'info',
+        subtitle: 'موعد مجدول'
+      },
+      {
+        title: 'مرضى جدد',
+        value: patient?.newPatientsThisMonth || 0,
+        icon: 'person_add',
+        color: 'accent',
+        subtitle: 'خلال 30 يوم'
+      },
+      {
+        title: 'فواتير معلقة',
+        value: patient?.patientsWithPendingInvoices || 0,
+        icon: 'receipt_long',
+        color: 'warn',
+        subtitle: this.formatCurrency(patient?.totalOutstandingBalance || 0)
+      },
+      {
+        title: 'متوسط العمر',
+        value: Math.round(patient?.averageAge || 0),
+        icon: 'cake',
+        color: 'primary',
+        subtitle: 'سنة'
+      }
+    ];
+  });
+
+  // Quick Actions
+  quickActions: QuickAction[] = [
+    { label: 'إضافة مريض', icon: 'person_add', route: '/patients/new', color: 'primary' },
+    { label: 'حجز موعد', icon: 'event', route: '/appointments/new', color: 'accent' },
+    { label: 'إصدار فاتورة', icon: 'receipt', route: '/invoices/create', color: 'success' },
+    { label: 'عرض التقارير', icon: 'assessment', route: '/reports', color: 'warn' }
+  ];
+
+  // Gender Distribution
+  genderData = computed(() => {
+    const stats = this.patientStats();
+    if (!stats) return null;
+
+    const total = stats.totalPatients;
+    if (total === 0) return null;
+
+    return {
+      male: {
+        count: stats.malePatients,
+        percentage: (stats.malePatients / total) * 100
+      },
+      female: {
+        count: stats.femalePatients,
+        percentage: (stats.femalePatients / total) * 100
+      }
+    };
+  });
+
+  // ===================================================================
+  // LIFECYCLE HOOKS
+  // ===================================================================
 
   ngOnInit(): void {
-    this.loadDashboardData();
+    this.initializeUser();
+    timer(1000).subscribe(() => this.loadDashboardData());
     this.startClock();
-    this.loadTodaysAppointments();
   }
 
   ngOnDestroy(): void {
-    if (this.timeInterval) {
-      clearInterval(this.timeInterval);
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ===================================================================
+  // INITIALIZATION METHODS
+  // ===================================================================
+
+  private initializeUser(): void {
+    this.authService.currentUser$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(user => {
+        this.currentUser.set(user);
+      });
+  }
+
+ private loadDashboardData(): void {
+  this.loadingStats.set(true);
+
+  // حدد أي Requests تنفذ بناءً على الدور
+  const requests: any = {
+    todayAppointments: this.appointmentService.getTodayAppointments()
+  };
+
+  if (this.userRole() === 'SYSTEM_ADMIN' || this.userRole() === 'ADMIN') {
+    requests.patientStats = this.patientService.getPatientStatistics();
+  }
+
+  forkJoin(requests).pipe(takeUntil(this.destroy$)).subscribe({
+    next: (results: any) => {
+      // فقط لو الدور يسمح يكون موجود
+      if (results.patientStats) {
+        this.patientStats.set(results.patientStats.data!);
+      }
+
+      this.todayAppointments.set(results.todayAppointments);
+
+      this.loadingStats.set(false);
+    },
+    error: (error) => {
+      console.error('Error loading dashboard data:', error);
+      this.notificationService.error('حدث خطأ في تحميل البيانات');
+      this.loadingStats.set(false);
     }
-  }
-
-  private loadDashboardData(): void {
-    this.loading.set(true);
-
-    // Simulate loading dashboard data
-    setTimeout(() => {
-      this.loading.set(false);
-    }, 1500);
-  }
+  });
+}
 
   private startClock(): void {
-    this.updateTime();
-    this.timeInterval = window.setInterval(() => {
-      this.updateTime();
-    }, 1000);
+    // Update time every second
+    interval(1000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        const now = new Date();
+        this.currentHijriDate.set(new Date().toLocaleDateString('ar-SA', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }));
+        this.currentGregorianDate.set(new Date().toLocaleDateString('ar', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }));
+        this.currentTime.set(now.toLocaleTimeString('ar-SA', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }));
+      });
   }
 
-  private updateTime(): void {
-    const now = new Date();
-    this.currentTime.set(now.toLocaleTimeString('ar-SA', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    }));
+  // ===================================================================
+  // HELPER METHODS
+  // ===================================================================
+
+  getGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'صباح الخير';
+    if (hour < 17) return 'مساء الخير';
+    return 'مساء الخير';
   }
 
-  private loadTodaysAppointments(): void {
-    // Mock data for today's appointments
-    const mockAppointments = [
-      {
-        id: 1,
-        time: '09:00',
-        patientName: 'أحمد محمد علي',
-        type: 'استشارة',
-        status: 'CONFIRMED'
-      },
-      {
-        id: 2,
-        time: '10:30',
-        patientName: 'فاطمة أحمد',
-        type: 'متابعة',
-        status: 'SCHEDULED'
-      },
-      {
-        id: 3,
-        time: '11:00',
-        patientName: 'محمد حسن',
-        type: 'فحص دوري',
-        status: 'IN_PROGRESS'
-      },
-      {
-        id: 4,
-        time: '14:00',
-        patientName: 'سارة علي',
-        type: 'استشارة',
-        status: 'SCHEDULED'
-      },
-      {
-        id: 5,
-        time: '15:30',
-        patientName: 'عبدالله محمد',
-        type: 'متابعة',
-        status: 'CONFIRMED'
-      }
-    ];
-
-    this.todaysAppointments.set(mockAppointments);
+  formatPercentage(value?: number): string {
+    if (!value) return '0%';
+    return `${value.toFixed(1)}%`;
   }
 
-  getCurrentDate(): string {
-    return new Date().toLocaleDateString('ar-SA', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  formatCurrency(value: number): string {
+    return new Intl.NumberFormat('ar-SA', {
+      style: 'currency',
+      currency: 'YER',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  }
+
+  calculateTrend(total: number, recent: number): number {
+    if (total === 0) return 0;
+    return (recent / total) * 100;
+  }
+
+  getRoleLabel(role: string): string {
+    const labels: Record<string, string> = {
+      'SYSTEM_ADMIN': 'مدير النظام',
+      'ADMIN': 'مدير العيادة',
+      'DOCTOR': 'طبيب',
+      'NURSE': 'ممرض',
+      'RECEPTIONIST': 'موظف استقبال'
+    };
+    return labels[role] || role;
+  }
+
+  getStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      'SCHEDULED': 'مجدول',
+      'CONFIRMED': 'مؤكد',
+      'IN_PROGRESS': 'جاري',
+      'COMPLETED': 'مكتمل',
+      'CANCELLED': 'ملغي',
+      'NO_SHOW': 'لم يحضر'
+    };
+    return labels[status] || status;
+  }
+
+  getStatusColor(status: string): string {
+    const colors: Record<string, string> = {
+      'SCHEDULED': 'primary',
+      'CONFIRMED': 'accent',
+      'IN_PROGRESS': 'warn',
+      'COMPLETED': 'success',
+      'CANCELLED': 'error',
+      'NO_SHOW': 'disabled'
+    };
+    return colors[status] || 'default';
   }
 
   getRoleDisplayName(role?: string): string {
@@ -165,16 +363,32 @@ export class MainDashboardComponent implements OnInit, OnDestroy {
     return roleNames[role || ''] || 'مستخدم';
   }
 
-  getAppointmentStatusText(status: string): string {
-    const statusText: { [key: string]: string } = {
-      'SCHEDULED': 'مجدول',
-      'CONFIRMED': 'مؤكد',
-      'IN_PROGRESS': 'جاري',
-      'COMPLETED': 'مكتمل',
-      'CANCELLED': 'ملغي',
-      'NO_SHOW': 'لم يحضر'
-    };
+  /**
+   * Format number with Arabic numerals
+   */
+  formatNumber(value: number): string {
+    if (value === undefined || value === null) return '0';
+    return Math.round(value).toLocaleString('ar-SA');
+  }
 
-    return statusText[status] || status;
+  // ===================================================================
+  // ACTION METHODS
+  // ===================================================================
+
+  refreshData(): void {
+    this.loadDashboardData();
+  }
+
+  exportDashboard(): void {
+    // Implement export functionality
+    this.notificationService.info('جاري تصدير لوحة التحكم...');
+  }
+
+  navigateToPatients(): void {
+    // Navigation is handled by routerLink in template
+  }
+
+  navigateToAppointments(): void {
+    // Navigation is handled by routerLink in template
   }
 }

@@ -1,0 +1,457 @@
+<app-header />
+<app-sidebar>
+  <div class="radiology-results-container">
+    <!-- Header -->
+    <div class="results-header">
+      <div class="header-content">
+        <button mat-icon-button (click)="onBack()" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+
+        <div class="title-section">
+          <h1 class="page-title">
+            <mat-icon>radiology</mat-icon>
+            نتائج الأشعة
+          </h1>
+          @if (medicalRecord()) {
+          <div class="record-info">
+            <span class="record-id">رقم السجل: {{ medicalRecord()!.id }}</span>
+            <span class="record-date">
+              <mat-icon>calendar_today</mat-icon>
+              {{ formatDate(medicalRecord()!.visitDate) }}
+            </span>
+            <span class="patient-name">
+              <mat-icon>person</mat-icon>
+              {{ medicalRecord()!.patientName }}
+            </span>
+          </div>
+          }
+        </div>
+
+        <div class="header-actions">
+          <button mat-stroked-button (click)="onViewImages()">
+            <mat-icon>photo_library</mat-icon>
+            عرض الصور
+          </button>
+
+          <button mat-stroked-button (click)="onPrintResults()">
+            <mat-icon>print</mat-icon>
+            طباعة النتائج
+          </button>
+
+          <button mat-stroked-button (click)="onExportPDF()">
+            <mat-icon>picture_as_pdf</mat-icon>
+            تصدير PDF
+          </button>
+
+          @if (canEdit()) {
+          <button mat-stroked-button (click)="onAddResult()">
+            <mat-icon>add</mat-icon>
+            إضافة نتيجة
+          </button>
+          }
+
+          <button mat-icon-button (click)="onRefresh()">
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>البحث</mat-label>
+          <input
+            matInput
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="applyFilter()"
+            placeholder="اسم الفحص..."
+          />
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>نوع الفحص</mat-label>
+          <mat-select
+            [(ngModel)]="selectedType"
+            (selectionChange)="applyFilter()"
+          >
+            <mat-option value="">الكل</mat-option>
+            @for (type of radiologyTypes; track type) {
+            <mat-option [value]="type.value">
+              {{ type.label }}
+            </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>الحالة</mat-label>
+          <mat-select
+            [(ngModel)]="selectedStatus"
+            (selectionChange)="applyFilter()"
+          >
+            <mat-option value="">الكل</mat-option>
+            @for (status of statuses; track status) {
+            <mat-option [value]="status.value">
+              {{ status.label }}
+            </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>الأولوية</mat-label>
+          <mat-select
+            [(ngModel)]="selectedUrgency"
+            (selectionChange)="applyFilter()"
+          >
+            <mat-option value="">الكل</mat-option>
+            @for (urgency of urgencies; track urgency) {
+            <mat-option [value]="urgency.value">
+              {{ urgency.label }}
+            </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (loading()) {
+    <div class="loading-container">
+      <mat-spinner></mat-spinner>
+      <p>جاري تحميل النتائج...</p>
+    </div>
+    } @else {
+    <div class="results-content">
+      <!-- Statistics Cards -->
+      <div class="stats-cards">
+        <mat-card class="stat-card">
+          <div class="stat-value">{{ totalTests() }}</div>
+          <div class="stat-label">إجمالي الفحوصات</div>
+          <mat-icon class="stat-icon">radiology</mat-icon>
+        </mat-card>
+
+        <mat-card class="stat-card completed">
+          <div class="stat-value">{{ completedTests() }}</div>
+          <div class="stat-label">مكتملة</div>
+          <mat-icon class="stat-icon">check_circle</mat-icon>
+        </mat-card>
+
+        <mat-card class="stat-card pending">
+          <div class="stat-value">{{ pendingTests() }}</div>
+          <div class="stat-label">قيد الانتظار</div>
+          <mat-icon class="stat-icon">pending</mat-icon>
+        </mat-card>
+
+        <!-- <mat-card class="stat-card images">
+          <div class="stat-value">{{ totalImages() }}</div>
+          <div class="stat-label">الصور المتاحة</div>
+          <mat-icon class="stat-icon">image</mat-icon>
+        </mat-card> -->
+      </div>
+
+      <!-- View Tabs -->
+      @if (!isEmbedded) {
+      <mat-tab-group [(selectedIndex)]="selectedView" class="view-tabs">
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>list</mat-icon>
+            عرض القائمة
+          </ng-template>
+        </mat-tab>
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>grid_view</mat-icon>
+            عرض الشبكة
+          </ng-template>
+        </mat-tab>
+      </mat-tab-group>
+      }
+
+      <!-- Radiology Tests List/Grid -->
+      @if (filteredRadiologyTests().length > 0) {
+      <div [class]="selectedView === 0 ? 'tests-list' : 'tests-grid'">
+        @for (test of filteredRadiologyTests(); track test.id) {
+        <!-- List View -->
+        @if (selectedView === 0) {
+        <mat-expansion-panel
+          class="test-panel"
+          [class.urgent]="test.urgency === testUrgency.URGENT"
+          [class.stat]="test.urgency === testUrgency.STAT"
+          [class.asap]="test.urgency === testUrgency.ASAP"
+          [expanded]="expandedTestId() === test.id"
+          (opened)="expandedTestId.set(test.id!)"
+          (closed)="expandedTestId.set(null)"
+        >
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <div class="test-header">
+                <div class="test-main-info">
+                  <span class="test-name">
+                    <mat-icon>{{ getTypeIcon(test.testType) }}</mat-icon>
+                    {{ test.testName }}
+                  </span>
+                  @if (test.testType) {
+                  <span class="test-code">({{ test.testType }})</span>
+                  }
+                </div>
+
+                <div class="test-meta">
+                  <mat-chip [ngClass]="'status-' + test.status?.toLowerCase()">
+                    {{ getStatusLabel(test.status!) }}
+                  </mat-chip>
+
+                  @if (test.urgency !== 'ROUTINE') {
+                  <mat-chip [ngClass]="'urgency-' + test.urgency.toLowerCase()">
+                    {{ getUrgencyLabel(test.urgency) }}
+                  </mat-chip>
+                  }
+
+                  <!-- @if (test.hasImages) {
+                          <mat-icon class="has-images-indicator"
+                                   matTooltip="صور متاحة"
+                                   matBadge="{{ test.numberOfImages }}"
+                                   matBadgeSize="small">
+                            image
+                          </mat-icon>
+                        } -->
+                </div>
+              </div>
+            </mat-panel-title>
+
+            <mat-panel-description>
+              <div class="test-summary">
+                <span class="type-badge">
+                  {{ getTypeLabel(test.testType) }}
+                </span>
+                @if (test.bodyPart) {
+                <span class="body-part">
+                  <mat-icon>accessibility_new</mat-icon>
+                  {{ test.bodyPart }}
+                </span>
+                } @if (test.orderedDate) {
+                <span class="date-info">
+                  طلب بتاريخ: {{ formatDate(test.orderedDate) }}
+                </span>
+                }
+              </div>
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <!-- Test Details -->
+          <div class="test-details">
+            <div class="details-grid">
+              <!-- Test Information -->
+              <div class="detail-section">
+                <h4>معلومات الفحص</h4>
+
+                <div class="detail-item">
+                  <label>نوع الفحص:</label>
+                  <span>{{ getTypeLabel(test.testType) }}</span>
+                </div>
+
+                @if (test.bodyPart) {
+                <div class="detail-item">
+                  <label>المنطقة المفحوصة:</label>
+                  <span>{{ test.bodyPart }}</span>
+                </div>
+                } @if (test.performedBy) {
+                <div class="detail-item">
+                  <label>أجري بواسطة:</label>
+                  <span>{{ test.performedBy }}</span>
+                </div>
+                } @if (test.resultDate) {
+                <div class="detail-item">
+                  <label>تاريخ النتيجة:</label>
+                  <span>{{ formatDateTime(test.resultDate) }}</span>
+                </div>
+                }
+              </div>
+
+              <!-- Findings Section -->
+              @if (test.findings || test.impression) {
+              <div class="detail-section findings-section">
+                <h4>النتائج والتقرير</h4>
+
+                @if (test.findings) {
+                <div class="findings">
+                  <label>النتائج:</label>
+                  <div class="findings-text">{{ test.findings }}</div>
+                </div>
+                } @if (test.impression) {
+                <div class="impression">
+                  <label>الانطباع:</label>
+                  <div class="impression-text">{{ test.impression }}</div>
+                </div>
+                }
+              </div>
+              }
+
+              <!-- Instructions & Notes -->
+              @if (test.instructions) {
+              <div class="detail-section">
+                <div class="instructions">
+                  <label>التعليمات:</label>
+                  <p>{{ test.instructions }}</p>
+                </div>
+              </div>
+              }
+            </div>
+
+            <!-- Images Preview -->
+            <!-- @if (test.hasImages) {
+                    <div class="images-section">
+                      <h4>
+                        <mat-icon>image</mat-icon>
+                        الصور ({{ test.numberOfImages }})
+                      </h4>
+                      <div class="images-preview">
+                        <button mat-stroked-button (click)="onViewTestImages(test)">
+                          <mat-icon>photo_library</mat-icon>
+                          عرض الصور
+                        </button>
+                        <button mat-stroked-button (click)="onDownloadImages(test)">
+                          <mat-icon>download</mat-icon>
+                          تحميل الصور
+                        </button>
+                      </div>
+                    </div>
+                  } -->
+
+            <!-- Test Actions -->
+            @if (canEdit()) {
+            <div class="test-actions">
+              <button
+                mat-button
+                (click)="onEditResult(test)"
+                [disabled]="test.status === 'COMPLETED'"
+              >
+                <mat-icon>edit</mat-icon>
+                تعديل
+              </button>
+
+              @if (test.status !== 'COMPLETED') {
+              <button mat-button (click)="onUpdateResult(test)">
+                <mat-icon>update</mat-icon>
+                تحديث النتيجة
+              </button>
+              }
+
+              <button mat-button (click)="onUploadImages(test)">
+                <mat-icon>upload</mat-icon>
+                رفع صور
+              </button>
+
+              <button mat-button (click)="onPrintTest(test)">
+                <mat-icon>print</mat-icon>
+                طباعة
+              </button>
+
+              @if (test.status === 'ORDERED') {
+              <button mat-button color="warn" (click)="onDeleteTest(test)">
+                <mat-icon>delete</mat-icon>
+                حذف
+              </button>
+              }
+            </div>
+            }
+          </div>
+        </mat-expansion-panel>
+        }
+
+        <!-- Grid View -->
+        @if (selectedView === 1) {
+        <mat-card class="test-card" (click)="onSelectTest(test)">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon
+                [class]="'type-icon type-' + test.testType.toLowerCase()"
+              >
+                {{ getTypeIcon(test.testType) }}
+              </mat-icon>
+              <span>{{ test.testName }}</span>
+            </mat-card-title>
+            <mat-card-subtitle>
+              {{ getTypeLabel(test.testType) }}
+              @if (test.bodyPart) { - {{ test.bodyPart }}
+              }
+            </mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="card-info">
+              <div class="info-row">
+                <mat-chip [ngClass]="'status-' + test.status!.toLowerCase()">
+                  {{ getStatusLabel(test.status!) }}
+                </mat-chip>
+                @if (test.urgency !== 'ROUTINE') {
+                <mat-chip [ngClass]="'urgency-' + test.urgency.toLowerCase()">
+                  {{ getUrgencyLabel(test.urgency) }}
+                </mat-chip>
+                }
+              </div>
+
+              @if (test.findings) {
+              <div class="findings-preview">
+                {{ test.findings.substring(0, 100)
+                }}{{ test.findings.length > 100 ? "..." : "" }}
+              </div>
+              }
+
+              <div class="card-meta">
+                @if (test.orderedDate) {
+                <span class="meta-item">
+                  <mat-icon>event</mat-icon>
+                  {{ formatDate(test.orderedDate) }}
+                </span>
+                }
+                <!-- @if (test.hasImages) {
+                        <span class="meta-item">
+                          <mat-icon matBadge="{{ test.numberOfImages }}" matBadgeSize="small">
+                            image
+                          </mat-icon>
+                          {{ test.numberOfImages }} صور
+                        </span>
+                      } -->
+              </div>
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions>
+            <button
+              mat-button
+              (click)="onViewTestDetails(test); $event.stopPropagation()"
+            >
+              <mat-icon>visibility</mat-icon>
+              عرض التفاصيل
+            </button>
+            <!-- @if (test.hasImages) {
+                    <button mat-button (click)="onViewTestImages(test); $event.stopPropagation()">
+                      <mat-icon>photo_library</mat-icon>
+                      عرض الصور
+                    </button>
+                  } -->
+          </mat-card-actions>
+        </mat-card>
+        } }
+      </div>
+      } @else {
+      <!-- Empty State -->
+      <mat-card class="empty-state">
+        <mat-icon>radiology</mat-icon>
+        <h3>لا توجد نتائج أشعة</h3>
+        <p>لم يتم العثور على أي فحوصات أشعة لهذا السجل الطبي</p>
+        @if (canEdit() && !readOnly && !isEmbedded) {
+        <button mat-raised-button color="primary" (click)="onAddResult()">
+          <mat-icon>add</mat-icon>
+          إضافة فحص جديد
+        </button>
+        }
+      </mat-card>
+      }
+    </div>
+    }
+  </div>
+</app-sidebar>

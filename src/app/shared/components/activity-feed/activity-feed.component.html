@@ -1,0 +1,190 @@
+<!-- ===================================================================
+     Activity Feed Component Template
+     src/app/shared/components/activity-feed/activity-feed.component.html
+     =================================================================== -->
+
+<div class="activity-feed" [class.compact]="compact">
+  <!-- Header Section -->
+  @if (showHeader) {
+  <div class="feed-header">
+    <div class="header-title">
+      <mat-icon>history</mat-icon>
+      <span>النشاطات الأخيرة</span>
+      @if (hasNewActivities()) {
+      <mat-icon class="new-indicator" matTooltip="نشاطات جديدة"
+        >fiber_new</mat-icon
+      >
+      }
+    </div>
+
+    <div class="header-actions">
+      @if (showFilters) {
+      <mat-chip-listbox
+        [value]="selectedFilter"
+        (change)="setFilter($event.value)"
+      >
+        <mat-chip-option value="all">الكل</mat-chip-option>
+        <mat-chip-option value="high">المهم</mat-chip-option>
+        <mat-chip-option value="today">اليوم</mat-chip-option>
+      </mat-chip-listbox>
+      }
+
+      <button
+        mat-icon-button
+        (click)="refresh()"
+        [disabled]="loading()"
+        matTooltip="تحديث"
+      >
+        <mat-icon>refresh</mat-icon>
+      </button>
+
+      <button mat-icon-button [matMenuTriggerFor]="menu" matTooltip="خيارات">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+      <mat-menu #menu="matMenu">
+        <button mat-menu-item routerLink="/activities">
+          <mat-icon>open_in_new</mat-icon>
+          عرض الكل
+        </button>
+        <button mat-menu-item (click)="clearAll()">
+          <mat-icon>clear_all</mat-icon>
+          مسح القائمة
+        </button>
+      </mat-menu>
+    </div>
+  </div>
+  <mat-divider></mat-divider>
+  }
+
+  <!-- Loading State -->
+  @if (loading()) {
+  <div class="loading-state">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>جاري تحميل النشاطات...</p>
+  </div>
+  }
+
+  <!-- Activities List -->
+  @if (!loading() && filteredActivities().length > 0) {
+  <div class="activities-container">
+    @if (!compact) {
+    <!-- Grouped View -->
+    @for (group of groupedActivities(); track group.label) {
+    <div class="activity-group">
+      <div class="group-label">{{ group.label }}</div>
+      @for (activity of group.activities; track activity.id) {
+      <div
+        class="activity-item"
+        [class]="getPriorityClass(activity.priority)"
+        [class.clickable]="!!activity.actionUrl"
+      >
+        <div
+          class="activity-icon"
+          [class]="'icon-' + getActivityColor(activity)"
+        >
+          <mat-icon>{{ getActivityIcon(activity) }}</mat-icon>
+        </div>
+
+        <div class="activity-content">
+          <div class="activity-header">
+            <span class="activity-title">{{ activity.title }}</span>
+            @if (activity.priority === 'HIGH' || activity.priority ===
+            'CRITICAL') {
+            <mat-icon
+              class="priority-icon"
+              [matTooltip]="getPriorityLabel(activity.priority)"
+            >
+              {{ activity.priority === "CRITICAL" ? "error" : "warning" }}
+            </mat-icon>
+            }
+          </div>
+
+          @if (activity.description) {
+          <p class="activity-description">{{ activity.description }}</p>
+          }
+
+          <div class="activity-meta">
+            <span class="activity-user">
+              <mat-icon>person</mat-icon>
+              {{ activity.userName }}
+            </span>
+            <span class="activity-time">
+              <mat-icon>schedule</mat-icon>
+              {{ getTimeAgo(activity.timestamp) }}
+            </span>
+            @if (activity.entityName) {
+            <span class="activity-entity">
+              <mat-icon>label</mat-icon>
+              {{ activity.entityName }}
+            </span>
+            }
+          </div>
+        </div>
+
+        @if (activity.actionUrl) {
+        <a
+          [routerLink]="activity.actionUrl"
+          class="activity-action"
+          mat-icon-button
+          matTooltip="عرض التفاصيل"
+        >
+          <mat-icon>arrow_forward</mat-icon>
+        </a>
+        }
+      </div>
+      }
+    </div>
+    } } @else {
+    <!-- Compact View -->
+    @for (activity of filteredActivities().slice(0, 5); track activity.id; let i
+    = $index) {
+    <div
+      class="activity-item-compact"
+      [class]="getPriorityClass(activity.priority)"
+      [class.clickable]="!!activity.actionUrl"
+    >
+      <div
+        class="activity-icon-compact"
+        [class]="'icon-' + getActivityColor(activity)"
+      >
+        <mat-icon>{{ getActivityIcon(activity) }}</mat-icon>
+      </div>
+
+      <div class="activity-info-compact">
+        <p class="activity-text">{{ activity.title }}</p>
+        <p class="activity-time-compact">
+          {{ getTimeAgo(activity.timestamp) }}
+        </p>
+      </div>
+
+      @if (activity.actionUrl) {
+      <a [routerLink]="activity.actionUrl" class="activity-link">
+        <mat-icon>open_in_new</mat-icon>
+      </a>
+      }
+    </div>
+
+    @if (i < filteredActivities().length - 1) {
+    <mat-divider></mat-divider>
+    } } @if (filteredActivities().length > 5) {
+    <div class="show-more">
+      <button mat-button routerLink="/activities" color="primary">
+        عرض الكل ({{ filteredActivities().length }})
+      </button>
+    </div>
+    } }
+  </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading() && filteredActivities().length === 0) {
+  <div class="empty-state">
+    <mat-icon>event_busy</mat-icon>
+    <p>لا توجد نشاطات حالياً</p>
+    <button mat-button color="primary" (click)="refresh()">
+      <mat-icon>refresh</mat-icon>
+      تحديث
+    </button>
+  </div>
+  }
+</div>

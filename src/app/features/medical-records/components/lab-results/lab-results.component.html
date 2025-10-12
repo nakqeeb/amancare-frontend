@@ -1,0 +1,353 @@
+<app-header />
+<app-sidebar>
+  <div class="lab-results-container" [class.embedded]="isEmbedded">
+    <!-- Header - Only show in standalone mode -->
+    @if (!isEmbedded) {
+    <div class="results-header">
+      <div class="header-content">
+        <button mat-icon-button (click)="onBack()" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+
+        <div class="title-section">
+          <h1 class="page-title">
+            <mat-icon>biotech</mat-icon>
+            نتائج المختبر
+          </h1>
+          @if (medicalRecord()) {
+          <div class="record-info">
+            <span class="record-id">رقم السجل: {{ medicalRecord()!.id }}</span>
+            <span class="record-date">
+              <mat-icon>calendar_today</mat-icon>
+              {{ formatDate(medicalRecord()!.visitDate) }}
+            </span>
+            <span class="patient-name">
+              <mat-icon>person</mat-icon>
+              {{ medicalRecord()!.patientName }}
+            </span>
+          </div>
+          }
+        </div>
+
+        <div class="header-actions">
+          <button mat-stroked-button (click)="onPrintResults()">
+            <mat-icon>print</mat-icon>
+            طباعة النتائج
+          </button>
+
+          <button mat-stroked-button (click)="onExportPDF()">
+            <mat-icon>picture_as_pdf</mat-icon>
+            تصدير PDF
+          </button>
+
+          <button mat-stroked-button (click)="onAddResult()" *ngIf="canEdit()">
+            <mat-icon>add</mat-icon>
+            إضافة نتيجة
+          </button>
+
+          <button mat-icon-button (click)="onRefresh()">
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>البحث</mat-label>
+          <input
+            matInput
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="applyFilter()"
+            placeholder="اسم التحليل..."
+          />
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>التصنيف</mat-label>
+          <mat-select
+            [(ngModel)]="selectedCategory"
+            (selectionChange)="applyFilter()"
+          >
+            <mat-option value="">الكل</mat-option>
+            @for (category of categories; track category) {
+            <mat-option [value]="category.value">
+              {{ category.label }}
+            </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>الحالة</mat-label>
+          <mat-select
+            [(ngModel)]="selectedStatus"
+            (selectionChange)="applyFilter()"
+          >
+            <mat-option value="">الكل</mat-option>
+            @for (status of statuses; track status) {
+            <mat-option [value]="status.value">
+              {{ status.label }}
+            </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>الأولوية</mat-label>
+          <mat-select
+            [(ngModel)]="selectedUrgency"
+            (selectionChange)="applyFilter()"
+          >
+            <mat-option value="">الكل</mat-option>
+            @for (urgency of urgencies; track urgency) {
+            <mat-option [value]="urgency.value">
+              {{ urgency.label }}
+            </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+    }
+
+    <!-- Loading State -->
+    @if (loading() && !isEmbedded) {
+    <div class="loading-container">
+      <mat-spinner></mat-spinner>
+      <p>جاري تحميل النتائج...</p>
+    </div>
+    }
+
+    <!-- Content -->
+    @if (!loading() || isEmbedded) {
+    <div class="results-content">
+      <!-- Statistics Cards - Show in both modes unless compact -->
+      @if (!isEmbedded || !compact) {
+      <div class="stats-cards">
+        <mat-card class="stat-card">
+          <div class="stat-value">{{ totalTests() }}</div>
+          <div class="stat-label">إجمالي التحاليل</div>
+          <mat-icon class="stat-icon">analytics</mat-icon>
+        </mat-card>
+
+        <mat-card class="stat-card completed">
+          <div class="stat-value">{{ completedTests() }}</div>
+          <div class="stat-label">مكتملة</div>
+          <mat-icon class="stat-icon">check_circle</mat-icon>
+        </mat-card>
+
+        <mat-card class="stat-card pending">
+          <div class="stat-value">{{ pendingTests() }}</div>
+          <div class="stat-label">قيد الانتظار</div>
+          <mat-icon class="stat-icon">pending</mat-icon>
+        </mat-card>
+
+        <mat-card class="stat-card abnormal" *ngIf="abnormalResults() > 0">
+          <div class="stat-value">{{ abnormalResults() }}</div>
+          <div class="stat-label">نتائج غير طبيعية</div>
+          <mat-icon class="stat-icon">warning</mat-icon>
+        </mat-card>
+      </div>
+      }
+
+      <!-- Lab Tests List -->
+      @if (filteredLabTests().length > 0) {
+      <div class="tests-list">
+        @for (test of filteredLabTests(); track test.id) {
+        <mat-expansion-panel
+          class="test-panel"
+          [class.urgent]="test.urgency === testUrgency.URGENT"
+          [class.stat]="test.urgency === testUrgency.STAT"
+          [class.asap]="test.urgency === testUrgency.ASAP"
+          [expanded]="expandedTestId() === test.id"
+          (opened)="expandedTestId.set(test.id!)"
+          (closed)="expandedTestId.set(null)"
+        >
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <div class="test-header">
+                <div class="test-main-info">
+                  <span class="test-name">
+                    <mat-icon>science</mat-icon>
+                    {{ test.testName }}
+                  </span>
+                  @if (test.testCode) {
+                  <span class="test-code">({{ test.testCode }})</span>
+                  }
+                </div>
+
+                <div class="test-meta">
+                  <mat-chip [ngClass]="'status-' + test.status!.toLowerCase()">
+                    {{ getStatusLabel(test.status!) }}
+                  </mat-chip>
+
+                  @if (test.urgency !== 'ROUTINE') {
+                  <mat-chip [ngClass]="'urgency-' + test.urgency.toLowerCase()">
+                    {{ getUrgencyLabel(test.urgency) }}
+                  </mat-chip>
+                  } @if (isAbnormal(test)) {
+                  <mat-icon
+                    class="abnormal-indicator"
+                    matTooltip="نتيجة غير طبيعية"
+                  >
+                    warning
+                  </mat-icon>
+                  }
+                </div>
+              </div>
+            </mat-panel-title>
+
+            <mat-panel-description>
+              <div class="test-summary">
+                <span class="category-badge">
+                  {{ getCategoryLabel(test.category) }}
+                </span>
+                @if (test.orderedDate) {
+                <span class="date-info">
+                  طلب بتاريخ: {{ formatDate(test.orderedDate) }}
+                </span>
+                }
+              </div>
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <!-- Test Details -->
+          <div class="test-details">
+            <div class="details-grid">
+              <!-- Test Information -->
+              <div class="detail-section">
+                <h4>معلومات التحليل</h4>
+
+                @if (test.specimenType) {
+                <div class="detail-item">
+                  <label>نوع العينة:</label>
+                  <span>{{ test.specimenType }}</span>
+                </div>
+                } @if (test.specimenNumber) {
+                <div class="detail-item">
+                  <label>رقم العينة:</label>
+                  <span>{{ test.specimenNumber }}</span>
+                </div>
+                } @if (test.collectedDate) {
+                <div class="detail-item">
+                  <label>تاريخ جمع العينة:</label>
+                  <span>{{ formatDateTime(test.collectedDate) }}</span>
+                </div>
+                } @if (test.collectedBy) {
+                <div class="detail-item">
+                  <label>جمعت بواسطة:</label>
+                  <span>{{ test.collectedBy }}</span>
+                </div>
+                } @if (test.labName) {
+                <div class="detail-item">
+                  <label>المختبر:</label>
+                  <span>{{ test.labName }}</span>
+                </div>
+                }
+              </div>
+
+              <!-- Results Section -->
+              @if (test.results) {
+              <div class="detail-section results-section">
+                <h4>النتائج</h4>
+
+                <div class="text-results">
+                  <p>{{ test.results }}</p>
+                </div>
+
+                @if (test.normalRange) {
+                <div class="normal-range">
+                  <label>المعدل الطبيعي:</label>
+                  <span>{{ test.normalRange }}</span>
+                </div>
+                } @if (test.interpretation) {
+                <div class="detail-item">
+                  <label>التفسير:</label>
+                  <span>{{ test.interpretation }}</span>
+                </div>
+                } @if (test.resultDate) {
+                <div class="detail-item">
+                  <label>تاريخ النتيجة:</label>
+                  <span>{{ formatDateTime(test.resultDate) }}</span>
+                </div>
+                } @if (test.performedBy) {
+                <div class="detail-item">
+                  <label>تم إجراؤه بواسطة:</label>
+                  <span>{{ test.performedBy }}</span>
+                </div>
+                }
+              </div>
+              }
+
+              <!-- Instructions -->
+              @if (test.instructions) {
+              <div class="detail-section">
+                <div class="instructions">
+                  <h4>التعليمات</h4>
+                  <p>{{ test.instructions }}</p>
+                </div>
+              </div>
+              }
+            </div>
+
+            <!-- Test Actions - Only show if not read-only -->
+            @if (!readOnly) {
+            <div class="test-actions" *ngIf="canEdit()">
+              <button
+                mat-button
+                (click)="onEditResult(test)"
+                [disabled]="test.status === 'COMPLETED'"
+              >
+                <mat-icon>edit</mat-icon>
+                تعديل
+              </button>
+
+              <button
+                mat-button
+                (click)="onUpdateResult(test)"
+                *ngIf="test.status !== 'COMPLETED'"
+              >
+                <mat-icon>update</mat-icon>
+                تحديث النتيجة
+              </button>
+
+              <button mat-button (click)="onPrintTest(test)">
+                <mat-icon>print</mat-icon>
+                طباعة
+              </button>
+
+              <button
+                mat-button
+                color="warn"
+                (click)="onDeleteTest(test)"
+                *ngIf="test.status === 'ORDERED'"
+              >
+                <mat-icon>delete</mat-icon>
+                حذف
+              </button>
+            </div>
+            }
+          </div>
+        </mat-expansion-panel>
+        }
+      </div>
+      } @else {
+      <!-- Empty State -->
+      <mat-card class="empty-state">
+        <mat-icon>science_off</mat-icon>
+        <h3>لا توجد نتائج مختبر</h3>
+        <p>لم يتم العثور على أي تحاليل مختبرية لهذا السجل الطبي</p>
+        @if (canEdit() && !readOnly && !isEmbedded) {
+        <button mat-raised-button color="primary" (click)="onAddResult()">
+          <mat-icon>add</mat-icon>
+          إضافة تحليل جديد
+        </button>
+        }
+      </mat-card>
+      }
+    </div>
+    }
+  </div>
+</app-sidebar>

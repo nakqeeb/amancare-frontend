@@ -1,0 +1,157 @@
+<!-- =============================================================================
+Recent Activities Component Template
+src/app/features/admin/components/recent-activities/recent-activities.component.html
+============================================================================== -->
+
+<mat-card class="activities-card">
+  <!-- Header -->
+  @if (showHeader) {
+  <mat-card-header>
+    <mat-card-title class="card-title">
+      <mat-icon class="title-icon">history</mat-icon>
+      <span>الأنشطة الأخيرة</span>
+    </mat-card-title>
+    <div class="header-actions">
+      <button
+        mat-icon-button
+        (click)="refresh()"
+        [disabled]="loading()"
+        matTooltip="تحديث"
+      >
+        <mat-icon [class.spinning]="loading()">refresh</mat-icon>
+      </button>
+      <button mat-button color="primary" (click)="viewAllActivities()">
+        عرض الكل
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </div>
+  </mat-card-header>
+  }
+
+  <mat-card-content>
+    <!-- Loading State -->
+    @if (loading()) {
+    <div class="loading-state">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>جاري تحميل الأنشطة...</p>
+    </div>
+    }
+
+    <!-- Error State -->
+    @if (error() && !loading()) {
+    <div class="error-state">
+      <mat-icon color="warn">error_outline</mat-icon>
+      <p>{{ error() }}</p>
+      <button mat-button color="primary" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        إعادة المحاولة
+      </button>
+    </div>
+    }
+
+    <!-- Empty State -->
+    @if (isEmpty()) {
+    <div class="empty-state">
+      <mat-icon>history</mat-icon>
+      <p>لا توجد أنشطة حتى الآن</p>
+      <small>سيتم عرض جميع الأنشطة الأخيرة هنا</small>
+    </div>
+    }
+
+    <!-- Activities List -->
+    @if (hasActivities() && !loading()) {
+    <div class="activities-list">
+      @for (activity of activities(); track activity.id) {
+      <!-- Edited: Added class and conditional click handler for auth activities -->
+      <div
+        class="activity-item"
+        [class.failed]="!activity.success"
+        [class.non-clickable]="
+          activity.entityType === 'Authentication' ||
+          activity.entityType === 'Registration'
+        "
+        (click)="
+          activity.entityType !== 'Authentication' &&
+          activity.entityType !== 'Registration'
+            ? viewActivityDetails(activity)
+            : null
+        "
+      >
+        <!-- End of edit -->
+        <!-- Activity Icon -->
+        <div
+          class="activity-icon"
+          [ngClass]="getActionColor(activity.actionType)"
+        >
+          <mat-icon>{{ getActionIcon(activity.actionType) }}</mat-icon>
+        </div>
+
+        <!-- Activity Content -->
+        <div class="activity-content">
+          <!-- Main Info -->
+          <div class="activity-main">
+            <div class="activity-description">
+              {{ getActivityDescription(activity) }}
+            </div>
+            <mat-chip
+              class="action-chip"
+              [color]="getActionColor(activity.actionType)"
+            >
+              {{ getActionLabel(activity.actionType) }}
+            </mat-chip>
+          </div>
+
+          <!-- Meta Info -->
+          <div class="activity-meta">
+            <!-- User -->
+            <span class="meta-item">
+              <mat-icon class="meta-icon">person</mat-icon>
+              {{ activity.userFullName }}
+            </span>
+
+            <!-- Time -->
+            <span class="meta-item">
+              <mat-icon class="meta-icon">schedule</mat-icon>
+              {{ formatTimestamp(activity.timestamp) }}
+            </span>
+
+            <!-- Entity Type -->
+            @if (activity.entityType) {
+            <span class="meta-item">
+              <mat-icon class="meta-icon">category</mat-icon>
+              {{ getEntityLabel(activity.entityType) }}
+            </span>
+            }
+
+            <!-- Success/Failure Icon -->
+            <span class="meta-item status-icon">
+              <mat-icon
+                class="meta-icon"
+                [color]="getSuccessColor(activity.success)"
+              >
+                {{ getSuccessIcon(activity.success) }}
+              </mat-icon>
+            </span>
+          </div>
+
+          <!-- Error Message (if failed) -->
+          @if (!activity.success && activity.errorMessage) {
+          <div class="error-message">
+            <mat-icon class="error-icon">warning</mat-icon>
+            <span>{{ activity.errorMessage }}</span>
+          </div>
+          }
+        </div>
+
+        <!-- Duration Badge (if available) -->
+        @if (activity.durationMs) {
+        <div class="duration-badge" matTooltip="مدة العملية">
+          {{ activity.durationMs }}ms
+        </div>
+        }
+      </div>
+      }
+    </div>
+    }
+  </mat-card-content>
+</mat-card>

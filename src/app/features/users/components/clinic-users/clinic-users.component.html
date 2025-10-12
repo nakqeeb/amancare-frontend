@@ -1,0 +1,513 @@
+<!-- ===================================================================
+     src/app/features/users/components/clinic-users/clinic-users.component.html
+     Template for Clinic Users Management Component
+     =================================================================== -->
+
+<div class="layout-container">
+  <!-- Header Component -->
+  <app-header />
+
+  <!-- Main Layout with Sidebar -->
+  <app-sidebar>
+    <div class="layout-content">
+      <!-- Main Content Area -->
+      <main class="main-content" [class.rtl]="true">
+        <!-- ===================================================================
+           PAGE HEADER SECTION
+           =================================================================== -->
+        <div class="page-header">
+          <div class="header-content">
+            <div class="title-section">
+              <h1 class="page-title">
+                <mat-icon>people</mat-icon>
+                إدارة مستخدمي العيادة
+              </h1>
+              <p class="page-subtitle">عرض وإدارة جميع مستخدمي العيادة</p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="header-actions">
+              <button
+                mat-stroked-button
+                (click)="refresh()"
+                [disabled]="loading()"
+              >
+                <mat-icon>refresh</mat-icon>
+                تحديث
+              </button>
+
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="navigateToUserForm()"
+                *ngIf="canManageUsers()"
+              >
+                <mat-icon>person_add</mat-icon>
+                إضافة مستخدم
+              </button>
+            </div>
+          </div>
+
+          <!-- Statistics Cards -->
+          <div class="stats-cards" *ngIf="clinicStats()">
+            <mat-card class="stat-card">
+              <div class="stat-content">
+                <mat-icon class="stat-icon primary">people</mat-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{
+                    clinicStats()?.totalUsers || 0
+                  }}</span>
+                  <span class="stat-label">إجمالي المستخدمين</span>
+                </div>
+              </div>
+            </mat-card>
+
+            <mat-card class="stat-card">
+              <div class="stat-content">
+                <mat-icon class="stat-icon success">check_circle</mat-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{
+                    clinicStats()?.activeUsers || 0
+                  }}</span>
+                  <span class="stat-label">نشط</span>
+                </div>
+              </div>
+            </mat-card>
+
+            <mat-card class="stat-card">
+              <div class="stat-content">
+                <mat-icon class="stat-icon accent">medical_services</mat-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{
+                    clinicStats()?.doctorsCount || 0
+                  }}</span>
+                  <span class="stat-label">أطباء</span>
+                </div>
+              </div>
+            </mat-card>
+
+            <mat-card class="stat-card">
+              <div class="stat-content">
+                <mat-icon class="stat-icon primary">health_and_safety</mat-icon>
+                <div class="stat-info">
+                  <span class="stat-number">{{
+                    clinicStats()?.nursesCount || 0
+                  }}</span>
+                  <span class="stat-label">ممرضين</span>
+                </div>
+              </div>
+            </mat-card>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+           LOADING INDICATOR
+           =================================================================== -->
+        <div class="loading-container" *ngIf="loading()">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p>جارٍ تحميل بيانات المستخدمين...</p>
+        </div>
+
+        <!-- ===================================================================
+           ERROR MESSAGE
+           =================================================================== -->
+        <mat-card class="error-card" *ngIf="error() && !loading()">
+          <mat-card-content>
+            <div class="error-content">
+              <mat-icon color="warn">error</mat-icon>
+              <p>{{ error() }}</p>
+              <button mat-raised-button color="primary" (click)="refresh()">
+                إعادة المحاولة
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- ===================================================================
+           MAIN CONTENT - USERS MANAGEMENT
+           =================================================================== -->
+        <div class="content-container" *ngIf="!loading() && !error()">
+          <!-- Filters Section -->
+          <mat-card class="filters-card">
+            <mat-card-header>
+              <div class="filters-header">
+                <span>تصفية النتائج</span>
+                <button mat-icon-button (click)="toggleFilters()">
+                  <mat-icon>{{
+                    showFilters() ? "expand_less" : "expand_more"
+                  }}</mat-icon>
+                </button>
+              </div>
+            </mat-card-header>
+
+            <mat-card-content [@expandCollapse] *ngIf="showFilters()">
+              <form [formGroup]="filtersForm" class="filters-form">
+                <div class="filters-row">
+                  <!-- Search Field -->
+                  <mat-form-field appearance="outline" class="search-field">
+                    <mat-label>البحث</mat-label>
+                    <input
+                      matInput
+                      formControlName="search"
+                      placeholder="البحث في الاسم، البريد الإلكتروني، أو اسم المستخدم"
+                    />
+                    <mat-icon matSuffix>search</mat-icon>
+                  </mat-form-field>
+
+                  <!-- Role Filter -->
+                  <mat-form-field appearance="outline">
+                    <mat-label>الدور</mat-label>
+                    <mat-select formControlName="role">
+                      <mat-option
+                        *ngFor="let role of roleOptions"
+                        [value]="role.value"
+                      >
+                        <mat-icon>{{ role.icon }}</mat-icon>
+                        <span>{{ role.label }}</span>
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <!-- Active Status Filter -->
+                  <mat-form-field appearance="outline">
+                    <mat-label>الحالة</mat-label>
+                    <mat-select formControlName="activeOnly">
+                      <mat-option [value]="true">النشطون فقط</mat-option>
+                      <mat-option [value]="false">المعطلون فقط</mat-option>
+                      <mat-option [value]="undefined">الكل</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <!-- Filter Actions -->
+                <div class="filter-actions">
+                  <button mat-button type="button" (click)="clearFilters()">
+                    <mat-icon>clear</mat-icon>
+                    مسح التصفية
+                  </button>
+
+                  <span class="results-count">
+                    {{ filteredUsers().length }} من
+                    {{ clinicUsers().length }} مستخدم
+                  </span>
+                </div>
+              </form>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Bulk Actions -->
+          <div class="bulk-actions" *ngIf="selection.selected.length > 0">
+            <mat-card class="bulk-actions-card">
+              <div class="bulk-content">
+                <span class="selection-info">
+                  تم تحديد {{ selection.selected.length }} مستخدم
+                </span>
+
+                <div class="bulk-buttons" *ngIf="canManageUsers()">
+                  <button
+                    mat-stroked-button
+                    color="primary"
+                    (click)="bulkToggleStatus(true)"
+                  >
+                    <mat-icon>check_circle</mat-icon>
+                    تفعيل المحددين
+                  </button>
+
+                  <button
+                    mat-stroked-button
+                    color="warn"
+                    (click)="bulkToggleStatus(false)"
+                  >
+                    <mat-icon>cancel</mat-icon>
+                    تعطيل المحددين
+                  </button>
+                </div>
+              </div>
+            </mat-card>
+          </div>
+
+          <!-- Users Table -->
+          <mat-card class="table-card">
+            <mat-card-content>
+              <div class="table-container">
+                <table
+                  mat-table
+                  [dataSource]="dataSource"
+                  matSort
+                  class="users-table"
+                >
+                  <!-- Selection Column -->
+                  <ng-container matColumnDef="select" *ngIf="canManageUsers()">
+                    <th mat-header-cell *matHeaderCellDef>
+                      <mat-checkbox
+                        (change)="$event ? masterToggle() : null"
+                        [checked]="selection.hasValue() && isAllSelected()"
+                        [indeterminate]="
+                          selection.hasValue() && !isAllSelected()
+                        "
+                      >
+                      </mat-checkbox>
+                    </th>
+                    <td mat-cell *matCellDef="let user">
+                      <mat-checkbox
+                        (click)="$event.stopPropagation()"
+                        (change)="$event ? selection.toggle(user) : null"
+                        [checked]="selection.isSelected(user)"
+                      >
+                      </mat-checkbox>
+                    </td>
+                  </ng-container>
+
+                  <!-- User Information Column -->
+                  <ng-container matColumnDef="user">
+                    <th
+                      mat-header-cell
+                      *matHeaderCellDef
+                      mat-sort-header="fullName"
+                    >
+                      معلومات المستخدم
+                    </th>
+                    <td mat-cell *matCellDef="let user" class="user-cell">
+                      <div class="user-info">
+                        <div class="user-avatar">
+                          <mat-icon class="avatar-icon">person</mat-icon>
+                        </div>
+                        <div class="user-details">
+                          <div class="user-name">{{ user.fullName }}</div>
+                          <div class="user-email">{{ user.email }}</div>
+                          <div class="user-username">@{{ user.username }}</div>
+                        </div>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <!-- Role Column -->
+                  <ng-container matColumnDef="role">
+                    <th
+                      mat-header-cell
+                      *matHeaderCellDef
+                      mat-sort-header="role"
+                    >
+                      الدور
+                    </th>
+                    <td mat-cell *matCellDef="let user">
+                      <mat-chip [color]="getRoleColor(user.role)">
+                        <mat-icon matChipAvatar>{{
+                          getRoleIcon(user.role)
+                        }}</mat-icon>
+                        {{ getRoleDisplayName(user.role) }}
+                      </mat-chip>
+                    </td>
+                  </ng-container>
+
+                  <!-- Specialization Column -->
+                  <ng-container matColumnDef="specialization">
+                    <th mat-header-cell *matHeaderCellDef>التخصص</th>
+                    <td mat-cell *matCellDef="let user">
+                      <span *ngIf="user.specialization; else noSpecialization">
+                        {{ user.specialization }}
+                      </span>
+                      <ng-template #noSpecialization>
+                        <span class="no-data">غير محدد</span>
+                      </ng-template>
+                    </td>
+                  </ng-container>
+
+                  <!-- Status Column -->
+                  <ng-container matColumnDef="status">
+                    <th
+                      mat-header-cell
+                      *matHeaderCellDef
+                      mat-sort-header="isActive"
+                    >
+                      الحالة
+                    </th>
+                    <td mat-cell *matCellDef="let user">
+                      <mat-chip
+                        [color]="getStatusColor(user.isActive)"
+                        class="status-chip"
+                      >
+                        <mat-icon matChipAvatar>{{
+                          getStatusIcon(user.isActive)
+                        }}</mat-icon>
+                        {{ getStatusText(user.isActive) }}
+                      </mat-chip>
+                    </td>
+                  </ng-container>
+
+                  <!-- Last Login Column -->
+                  <ng-container matColumnDef="lastLogin">
+                    <th
+                      mat-header-cell
+                      *matHeaderCellDef
+                      mat-sort-header="lastLoginAt"
+                    >
+                      آخر دخول
+                    </th>
+                    <td mat-cell *matCellDef="let user">
+                      <span class="date-cell">{{
+                        formatDateTime(user.lastLoginAt)
+                      }}</span>
+                    </td>
+                  </ng-container>
+
+                  <!-- Actions Column -->
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+                    <td mat-cell *matCellDef="let user">
+                      <div class="actions-cell">
+                        <button
+                          mat-icon-button
+                          [matTooltip]="'عرض الملف الشخصي'"
+                          (click)="viewUser(user)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+
+                        <button
+                          mat-icon-button
+                          [matTooltip]="'تعديل'"
+                          (click)="editUser(user)"
+                          *ngIf="canManageUsers()"
+                        >
+                          <mat-icon>edit</mat-icon>
+                        </button>
+
+                        <button
+                          mat-icon-button
+                          [matTooltip]="user.isActive ? 'تعطيل' : 'تفعيل'"
+                          [color]="user.isActive ? 'warn' : 'primary'"
+                          (click)="toggleUserStatus(user)"
+                          *ngIf="canManageUsers()"
+                        >
+                          <mat-icon>{{
+                            user.isActive ? "cancel" : "check_circle"
+                          }}</mat-icon>
+                        </button>
+
+                        <!-- More Actions Menu -->
+                        <button
+                          mat-icon-button
+                          [matMenuTriggerFor]="actionsMenu"
+                        >
+                          <mat-icon>more_vert</mat-icon>
+                        </button>
+                        <mat-menu #actionsMenu="matMenu">
+                          <button mat-menu-item (click)="viewUser(user)">
+                            <mat-icon>person</mat-icon>
+                            <span>الملف الشخصي</span>
+                          </button>
+                          <button
+                            mat-menu-item
+                            (click)="editUser(user)"
+                            *ngIf="canManageUsers()"
+                          >
+                            <mat-icon>edit</mat-icon>
+                            <span>تعديل</span>
+                          </button>
+                          <mat-divider></mat-divider>
+                          <button
+                            mat-menu-item
+                            (click)="toggleUserStatus(user)"
+                            *ngIf="canManageUsers()"
+                          >
+                            <mat-icon>{{
+                              user.isActive ? "cancel" : "check_circle"
+                            }}</mat-icon>
+                            <span>{{ user.isActive ? "تعطيل" : "تفعيل" }}</span>
+                          </button>
+                        </mat-menu>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <!-- Table Header and Data Rows -->
+                  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                  <tr
+                    mat-row
+                    *matRowDef="let user; columns: displayedColumns"
+                    class="user-row"
+                    [class.selected]="selection.isSelected(user)"
+                    (click)="viewUser(user)"
+                  ></tr>
+
+                  <!-- No Data Row -->
+                  <tr class="mat-row no-data-row" *matNoDataRow>
+                    <td
+                      class="mat-cell"
+                      [attr.colspan]="displayedColumns.length"
+                    >
+                      <div class="no-data-content">
+                        <mat-icon class="no-data-icon">people_outline</mat-icon>
+                        <p class="no-data-message">
+                          <span
+                            *ngIf="
+                              filtersForm.get('search')?.value;
+                              else noUsers
+                            "
+                          >
+                            لم يتم العثور على مستخدمين يطابقون البحث "{{
+                              filtersForm.get("search")?.value
+                            }}"
+                          </span>
+                          <ng-template #noUsers>
+                            لا يوجد مستخدمون في العيادة حالياً
+                          </ng-template>
+                        </p>
+                        <button
+                          mat-raised-button
+                          color="primary"
+                          (click)="navigateToUserForm()"
+                          *ngIf="
+                            canManageUsers() &&
+                            !filtersForm.get('search')?.value
+                          "
+                        >
+                          <mat-icon>person_add</mat-icon>
+                          إضافة مستخدم جديد
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Paginator -->
+                <mat-paginator
+                  [pageSizeOptions]="[10, 25, 50, 100]"
+                  [pageSize]="25"
+                  showFirstLastButtons
+                  [length]="filteredUsers().length"
+                >
+                </mat-paginator>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Quick Actions Card -->
+          <mat-card class="quick-actions-card" *ngIf="canManageUsers()">
+            <mat-card-header>
+              <mat-card-title>إجراءات سريعة</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="quick-actions">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="navigateToUserForm()"
+                >
+                  <mat-icon>person_add</mat-icon>
+                  إضافة مستخدم جديد
+                </button>
+
+                <button mat-stroked-button (click)="refresh()">
+                  <mat-icon>refresh</mat-icon>
+                  تحديث القائمة
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </main>
+    </div>
+  </app-sidebar>
+</div>

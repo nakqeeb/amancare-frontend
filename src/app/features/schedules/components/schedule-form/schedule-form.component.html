@@ -1,0 +1,564 @@
+<div class="schedule-form-container">
+  <app-header></app-header>
+
+  <app-sidebar>
+    <div class="main-content">
+      <main class="content-area">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="header-content">
+            <h1 class="page-title">
+              <mat-icon>schedule</mat-icon>
+              {{ isEditMode() ? "تعديل جدولة الطبيب" : "إنشاء جدولة جديدة" }}
+            </h1>
+            <p class="page-description">
+              {{
+                isEditMode()
+                  ? "تعديل جدول عمل الطبيب"
+                  : "إنشاء جدول عمل جديد للطبيب"
+              }}
+            </p>
+          </div>
+
+          <div class="header-actions">
+            <button mat-button [routerLink]="['/schedules']" class="back-btn">
+              <mat-icon>arrow_back</mat-icon>
+              العودة للقائمة
+            </button>
+          </div>
+        </div>
+
+        <div class="form-container">
+          <mat-stepper #stepper orientation="horizontal" [linear]="true">
+            <!-- Step 1: Doctor Selection -->
+            <mat-step [stepControl]="doctorForm" label="اختيار الطبيب">
+              <mat-card>
+                <mat-card-header>
+                  <mat-card-title>
+                    <mat-icon>person</mat-icon>
+                    اختيار الطبيب
+                  </mat-card-title>
+                  <mat-card-subtitle
+                    >حدد الطبيب الذي تريد إنشاء جدولة له</mat-card-subtitle
+                  >
+                </mat-card-header>
+
+                <mat-card-content>
+                  <form [formGroup]="doctorForm" class="doctor-selection-form">
+                    @if (isEditMode()) {
+                    <!-- Edit Mode: Show selected doctor -->
+                    <div class="selected-doctor-info">
+                      <div class="doctor-card">
+                        <mat-icon class="doctor-icon">person</mat-icon>
+                        <div class="doctor-details">
+                          <h3>{{ selectedDoctor()?.fullName }}</h3>
+                          @if (selectedDoctor()?.specialization) {
+                          <p>{{ selectedDoctor()?.specialization }}</p>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                    } @else {
+                    <!-- Create Mode: Doctor selection -->
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>الطبيب</mat-label>
+                      <input
+                        matInput
+                        formControlName="doctorSearch"
+                        placeholder="ابحث عن الطبيب بالاسم أو التخصص..."
+                        [matAutocomplete]="doctorAutocomplete"
+                      />
+                      <mat-icon matSuffix>search</mat-icon>
+
+                      <mat-autocomplete
+                        #doctorAutocomplete="matAutocomplete"
+                        [displayWith]="displayDoctorFn"
+                        (optionSelected)="onDoctorSelected($event)"
+                      >
+                        @for (doctor of filteredDoctors$ | async; track
+                        doctor.id) {
+                        <mat-option [value]="doctor">
+                          <div class="doctor-option">
+                            <div class="doctor-name">{{ doctor.fullName }}</div>
+                            @if (doctor.specialization) {
+                            <div class="doctor-spec">
+                              {{ doctor.specialization }}
+                            </div>
+                            }
+                          </div>
+                        </mat-option>
+                        }
+                      </mat-autocomplete>
+                    </mat-form-field>
+
+                    @if (selectedDoctor()) {
+                    <div class="selected-doctor-preview">
+                      <mat-card class="doctor-preview-card">
+                        <mat-card-content>
+                          <div class="doctor-preview">
+                            <mat-icon class="doctor-icon">person</mat-icon>
+                            <div class="doctor-info">
+                              <h4>{{ selectedDoctor()?.fullName }}</h4>
+                              @if (selectedDoctor()?.specialization) {
+                              <p>{{ selectedDoctor()?.specialization }}</p>
+                              }
+                            </div>
+                          </div>
+                        </mat-card-content>
+                      </mat-card>
+                    </div>
+                    } }
+                  </form>
+                </mat-card-content>
+
+                <mat-card-actions class="step-actions">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    matStepperNext
+                    [disabled]="!selectedDoctor()"
+                  >
+                    التالي
+                    <mat-icon>arrow_forward</mat-icon>
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            </mat-step>
+
+            <!-- Step 2: Working Days -->
+            <mat-step [stepControl]="daysForm" label="أيام العمل">
+              <mat-card>
+                <mat-card-header>
+                  <mat-card-title>
+                    <mat-icon>calendar_today</mat-icon>
+                    أيام العمل
+                  </mat-card-title>
+                  <mat-card-subtitle
+                    >حدد أيام العمل الأسبوعية</mat-card-subtitle
+                  >
+                </mat-card-header>
+
+                <mat-card-content>
+                  <form [formGroup]="daysForm" class="days-form">
+                    <div class="days-grid">
+                      @for (day of availableDays; track day.value) {
+                      <mat-card
+                        class="day-card"
+                        [class.selected]="isDaySelected(day.value)"
+                      >
+                        <mat-card-content>
+                          <mat-checkbox
+                            [checked]="isDaySelected(day.value)"
+                            (change)="toggleDay(day.value, $event.checked)"
+                            [color]="getDayCheckboxColor(day.value)"
+                          >
+                            <div class="day-info">
+                              <div class="day-name">{{ day.label }}</div>
+                              <div class="day-name-en">{{ day.value }}</div>
+                            </div>
+                          </mat-checkbox>
+                        </mat-card-content>
+                      </mat-card>
+                      }
+                    </div>
+
+                    @if (selectedDays().length > 0) {
+                    <div class="selected-days-summary">
+                      <h4>الأيام المختارة:</h4>
+                      <div class="days-chips">
+                        @for (day of selectedDays(); track day) {
+                        <mat-chip [color]="getDayChipColor(day)" selected>
+                          {{ getDayLabel(day) }}
+                        </mat-chip>
+                        }
+                      </div>
+                    </div>
+                    }
+                  </form>
+                </mat-card-content>
+
+                <mat-card-actions class="step-actions">
+                  <button mat-button matStepperPrevious>
+                    <mat-icon>arrow_back</mat-icon>
+                    السابق
+                  </button>
+
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    matStepperNext
+                    [disabled]="selectedDays().length === 0"
+                  >
+                    التالي
+                    <mat-icon>arrow_forward</mat-icon>
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            </mat-step>
+
+            <!-- Step 3: Working Hours -->
+            <mat-step [stepControl]="hoursForm" label="ساعات العمل">
+              <mat-card>
+                <mat-card-header>
+                  <mat-card-title>
+                    <mat-icon>access_time</mat-icon>
+                    ساعات العمل
+                  </mat-card-title>
+                  <mat-card-subtitle
+                    >حدد أوقات بداية ونهاية العمل</mat-card-subtitle
+                  >
+                </mat-card-header>
+
+                <mat-card-content>
+                  <form [formGroup]="hoursForm" class="hours-form">
+                    <div class="working-hours-section">
+                      <h4>ساعات العمل الرئيسية</h4>
+
+                      <div class="time-inputs">
+                        <mat-form-field appearance="outline">
+                          <mat-label>وقت البداية</mat-label>
+                          <input
+                            matInput
+                            type="time"
+                            formControlName="startTime"
+                            [class.error]="
+                              hoursForm.get('startTime')?.invalid &&
+                              hoursForm.get('startTime')?.touched
+                            "
+                          />
+                          <mat-icon matSuffix>schedule</mat-icon>
+                          @if (hoursForm.get('startTime')?.errors?.['required'])
+                          {
+                          <mat-error>وقت البداية مطلوب</mat-error>
+                          }
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>وقت النهاية</mat-label>
+                          <input
+                            matInput
+                            type="time"
+                            formControlName="endTime"
+                            [class.error]="
+                              hoursForm.get('endTime')?.invalid &&
+                              hoursForm.get('endTime')?.touched
+                            "
+                          />
+                          <mat-icon matSuffix>schedule</mat-icon>
+                          @if (hoursForm.get('endTime')?.errors?.['required']) {
+                          <mat-error>وقت النهاية مطلوب</mat-error>
+                          }
+                        </mat-form-field>
+                      </div>
+
+                      @if (totalWorkingHours() > 0) {
+                      <div class="hours-summary">
+                        <mat-icon>info</mat-icon>
+                        <span
+                          >إجمالي ساعات العمل:
+                          {{ totalWorkingHours() }} ساعة</span
+                        >
+                      </div>
+                      }
+                    </div>
+
+                    <mat-divider></mat-divider>
+
+                    <div class="break-section">
+                      <div class="break-header">
+                        <mat-checkbox
+                          formControlName="hasBreak"
+                          color="primary"
+                        >
+                          إضافة فترة استراحة
+                        </mat-checkbox>
+                      </div>
+
+                      @if (hoursForm.get('hasBreak')?.value) {
+                      <div class="break-inputs">
+                        <mat-form-field appearance="outline">
+                          <mat-label>بداية الاستراحة</mat-label>
+                          <input
+                            matInput
+                            type="time"
+                            formControlName="breakStartTime"
+                          />
+                          <mat-icon matSuffix>coffee</mat-icon>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>نهاية الاستراحة</mat-label>
+                          <input
+                            matInput
+                            type="time"
+                            formControlName="breakEndTime"
+                          />
+                          <mat-icon matSuffix>coffee</mat-icon>
+                        </mat-form-field>
+                      </div>
+
+                      @if (breakDuration() > 0) {
+                      <div class="break-summary">
+                        <mat-icon>coffee</mat-icon>
+                        <span>مدة الاستراحة: {{ breakDuration() }} دقيقة</span>
+                      </div>
+                      } }
+                    </div>
+                  </form>
+                </mat-card-content>
+
+                <mat-card-actions class="step-actions">
+                  <button mat-button matStepperPrevious>
+                    <mat-icon>arrow_back</mat-icon>
+                    السابق
+                  </button>
+
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    matStepperNext
+                    [disabled]="hoursForm.invalid"
+                  >
+                    التالي
+                    <mat-icon>arrow_forward</mat-icon>
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            </mat-step>
+
+            <!-- Step 4: Additional Settings -->
+            <mat-step [stepControl]="settingsForm" label="الإعدادات الإضافية">
+              <mat-card>
+                <mat-card-header>
+                  <mat-card-title>
+                    <mat-icon>settings</mat-icon>
+                    الإعدادات الإضافية
+                  </mat-card-title>
+                  <mat-card-subtitle
+                    >إعدادات الجدولة والملاحظات</mat-card-subtitle
+                  >
+                </mat-card-header>
+
+                <mat-card-content>
+                  <form [formGroup]="settingsForm" class="settings-form">
+                    <div class="settings-section">
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>نوع الجدولة</mat-label>
+                        <mat-select formControlName="scheduleType">
+                          @for (type of scheduleTypes; track type.value) {
+                          <mat-option [value]="type.value">
+                            {{ type.label }}
+                          </mat-option>
+                          }
+                        </mat-select>
+                        <mat-icon matSuffix>category</mat-icon>
+                      </mat-form-field>
+
+                      <div class="date-inputs">
+                        <mat-form-field appearance="outline">
+                          <mat-label>تاريخ البدء (اختياري)</mat-label>
+                          <input
+                            matInput
+                            [matDatepicker]="startDatePicker"
+                            formControlName="effectiveDate"
+                            placeholder="اختر تاريخ البدء"
+                          />
+                          <mat-datepicker-toggle
+                            matSuffix
+                            [for]="startDatePicker"
+                          ></mat-datepicker-toggle>
+                          <mat-datepicker #startDatePicker></mat-datepicker>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>تاريخ الانتهاء (اختياري)</mat-label>
+                          <input
+                            matInput
+                            [matDatepicker]="endDatePicker"
+                            formControlName="endDate"
+                            placeholder="اختر تاريخ الانتهاء"
+                          />
+                          <mat-datepicker-toggle
+                            matSuffix
+                            [for]="endDatePicker"
+                          ></mat-datepicker-toggle>
+                          <mat-datepicker #endDatePicker></mat-datepicker>
+                        </mat-form-field>
+                      </div>
+
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>ملاحظات</mat-label>
+                        <textarea
+                          matInput
+                          formControlName="notes"
+                          rows="4"
+                          placeholder="أدخل أي ملاحظات إضافية..."
+                        ></textarea>
+                        <mat-icon matSuffix>note</mat-icon>
+                      </mat-form-field>
+                    </div>
+                  </form>
+                </mat-card-content>
+
+                <mat-card-actions class="step-actions">
+                  <button mat-button matStepperPrevious>
+                    <mat-icon>arrow_back</mat-icon>
+                    السابق
+                  </button>
+
+                  <button mat-raised-button color="primary" matStepperNext>
+                    التالي
+                    <mat-icon>arrow_forward</mat-icon>
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            </mat-step>
+
+            <!-- Step 5: Review & Submit -->
+            <mat-step label="مراجعة وحفظ">
+              <mat-card>
+                <mat-card-header>
+                  <mat-card-title>
+                    <mat-icon>preview</mat-icon>
+                    مراجعة الجدولة
+                  </mat-card-title>
+                  <mat-card-subtitle>راجع البيانات قبل الحفظ</mat-card-subtitle>
+                </mat-card-header>
+
+                <mat-card-content>
+                  <div class="schedule-preview">
+                    <!-- Doctor Info -->
+                    <div class="preview-section">
+                      <h4>
+                        <mat-icon>person</mat-icon>
+                        الطبيب
+                      </h4>
+                      <div class="doctor-preview">
+                        <div class="doctor-name">
+                          {{ selectedDoctor()?.fullName }}
+                        </div>
+                        @if (selectedDoctor()?.specialization) {
+                        <div class="doctor-spec">
+                          {{ selectedDoctor()?.specialization }}
+                        </div>
+                        }
+                      </div>
+                    </div>
+
+                    <mat-divider></mat-divider>
+
+                    <!-- Working Days -->
+                    <div class="preview-section">
+                      <h4>
+                        <mat-icon>calendar_today</mat-icon>
+                        أيام العمل
+                      </h4>
+                      <div class="days-preview">
+                        @for (day of selectedDays(); track day) {
+                        <mat-chip [color]="getDayChipColor(day)" selected>
+                          {{ getDayLabel(day) }}
+                        </mat-chip>
+                        }
+                      </div>
+                    </div>
+
+                    <mat-divider></mat-divider>
+
+                    <!-- Working Hours -->
+                    <div class="preview-section">
+                      <h4>
+                        <mat-icon>access_time</mat-icon>
+                        ساعات العمل
+                      </h4>
+                      <div class="hours-preview">
+                        <div class="working-hours">
+                          {{ hoursForm.get("startTime")?.value }} -
+                          {{ hoursForm.get("endTime")?.value }}
+                        </div>
+                        @if (hoursForm.get('hasBreak')?.value) {
+                        <div class="break-hours">
+                          استراحة:
+                          {{ hoursForm.get("breakStartTime")?.value }} -
+                          {{ hoursForm.get("breakEndTime")?.value }}
+                        </div>
+                        }
+                        <div class="total-hours">
+                          إجمالي ساعات العمل: {{ totalWorkingHours() }} ساعة
+                        </div>
+                      </div>
+                    </div>
+
+                    <mat-divider></mat-divider>
+
+                    <!-- Schedule Settings -->
+                    <div class="preview-section">
+                      <h4>
+                        <mat-icon>settings</mat-icon>
+                        إعدادات الجدولة
+                      </h4>
+                      <div class="settings-preview">
+                        <div class="setting-item">
+                          <span class="label">نوع الجدولة:</span>
+                          <span class="value">{{
+                            getScheduleTypeLabel()
+                          }}</span>
+                        </div>
+                        @if (settingsForm.get('effectiveDate')?.value) {
+                        <div class="setting-item">
+                          <span class="label">تاريخ البدء:</span>
+                          <span class="value">{{
+                            settingsForm.get("effectiveDate")?.value
+                              | date : "medium"
+                          }}</span>
+                        </div>
+                        } @if (settingsForm.get('endDate')?.value) {
+                        <div class="setting-item">
+                          <span class="label">تاريخ الانتهاء:</span>
+                          <span class="value">{{
+                            settingsForm.get("endDate")?.value | date : "medium"
+                          }}</span>
+                        </div>
+                        } @if (settingsForm.get('notes')?.value) {
+                        <div class="setting-item">
+                          <span class="label">ملاحظات:</span>
+                          <span class="value">{{
+                            settingsForm.get("notes")?.value
+                          }}</span>
+                        </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </mat-card-content>
+
+                <mat-card-actions class="step-actions">
+                  <button mat-button matStepperPrevious>
+                    <mat-icon>arrow_back</mat-icon>
+                    السابق
+                  </button>
+
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="saveSchedule()"
+                    [disabled]="scheduleService.loading()"
+                  >
+                    @if (scheduleService.loading()) {
+                    <mat-progress-spinner
+                      diameter="20"
+                      color="primary"
+                    ></mat-progress-spinner>
+                    } @else {
+                    <mat-icon>save</mat-icon>
+                    }
+                    {{ isEditMode() ? "حفظ التعديلات" : "حفظ الجدولة" }}
+                  </button>
+                </mat-card-actions>
+              </mat-card>
+            </mat-step>
+          </mat-stepper>
+        </div>
+      </main>
+    </div>
+  </app-sidebar>
+</div>

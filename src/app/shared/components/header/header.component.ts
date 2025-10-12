@@ -21,6 +21,7 @@ import { ThemeService } from '../../../core/services/theme.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ThemeToggleComponent, ThemeToggleSimpleComponent } from "../theme-toggle/theme-toggle.component";
 
 @Component({
   selector: 'app-header',
@@ -34,7 +35,9 @@ import { CommonModule } from '@angular/common';
     MatMenuModule,
     MatBadgeModule,
     MatDividerModule,
-  ],
+    ThemeToggleComponent,
+    ThemeToggleSimpleComponent
+],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -73,7 +76,7 @@ export class HeaderComponent implements OnInit {
   }
 
   logout(): void {
-    this.authService.logout();
+    this.authService.logout().subscribe();
   }
 
   getRoleDisplayName(role?: string): string {

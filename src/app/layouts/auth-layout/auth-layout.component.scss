@@ -1,0 +1,328 @@
+/* ===================================================================
+   src/app/layouts/auth-layout/auth-layout.component.scss
+   أنماط تخطيط صفحات المصادقة
+   =================================================================== */
+
+.auth-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* ===================================================================
+   AUTH TOOLBAR
+   =================================================================== */
+.auth-toolbar {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: 64px;
+}
+
+.toolbar-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Brand Section */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.brand-icon {
+  font-size: 2rem;
+  width: 2rem;
+  height: 2rem;
+  color: var(--primary-color);
+  filter: drop-shadow(0 2px 4px rgba(103, 126, 234, 0.3));
+}
+
+.brand-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+
+.version-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  background: rgba(103, 126, 234, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 1rem;
+  text-transform: uppercase;
+}
+
+/* Toolbar Actions */
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.theme-toggle,
+.language-toggle {
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: var(--primary-color);
+    background-color: rgba(103, 126, 234, 0.08);
+  }
+}
+
+/* ===================================================================
+   MAIN CONTENT AREA
+   =================================================================== */
+.auth-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Route Header */
+.route-header {
+  padding: 2rem 1rem 1rem 1rem;
+  text-align: center;
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+.route-info {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.route-icon {
+  font-size: 3.5rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  color: var(--primary-color);
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 30px rgba(103, 126, 234, 0.3);
+}
+
+.route-text {
+  text-align: center;
+}
+
+.route-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.route-description {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+/* Content Wrapper */
+.content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 1rem 2rem 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===================================================================
+   FOOTER
+   =================================================================== */
+.auth-footer {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1.5rem 1rem;
+  margin-top: auto;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.footer-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+  }
+}
+
+.separator {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.copyright {
+  p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
+}
+
+/* ===================================================================
+   DARK THEME SUPPORT
+   =================================================================== */
+[data-theme="dark"] {
+  .auth-layout {
+    background: linear-gradient(135deg, #2c3e50 0%, #4a6741 100%);
+  }
+
+  .auth-toolbar {
+    background: rgba(45, 55, 72, 0.95);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .route-icon {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+  }
+
+  .auth-footer {
+    background: rgba(45, 55, 72, 0.8);
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* ===================================================================
+   RESPONSIVE DESIGN
+   =================================================================== */
+@media (max-width: 768px) {
+  .auth-toolbar {
+    height: 56px;
+  }
+
+  .toolbar-content {
+    padding: 0 0.75rem;
+  }
+
+  .brand-text {
+    font-size: 1.25rem;
+  }
+
+  .version-badge {
+    display: none;
+  }
+
+  .route-header {
+    padding: 1.5rem 0.75rem 0.75rem 0.75rem;
+  }
+
+  .route-icon {
+    font-size: 2.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .route-title {
+    font-size: 1.5rem;
+  }
+
+  .route-description {
+    font-size: 1rem;
+  }
+
+  .content-wrapper {
+    padding: 0 0.75rem 1.5rem 0.75rem;
+  }
+
+  .footer-links {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .footer-link {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand {
+    gap: 0.5rem;
+  }
+
+  .brand-icon {
+    font-size: 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .brand-text {
+    font-size: 1.125rem;
+  }
+
+  .toolbar-actions {
+    gap: 0.25rem;
+  }
+
+  .route-info {
+    gap: 0.75rem;
+  }
+
+  .route-icon {
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .route-title {
+    font-size: 1.25rem;
+  }
+
+  .route-description {
+    font-size: 0.9rem;
+  }
+}

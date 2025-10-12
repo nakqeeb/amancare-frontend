@@ -1,644 +1,1064 @@
+<!-- ===================================================================
+// src/app/features/patients/components/patient-details/patient-details.component.html
+// Patient Details Template
+// =================================================================== -->
 <app-header></app-header>
 
 <app-sidebar>
   <div class="patient-details-container">
-    <!-- Loading State -->
-    <div class="loading-container" *ngIf="loading()">
-      <mat-card class="loading-card">
-        <mat-card-content>
-          <div class="loading-content">
-            <mat-spinner diameter="40"></mat-spinner>
-            <p>جاري تحميل بيانات المريض...</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
+    <!-- Loading Spinner -->
+    <div *ngIf="loading()" class="loading-container">
+      <mat-spinner></mat-spinner>
+      <p>جاري تحميل بيانات المريض...</p>
     </div>
 
     <!-- Patient Details -->
-    <div class="patient-content" *ngIf="!loading() && patient()">
-      <!-- Page Header -->
-      <div class="page-header">
-        <div class="header-navigation">
-          <button mat-icon-button routerLink="/patients" class="back-button">
-            <mat-icon>arrow_back</mat-icon>
-          </button>
-          <div class="breadcrumb">
-            <a routerLink="/patients" class="breadcrumb-link">المرضى</a>
-            <mat-icon class="breadcrumb-separator">chevron_left</mat-icon>
-            <span class="breadcrumb-current">{{ patient()?.fullName }}</span>
-          </div>
-        </div>
-
+    <div *ngIf="!loading() && patient()" class="patient-content">
+      <!-- Header with Patient Info -->
+      <div class="patient-header">
         <div class="header-actions">
           <button
-            mat-raised-button
-            color="primary"
-            routerLink="/appointments/new"
-            [queryParams]="{ patientId: patient()?.id }"
+            mat-icon-button
+            (click)="onBackToPatients()"
+            matTooltip="العودة إلى قائمة المرضى"
           >
-            <mat-icon>event_available</mat-icon>
-            حجز موعد
-          </button>
-
-          <button mat-stroked-button [matMenuTriggerFor]="actionsMenu">
-            <mat-icon>more_vert</mat-icon>
-            المزيد
+            <mat-icon>arrow_back</mat-icon>
           </button>
         </div>
-      </div>
 
-      <!-- Patient Profile Card -->
-      <mat-card class="profile-card">
-        <mat-card-content>
-          <div class="profile-header">
-            <div
-              class="patient-avatar"
-              [class.male]="patient()?.gender === 'MALE'"
-            >
-              <mat-icon>{{
-                patient()?.gender === "MALE" ? "face" : "face_3"
-              }}</mat-icon>
-            </div>
-
-            <div class="patient-info">
-              <div class="patient-name-section">
-                <h1 class="patient-name">{{ patient()?.fullName }}</h1>
-                <div class="patient-status">
-                  <mat-chip
-                    [class]="
-                      patient()?.isActive ? 'status-active' : 'status-inactive'
-                    "
+        <mat-card class="patient-summary-card">
+          <mat-card-content>
+            <div class="patient-summary">
+              <!-- Patient Avatar -->
+              <div class="patient-avatar">
+                <div
+                  class="avatar-circle"
+                  [class]="'avatar-' + patient()!.gender.toLowerCase()"
+                >
+                  {{ getInitials() }}
+                </div>
+                <div class="status-badge">
+                  <mat-icon
+                    [color]="getPatientStatus().color"
+                    [matTooltip]="getPatientStatus().label"
                   >
-                    {{ patient()?.isActive ? "نشط" : "غير نشط" }}
-                  </mat-chip>
+                    {{ getPatientStatus().icon }}
+                  </mat-icon>
                 </div>
               </div>
 
-              <div class="patient-meta">
-                <div class="meta-item">
-                  <mat-icon>tag</mat-icon>
-                  <span class="meta-label">رقم المريض:</span>
-                  <span class="meta-value">{{ patient()?.patientNumber }}</span>
-                </div>
+              <!-- Patient Basic Info -->
+              <div class="patient-basic-info">
+                <h1 class="patient-name">{{ patient()!.fullName }}</h1>
+                <p class="patient-number">
+                  رقم المريض: {{ patient()!.patientNumber }}
+                </p>
 
-                <div class="meta-item" *ngIf="patient()?.age">
-                  <mat-icon>cake</mat-icon>
-                  <span class="meta-label">العمر:</span>
-                  <span class="meta-value">{{ patient()?.age }} سنة</span>
-                </div>
-
-                <div class="meta-item">
-                  <mat-icon>person</mat-icon>
-                  <span class="meta-label">الجنس:</span>
-                  <span class="meta-value">{{
-                    getGenderText(patient()?.gender)
-                  }}</span>
-                </div>
-
-                <div class="meta-item" *ngIf="patient()?.bloodType">
-                  <mat-icon>colorize</mat-icon>
-                  <span class="meta-label">فصيلة الدم:</span>
-                  <span class="meta-value">{{
-                    getBloodTypeLabel(patient()?.bloodType)
-                  }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="patient-stats">
-              <div class="stat-item">
-                <span class="stat-number">{{
-                  patient()?.appointmentsCount || 0
-                }}</span>
-                <span class="stat-label">المواعيد</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-number">{{
-                  patient()?.totalInvoices || 0
-                }}</span>
-                <span class="stat-label">الفواتير</span>
-              </div>
-              <div
-                class="stat-item"
-                [class.warning]="(patient()?.outstandingBalance || 0) > 0"
-              >
-                <span class="stat-number">{{
-                  patient()?.outstandingBalance || 0
-                }}</span>
-                <span class="stat-label">المستحق</span>
-              </div>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- Quick Actions -->
-      <div class="quick-actions">
-        <button
-          mat-stroked-button
-          class="quick-action"
-          routerLink="/appointments/new"
-          [queryParams]="{ patientId: patient()?.id }"
-        >
-          <mat-icon>event_available</mat-icon>
-          حجز موعد
-        </button>
-
-        <button
-          mat-stroked-button
-          class="quick-action"
-          routerLink="/medical-records/new"
-          [queryParams]="{ patientId: patient()?.id }"
-        >
-          <mat-icon>note_add</mat-icon>
-          سجل طبي
-        </button>
-
-        <button
-          mat-stroked-button
-          class="quick-action"
-          routerLink="/invoices/new"
-          [queryParams]="{ patientId: patient()?.id }"
-        >
-          <mat-icon>receipt_long</mat-icon>
-          فاتورة جديدة
-        </button>
-
-        <button
-          mat-stroked-button
-          class="quick-action"
-          (click)="onEditPatient()"
-        >
-          <mat-icon>edit</mat-icon>
-          تعديل البيانات
-        </button>
-      </div>
-
-      <!-- Tabs Content -->
-      <mat-card class="tabs-card">
-        <mat-tab-group class="patient-tabs" animationDuration="300ms">
-          <!-- Personal Information Tab -->
-          <mat-tab label="المعلومات الشخصية">
-            <div class="tab-content">
-              <div class="info-sections">
-                <!-- Contact Information -->
-                <div class="info-section">
-                  <h3 class="section-title">
-                    <mat-icon>contact_phone</mat-icon>
-                    معلومات الاتصال
-                  </h3>
-
-                  <div class="info-grid">
-                    <div class="info-item">
-                      <mat-icon class="info-icon">phone</mat-icon>
-                      <div class="info-content">
-                        <span class="info-label">رقم الهاتف</span>
-                        <span class="info-value">{{
-                          patient()?.phone || "-"
-                        }}</span>
-                      </div>
-                      <button
-                        mat-icon-button
-                        *ngIf="patient()?.phone"
-                        (click)="callPatient(patient()?.phone!)"
-                      >
-                        <mat-icon>call</mat-icon>
-                      </button>
-                    </div>
-
-                    <div class="info-item">
-                      <mat-icon class="info-icon">email</mat-icon>
-                      <div class="info-content">
-                        <span class="info-label">البريد الإلكتروني</span>
-                        <span class="info-value">{{
-                          patient()?.email || "-"
-                        }}</span>
-                      </div>
-                      <button
-                        mat-icon-button
-                        *ngIf="patient()?.email"
-                        (click)="emailPatient(patient()?.email!)"
-                      >
-                        <mat-icon>mail</mat-icon>
-                      </button>
-                    </div>
-
-                    <div
-                      class="info-item full-width"
-                      *ngIf="patient()?.address"
-                    >
-                      <mat-icon class="info-icon">location_on</mat-icon>
-                      <div class="info-content">
-                        <span class="info-label">العنوان</span>
-                        <span class="info-value">{{ patient()?.address }}</span>
-                      </div>
-                    </div>
+                <div class="patient-details-row">
+                  <div class="detail-item">
+                    <mat-icon>cake</mat-icon>
+                    <span>{{ getPatientAge() }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <mat-icon>person</mat-icon>
+                    <span>{{ getGenderLabel() }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <mat-icon>colorize</mat-icon>
+                    <span>{{ getBloodTypeLabel() }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <mat-icon>phone</mat-icon>
+                    <span>{{ formatPhone(patient()!.phone) }}</span>
                   </div>
                 </div>
 
-                <!-- Emergency Contact -->
-                <div
-                  class="info-section"
-                  *ngIf="
-                    patient()?.emergencyContactName ||
-                    patient()?.emergencyContactPhone
-                  "
-                >
-                  <h3 class="section-title">
-                    <mat-icon>emergency</mat-icon>
-                    جهة اتصال الطوارئ
-                  </h3>
-
-                  <div class="info-grid">
-                    <div
-                      class="info-item"
-                      *ngIf="patient()?.emergencyContactName"
-                    >
-                      <mat-icon class="info-icon">person</mat-icon>
-                      <div class="info-content">
-                        <span class="info-label">اسم جهة الاتصال</span>
-                        <span class="info-value">{{
-                          patient()?.emergencyContactName
-                        }}</span>
-                      </div>
-                    </div>
-
-                    <div
-                      class="info-item"
-                      *ngIf="patient()?.emergencyContactPhone"
-                    >
-                      <mat-icon class="info-icon">phone</mat-icon>
-                      <div class="info-content">
-                        <span class="info-label">رقم الهاتف</span>
-                        <span class="info-value">{{
-                          patient()?.emergencyContactPhone
-                        }}</span>
-                      </div>
-                      <button
-                        mat-icon-button
-                        (click)="callPatient(patient()?.emergencyContactPhone!)"
-                      >
-                        <mat-icon>call</mat-icon>
-                      </button>
-                    </div>
+                <div class="patient-stats">
+                  <div class="stat-item">
+                    <span class="stat-number">{{ appointmentsCount() }}</span>
+                    <span class="stat-label">المواعيد</span>
                   </div>
-                </div>
-
-                <!-- Additional Information -->
-                <div
-                  class="info-section"
-                  *ngIf="patient()?.dateOfBirth || patient()?.notes"
-                >
-                  <h3 class="section-title">
-                    <mat-icon>info</mat-icon>
-                    معلومات إضافية
-                  </h3>
-
-                  <div class="info-grid">
-                    <div class="info-item" *ngIf="patient()?.dateOfBirth">
-                      <mat-icon class="info-icon">cake</mat-icon>
-                      <div class="info-content">
-                        <span class="info-label">تاريخ الميلاد</span>
-                        <span class="info-value">{{
-                          formatDate(patient()?.dateOfBirth!)
-                        }}</span>
-                      </div>
-                    </div>
-
-                    <div class="info-item full-width" *ngIf="patient()?.notes">
-                      <mat-icon class="info-icon">note</mat-icon>
-                      <div class="info-content">
-                        <span class="info-label">ملاحظات</span>
-                        <span class="info-value notes-text">{{
-                          patient()?.notes
-                        }}</span>
-                      </div>
-                    </div>
+                  <div class="stat-item">
+                    <span class="stat-number">{{ medicalRecordsCount() }}</span>
+                    <span class="stat-label">السجلات الطبية</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-number">{{ invoicesCount() }}</span>
+                    <span class="stat-label">الفواتير</span>
+                  </div>
+                  <div class="stat-item" *ngIf="outstandingBalance() > 0">
+                    <span
+                      class="stat-number"
+                      [class.balance-warning]="outstandingBalance() > 0"
+                    ></span>
+                    <span class="stat-label">المتبقي</span>
                   </div>
                 </div>
               </div>
-            </div>
-          </mat-tab>
 
-          <!-- Medical Information Tab -->
-          <mat-tab label="المعلومات الطبية">
-            <div class="tab-content">
-              <div class="info-sections">
-                <!-- Medical Details -->
-                <div class="info-section">
-                  <h3 class="section-title">
-                    <mat-icon>medical_information</mat-icon>
-                    المعلومات الطبية الأساسية
-                  </h3>
-
-                  <div class="info-grid">
-                    <div class="info-item" *ngIf="patient()?.bloodType">
-                      <mat-icon class="info-icon medical">colorize</mat-icon>
-                      <div class="info-content">
-                        <span class="info-label">فصيلة الدم</span>
-                        <span class="info-value medical-value">{{
-                          getBloodTypeLabel(patient()?.bloodType)
-                        }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Allergies -->
-                <div class="info-section" *ngIf="patient()?.allergies">
-                  <h3 class="section-title warning">
-                    <mat-icon>warning</mat-icon>
-                    الحساسيات
-                  </h3>
-
-                  <div class="medical-content">
-                    <div class="allergies-list">
-                      <mat-chip-set>
-                        <mat-chip
-                          *ngFor="
-                            let allergy of getAllergiesList(
-                              patient()?.allergies!
-                            )
-                          "
-                          class="allergy-chip"
-                        >
-                          <mat-icon matChipLeading>warning</mat-icon>
-                          {{ allergy }}
-                        </mat-chip>
-                      </mat-chip-set>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Chronic Diseases -->
-                <div class="info-section" *ngIf="patient()?.chronicDiseases">
-                  <h3 class="section-title medical">
-                    <mat-icon>medical_services</mat-icon>
-                    الأمراض المزمنة
-                  </h3>
-
-                  <div class="medical-content">
-                    <div class="diseases-list">
-                      <mat-chip-set>
-                        <mat-chip
-                          *ngFor="
-                            let disease of getDiseasesList(
-                              patient()?.chronicDiseases!
-                            )
-                          "
-                          class="disease-chip"
-                        >
-                          <mat-icon matChipLeading>medical_services</mat-icon>
-                          {{ disease }}
-                        </mat-chip>
-                      </mat-chip-set>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Empty State -->
-                <div
-                  class="empty-medical"
-                  *ngIf="
-                    !patient()?.bloodType &&
-                    !patient()?.allergies &&
-                    !patient()?.chronicDiseases
-                  "
-                >
-                  <mat-icon class="empty-icon">medical_information</mat-icon>
-                  <p>لا توجد معلومات طبية مسجلة</p>
-                  <button
-                    mat-raised-button
-                    color="primary"
-                    (click)="onEditPatient()"
-                  >
-                    <mat-icon>edit</mat-icon>
-                    إضافة معلومات طبية
-                  </button>
-                </div>
-              </div>
-            </div>
-          </mat-tab>
-
-          <!-- Appointments History Tab -->
-          <mat-tab
-            label="تاريخ المواعيد"
-            [matBadge]="patient()?.appointmentsCount || 0"
-          >
-            <div class="tab-content">
-              <div class="appointments-header">
-                <h3>تاريخ المواعيد</h3>
+              <!-- Action Buttons -->
+              <div class="patient-actions">
                 <button
                   mat-raised-button
                   color="primary"
-                  routerLink="/appointments/new"
-                  [queryParams]="{ patientId: patient()?.id }"
+                  *ngIf="canEditPatient()"
+                  (click)="onEditPatient()"
                 >
-                  <mat-icon>add</mat-icon>
-                  حجز موعد جديد
+                  <mat-icon>edit</mat-icon>
+                  تعديل البيانات
+                </button>
+
+                <button
+                  mat-raised-button
+                  color="accent"
+                  *ngIf="canCreateAppointment()"
+                  (click)="onCreateAppointment()"
+                >
+                  <mat-icon>event_note</mat-icon>
+                  موعد جديد
+                </button>
+
+                <button mat-button [matMenuTriggerFor]="moreMenu">
+                  <mat-icon>more_vert</mat-icon>
+                  المزيد
                 </button>
               </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
 
-              <!-- Mock Appointments List -->
-              <div class="appointments-list">
-                <mat-card
-                  *ngFor="let appointment of mockAppointments"
-                  class="appointment-card"
-                  [class]="'status-' + appointment.status.toLowerCase()"
-                >
+      <!-- Tabs Section -->
+      <mat-card class="tabs-card">
+        <mat-tab-group
+          [(selectedIndex)]="activeTabIndex"
+          (selectedTabChange)="onTabChange($event.index)"
+          animationDuration="300ms"
+        >
+          <!-- Overview Tab -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon>person</mat-icon>
+              <span>معلومات عامة</span>
+            </ng-template>
+
+            <div class="tab-content overview-tab">
+              <div class="overview-grid">
+                <!-- Personal Information -->
+                <mat-card class="info-card">
+                  <mat-card-header>
+                    <mat-card-title>
+                      <mat-icon>person</mat-icon>
+                      المعلومات الشخصية
+                    </mat-card-title>
+                  </mat-card-header>
                   <mat-card-content>
-                    <div class="appointment-header">
-                      <div class="appointment-date">
-                        <mat-icon>event</mat-icon>
-                        <span>{{ appointment.date }}</span>
-                        <span class="appointment-time">{{
-                          appointment.time
-                        }}</span>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <label>الاسم الأول:</label>
+                        <span>{{ patient()!.firstName }}</span>
                       </div>
-                      <mat-chip
-                        [class]="'status-' + appointment.status.toLowerCase()"
-                      >
-                        {{ getAppointmentStatusText(appointment.status) }}
-                      </mat-chip>
-                    </div>
-
-                    <div class="appointment-details">
-                      <p class="appointment-type">
-                        <mat-icon>medical_services</mat-icon>
-                        {{ appointment.type }}
-                      </p>
-                      <p class="appointment-doctor" *ngIf="appointment.doctor">
-                        <mat-icon>person</mat-icon>
-                        د. {{ appointment.doctor }}
-                      </p>
-                      <p class="appointment-notes" *ngIf="appointment.notes">
-                        <mat-icon>note</mat-icon>
-                        {{ appointment.notes }}
-                      </p>
+                      <div class="info-item">
+                        <label>الاسم الأخير:</label>
+                        <span>{{ patient()!.lastName }}</span>
+                      </div>
+                      <div class="info-item">
+                        <label>تاريخ الميلاد:</label>
+                        <span>{{ formatDate(patient()!.dateOfBirth) }}</span>
+                      </div>
+                      <div class="info-item">
+                        <label>العمر:</label>
+                        <span>{{ getPatientAge() }}</span>
+                      </div>
+                      <div class="info-item">
+                        <label>الجنس:</label>
+                        <span>{{ getGenderLabel() }}</span>
+                      </div>
+                      <div class="info-item">
+                        <label>فصيلة الدم:</label>
+                        <span>{{ getBloodTypeLabel() }}</span>
+                      </div>
                     </div>
                   </mat-card-content>
                 </mat-card>
 
-                <!-- Empty State -->
-                <div
-                  class="empty-appointments"
-                  *ngIf="mockAppointments.length === 0"
+                <!-- Contact Information -->
+                <mat-card class="info-card">
+                  <mat-card-header>
+                    <mat-card-title>
+                      <mat-icon>contact_phone</mat-icon>
+                      معلومات الاتصال
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <label>رقم الهاتف:</label>
+                        <span>{{ formatPhone(patient()!.phone) }}</span>
+                      </div>
+                      <div class="info-item" *ngIf="patient()!.email">
+                        <label>البريد الإلكتروني:</label>
+                        <span>{{ patient()!.email }}</span>
+                      </div>
+                      <div
+                        class="info-item full-width"
+                        *ngIf="patient()!.address"
+                      >
+                        <label>العنوان:</label>
+                        <span>{{ patient()!.address }}</span>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <!-- Emergency Contact -->
+                <mat-card
+                  class="info-card"
+                  *ngIf="
+                    patient()!.emergencyContactName ||
+                    patient()!.emergencyContactPhone
+                  "
                 >
-                  <mat-icon class="empty-icon">event_busy</mat-icon>
-                  <p>لا توجد مواعيد مسجلة</p>
-                  <button
-                    mat-raised-button
-                    color="primary"
-                    routerLink="/appointments/new"
-                    [queryParams]="{ patientId: patient()?.id }"
-                  >
-                    <mat-icon>add</mat-icon>
-                    حجز أول موعد
-                  </button>
-                </div>
+                  <mat-card-header>
+                    <mat-card-title>
+                      <mat-icon>emergency</mat-icon>
+                      جهة الاتصال في الطوارئ
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="info-grid">
+                      <div
+                        class="info-item"
+                        *ngIf="patient()!.emergencyContactName"
+                      >
+                        <label>الاسم:</label>
+                        <span>{{ patient()!.emergencyContactName }}</span>
+                      </div>
+                      <div
+                        class="info-item"
+                        *ngIf="patient()!.emergencyContactPhone"
+                      >
+                        <label>رقم الهاتف:</label>
+                        <span>{{
+                          formatPhone(patient()!.emergencyContactPhone!)
+                        }}</span>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <!-- Medical Information -->
+                <mat-card class="info-card">
+                  <mat-card-header>
+                    <mat-card-title>
+                      <mat-icon>local_hospital</mat-icon>
+                      المعلومات الطبية
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="info-grid">
+                      <div
+                        class="info-item full-width"
+                        *ngIf="patient()!.allergies"
+                      >
+                        <label>الحساسية:</label>
+                        <span>{{ patient()!.allergies }}</span>
+                      </div>
+                      <div
+                        class="info-item full-width"
+                        *ngIf="patient()!.chronicDiseases"
+                      >
+                        <label>الأمراض المزمنة:</label>
+                        <span>{{ patient()!.chronicDiseases }}</span>
+                      </div>
+                      <div
+                        class="info-item full-width"
+                        *ngIf="patient()!.notes"
+                      >
+                        <label>ملاحظات:</label>
+                        <span>{{ patient()!.notes }}</span>
+                      </div>
+                      <div
+                        class="info-item"
+                        *ngIf="
+                          !patient()!.allergies &&
+                          !patient()!.chronicDiseases &&
+                          !patient()!.notes
+                        "
+                      >
+                        <span class="no-data">لا توجد معلومات طبية مسجلة</span>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <!-- Registration Information -->
+                <mat-card class="info-card">
+                  <mat-card-header>
+                    <mat-card-title>
+                      <mat-icon>info</mat-icon>
+                      معلومات التسجيل
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <label>تاريخ التسجيل:</label>
+                        <span>{{ formatDate(patient()!.createdAt) }}</span>
+                      </div>
+                      <div class="info-item" *ngIf="patient()!.updatedAt">
+                        <label>آخر تحديث:</label>
+                        <span>{{ formatDate(patient()!.updatedAt!) }}</span>
+                      </div>
+                      <div class="info-item">
+                        <label>آخر زيارة:</label>
+                        <span>{{ getLastVisitText() }}</span>
+                      </div>
+                      <div class="info-item">
+                        <label>الحالة:</label>
+                        <mat-chip [color]="getPatientStatus().color">
+                          {{ getPatientStatus().label }}
+                        </mat-chip>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <!-- Quick Actions -->
+                <mat-card class="info-card">
+                  <mat-card-header>
+                    <mat-card-title>
+                      <mat-icon>flash_on</mat-icon>
+                      إجراءات سريعة
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content>
+                    <div class="quick-actions">
+                      <button
+                        mat-raised-button
+                        color="primary"
+                        *ngIf="canCreateAppointment()"
+                        (click)="onCreateAppointment()"
+                      >
+                        <mat-icon>event_note</mat-icon>
+                        موعد جديد
+                      </button>
+
+                      <button
+                        mat-raised-button
+                        color="accent"
+                        *ngIf="canViewMedicalRecords()"
+                        (click)="onViewMedicalHistory()"
+                      >
+                        <mat-icon>local_hospital</mat-icon>
+                        السجلات الطبية
+                      </button>
+
+                      <button
+                        mat-raised-button
+                        *ngIf="canCreateInvoice()"
+                        (click)="onCreateInvoice()"
+                      >
+                        <mat-icon>receipt</mat-icon>
+                        فاتورة جديدة
+                      </button>
+
+                      <button mat-stroked-button (click)="onPrintPatientCard()">
+                        <mat-icon>print</mat-icon>
+                        بطاقة المريض
+                      </button>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
               </div>
             </div>
           </mat-tab>
 
-          <!-- Financial Tab -->
-          <mat-tab
-            label="المالية"
-            [matBadge]="patient()?.outstandingBalance ? '!' : ''"
-          >
+          <!-- Appointments Tab -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon>event</mat-icon>
+              <span>المواعيد</span>
+              <span *ngIf="appointmentsCount() > 0" class="tab-badge">{{
+                appointmentsCount()
+              }}</span>
+            </ng-template>
+
             <div class="tab-content">
-              <div class="financial-summary">
-                <div class="summary-cards">
-                  <mat-card class="summary-card">
-                    <mat-card-content>
-                      <div class="summary-header">
-                        <mat-icon>receipt_long</mat-icon>
-                        <h4>إجمالي الفواتير</h4>
-                      </div>
-                      <div class="summary-value">
-                        {{ patient()?.totalInvoices || 0 }}
-                      </div>
-                    </mat-card-content>
-                  </mat-card>
-
-                  <mat-card class="summary-card">
-                    <mat-card-content>
-                      <div class="summary-header">
-                        <mat-icon>attach_money</mat-icon>
-                        <h4>إجمالي المبلغ</h4>
-                      </div>
-                      <div class="summary-value">12,450 ريال</div>
-                    </mat-card-content>
-                  </mat-card>
-
-                  <mat-card
-                    class="summary-card"
-                    [class.warning]="(patient()?.outstandingBalance || 0) > 0"
-                  >
-                    <mat-card-content>
-                      <div class="summary-header">
-                        <mat-icon>warning</mat-icon>
-                        <h4>المبلغ المستحق</h4>
-                      </div>
-                      <div class="summary-value">
-                        {{ patient()?.outstandingBalance || 0 }} ريال
-                      </div>
-                    </mat-card-content>
-                  </mat-card>
-                </div>
-              </div>
-
-              <!-- Mock Invoices -->
-              <div class="invoices-section">
-                <div class="section-header">
-                  <h3>الفواتير الأخيرة</h3>
+              <mat-card class="appointments-card">
+                <mat-card-header>
+                  <mat-card-title>
+                    <mat-icon>event</mat-icon>
+                    المواعيد القادمة
+                  </mat-card-title>
                   <button
-                    mat-stroked-button
-                    routerLink="/invoices"
-                    [queryParams]="{ patientId: patient()?.id }"
+                    mat-icon-button
+                    (click)="refreshAppointments()"
+                    matTooltip="تحديث"
                   >
-                    عرض جميع الفواتير
+                    <mat-icon>refresh</mat-icon>
+                  </button>
+                </mat-card-header>
+
+                <mat-card-content>
+                  <!-- Loading State -->
+                  <div *ngIf="loadingAppointments()" class="loading-state">
+                    <mat-spinner diameter="40"></mat-spinner>
+                    <p>جاري تحميل المواعيد...</p>
+                  </div>
+
+                  <!-- No Appointments State -->
+                  <div
+                    *ngIf="
+                      !loadingAppointments() &&
+                      upcomingAppointments().length === 0
+                    "
+                    class="empty-state"
+                  >
+                    <mat-icon>event_busy</mat-icon>
+                    <h3>لا توجد مواعيد قادمة</h3>
+                    <p>لا يوجد مواعيد مجدولة لهذا المريض</p>
+                    <button
+                      mat-raised-button
+                      color="primary"
+                      (click)="onNewAppointment()"
+                    >
+                      <mat-icon>add</mat-icon>
+                      حجز موعد جديد
+                    </button>
+                  </div>
+
+                  <!-- Appointments Table -->
+                  <div
+                    *ngIf="
+                      !loadingAppointments() &&
+                      upcomingAppointments().length > 0
+                    "
+                    class="appointments-table-container"
+                  >
+                    <table
+                      mat-table
+                      [dataSource]="upcomingAppointments()"
+                      class="appointments-table"
+                    >
+                      <!-- Date Column -->
+                      <ng-container matColumnDef="appointmentDate">
+                        <th mat-header-cell *matHeaderCellDef>التاريخ</th>
+                        <td mat-cell *matCellDef="let appointment">
+                          {{
+                            formatAppointmentDate(appointment.appointmentDate)
+                          }}
+                        </td>
+                      </ng-container>
+
+                      <!-- Time Column -->
+                      <ng-container matColumnDef="appointmentTime">
+                        <th mat-header-cell *matHeaderCellDef>الوقت</th>
+                        <td mat-cell *matCellDef="let appointment">
+                          {{
+                            formatAppointmentTime(appointment.appointmentTime)
+                          }}
+                        </td>
+                      </ng-container>
+
+                      <!-- Doctor Column -->
+                      <ng-container matColumnDef="doctor">
+                        <th mat-header-cell *matHeaderCellDef>الطبيب</th>
+                        <td mat-cell *matCellDef="let appointment">
+                          {{ appointment.doctorName }}
+                        </td>
+                      </ng-container>
+
+                      <!-- Type Column -->
+                      <ng-container matColumnDef="type">
+                        <th mat-header-cell *matHeaderCellDef>النوع</th>
+                        <td mat-cell *matCellDef="let appointment">
+                          <mat-chip>
+                            {{
+                              getAppointmentTypeLabel(
+                                appointment.appointmentType
+                              )
+                            }}
+                          </mat-chip>
+                        </td>
+                      </ng-container>
+
+                      <!-- Status Column -->
+                      <ng-container matColumnDef="status">
+                        <th mat-header-cell *matHeaderCellDef>الحالة</th>
+                        <td mat-cell *matCellDef="let appointment">
+                          <mat-chip
+                            [color]="
+                              getAppointmentStatusColor(appointment.status)
+                            "
+                          >
+                            {{ getAppointmentStatusLabel(appointment.status) }}
+                          </mat-chip>
+                        </td>
+                      </ng-container>
+
+                      <!-- Actions Column -->
+                      <ng-container matColumnDef="actions">
+                        <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+                        <td mat-cell *matCellDef="let appointment">
+                          <button
+                            mat-icon-button
+                            [matMenuTriggerFor]="appointmentMenu"
+                            matTooltip="خيارات"
+                          >
+                            <mat-icon>more_vert</mat-icon>
+                          </button>
+                          <mat-menu #appointmentMenu="matMenu">
+                            <button
+                              mat-menu-item
+                              (click)="onViewAppointment(appointment.id)"
+                            >
+                              <mat-icon>visibility</mat-icon>
+                              <span>عرض التفاصيل</span>
+                            </button>
+                            <button
+                              mat-menu-item
+                              (click)="onRescheduleAppointment(appointment.id)"
+                            >
+                              <mat-icon>schedule</mat-icon>
+                              <span>إعادة جدولة</span>
+                            </button>
+                            <button
+                              mat-menu-item
+                              (click)="onCancelAppointment(appointment)"
+                              class="cancel-button"
+                            >
+                              <mat-icon>cancel</mat-icon>
+                              <span>إلغاء الموعد</span>
+                            </button>
+                          </mat-menu>
+                        </td>
+                      </ng-container>
+
+                      <tr
+                        mat-header-row
+                        *matHeaderRowDef="appointmentsDisplayedColumns"
+                      ></tr>
+                      <tr
+                        mat-row
+                        *matRowDef="
+                          let row;
+                          columns: appointmentsDisplayedColumns
+                        "
+                      ></tr>
+                    </table>
+
+                    <!-- Add New Appointment Button -->
+                    <div class="table-footer">
+                      <button
+                        mat-raised-button
+                        color="primary"
+                        (click)="onNewAppointment()"
+                      >
+                        <mat-icon>add</mat-icon>
+                        حجز موعد جديد
+                      </button>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </mat-tab>
+
+          <!-- Medical Records Tab -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon>local_hospital</mat-icon>
+              <span>السجلات الطبية</span>
+              <span *ngIf="medicalRecordsCount() > 0" class="tab-badge">{{
+                medicalRecordsCount()
+              }}</span>
+            </ng-template>
+
+            <div class="tab-content">
+              <!-- NEW: Loading State -->
+              @if (loadingMedicalRecords()) {
+              <div class="loading-container">
+                <mat-spinner diameter="40"></mat-spinner>
+                <p>جاري تحميل السجلات الطبية...</p>
+              </div>
+              } @else {
+              <!-- NEW: Header with Actions -->
+              <div class="medical-records-header">
+                <div class="header-info">
+                  <h3>
+                    <mat-icon>local_hospital</mat-icon>
+                    السجلات الطبية للمريض
+                  </h3>
+                  <p class="subtitle">
+                    إجمالي السجلات: {{ medicalRecordsCount() }}
+                  </p>
+                </div>
+
+                <div class="header-actions">
+                  @if (canCreateMedicalRecord()) {
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="onCreateMedicalRecord()"
+                  >
+                    <mat-icon>add</mat-icon>
+                    إضافة سجل طبي
+                  </button>
+                  }
+                  <button
+                    mat-icon-button
+                    matTooltip="تحديث"
+                    (click)="loadMedicalRecords()"
+                  >
+                    <mat-icon>refresh</mat-icon>
                   </button>
                 </div>
+              </div>
 
-                <div class="invoices-list">
-                  <!-- Mock invoice items -->
-                  <mat-card class="invoice-card">
-                    <mat-card-content>
-                      <div class="invoice-header">
-                        <span class="invoice-number">INV-2024-001</span>
-                        <mat-chip class="status-paid">مدفوع</mat-chip>
-                      </div>
-                      <div class="invoice-details">
-                        <span class="invoice-date">2024-08-20</span>
-                        <span class="invoice-amount">350 ريال</span>
-                      </div>
-                    </mat-card-content>
-                  </mat-card>
+              <!-- NEW: Medical Records Table -->
+              @if (medicalRecords().length > 0) {
+              <div class="table-container">
+                <table
+                  mat-table
+                  [dataSource]="medicalRecords()"
+                  class="medical-records-table"
+                >
+                  <!-- Visit Date Column -->
+                  <ng-container matColumnDef="visitDate">
+                    <th mat-header-cell *matHeaderCellDef>تاريخ الزيارة</th>
+                    <td mat-cell *matCellDef="let record">
+                      {{ formatDate(record.visitDate) }}
+                    </td>
+                  </ng-container>
 
-                  <mat-card class="invoice-card">
-                    <mat-card-content>
-                      <div class="invoice-header">
-                        <span class="invoice-number">INV-2024-002</span>
-                        <mat-chip class="status-pending">معلق</mat-chip>
-                      </div>
-                      <div class="invoice-details">
-                        <span class="invoice-date">2024-08-25</span>
-                        <span class="invoice-amount">150 ريال</span>
-                      </div>
-                    </mat-card-content>
-                  </mat-card>
+                  <!-- Visit Type Column -->
+                  <ng-container matColumnDef="visitType">
+                    <th mat-header-cell *matHeaderCellDef>نوع الزيارة</th>
+                    <td mat-cell *matCellDef="let record">
+                      <mat-chip>{{
+                        getVisitTypeLabel(record.visitType)
+                      }}</mat-chip>
+                    </td>
+                  </ng-container>
+
+                  <!-- Chief Complaint Column -->
+                  <ng-container matColumnDef="chiefComplaint">
+                    <th mat-header-cell *matHeaderCellDef>الشكوى الرئيسية</th>
+                    <td mat-cell *matCellDef="let record">
+                      <span class="complaint-text">{{
+                        record.chiefComplaint
+                      }}</span>
+                      @if (record.primaryDiagnosis) {
+                      <span class="diagnosis-badge">{{
+                        record.primaryDiagnosis
+                      }}</span>
+                      }
+                    </td>
+                  </ng-container>
+
+                  <!-- Doctor Name Column -->
+                  <ng-container matColumnDef="doctorName">
+                    <th mat-header-cell *matHeaderCellDef>الطبيب</th>
+                    <td mat-cell *matCellDef="let record">
+                      د. {{ record.doctorName }}
+                    </td>
+                  </ng-container>
+
+                  <!-- Status Column -->
+                  <ng-container matColumnDef="status">
+                    <th mat-header-cell *matHeaderCellDef>الحالة</th>
+                    <td mat-cell *matCellDef="let record">
+                      <mat-chip [color]="getStatusColor(record.status)">
+                        {{ getRecordStatusLabel(record.status) }}
+                      </mat-chip>
+                      @if (record.isConfidential) {
+                      <mat-icon
+                        class="confidential-icon"
+                        matTooltip="سجل سري"
+                        color="warn"
+                      >
+                        lock
+                      </mat-icon>
+                      }
+                    </td>
+                  </ng-container>
+
+                  <!-- Actions Column -->
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+                    <td mat-cell *matCellDef="let record">
+                      <button
+                        mat-icon-button
+                        [matMenuTriggerFor]="recordMenu"
+                        matTooltip="المزيد"
+                      >
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+                      <mat-menu #recordMenu="matMenu">
+                        <button
+                          mat-menu-item
+                          (click)="onViewMedicalRecord(record.id)"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                          <span>عرض التفاصيل</span>
+                        </button>
+                        @if (canCreateMedicalRecord() && record.status ===
+                        RecordStatus.DRAFT) {
+                        <button
+                          mat-menu-item
+                          (click)="onEditMedicalRecord(record.id)"
+                        >
+                          <mat-icon>edit</mat-icon>
+                          <span>تعديل</span>
+                        </button>
+                        } @if (record.hasFollowUp) {
+                        <mat-divider></mat-divider>
+                        <button mat-menu-item disabled>
+                          <mat-icon>event</mat-icon>
+                          <span
+                            >موعد متابعة:
+                            {{ formatDate(record.followUpDate) }}</span
+                          >
+                        </button>
+                        }
+                      </mat-menu>
+                    </td>
+                  </ng-container>
+
+                  <tr
+                    mat-header-row
+                    *matHeaderRowDef="medicalRecordsColumns"
+                  ></tr>
+                  <tr
+                    mat-row
+                    *matRowDef="let row; columns: medicalRecordsColumns"
+                    class="medical-record-row"
+                    (click)="onViewMedicalRecord(row.id)"
+                  ></tr>
+                </table>
+              </div>
+              } @else {
+              <!-- NEW: Empty State -->
+              <div class="empty-state">
+                <mat-icon>local_hospital</mat-icon>
+                <h3>لا توجد سجلات طبية</h3>
+                <p>لم يتم إنشاء أي سجلات طبية لهذا المريض بعد</p>
+                @if (canCreateMedicalRecord()) {
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="onCreateMedicalRecord()"
+                >
+                  <mat-icon>add</mat-icon>
+                  إضافة أول سجل طبي
+                </button>
+                }
+              </div>
+              } }
+            </div>
+          </mat-tab>
+
+          <!-- Invoices Tab -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon>receipt</mat-icon>
+              <span>الفواتير</span>
+              <span *ngIf="invoicesCount() > 0" class="tab-badge">{{
+                invoicesCount()
+              }}</span>
+            </ng-template>
+
+            <div class="tab-content">
+              <!-- Loading State -->
+              @if (loadingInvoices()) {
+              <div class="loading-container">
+                <mat-spinner diameter="40"></mat-spinner>
+                <p>جاري تحميل الفواتير...</p>
+              </div>
+              } @else {
+              <!-- Header with Actions -->
+              <div class="invoices-header">
+                <div class="header-info">
+                  <h3>
+                    <mat-icon>receipt</mat-icon>
+                    فواتير المريض
+                  </h3>
+                  <p class="subtitle">
+                    إجمالي الفواتير: {{ invoicesCount() }} | الرصيد المستحق:
+                    {{ formatCurrency(outstandingBalance()) }}
+                  </p>
+                </div>
+
+                <div class="header-actions">
+                  @if (canCreateInvoice()) {
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    (click)="onCreateInvoice()"
+                  >
+                    <mat-icon>add</mat-icon>
+                    إنشاء فاتورة جديدة
+                  </button>
+                  }
+                  <button
+                    mat-stroked-button
+                    (click)="refreshInvoices()"
+                    matTooltip="تحديث"
+                  >
+                    <mat-icon>refresh</mat-icon>
+                  </button>
                 </div>
               </div>
+
+              <mat-divider></mat-divider>
+
+              <!-- Empty State -->
+              @if (patientInvoices().length === 0) {
+              <div class="empty-state">
+                <mat-icon>receipt_long</mat-icon>
+                <h3>لا توجد فواتير</h3>
+                <p>لم يتم إنشاء أي فواتير لهذا المريض بعد</p>
+                @if (canCreateInvoice()) {
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="onCreateInvoice()"
+                >
+                  <mat-icon>add</mat-icon>
+                  إنشاء فاتورة الآن
+                </button>
+                }
+              </div>
+              } @else {
+              <!-- Invoices Table -->
+              <div class="invoices-table-container">
+                <table
+                  mat-table
+                  [dataSource]="patientInvoices()"
+                  class="invoices-table"
+                >
+                  <!-- Invoice Number Column -->
+                  <ng-container matColumnDef="invoiceNumber">
+                    <th mat-header-cell *matHeaderCellDef>رقم الفاتورة</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <div class="invoice-number">
+                        <mat-icon class="invoice-icon">receipt</mat-icon>
+                        <span class="number">{{ invoice.invoiceNumber }}</span>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <!-- Invoice Date Column -->
+                  <ng-container matColumnDef="invoiceDate">
+                    <th mat-header-cell *matHeaderCellDef>تاريخ الإصدار</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <div class="date-cell">
+                        <mat-icon>calendar_today</mat-icon>
+                        <span>{{ formatDate(invoice.invoiceDate) }}</span>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <!-- Total Amount Column -->
+                  <ng-container matColumnDef="totalAmount">
+                    <th mat-header-cell *matHeaderCellDef>المبلغ الإجمالي</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <span class="amount total">{{
+                        formatCurrency(invoice.totalAmount)
+                      }}</span>
+                    </td>
+                  </ng-container>
+
+                  <!-- Paid Amount Column -->
+                  <ng-container matColumnDef="amountPaid">
+                    <th mat-header-cell *matHeaderCellDef>المدفوع</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <span class="amount paid">{{
+                        formatCurrency(invoice.paidAmount)
+                      }}</span>
+                    </td>
+                  </ng-container>
+
+                  <!-- Balance Due Column -->
+                  <ng-container matColumnDef="balanceDue">
+                    <th mat-header-cell *matHeaderCellDef>المتبقي</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <span
+                        class="amount balance"
+                        [class.overdue]="invoice.balanceDue > 0"
+                      >
+                        {{ formatCurrency(invoice.balanceDue) }}
+                      </span>
+                    </td>
+                  </ng-container>
+
+                  <!-- Invoices Status Column -->
+                  <ng-container matColumnDef="status">
+                    <th mat-header-cell *matHeaderCellDef>حالة الفاتورة</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <div class="status-chips">
+                        <mat-chip [color]="getStatusColor(invoice.status)">
+                          {{ getInvoiceStatusLabel(invoice.status) }}
+                        </mat-chip>
+                      </div>
+                    </td>
+                  </ng-container>
+                  <!-- Payment status -->
+                  <ng-container matColumnDef="paymentStatus">
+                    <th mat-header-cell *matHeaderCellDef>حالة الدفع</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <mat-chip
+                        [color]="getPaymentStatusColor(invoice.paymentStatus)"
+                        class="payment-status"
+                      >
+                        {{ getPaymentStatusLabel(invoice.paymentStatus) }}
+                      </mat-chip>
+                    </td>
+                  </ng-container>
+
+                  <!-- Actions Column -->
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+                    <td mat-cell *matCellDef="let invoice">
+                      <div class="action-buttons">
+                        <button
+                          mat-icon-button
+                          (click)="onViewInvoice(invoice.id)"
+                          matTooltip="عرض التفاصيل"
+                        >
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+
+                        @if (invoice.balanceDue > 0 && canCreateInvoice()) {
+                        <button
+                          mat-icon-button
+                          color="primary"
+                          (click)="onAddPayment(invoice.id)"
+                          matTooltip="إضافة دفعة"
+                        >
+                          <mat-icon>payment</mat-icon>
+                        </button>
+                        }
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <tr
+                    mat-header-row
+                    *matHeaderRowDef="invoicesDisplayedColumns"
+                  ></tr>
+                  <tr
+                    mat-row
+                    *matRowDef="let row; columns: invoicesDisplayedColumns"
+                    class="invoice-row"
+                    [class.overdue]="row.status === 'OVERDUE'"
+                  ></tr>
+                </table>
+              </div>
+
+              <!-- Summary Cards -->
+              <div class="invoices-summary">
+                <mat-card class="summary-card">
+                  <mat-card-content>
+                    <div class="summary-icon total">
+                      <mat-icon>receipt_long</mat-icon>
+                    </div>
+                    <div class="summary-info">
+                      <span class="label">إجمالي الفواتير</span>
+                      <span class="value">{{ invoicesCount() }}</span>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <mat-card class="summary-card">
+                  <mat-card-content>
+                    <div class="summary-icon paid">
+                      <mat-icon>check_circle</mat-icon>
+                    </div>
+                    <div class="summary-info">
+                      <span class="label">إجمالي المدفوعات</span>
+                      <span class="value">
+                        {{ formatCurrency(getTotalPaidAmount()) }}
+                      </span>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+
+                <mat-card class="summary-card">
+                  <mat-card-content>
+                    <div class="summary-icon outstanding">
+                      <mat-icon>account_balance_wallet</mat-icon>
+                    </div>
+                    <div class="summary-info">
+                      <span class="label">الرصيد المستحق</span>
+                      <span class="value outstanding-value">{{
+                        formatCurrency(outstandingBalance())
+                      }}</span>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+              } }
             </div>
           </mat-tab>
         </mat-tab-group>
       </mat-card>
     </div>
 
-    <!-- Error State -->
-    <div class="error-container" *ngIf="!loading() && !patient()">
-      <mat-card class="error-card">
-        <mat-card-content>
-          <div class="error-content">
-            <mat-icon class="error-icon">error</mat-icon>
-            <h2>المريض غير موجود</h2>
-            <p>لم يتم العثور على المريض المطلوب</p>
-            <button mat-raised-button color="primary" routerLink="/patients">
-              <mat-icon>people</mat-icon>
-              العودة لقائمة المرضى
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
+    <!-- More Actions Menu -->
+    <mat-menu #moreMenu="matMenu">
+      <button mat-menu-item (click)="onPrintPatientCard()">
+        <mat-icon>print</mat-icon>
+        <span>طباعة بطاقة المريض</span>
+      </button>
+
+      <button mat-menu-item (click)="onExportPatientData()">
+        <mat-icon>file_download</mat-icon>
+        <span>تصدير البيانات</span>
+      </button>
+
+      <mat-divider></mat-divider>
+
+      <button
+        mat-menu-item
+        *ngIf="canReactivatePatient() && !patient()!.active"
+        (click)="onReactivatePatient()"
+      >
+        <mat-icon color="primary">restore</mat-icon>
+        <span>إعادة تفعيل المريض</span>
+      </button>
+
+      <!-- <button
+        mat-menu-item
+        *ngIf="canDeletePatient() && patient()!.isActive"
+        (click)="onDeletePatient()"
+      >
+        <mat-icon color="warn">delete</mat-icon>
+        <span>حذف المريض</span>
+      </button> -->
+
+      <!-- Soft Delete -->
+      <button
+        mat-menu-item
+        *ngIf="canDeletePatient() && patient()!.active"
+        (click)="onDeletePatient()"
+        class="danger-menu-item"
+      >
+        <mat-icon color="warn">delete</mat-icon>
+        <span>إلغاء التفعيل</span>
+      </button>
+
+      <!-- Permanent Delete - SYSTEM_ADMIN Only -->
+      <button
+        mat-menu-item
+        *ngIf="canPermanentlyDelete()"
+        (click)="onDeletePatient(true)"
+        class="permanent-delete-menu-item"
+      >
+        <mat-icon class="danger-icon">delete_forever</mat-icon>
+        <span class="danger-text">حذف نهائي (لا يمكن التراجع)</span>
+      </button>
+    </mat-menu>
   </div>
 </app-sidebar>
-
-<!-- Actions Menu -->
-<mat-menu #actionsMenu="matMenu">
-  <button mat-menu-item (click)="onEditPatient()">
-    <mat-icon>edit</mat-icon>
-    تعديل البيانات
-  </button>
-  <button mat-menu-item (click)="onPrintProfile()">
-    <mat-icon>print</mat-icon>
-    طباعة الملف
-  </button>
-  <button mat-menu-item (click)="onExportProfile()">
-    <mat-icon>file_download</mat-icon>
-    تصدير البيانات
-  </button>
-  <mat-divider></mat-divider>
-  <button mat-menu-item (click)="onDeletePatient()" *ngIf="patient()?.isActive">
-    <mat-icon color="warn">delete</mat-icon>
-    <span class="text-warn">حذف المريض</span>
-  </button>
-  <button
-    mat-menu-item
-    (click)="onRestorePatient()"
-    *ngIf="!patient()?.isActive"
-  >
-    <mat-icon color="primary">restore</mat-icon>
-    إعادة تفعيل
-  </button>
-</mat-menu>

@@ -1,0 +1,211 @@
+<!-- ===================================================================
+  src/app/features/invoices/components/payment-details/payment-details.component.html
+  Payment Details Template - قالب تفاصيل الدفعة
+  =================================================================== -->
+
+<app-header></app-header>
+<app-sidebar>
+  <div class="main-content">
+    <div class="payment-details-container">
+      <!-- Loading State -->
+      @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner diameter="48"></mat-spinner>
+        <p>جاري تحميل تفاصيل الدفعة...</p>
+      </div>
+      }
+
+      <!-- Payment Details Content -->
+      @if (!loading() && payment(); as paymentData) {
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="header-content">
+          <button
+            mat-icon-button
+            (click)="goBack()"
+            class="back-button"
+            matTooltip="العودة"
+          >
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+
+          <div class="title-section">
+            <h1 class="page-title">
+              <mat-icon>payment</mat-icon>
+              تفاصيل الدفعة
+            </h1>
+            <p class="page-subtitle">
+              عرض معلومات الدفعة #{{ paymentData.id }}
+            </p>
+          </div>
+
+          <div class="header-actions">
+            <!-- <button mat-icon-button (click)="onPrint()" matTooltip="طباعة">
+              <mat-icon>print</mat-icon>
+            </button> -->
+            <button mat-icon-button (click)="onDownload()" matTooltip="تحميل">
+              <mat-icon>download</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Information Card -->
+      <mat-card class="payment-info-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>info</mat-icon>
+            معلومات الدفعة
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="info-grid">
+            <!-- Payment ID -->
+            <div class="info-item">
+              <span class="info-label">
+                <mat-icon>tag</mat-icon>
+                رقم الدفعة
+              </span>
+              <span class="info-value payment-id">#{{ paymentData.id }}</span>
+            </div>
+
+            <!-- Invoice Number -->
+            @if (paymentData.invoiceNumber) {
+            <div class="info-item">
+              <span class="info-label">
+                <mat-icon>receipt_long</mat-icon>
+                رقم الفاتورة
+              </span>
+              <span class="info-value invoice-link" (click)="goToInvoice()">
+                {{ paymentData.invoiceNumber }}
+              </span>
+            </div>
+            }
+
+            <!-- Amount -->
+            <div class="info-item highlighted">
+              <span class="info-label">
+                <mat-icon>payments</mat-icon>
+                المبلغ المدفوع
+              </span>
+              <span class="info-value amount-value">
+                {{ formatCurrency(paymentData.amount) }}
+              </span>
+            </div>
+
+            <!-- Payment Date -->
+            <div class="info-item">
+              <span class="info-label">
+                <mat-icon>event</mat-icon>
+                تاريخ الدفع
+              </span>
+              <span class="info-value">
+                {{ formatDate(paymentData.paymentDate) }}
+              </span>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="info-item">
+              <span class="info-label">
+                <mat-icon>{{
+                  getPaymentMethodIcon(paymentData.paymentMethod)
+                }}</mat-icon>
+                طريقة الدفع
+              </span>
+              <span class="info-value">
+                <mat-chip class="payment-method-chip">
+                  {{ getPaymentMethodLabel(paymentData.paymentMethod) }}
+                </mat-chip>
+              </span>
+            </div>
+
+            <!-- Reference Number -->
+            @if (paymentData.referenceNumber) {
+            <div class="info-item">
+              <span class="info-label">
+                <mat-icon>confirmation_number</mat-icon>
+                الرقم المرجعي
+              </span>
+              <span class="info-value reference-number">
+                {{ paymentData.referenceNumber }}
+              </span>
+            </div>
+            }
+
+            <!-- Processed By -->
+            @if (paymentData.processedBy) {
+            <div class="info-item">
+              <span class="info-label">
+                <mat-icon>person</mat-icon>
+                تمت المعالجة بواسطة
+              </span>
+              <span class="info-value">
+                {{ paymentData.processedBy }}
+              </span>
+            </div>
+            }
+
+            <!-- Created At -->
+            @if (paymentData.createdAt) {
+            <div class="info-item">
+              <span class="info-label">
+                <mat-icon>schedule</mat-icon>
+                تاريخ الإنشاء
+              </span>
+              <span class="info-value">
+                {{ formatDateTime(paymentData.createdAt) }}
+              </span>
+            </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Notes Card -->
+      @if (paymentData.notes) {
+      <mat-card class="notes-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>note</mat-icon>
+            ملاحظات الدفعة
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p class="notes-content">{{ paymentData.notes }}</p>
+        </mat-card-content>
+      </mat-card>
+      }
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button mat-raised-button (click)="goBack()" class="back-action-button">
+          <mat-icon>arrow_forward</mat-icon>
+          العودة
+        </button>
+
+        @if (paymentData.invoiceId) {
+        <button mat-raised-button color="primary" (click)="goToInvoice()">
+          <mat-icon>receipt_long</mat-icon>
+          عرض الفاتورة
+        </button>
+        }
+      </div>
+
+      }
+
+      <!-- Error State -->
+      @if (!loading() && !payment()) {
+      <div class="error-container">
+        <mat-icon>error_outline</mat-icon>
+        <h3>لم يتم العثور على تفاصيل الدفعة</h3>
+        <p>عذراً، لا يمكن العثور على تفاصيل هذه الدفعة</p>
+        <button mat-raised-button color="primary" (click)="goBack()">
+          <mat-icon>arrow_forward</mat-icon>
+          العودة
+        </button>
+      </div>
+      }
+    </div>
+  </div>
+</app-sidebar>

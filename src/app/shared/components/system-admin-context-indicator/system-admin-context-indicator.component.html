@@ -1,0 +1,92 @@
+@if (isSystemAdmin()) {
+<div class="context-indicator">
+  @if (actingContext()) {
+  <!-- Active Context Display -->
+  <button
+    mat-button
+    [matMenuTriggerFor]="contextMenu"
+    class="context-button active"
+  >
+    <mat-icon>business</mat-icon>
+    <span class="context-label">
+      يعمل نيابة عن: <strong>{{ actingContext()!.clinicName }}</strong>
+    </span>
+    <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
+  </button>
+
+  <!-- Context Menu -->
+  <mat-menu #contextMenu="matMenu" class="context-menu">
+    <div class="menu-header">
+      <h3>سياق العمل الحالي</h3>
+      <span class="elapsed-time">{{ getElapsedTime() }}</span>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <div class="menu-content">
+      <div class="info-row">
+        <mat-icon>location_city</mat-icon>
+        <div class="info-details">
+          <span class="label">العيادة:</span>
+          <span class="value">{{ actingContext()!.clinicName }}</span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <mat-icon>description</mat-icon>
+        <div class="info-details">
+          <span class="label">السبب:</span>
+          <span class="value">{{ actingContext()!.reason }}</span>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <mat-icon>access_time</mat-icon>
+        <div class="info-details">
+          <span class="label">بدأ في:</span>
+          <span class="value">{{ formatStartTime() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <div class="menu-actions">
+      <button mat-menu-item (click)="changeContext()">
+        <mat-icon>swap_horiz</mat-icon>
+        تغيير العيادة
+      </button>
+
+      <button mat-menu-item (click)="clearContext()" class="clear-button">
+        <mat-icon>clear</mat-icon>
+        إنهاء السياق
+      </button>
+    </div>
+  </mat-menu>
+  } @else {
+  <!-- No Active Context -->
+  <button
+    mat-stroked-button
+    (click)="selectContext()"
+    class="context-button inactive"
+    matTooltip="حدد عيادة للعمل نيابة عنها"
+  >
+    <mat-icon>business_center</mat-icon>
+    <span class="context-label">تحديد سياق العيادة</span>
+  </button>
+  }
+
+  <!-- Quick Info Badge -->
+  @if (actingContext() && shouldShowWarning()) {
+  <mat-icon
+    class="warning-icon"
+    matTooltip="السياق نشط منذ أكثر من 12 ساعة"
+    matBadge="!"
+    matBadgeColor="warn"
+    matBadgeSize="small"
+  >
+    warning
+  </mat-icon>
+  }
+</div>
+}

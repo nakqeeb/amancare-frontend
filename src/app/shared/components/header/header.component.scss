@@ -37,12 +37,17 @@
   height: 1.8rem;
 }
 
+.logo-img {
+  width: 2.8rem;
+  height: 2.8rem;
+}
+
 .search-container {
   flex: 1;
   max-width: 400px;
   display: flex;
   align-items: center;
-  background: var(--bg-light);
+  // background: var(--bg-light);
   border-radius: 25px;
   padding: 0.5rem 1rem;
   margin: 0 1rem;

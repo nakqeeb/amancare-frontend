@@ -1,230 +1,294 @@
-<mat-card class="vital-signs-card">
-  <mat-card-header>
-    <mat-card-title>
+<!-- src/app/features/medical-records/components/vital-signs-form/vital-signs-form.component.html -->
+<div class="vital-signs-form">
+  <div class="form-header">
+    <h3 class="form-title">
       <mat-icon>favorite</mat-icon>
       العلامات الحيوية
-    </mat-card-title>
-  </mat-card-header>
-  <mat-card-content>
-    <form [formGroup]="vitalSignsForm" class="vital-signs-form">
-      <div class="form-grid">
-        <!-- Temperature -->
-        <div class="vital-item">
-          <mat-form-field appearance="outline">
-            <mat-label>درجة الحرارة</mat-label>
-            <input
-              matInput
-              type="number"
-              formControlName="temperature"
-              placeholder="37.0"
-              step="0.1"
-              min="35"
-              max="42"
-            />
-            <span matSuffix>°C</span>
-            <mat-icon matPrefix>thermostat</mat-icon>
-            <mat-hint>المعدل الطبيعي: 36.5 - 37.5</mat-hint>
-          </mat-form-field>
-        </div>
+    </h3>
+    <button mat-icon-button (click)="resetValues()" matTooltip="إعادة تعيين">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
 
-        <!-- Blood Pressure -->
-        <div class="vital-item bp-item">
-          <label class="bp-label">ضغط الدم</label>
-          <div class="bp-inputs">
-            <mat-form-field appearance="outline">
-              <mat-label>الانقباضي</mat-label>
-              <input
-                matInput
-                type="number"
-                formControlName="bloodPressureSystolic"
-                placeholder="120"
-                min="70"
-                max="250"
-              />
-              <span matSuffix>mmHg</span>
-            </mat-form-field>
-            <span class="bp-separator">/</span>
-            <mat-form-field appearance="outline">
-              <mat-label>الانبساطي</mat-label>
-              <input
-                matInput
-                type="number"
-                formControlName="bloodPressureDiastolic"
-                placeholder="80"
-                min="40"
-                max="150"
-              />
-              <span matSuffix>mmHg</span>
-            </mat-form-field>
-          </div>
-          <mat-hint class="bp-hint">المعدل الطبيعي: 120/80</mat-hint>
-        </div>
+  <div class="vital-signs-grid">
+    <!-- Temperature -->
+    <mat-form-field appearance="outline">
+      <mat-label>درجة الحرارة</mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="vitalSigns.temperature"
+        (ngModelChange)="onValueChange()"
+        min="35"
+        max="42"
+        step="0.1"
+        placeholder="37.0"
+      />
+      <span matSuffix>°C</span>
+      <mat-icon matPrefix>thermostat</mat-icon>
+      @if (vitalSigns.temperature && isAbnormal('temperature',
+      vitalSigns.temperature)) {
+      <mat-hint class="warning">
+        {{ getAbnormalMessage("temperature", vitalSigns.temperature) }}
+      </mat-hint>
+      }
+    </mat-form-field>
 
-        <!-- Heart Rate -->
-        <div class="vital-item">
-          <mat-form-field appearance="outline">
-            <mat-label>معدل النبض</mat-label>
-            <input
-              matInput
-              type="number"
-              formControlName="heartRate"
-              placeholder="75"
-              min="40"
-              max="200"
-            />
-            <span matSuffix>نبضة/دقيقة</span>
-            <mat-icon matPrefix>favorite_border</mat-icon>
-            <mat-hint>المعدل الطبيعي: 60 - 100</mat-hint>
-          </mat-form-field>
-        </div>
+    <!-- Blood Pressure -->
+    <div class="blood-pressure-group">
+      <mat-form-field appearance="outline">
+        <mat-label>ضغط الدم الانقباضي</mat-label>
+        <input
+          matInput
+          type="number"
+          [(ngModel)]="vitalSigns.bloodPressureSystolic"
+          (ngModelChange)="onValueChange()"
+          min="60"
+          max="200"
+          placeholder="120"
+        />
+        <span matSuffix>mmHg</span>
+        <mat-icon matPrefix>bloodtype</mat-icon>
+      </mat-form-field>
 
-        <!-- Respiratory Rate -->
-        <div class="vital-item">
-          <mat-form-field appearance="outline">
-            <mat-label>معدل التنفس</mat-label>
-            <input
-              matInput
-              type="number"
-              formControlName="respiratoryRate"
-              placeholder="16"
-              min="8"
-              max="60"
-            />
-            <span matSuffix>نفس/دقيقة</span>
-            <mat-icon matPrefix>air</mat-icon>
-            <mat-hint>المعدل الطبيعي: 12 - 20</mat-hint>
-          </mat-form-field>
-        </div>
+      <span class="separator">/</span>
 
-        <!-- Oxygen Saturation -->
-        <div class="vital-item">
-          <mat-form-field appearance="outline">
-            <mat-label>تشبع الأكسجين</mat-label>
-            <input
-              matInput
-              type="number"
-              formControlName="oxygenSaturation"
-              placeholder="98"
-              min="70"
-              max="100"
-            />
-            <span matSuffix>%</span>
-            <mat-icon matPrefix>bubble_chart</mat-icon>
-            <mat-hint>المعدل الطبيعي: 95 - 100</mat-hint>
-          </mat-form-field>
-        </div>
+      <mat-form-field appearance="outline">
+        <mat-label>ضغط الدم الانبساطي</mat-label>
+        <input
+          matInput
+          type="number"
+          [(ngModel)]="vitalSigns.bloodPressureDiastolic"
+          (ngModelChange)="onValueChange()"
+          min="40"
+          max="130"
+          placeholder="80"
+        />
+        <span matSuffix>mmHg</span>
+      </mat-form-field>
+    </div>
+    @if (vitalSigns.bloodPressureSystolic && vitalSigns.bloodPressureDiastolic)
+    {
+    <div class="bp-classification">
+      <span class="classification-label">التصنيف:</span>
+      <span [class]="'classification-value ' + getBloodPressureClass()">
+        {{ getBloodPressureClassification() }}
+      </span>
+    </div>
+    }
 
-        <!-- Weight -->
-        <div class="vital-item">
-          <mat-form-field appearance="outline">
-            <mat-label>الوزن</mat-label>
-            <input
-              matInput
-              type="number"
-              formControlName="weight"
-              placeholder="70"
-              min="1"
-              max="300"
-              (blur)="calculateBMI()"
-            />
-            <span matSuffix>كجم</span>
-            <mat-icon matPrefix>fitness_center</mat-icon>
-          </mat-form-field>
-        </div>
+    <!-- Heart Rate -->
+    <mat-form-field appearance="outline">
+      <mat-label>معدل النبض</mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="vitalSigns.heartRate"
+        (ngModelChange)="onValueChange()"
+        min="40"
+        max="200"
+        placeholder="72"
+      />
+      <span matSuffix>نبضة/دقيقة</span>
+      <mat-icon matPrefix>favorite</mat-icon>
+      @if (vitalSigns.heartRate && isAbnormal('heartRate',
+      vitalSigns.heartRate)) {
+      <mat-hint class="warning">
+        {{ getAbnormalMessage("heartRate", vitalSigns.heartRate) }}
+      </mat-hint>
+      }
+    </mat-form-field>
 
-        <!-- Height -->
-        <div class="vital-item">
-          <mat-form-field appearance="outline">
-            <mat-label>الطول</mat-label>
-            <input
-              matInput
-              type="number"
-              formControlName="height"
-              placeholder="170"
-              min="50"
-              max="250"
-              (blur)="calculateBMI()"
-            />
-            <span matSuffix>سم</span>
-            <mat-icon matPrefix>straighten</mat-icon>
-          </mat-form-field>
-        </div>
+    <!-- Respiratory Rate -->
+    <mat-form-field appearance="outline">
+      <mat-label>معدل التنفس</mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="vitalSigns.respiratoryRate"
+        (ngModelChange)="onValueChange()"
+        min="8"
+        max="40"
+        placeholder="16"
+      />
+      <span matSuffix>نفس/دقيقة</span>
+      <mat-icon matPrefix>air</mat-icon>
+      @if (vitalSigns.respiratoryRate && isAbnormal('respiratoryRate',
+      vitalSigns.respiratoryRate)) {
+      <mat-hint class="warning">
+        {{ getAbnormalMessage("respiratoryRate", vitalSigns.respiratoryRate) }}
+      </mat-hint>
+      }
+    </mat-form-field>
 
-        <!-- BMI -->
-        <div class="vital-item">
-          <mat-form-field appearance="outline">
-            <mat-label>مؤشر كتلة الجسم</mat-label>
-            <input
-              matInput
-              formControlName="bmi"
-              readonly
-              [value]="bmiValue"
-              [class.normal]="bmiCategory === 'normal'"
-              [class.warning]="bmiCategory === 'warning'"
-              [class.danger]="bmiCategory === 'danger'"
-            />
-            <mat-icon matPrefix>assessment</mat-icon>
-            <mat-hint>{{ bmiMessage }}</mat-hint>
-          </mat-form-field>
-        </div>
+    <!-- Oxygen Saturation -->
+    <mat-form-field appearance="outline">
+      <mat-label>تشبع الأكسجين</mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="vitalSigns.oxygenSaturation"
+        (ngModelChange)="onValueChange()"
+        min="70"
+        max="100"
+        placeholder="98"
+      />
+      <span matSuffix>%</span>
+      <mat-icon matPrefix>opacity</mat-icon>
+      @if (vitalSigns.oxygenSaturation && isAbnormal('oxygenSaturation',
+      vitalSigns.oxygenSaturation)) {
+      <mat-hint class="warning">
+        {{
+          getAbnormalMessage("oxygenSaturation", vitalSigns.oxygenSaturation)
+        }}
+      </mat-hint>
+      }
+    </mat-form-field>
 
-        <!-- Blood Sugar -->
-        <div class="vital-item">
-          <mat-form-field appearance="outline">
-            <mat-label>سكر الدم</mat-label>
-            <input
-              matInput
-              type="number"
-              formControlName="bloodSugar"
-              placeholder="100"
-              min="30"
-              max="600"
-            />
-            <span matSuffix>mg/dL</span>
-            <mat-icon matPrefix>opacity</mat-icon>
-            <mat-hint>الصائم: 70-100 | العشوائي: &lt;200</mat-hint>
-          </mat-form-field>
-        </div>
+    <!-- Weight -->
+    <mat-form-field appearance="outline">
+      <mat-label>الوزن</mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="vitalSigns.weight"
+        (ngModelChange)="calculateBMI()"
+        min="1"
+        max="300"
+        step="0.1"
+        placeholder="70"
+      />
+      <span matSuffix>كجم</span>
+      <mat-icon matPrefix>monitor_weight</mat-icon>
+    </mat-form-field>
 
-        <!-- Pain Scale -->
-        <div class="vital-item pain-scale">
-          <label>مقياس الألم</label>
-          <div class="pain-slider">
-            <mat-slider
-              min="0"
-              max="10"
-              step="1"
-              showTickMarks
-              discrete
-              [displayWith]="formatPainLabel"
-            >
-              <input matSliderThumb formControlName="painScale" />
-            </mat-slider>
-            <div class="pain-labels">
-              <span>0</span>
-              <span>{{ getPainDescription() }}</span>
-              <span>10</span>
-            </div>
-          </div>
-        </div>
+    <!-- Height -->
+    <mat-form-field appearance="outline">
+      <mat-label>الطول</mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="vitalSigns.height"
+        (ngModelChange)="calculateBMI()"
+        min="50"
+        max="250"
+        placeholder="170"
+      />
+      <span matSuffix>سم</span>
+      <mat-icon matPrefix>height</mat-icon>
+    </mat-form-field>
+
+    <!-- BMI (calculated) -->
+    @if (vitalSigns.bmi) {
+    <div class="bmi-display">
+      <div class="bmi-header">
+        <mat-icon>accessibility_new</mat-icon>
+        <span>مؤشر كتلة الجسم</span>
       </div>
+      <div class="bmi-value" [class]="'bmi-' + getBMIClass()">
+        {{ vitalSigns.bmi | number : "1.1-1" }}
+      </div>
+      <div class="bmi-classification">
+        {{ getBMIClassification() }}
+      </div>
+    </div>
+    }
 
-      <div class="form-actions">
-        <button mat-stroked-button type="button" (click)="onReset()">
-          <mat-icon>refresh</mat-icon>
-          إعادة تعيين
-        </button>
+    <!-- Blood Sugar -->
+    <mat-form-field appearance="outline">
+      <mat-label>سكر الدم</mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="vitalSigns.bloodSugar"
+        (ngModelChange)="onValueChange()"
+        min="30"
+        max="600"
+        placeholder="100"
+      />
+      <span matSuffix>mg/dL</span>
+      <mat-icon matPrefix>water_drop</mat-icon>
+      <mat-hint>
+        <mat-select [(value)]="bloodSugarType" class="inline-select">
+          <mat-option value="fasting">صائم</mat-option>
+          <mat-option value="random">عشوائي</mat-option>
+          <mat-option value="postprandial">بعد الأكل</mat-option>
+        </mat-select>
+      </mat-hint>
+    </mat-form-field>
+
+    <!-- Pain Scale -->
+    <div class="pain-scale-container">
+      <label class="pain-label">
+        <mat-icon>sentiment_very_dissatisfied</mat-icon>
+        مقياس الألم
+      </label>
+      <div class="pain-scale">
+        @for (level of painLevels; track level.value) {
         <button
-          mat-raised-button
-          color="primary"
-          type="button"
-          (click)="onSave()"
-          [disabled]="vitalSignsForm.invalid"
+          mat-icon-button
+          [class.selected]="vitalSigns.painScale === level.value"
+          [style.color]="level.color"
+          (click)="setPainLevel(level.value)"
+          [matTooltip]="level.label"
         >
-          <mat-icon>save</mat-icon>
-          حفظ العلامات الحيوية
+          <mat-icon>{{ level.icon }}</mat-icon>
         </button>
+        }
       </div>
-    </form>
-  </mat-card-content>
-</mat-card>
+      @if (vitalSigns.painScale !== undefined) {
+      <div class="pain-value">
+        {{ vitalSigns.painScale }}/10 -
+        {{ getPainDescription(vitalSigns.painScale) }}
+      </div>
+      }
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <button mat-button (click)="fillNormalValues()">
+      <mat-icon>check_circle</mat-icon>
+      قيم طبيعية
+    </button>
+
+    <button
+      mat-button
+      (click)="importFromLastVisit()"
+      [disabled]="!hasLastVisitData"
+    >
+      <mat-icon>history</mat-icon>
+      من آخر زيارة
+    </button>
+
+    <button mat-button (click)="showChart()">
+      <mat-icon>show_chart</mat-icon>
+      عرض المخطط
+    </button>
+  </div>
+
+  <!-- Summary -->
+  @if (hasAnyAbnormalValues()) {
+  <mat-card class="abnormal-summary">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon color="warn">warning</mat-icon>
+        قيم غير طبيعية
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <ul class="abnormal-list">
+        @for (abnormal of getAbnormalValues(); track abnormal.name) {
+        <li>
+          <strong>{{ abnormal.label }}:</strong>
+          {{ abnormal.value }} {{ abnormal.unit }}
+          <span class="normal-range"
+            >(الطبيعي: {{ abnormal.normalRange }})</span
+          >
+        </li>
+        }
+      </ul>
+    </mat-card-content>
+  </mat-card>
+  }
+</div>

@@ -1,299 +1,294 @@
-<!-- ===================================================================
-4. PATIENT MEDICAL HISTORY COMPONENT TEMPLATE
-src/app/features/medical-records/components/patient-medical-history/patient-medical-history.component.html
-=================================================================== -->
-<div class="patient-history-container">
-  <app-header></app-header>
-  <app-sidebar></app-sidebar>
-
-  <main class="main-content">
-    @if (loading()) {
-    <div class="loading-container">
-      <mat-spinner></mat-spinner>
-      <p>جاري تحميل التاريخ المرضي...</p>
-    </div>
-    } @else {
-    <!-- Page Header -->
-    <div class="page-header">
+<!-- src/app/features/medical-records/components/patient-medical-history/patient-medical-history.component.html -->
+<app-header />
+<app-sidebar>
+  <div class="patient-medical-history-container">
+    <!-- Header -->
+    <div class="history-header">
       <div class="header-content">
-        <button mat-icon-button routerLink="/patients" class="back-btn">
+        <button mat-icon-button (click)="onBack()" class="back-button">
           <mat-icon>arrow_back</mat-icon>
         </button>
-        <div>
-          <h1>التاريخ المرضي</h1>
+
+        <div class="title-section">
+          <h1 class="page-title">
+            <mat-icon>history</mat-icon>
+            التاريخ المرضي
+          </h1>
           @if (patient()) {
-          <p class="subtitle">
-            {{ patient()!.firstName }} {{ patient()!.lastName }} -
-            {{ patient()!.patientNumber }}
-          </p>
+          <div class="patient-info">
+            <span class="patient-name">{{ patient()!.fullName }}</span>
+            <span class="patient-meta">
+              <mat-icon>badge</mat-icon>
+              {{ patient()!.patientNumber }}
+            </span>
+            <span class="patient-meta">
+              <mat-icon>cake</mat-icon>
+              {{ getPatientAge() }} سنة
+            </span>
+            @if (patient()!.bloodType) {
+            <span class="patient-meta blood-type">
+              <mat-icon>bloodtype</mat-icon>
+              {{ patient()!.bloodType }}
+            </span>
+            }
+          </div>
           }
         </div>
+
+        <div class="header-actions">
+          <button mat-button (click)="onAddNewRecord()">
+            <mat-icon>add</mat-icon>
+            سجل جديد
+          </button>
+
+          <button mat-button (click)="onExportHistory()">
+            <mat-icon>download</mat-icon>
+            تصدير السجل
+          </button>
+
+          <button mat-icon-button (click)="onRefresh()">
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </div>
       </div>
-      <div class="header-actions">
+
+      <!-- Statistics -->
+      <div class="history-stats">
+        <div class="stat-item">
+          <span class="stat-value">{{ totalVisits() }}</span>
+          <span class="stat-label">إجمالي الزيارات</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ totalPrescriptions() }}</span>
+          <span class="stat-label">الوصفات الطبية</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ totalLabTests() }}</span>
+          <span class="stat-label">التحاليل المخبرية</span>
+        </div>
+        @if (chronicConditions().length > 0) {
+        <div class="stat-item chronic">
+          <span class="stat-value">{{ chronicConditions().length }}</span>
+          <span class="stat-label">الأمراض المزمنة</span>
+        </div>
+        } @if (allergies().length > 0) {
+        <div class="stat-item allergies">
+          <span class="stat-value">{{ allergies().length }}</span>
+          <span class="stat-label">الحساسية</span>
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="history-content">
+      @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner></mat-spinner>
+        <p>جاري تحميل التاريخ المرضي...</p>
+      </div>
+      } @else if (medicalRecords().length === 0) {
+      <div class="empty-state">
+        <mat-icon>folder_open</mat-icon>
+        <h3>لا يوجد سجل مرضي</h3>
+        <p>لم يتم تسجيل أي زيارات طبية لهذا المريض</p>
         <button mat-raised-button color="primary" (click)="onAddNewRecord()">
           <mat-icon>add</mat-icon>
-          إضافة سجل جديد
-        </button>
-        <button mat-stroked-button (click)="onExportHistory()">
-          <mat-icon>download</mat-icon>
-          تصدير التاريخ
+          إضافة أول سجل طبي
         </button>
       </div>
-    </div>
-
-    <!-- Patient Info Card -->
-    @if (patient()) {
-    <mat-card class="patient-info-card">
-      <mat-card-content>
-        <div class="patient-info">
-          <div class="patient-avatar">
-            <mat-icon>person</mat-icon>
-          </div>
-          <div class="patient-details">
-            <h3>{{ patient()!.firstName }} {{ patient()!.lastName }}</h3>
-            <div class="info-row">
-              <span
-                ><mat-icon>badge</mat-icon> {{ patient()!.patientNumber }}</span
-              >
-              <span><mat-icon>cake</mat-icon> {{ getPatientAge() }} سنة</span>
-              <span
-                ><mat-icon>opacity</mat-icon> {{ patient()!.bloodType }}</span
-              >
-              <span><mat-icon>phone</mat-icon> {{ patient()!.phone }}</span>
-            </div>
-          </div>
-          <div class="patient-stats">
-            <div class="stat">
-              <span class="stat-value">{{ totalVisits() }}</span>
-              <span class="stat-label">زيارة</span>
-            </div>
-            <div class="stat">
-              <span class="stat-value">{{ totalPrescriptions() }}</span>
-              <span class="stat-label">وصفة طبية</span>
-            </div>
-            <div class="stat">
-              <span class="stat-value">{{ totalLabTests() }}</span>
-              <span class="stat-label">فحص مخبري</span>
-            </div>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-    }
-
-    <!-- Quick Info Cards -->
-    <div class="quick-info-row">
-      <!-- Allergies -->
-      @if (allergies().length > 0) {
-      <mat-card class="info-card allergies-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon color="warn">warning</mat-icon>
-            الحساسيات
-          </mat-card-title>
-        </mat-card-header>
+      } @else {
+      <!-- Filters -->
+      <mat-card class="filters-card">
         <mat-card-content>
-          <div class="chips-list">
-            @for (allergy of allergies(); track allergy) {
-            <mat-chip color="warn">{{ allergy }}</mat-chip>
-            }
+          <div class="filters-row">
+            <mat-form-field appearance="outline">
+              <mat-label>نوع الزيارة</mat-label>
+              <mat-select
+                [(value)]="filterVisitType"
+                (selectionChange)="applyFilters()"
+              >
+                <mat-option value="">الكل</mat-option>
+                <mat-option value="FIRST_VISIT">زيارة أولى</mat-option>
+                <mat-option value="FOLLOW_UP">متابعة</mat-option>
+                <mat-option value="EMERGENCY">طوارئ</mat-option>
+                <mat-option value="ROUTINE_CHECK">فحص دوري</mat-option>
+                <mat-option value="VACCINATION">تطعيم</mat-option>
+                <mat-option value="CONSULTATION">استشارة</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>الحالة</mat-label>
+              <mat-select
+                [(value)]="filterStatus"
+                (selectionChange)="applyFilters()"
+              >
+                <mat-option value="">الكل</mat-option>
+                <mat-option value="DRAFT">مسودة</mat-option>
+                <mat-option value="COMPLETED">مكتمل</mat-option>
+                <mat-option value="REVIEWED">مراجع</mat-option>
+                <mat-option value="LOCKED">مقفل</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>الفترة الزمنية</mat-label>
+              <mat-select
+                [(value)]="filterPeriod"
+                (selectionChange)="applyFilters()"
+              >
+                <mat-option value="">الكل</mat-option>
+                <mat-option value="last_month">آخر شهر</mat-option>
+                <mat-option value="last_3_months">آخر 3 أشهر</mat-option>
+                <mat-option value="last_6_months">آخر 6 أشهر</mat-option>
+                <mat-option value="last_year">آخر سنة</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="search-field">
+              <mat-label>البحث</mat-label>
+              <input
+                matInput
+                [(ngModel)]="searchTerm"
+                (keyup)="applyFilters()"
+                placeholder="البحث في السجلات..."
+              />
+              <mat-icon matPrefix>search</mat-icon>
+            </mat-form-field>
           </div>
         </mat-card-content>
       </mat-card>
-      }
 
-      <!-- Chronic Conditions -->
-      @if (chronicConditions().length > 0) {
-      <mat-card class="info-card conditions-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon>medical_information</mat-icon>
-            الحالات المزمنة
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="chips-list">
-            @for (condition of chronicConditions(); track condition) {
-            <mat-chip>{{ condition }}</mat-chip>
-            }
-          </div>
-        </mat-card-content>
-      </mat-card>
-      }
-    </div>
-
-    <!-- Medical Records Timeline -->
-    <mat-tab-group [(selectedIndex)]="selectedTab">
-      <mat-tab label="عرض زمني">
-        <div class="tab-content">
-          @if (groupedRecords().length === 0) {
-          <div class="empty-state">
-            <mat-icon>history</mat-icon>
-            <h3>لا يوجد سجلات طبية سابقة</h3>
-            <p>لم يتم إضافة أي سجلات طبية لهذا المريض بعد</p>
-            <button
-              mat-raised-button
-              color="primary"
-              (click)="onAddNewRecord()"
+      <!-- Timeline View -->
+      <div class="timeline-container">
+        @for (yearGroup of groupedRecords(); track yearGroup.year) {
+        <div class="year-section">
+          <div class="year-header">
+            <h2 class="year-title">{{ yearGroup.year }}</h2>
+            <span class="year-count"
+              >{{ getYearTotalRecords(yearGroup) }} سجل</span
             >
-              <mat-icon>add</mat-icon>
-              إضافة أول سجل طبي
-            </button>
           </div>
-          } @else {
-          <mat-accordion>
-            @for (yearGroup of groupedRecords(); track yearGroup.year) {
-            <mat-expansion-panel expanded="{{ $index === 0 }}">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <mat-icon>calendar_month</mat-icon>
-                  {{ yearGroup.year }}
-                </mat-panel-title>
-                <mat-panel-description>
-                  <!-- {{ yearGroup.months.reduce((sum, m) => sum + m.records.length, 0) }} -->
-                  {{ getYearTotalRecords(yearGroup) }}
-                  سجل
-                </mat-panel-description>
-              </mat-expansion-panel-header>
 
-              <div class="year-content">
-                @for (monthGroup of yearGroup.months; track monthGroup.month) {
-                <div class="month-section">
-                  <h4 class="month-header">{{ monthGroup.month }}</h4>
-                  <div class="records-list">
-                    @for (record of monthGroup.records; track record.id) {
-                    <mat-card
-                      class="record-card"
-                      (click)="onViewRecord(record)"
-                    >
-                      <mat-card-content>
-                        <div class="record-header">
-                          <div class="record-date">
-                            <mat-icon>event</mat-icon>
-                            {{ formatDate(record.visitDate) }}
-                          </div>
-                          <div class="record-badges">
-                            <mat-chip [class]="getStatusClass(record.status)">
-                              {{ getStatusLabel(record.status) }}
-                            </mat-chip>
-                            <mat-chip>{{
-                              getVisitTypeLabel(record.visitType)
-                            }}</mat-chip>
-                          </div>
-                        </div>
-                        <div class="record-content">
-                          <h4>{{ record.chiefComplaint }}</h4>
-                          <p class="diagnosis">
-                            <mat-icon>medical_information</mat-icon>
-                            {{ getPrimaryDiagnosis(record) }}
-                          </p>
-                          <p class="doctor">
-                            <mat-icon>person</mat-icon>
-                            {{ record.doctorName }}
-                          </p>
-                        </div>
-                        <div class="record-actions">
-                          <button
-                            mat-icon-button
-                            (click)="
-                              onViewRecord(record); $event.stopPropagation()
-                            "
-                          >
-                            <mat-icon>visibility</mat-icon>
-                          </button>
-                          @if (record.status !== 'LOCKED') {
-                          <button
-                            mat-icon-button
-                            (click)="
-                              onEditRecord(record); $event.stopPropagation()
-                            "
-                          >
-                            <mat-icon>edit</mat-icon>
-                          </button>
-                          }
-                          <button
-                            mat-icon-button
-                            (click)="
-                              onPrintRecord(record); $event.stopPropagation()
-                            "
-                          >
-                            <mat-icon>print</mat-icon>
-                          </button>
-                        </div>
-                      </mat-card-content>
-                    </mat-card>
+          @for (monthGroup of yearGroup.months; track monthGroup.month) {
+          <div class="month-section">
+            <h3 class="month-title">
+              <mat-icon>calendar_today</mat-icon>
+              {{ monthGroup.month }}
+            </h3>
+
+            <div class="records-list">
+              @for (record of monthGroup.records; track record.id) {
+              <mat-card
+                class="record-card"
+                [class.confidential]="record.isConfidential"
+              >
+                <mat-card-header>
+                  <mat-card-title>
+                    <div class="record-title">
+                      <span class="visit-date">{{
+                        formatDate(record.visitDate)
+                      }}</span>
+                      <span
+                        class="visit-type-chip"
+                        [ngClass]="'type-' + record.visitType.toLowerCase()"
+                      >
+                        {{ getVisitTypeLabel(record.visitType) }}
+                      </span>
+                      <span
+                        class="status-chip"
+                        [ngClass]="'status-' + record.status.toLowerCase()"
+                      >
+                        {{ getStatusLabel(record.status) }}
+                      </span>
+                      @if (record.isConfidential) {
+                      <mat-icon class="confidential-icon" matTooltip="سري"
+                        >lock</mat-icon
+                      >
+                      }
+                    </div>
+                  </mat-card-title>
+                </mat-card-header>
+
+                <mat-card-content>
+                  <div class="record-content">
+                    <div class="chief-complaint">
+                      <strong>الشكوى الرئيسية:</strong>
+                      <p>{{ record.chiefComplaint }}</p>
+                    </div>
+
+                    @if (record.primaryDiagnosis) {
+                    <div class="diagnosis">
+                      <strong>التشخيص:</strong>
+                      <p>{{ record.primaryDiagnosis }}</p>
+                    </div>
                     }
-                  </div>
-                </div>
-                }
-              </div>
-            </mat-expansion-panel>
-            }
-          </mat-accordion>
-          }
-        </div>
-      </mat-tab>
 
-      <mat-tab label="جميع السجلات">
-        <div class="tab-content">
-          <div class="all-records-list">
-            @for (record of medicalRecords(); track record.id) {
-            <mat-card class="record-card" (click)="onViewRecord(record)">
-              <mat-card-content>
-                <div class="record-header">
-                  <div class="record-date">
-                    <mat-icon>event</mat-icon>
-                    {{ formatDate(record.visitDate) }}
+                    <div class="record-meta">
+                      <span class="doctor">
+                        <mat-icon>person</mat-icon>
+                        د. {{ record.doctorName }}
+                      </span>
+                      @if (record.hasFollowUp) {
+                      <span class="follow-up">
+                        <mat-icon>event</mat-icon>
+                        متابعة: {{ formatDate(record.followUpDate!) }}
+                      </span>
+                      }
+                    </div>
                   </div>
-                  <div class="record-badges">
-                    <mat-chip [class]="getStatusClass(record.status)">
-                      {{ getStatusLabel(record.status) }}
-                    </mat-chip>
-                    <mat-chip>{{
-                      getVisitTypeLabel(record.visitType)
-                    }}</mat-chip>
-                  </div>
-                </div>
-                <div class="record-content">
-                  <h4>{{ record.chiefComplaint }}</h4>
-                  <p class="diagnosis">
-                    <mat-icon>medical_information</mat-icon>
-                    {{ getPrimaryDiagnosis(record) }}
-                  </p>
-                  <p class="doctor">
-                    <mat-icon>person</mat-icon>
-                    {{ record.doctorName }}
-                  </p>
-                </div>
-                <div class="record-actions">
-                  <button
-                    mat-icon-button
-                    (click)="onViewRecord(record); $event.stopPropagation()"
-                  >
+                </mat-card-content>
+
+                <mat-card-actions>
+                  <button mat-button (click)="onViewRecord(record)">
                     <mat-icon>visibility</mat-icon>
+                    عرض التفاصيل
                   </button>
-                  @if (record.status !== 'LOCKED') {
-                  <button
-                    mat-icon-button
-                    (click)="onEditRecord(record); $event.stopPropagation()"
-                  >
+                  @if (canEdit(record)) {
+                  <button mat-button (click)="onEditRecord(record)">
                     <mat-icon>edit</mat-icon>
+                    تعديل
                   </button>
                   }
-                  <button
-                    mat-icon-button
-                    (click)="onPrintRecord(record); $event.stopPropagation()"
-                  >
+                  <button mat-button (click)="onPrintRecord(record)">
                     <mat-icon>print</mat-icon>
+                    طباعة
                   </button>
-                </div>
-              </mat-card-content>
-            </mat-card>
-            }
+                </mat-card-actions>
+              </mat-card>
+              }
+            </div>
           </div>
+          }
         </div>
-      </mat-tab>
-    </mat-tab-group>
-    }
-  </main>
-</div>
+        }
+
+        <!-- Load More -->
+        @if (hasMoreRecords()) {
+        <div class="load-more">
+          <button mat-raised-button (click)="loadMore()" [disabled]="loading()">
+            @if (loading()) {
+            <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+            <mat-icon>expand_more</mat-icon>
+            عرض المزيد }
+          </button>
+        </div>
+        }
+      </div>
+      }
+    </div>
+
+    <!-- Floating Action Button -->
+    <button
+      mat-fab
+      color="primary"
+      class="fab-button"
+      (click)="onAddNewRecord()"
+      matTooltip="إضافة سجل طبي جديد"
+    >
+      <mat-icon>add</mat-icon>
+    </button>
+  </div>
+</app-sidebar>

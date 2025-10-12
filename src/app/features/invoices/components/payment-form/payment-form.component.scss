@@ -1,0 +1,435 @@
+// ===================================================================
+// src/app/features/invoices/components/payment-form/payment-form.component.scss
+// Payment Form Styles
+// ===================================================================
+
+.main-content {
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  min-height: calc(100vh - 64px);
+}
+
+.payment-form-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+// ===================================================================
+// PAGE HEADER
+// ===================================================================
+
+.page-header {
+  margin-bottom: var(--spacing-xl);
+
+  .header-content {
+    .title-section {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+
+      .page-title {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        font-size: var(--font-size-2xl);
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+
+        mat-icon {
+          font-size: 32px;
+          width: 32px;
+          height: 32px;
+          color: var(--primary-color);
+        }
+      }
+    }
+  }
+}
+
+// ===================================================================
+// LOADING STATE
+// ===================================================================
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+
+  p {
+    margin-top: var(--spacing-md);
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+  }
+}
+
+// ===================================================================
+// SUMMARY CARD
+// ===================================================================
+
+.summary-card {
+  margin-bottom: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-light) 100%);
+
+  mat-card-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-light);
+
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+
+      mat-icon {
+        color: var(--primary-color);
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+      }
+    }
+  }
+
+  mat-card-content {
+    padding: var(--spacing-lg);
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-md);
+      background: var(--bg-primary);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-light);
+
+      .summary-label {
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .summary-value {
+        font-size: var(--font-size-lg);
+        color: var(--text-primary);
+        font-weight: 600;
+
+        &.paid {
+          color: var(--success-color);
+        }
+
+        &.balance {
+          color: var(--primary-color);
+        }
+      }
+
+      &.highlight {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        border-color: var(--primary-color);
+
+        .summary-label {
+          color: rgba(255, 255, 255, 0.9);
+        }
+
+        .summary-value {
+          color: white;
+          font-size: var(--font-size-xl);
+        }
+      }
+    }
+  }
+}
+
+// ===================================================================
+// FORM CARD
+// ===================================================================
+
+.form-card {
+  margin-bottom: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+
+  mat-card-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-light);
+
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+
+      mat-icon {
+        color: var(--primary-color);
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+      }
+    }
+  }
+
+  mat-card-content {
+    padding: var(--spacing-lg);
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-lg);
+    }
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
+
+  mat-divider {
+    margin: var(--spacing-lg) 0;
+  }
+}
+
+// ===================================================================
+// AMOUNT SECTION
+// ===================================================================
+
+.amount-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+
+  .quick-amount-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-sm);
+
+    @media (max-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    button {
+      height: 48px;
+      font-weight: 600;
+
+      mat-icon {
+        margin-left: var(--spacing-xs);
+      }
+    }
+  }
+}
+
+// ===================================================================
+// PAYMENT SUMMARY
+// ===================================================================
+
+.payment-summary {
+  padding: var(--spacing-lg);
+  background: var(--bg-light);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-md);
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+
+    .summary-label {
+      font-size: var(--font-size-base);
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .summary-value {
+      font-size: var(--font-size-lg);
+      color: var(--text-primary);
+      font-weight: 700;
+
+      &.remaining {
+        color: var(--warning-color);
+      }
+    }
+
+    &:not(:last-child) {
+      border-bottom: 1px solid var(--border-light);
+    }
+  }
+
+  .payment-complete-notice {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-md);
+    background: var(--success-color);
+    color: white;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+  }
+}
+
+// ===================================================================
+// FORM ACTIONS
+// ===================================================================
+
+.form-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  padding-top: var(--spacing-lg);
+  border-top: 2px solid var(--border-light);
+
+  button {
+    min-width: 150px;
+    position: relative;
+
+    mat-icon {
+      margin-left: var(--spacing-xs);
+    }
+
+    mat-spinner {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column-reverse;
+
+    button {
+      width: 100%;
+    }
+  }
+}
+
+// ===================================================================
+// HELP CARD
+// ===================================================================
+
+.help-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  background: linear-gradient(135deg, var(--info-color), #3182ce);
+  color: white;
+
+  mat-card-content {
+    padding: var(--spacing-lg);
+
+    .help-content {
+      display: flex;
+      gap: var(--spacing-lg);
+
+      mat-icon {
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+      }
+
+      .help-text {
+        flex: 1;
+
+        h4 {
+          margin: 0 0 var(--spacing-md) 0;
+          font-size: var(--font-size-lg);
+          font-weight: 600;
+        }
+
+        ul {
+          margin: 0;
+          padding: 0 0 0 var(--spacing-lg);
+          list-style-position: outside;
+
+          li {
+            margin-bottom: var(--spacing-sm);
+            line-height: 1.6;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// ===================================================================
+// RESPONSIVE DESIGN
+// ===================================================================
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: var(--spacing-md);
+  }
+
+  .summary-card {
+    .summary-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .help-card {
+    .help-content {
+      flex-direction: column;
+      text-align: center;
+
+      mat-icon {
+        margin: 0 auto;
+      }
+
+      .help-text {
+        ul {
+          text-align: right;
+          padding: 0 var(--spacing-lg);
+        }
+      }
+    }
+  }
+}
+
+// ===================================================================
+// RTL SUPPORT
+// ===================================================================
+
+[dir="rtl"] {
+  .form-actions button mat-icon {
+    margin-left: 0;
+    margin-right: var(--spacing-xs);
+  }
+
+  .quick-amount-buttons button mat-icon {
+    margin-left: 0;
+    margin-right: var(--spacing-xs);
+  }
+
+  .help-content {
+    .help-text ul {
+      padding: 0 var(--spacing-lg) 0 0;
+    }
+  }
+}

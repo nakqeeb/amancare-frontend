@@ -1,428 +1,502 @@
 // ===================================================================
-// 1. MEDICAL RECORD LIST COMPONENT
 // src/app/features/medical-records/components/medical-record-list/medical-record-list.component.ts
+// Medical Record List Component with Full Functionality
 // ===================================================================
-import { Component, inject, signal, OnInit, ViewChild, computed } from '@angular/core';
+
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatChipsModule } from '@angular/material/chips';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatDividerModule } from '@angular/material/divider';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { ViewChild } from '@angular/core';
 
-// Shared Components
-import { HeaderComponent } from '../../../../shared/components/header/header.component';
-import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.component';
-import { DataTableComponent, TableColumn, TableAction } from '../../../../shared/components/data-table/data-table.component';
-import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Observable, map, startWith } from 'rxjs';
 
-// Services & Models
 import { MedicalRecordService } from '../../services/medical-record.service';
-import { NotificationService } from '../../../../core/services/notification.service';
-import { LoadingService } from '../../../../core/services/loading.service';
+import { PatientService } from '../../../patients/services/patient.service';
+import { UserService } from '../../../users/services/user.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { NotificationService } from '../../../../core/services/notification.service';
+
 import {
-  MedicalRecord,
+  MedicalRecordSummary,
   MedicalRecordSearchCriteria,
+  MedicalRecordStatistics,
   RecordStatus,
-  VisitType
+  VisitType,
+  UpdateRecordStatusRequest
 } from '../../models/medical-record.model';
+import { Patient } from '../../../patients/models/patient.model';
+import { User } from '../../../users/models/user.model';
+import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { HeaderComponent } from "../../../../shared/components/header/header.component";
+import { SidebarComponent } from "../../../../shared/components/sidebar/sidebar.component";
 
 @Component({
   selector: 'app-medical-record-list',
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule,
+    FormsModule,
     ReactiveFormsModule,
+    RouterModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
+    MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatProgressSpinnerModule,
     MatMenuModule,
-    MatChipsModule,
+    MatTooltipModule,
+    MatSlideToggleModule,
+    MatAutocompleteModule,
     MatDialogModule,
-    MatDividerModule,
+    MatSnackBarModule,
     HeaderComponent,
-    SidebarComponent,
-    DataTableComponent
-  ],
+    SidebarComponent
+],
   templateUrl: './medical-record-list.component.html',
   styleUrl: './medical-record-list.component.scss'
 })
-export class MedicalRecordListComponent implements OnInit {
-  @ViewChild('dataTable') dataTable!: DataTableComponent;
+export class MedicalRecordListComponent implements OnInit, OnDestroy {
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
 
   // Services
   private medicalRecordService = inject(MedicalRecordService);
-  private notificationService = inject(NotificationService);
-  private loadingService = inject(LoadingService);
+  private patientService = inject(PatientService);
+  private userService = inject(UserService);
   private authService = inject(AuthService);
+  private notificationService = inject(NotificationService);
   private router = inject(Router);
-  private route = inject(ActivatedRoute);
-  private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
 
-  // Signals
-  medicalRecords = signal<MedicalRecord[]>([]);
-  loading = signal(false);
-  totalRecords = signal(0);
+  // State Management
+  medicalRecords = this.medicalRecordService.medicalRecords;
+  statistics = this.medicalRecordService.statistics;
+  loading = this.medicalRecordService.loading;
   currentUser = this.authService.currentUser;
 
-  completedCount = computed(() =>
-    this.medicalRecords().filter(r => r.status === RecordStatus.COMPLETED).length
-  );
-
-  draftCount = computed(() =>
-    this.medicalRecords().filter(r => r.status === RecordStatus.DRAFT).length
-  );
-
-  lockedCount = computed(() =>
-    this.medicalRecords().filter(r => r.status === RecordStatus.LOCKED).length
-  );
-
-  // Filter Form
-  filterForm!: FormGroup;
+  // Additional Signals
+  doctors = signal<User[]>([]);
+  patients = signal<Patient[]>([]);
 
   // Table Configuration
-  columns: TableColumn[] = [
-    {
-      key: 'visitDate',
-      label: 'تاريخ الزيارة',
-      sortable: true,
-      width: '120px',
-      cellTemplate: (record: MedicalRecord) =>
-        new Date(record.visitDate).toLocaleDateString('ar-SA')
-    },
-    {
-      key: 'patientName',
-      label: 'المريض',
-      sortable: true,
-      searchable: true
-    },
-    {
-      key: 'doctorName',
-      label: 'الطبيب',
-      sortable: true
-    },
-    {
-      key: 'visitType',
-      label: 'نوع الزيارة',
-      width: '120px',
-      cellTemplate: (record: MedicalRecord) => this.getVisitTypeLabel(record.visitType)
-    },
-    {
-      key: 'chiefComplaint',
-      label: 'الشكوى الرئيسية',
-      width: '200px'
-    },
-    {
-      key: 'diagnosis',
-      label: 'التشخيص',
-      width: '200px',
-      cellTemplate: (record: MedicalRecord) =>
-        record.diagnosis.find(d => d.isPrimary)?.description || '-'
-    },
-    {
-      key: 'status',
-      label: 'الحالة',
-      sortable: true,
-      width: '100px',
-      cellTemplate: (record: MedicalRecord) =>
-        `<span class="status-chip status-${record.status.toLowerCase()}">
-          ${this.getStatusLabel(record.status)}
-        </span>`
-    }
+  displayedColumns: string[] = [
+    'id',
+    'patient',
+    'doctor',
+    'visitDate',
+    'visitType',
+    'chiefComplaint',
+    'diagnosis',
+    'status',
+    'indicators',
+    'actions'
   ];
 
-  actions: TableAction[] = [
-    {
-      icon: 'visibility',
-      label: 'عرض',
-      color: 'primary',
-      action: (record: MedicalRecord) => this.onViewRecord(record)
-    },
-    {
-      icon: 'edit',
-      label: 'تعديل',
-      color: 'accent',
-      action: (record: MedicalRecord) => this.onEditRecord(record),
-      show: (record: MedicalRecord) => this.canEdit(record)
-    },
-    {
-      icon: 'print',
-      label: 'طباعة',
-      color: 'info',
-      action: (record: MedicalRecord) => this.onPrintRecord(record)
-    },
-    {
-      icon: 'lock',
-      label: 'قفل',
-      color: 'warn',
-      action: (record: MedicalRecord) => this.onLockRecord(record),
-      show: (record: MedicalRecord) =>
-        record.status === RecordStatus.COMPLETED && this.isDoctor()
-    },
-    {
-      icon: 'delete',
-      label: 'حذف',
-      color: 'warn',
-      action: (record: MedicalRecord) => this.onDeleteRecord(record),
-      show: (record: MedicalRecord) =>
-        record.status === RecordStatus.DRAFT && this.canEdit(record)
-    }
-  ];
+  dataSource = new MatTableDataSource<MedicalRecordSummary>([]);
 
-  // Filter Options
-  visitTypes = [
-    { value: '', label: 'جميع الأنواع' },
-    { value: VisitType.FIRST_VISIT, label: 'زيارة أولى' },
-    { value: VisitType.FOLLOW_UP, label: 'متابعة' },
-    { value: VisitType.EMERGENCY, label: 'طوارئ' },
-    { value: VisitType.ROUTINE_CHECK, label: 'فحص دوري' },
-    { value: VisitType.VACCINATION, label: 'تطعيم' },
-    { value: VisitType.CONSULTATION, label: 'استشارة' }
-  ];
+  // Pagination
+  currentPage = 0;
+  pageSize = 10;
+  totalRecords = 0;
 
-  statusOptions = [
-    { value: '', label: 'جميع الحالات' },
-    { value: RecordStatus.DRAFT, label: 'مسودة' },
-    { value: RecordStatus.COMPLETED, label: 'مكتمل' },
-    { value: RecordStatus.REVIEWED, label: 'مراجع' },
-    { value: RecordStatus.AMENDED, label: 'معدل' },
-    { value: RecordStatus.LOCKED, label: 'مقفل' }
-  ];
+  // Search and Filters
+  searchTerm = '';
+  selectedPatient: Patient | null = null;
+  selectedDoctor = '';
+  selectedVisitType = '';
+  selectedStatus = '';
+  fromDate: Date | null = null;
+  toDate: Date | null = null;
+  includeConfidential = false;
+
+  // Autocomplete
+  patientControl = new FormControl<Patient | string>('');
+  filteredPatients$!: Observable<Patient[]>;
+
+  // Subscriptions
+  private destroy$ = new Subject<void>();
 
   ngOnInit(): void {
-    this.initializeFilterForm();
+    this.initializeData();
+    this.setupAutoComplete();
+    this.subscribeToDataChanges();
+    this.loadStatistics();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ===================================================================
+  // INITIALIZATION
+  // ===================================================================
+
+  private initializeData(): void {
     this.loadMedicalRecords();
-    this.checkQueryParams();
+    this.loadDoctors();
+    this.loadPatients();
   }
 
-  private initializeFilterForm(): void {
-    this.filterForm = this.fb.group({
-      searchQuery: [''],
-      visitType: [''],
-      status: [''],
-      fromDate: [null],
-      toDate: [null],
-      patientId: [''],
-      doctorId: ['']
-    });
-
-    // Subscribe to form changes
-    this.filterForm.valueChanges.subscribe(() => {
-      this.loadMedicalRecords();
-    });
+  private setupAutoComplete(): void {
+    this.filteredPatients$ = this.patientControl.valueChanges.pipe(
+      startWith(''),
+      debounceTime(300),
+      distinctUntilChanged(),
+      map(value => {
+        const filterValue = typeof value === 'string' ? value : value?.fullName || '';
+        return this.filterPatients(filterValue);
+      })
+    );
   }
 
-  private checkQueryParams(): void {
-    this.route.queryParams.subscribe(params => {
-      if (params['patientId']) {
-        this.filterForm.patchValue({
-          patientId: +params['patientId']
-        });
-      }
-      if (params['doctorId']) {
-        this.filterForm.patchValue({
-          doctorId: +params['doctorId']
-        });
-      }
-    });
+  private filterPatients(value: string): Patient[] {
+    const filterValue = value.toLowerCase();
+    return this.patients().filter(patient =>
+      patient.fullName.toLowerCase().includes(filterValue) ||
+      patient.patientNumber.toLowerCase().includes(filterValue)
+    );
   }
 
-  loadMedicalRecords(): void {
-    this.loading.set(true);
+  private subscribeToDataChanges(): void {
+    // Subscribe to medical records changes
+    this.medicalRecordService.medicalRecords$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(records => {
+        this.dataSource.data = records;
+        this.totalRecords = records.length;
+      });
+  }
 
-    const criteria: MedicalRecordSearchCriteria = {
-      ...this.filterForm.value
-    };
+  // ===================================================================
+  // DATA LOADING
+  // ===================================================================
 
-    // Format dates
-    if (criteria.fromDate) {
-      criteria.fromDate = this.formatDate(criteria.fromDate);
-    }
-    if (criteria.toDate) {
-      criteria.toDate = this.formatDate(criteria.toDate);
-    }
-
-    // Remove empty values
-    Object.keys(criteria).forEach(key => {
-      if (!criteria[key as keyof MedicalRecordSearchCriteria]) {
-        delete criteria[key as keyof MedicalRecordSearchCriteria];
-      }
-    });
-
-    this.medicalRecordService.getMedicalRecords(criteria).subscribe({
-      next: (records) => {
-        this.medicalRecords.set(records);
-        this.totalRecords.set(records.length);
-        this.loading.set(false);
+  private loadMedicalRecords(): void {
+    this.medicalRecordService.getAllMedicalRecords(
+      this.currentPage,
+      this.pageSize
+    ).subscribe({
+      next: (response) => {
+        this.dataSource.data = response.content || [];
+        this.totalRecords = response.totalElements || 0;
+        this.setupTableFeatures();
       },
       error: (error) => {
         console.error('Error loading medical records:', error);
-        this.notificationService.error('حدث خطأ في تحميل السجلات الطبية');
-        this.loading.set(false);
       }
     });
   }
 
-  onViewRecord(record: MedicalRecord): void {
+  private loadStatistics(): void {
+    this.medicalRecordService.getMedicalRecordStatistics().subscribe();
+  }
+
+  private loadDoctors(): void {
+    this.userService.getDoctors().subscribe({
+      next: (response) => {
+        this.doctors.set(response.data!);
+      }
+    });
+  }
+
+  private loadPatients(): void {
+    this.patientService.getAllPatients(0, 100).subscribe({
+      next: (response) => {
+        this.patients.set(response.data?.content || []);
+      }
+    });
+  }
+
+  private setupTableFeatures(): void {
+    if (this.paginator) {
+      this.dataSource.paginator = this.paginator;
+    }
+    if (this.sort) {
+      this.dataSource.sort = this.sort;
+    }
+  }
+
+  // ===================================================================
+  // SEARCH & FILTERS
+  // ===================================================================
+
+  onSearch(): void {
+    const criteria: MedicalRecordSearchCriteria = {
+      searchTerm: this.searchTerm,
+      patientId: this.selectedPatient?.id,
+      doctorId: this.selectedDoctor ? parseInt(this.selectedDoctor) : undefined,
+      visitType: this.selectedVisitType as VisitType || undefined,
+      status: this.selectedStatus as RecordStatus || undefined,
+      visitDateFrom: this.fromDate?.toISOString().split('T')[0],
+      visitDateTo: this.toDate?.toISOString().split('T')[0],
+      isConfidential: this.includeConfidential ? undefined : false
+    };
+
+    this.medicalRecordService.searchMedicalRecords(
+      criteria,
+      this.currentPage,
+      this.pageSize
+    ).subscribe({
+      next: (response) => {
+        this.dataSource.data = response.content || [];
+        this.totalRecords = response.totalElements || 0;
+      }
+    });
+  }
+
+  onFilterChange(): void {
+    // Reset to first page when filters change
+    this.currentPage = 0;
+    if (this.paginator) {
+      this.paginator.pageIndex = 0;
+    }
+    this.onSearch();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.onSearch();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.selectedPatient = null;
+    this.patientControl.setValue('');
+    this.selectedDoctor = '';
+    this.selectedVisitType = '';
+    this.selectedStatus = '';
+    this.fromDate = null;
+    this.toDate = null;
+    this.includeConfidential = false;
+    this.loadMedicalRecords();
+  }
+
+  onPatientSelected(event: any): void {
+    this.selectedPatient = event.option.value;
+    this.onFilterChange();
+  }
+
+  displayPatient(patient: Patient): string {
+    return patient ? `${patient.fullName} - ${patient.patientNumber}` : '';
+  }
+
+  // ===================================================================
+  // TABLE ACTIONS
+  // ===================================================================
+
+  onRowClick(record: MedicalRecordSummary): void {
+    if (!record.isConfidential || this.canViewConfidential()) {
+      this.router.navigate(['/medical-records', record.id]);
+    }
+  }
+
+  onView(record: MedicalRecordSummary): void {
     this.router.navigate(['/medical-records', record.id]);
   }
 
-  onEditRecord(record: MedicalRecord): void {
+  onEdit(record: MedicalRecordSummary): void {
     this.router.navigate(['/medical-records', record.id, 'edit']);
   }
 
-  onPrintRecord(record: MedicalRecord): void {
-    this.loadingService.startLoading();
-    this.medicalRecordService.exportMedicalRecord(record.id!).subscribe({
+  onAddRecord(): void {
+    this.router.navigate(['/medical-records', 'new']);
+  }
+
+  onPrint(record: MedicalRecordSummary): void {
+    this.medicalRecordService.exportMedicalRecordAsPdf(record.id).subscribe({
       next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `medical-record-${record.id}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        this.loadingService.stopLoading();
-        this.notificationService.success('تم تحميل السجل الطبي');
-      },
-      error: () => {
-        this.loadingService.stopLoading();
-        this.notificationService.error('حدث خطأ في طباعة السجل');
+        const filename = `medical-record-${record.id}-${new Date().toISOString().split('T')[0]}.pdf`;
+        this.medicalRecordService.downloadPdf(blob, filename);
       }
     });
   }
 
-  onLockRecord(record: MedicalRecord): void {
-    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
-      data: {
-        title: 'قفل السجل الطبي',
-        message: 'هل أنت متأكد من قفل هذا السجل؟ لن يمكن تعديله بعد القفل',
-        confirmText: 'قفل السجل',
-        cancelText: 'إلغاء',
-        type: 'warning'
-      }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.medicalRecordService.updateRecordStatus(record.id!, RecordStatus.LOCKED).subscribe({
-          next: () => {
-            this.notificationService.success('تم قفل السجل الطبي');
-            this.loadMedicalRecords();
-          },
-          error: () => {
-            this.notificationService.error('حدث خطأ في قفل السجل');
-          }
-        });
-      }
-    });
-  }
-
-  onDeleteRecord(record: MedicalRecord): void {
-    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+  onDelete(record: MedicalRecordSummary): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
       data: {
         title: 'حذف السجل الطبي',
-        message: 'هل أنت متأكد من حذف هذا السجل؟',
+        message: `هل أنت متأكد من حذف السجل الطبي رقم ${record.id}؟`,
         confirmText: 'حذف',
-        cancelText: 'إلغاء',
-        type: 'danger'
+        cancelText: 'إلغاء'
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.medicalRecordService.deleteMedicalRecord(record.id!).subscribe({
+        this.medicalRecordService.deleteMedicalRecord(record.id).subscribe({
           next: () => {
-            this.notificationService.success('تم حذف السجل الطبي');
             this.loadMedicalRecords();
-          },
-          error: () => {
-            this.notificationService.error('حدث خطأ في حذف السجل');
           }
         });
       }
     });
   }
 
-  onExport(event: { format: string }): void {
-    // Implement export logic
-    this.notificationService.info('جاري تصدير السجلات...');
+  onDuplicate(record: MedicalRecordSummary): void {
+    // Navigate to create form with record data as query params
+    this.router.navigate(['/medical-records', 'new'], {
+      queryParams: { duplicateFrom: record.id }
+    });
+  }
+
+  onToggleLock(record: MedicalRecordSummary): void {
+    const newStatus = record.status === RecordStatus.LOCKED
+      ? RecordStatus.COMPLETED
+      : RecordStatus.LOCKED;
+
+    const request: UpdateRecordStatusRequest = {
+      status: newStatus,
+      notes: newStatus === RecordStatus.LOCKED
+        ? 'تم قفل السجل الطبي'
+        : 'تم إلغاء قفل السجل الطبي'
+    };
+
+    this.medicalRecordService.updateRecordStatus(record.id, request).subscribe({
+      next: () => {
+        this.loadMedicalRecords();
+      }
+    });
+  }
+
+  onViewHistory(record: MedicalRecordSummary): void {
+    this.router.navigate(['/medical-records', record.id, 'history']);
+  }
+
+  onExport(): void {
+    // Export current filtered results
+    this.notificationService.info('جاري تصدير البيانات...');
+    // Implementation for export functionality
   }
 
   onRefresh(): void {
     this.loadMedicalRecords();
+    this.loadStatistics();
   }
 
-  onResetFilters(): void {
-    this.filterForm.reset({
-      searchQuery: '',
-      visitType: '',
-      status: '',
-      fromDate: null,
-      toDate: null,
-      patientId: '',
-      doctorId: ''
-    });
+  // ===================================================================
+  // PAGINATION
+  // ===================================================================
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.loadMedicalRecords();
   }
 
-  // Helper methods
-  private formatDate(date: Date | string): string {
-    if (!date) return '';
+  // ===================================================================
+  // PERMISSIONS
+  // ===================================================================
 
-    if (typeof date === 'string') {
-      return date;
-    }
-
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  canCreateRecord(): boolean {
+    const role = this.currentUser()?.role;
+    return role === 'DOCTOR' || role === 'ADMIN' || role === 'SYSTEM_ADMIN';
   }
 
-  getVisitTypeLabel(type: VisitType): string {
-    const option = this.visitTypes.find(v => v.value === type);
-    return option ? option.label : type;
-  }
-
-  getStatusLabel(status: RecordStatus): string {
-    const option = this.statusOptions.find(s => s.value === status);
-    return option ? option.label : status;
-  }
-
-  canEdit(record: MedicalRecord): boolean {
-    if (record.status === RecordStatus.LOCKED) return false;
-
+  canEdit(record: MedicalRecordSummary): boolean {
     const user = this.currentUser();
     if (!user) return false;
 
-    // Only the doctor who created the record or admin can edit
-    return (record.createdBy === user.username || user.role === 'ADMIN') &&
-      (record.status === RecordStatus.DRAFT || record.status === RecordStatus.COMPLETED);
+    if (record.status === RecordStatus.LOCKED) {
+      return user.role === 'ADMIN' || user.role === 'SYSTEM_ADMIN';
+    }
+
+    return user.role === 'DOCTOR' || user.role === 'ADMIN' || user.role === 'SYSTEM_ADMIN';
   }
 
-  isDoctor(): boolean {
-    const user = this.currentUser();
-    return user?.role === 'DOCTOR';
+  canDelete(record: MedicalRecordSummary): boolean {
+    const role = this.currentUser()?.role;
+    return (role === 'ADMIN' || role === 'SYSTEM_ADMIN') &&
+      record.status !== RecordStatus.LOCKED;
   }
 
-  trackByRecord(index: number, record: MedicalRecord): number {
-    return record.id!;
+  canLock(record: MedicalRecordSummary): boolean {
+    const role = this.currentUser()?.role;
+    return role === 'DOCTOR' || role === 'ADMIN' || role === 'SYSTEM_ADMIN';
+  }
+
+  canViewConfidential(): boolean {
+    const role = this.currentUser()?.role || '';
+    return this.medicalRecordService.canViewConfidential(role);
+  }
+
+  // ===================================================================
+  // UTILITY METHODS
+  // ===================================================================
+
+  formatDate(date: string): string {
+    return new Date(date).toLocaleDateString('ar-SA', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
+
+  getVisitTypeLabel(type: VisitType): string {
+  const labels: Record<VisitType, string> = {
+    [VisitType.CONSULTATION]: 'استشارة',
+    [VisitType.FOLLOW_UP]: 'متابعة',
+    [VisitType.EMERGENCY]: 'طوارئ',
+    [VisitType.ROUTINE_CHECKUP]: 'فحص دوري',
+    [VisitType.VACCINATION]: 'تطعيم',
+    [VisitType.PROCEDURE]: 'إجراء طبي',
+    [VisitType.SURGERY]: 'عملية جراحية',
+    [VisitType.REHABILITATION]: 'تأهيل',
+    [VisitType.PREVENTIVE_CARE]: 'رعاية وقائية',
+    [VisitType.CHRONIC_CARE]: 'رعاية مزمنة'
+  };
+  return labels[type] || type;
+}
+
+  getStatusLabel(status: RecordStatus): string {
+    const labels: Record<RecordStatus, string> = {
+      [RecordStatus.DRAFT]: 'مسودة',
+      [RecordStatus.IN_PROGRESS]: 'قيد التحرير',
+      [RecordStatus.COMPLETED]: 'مكتمل',
+      [RecordStatus.REVIEWED]: 'مراجع',
+      [RecordStatus.LOCKED]: 'مقفل',
+      [RecordStatus.CANCELLED]: 'ملغي'
+    };
+    return labels[status] || status;
+  }
+
+  getStatusIcon(status: RecordStatus): string {
+    const icons: Record<RecordStatus, string> = {
+      [RecordStatus.DRAFT]: 'edit_note',
+      [RecordStatus.IN_PROGRESS]: 'pending',
+      [RecordStatus.COMPLETED]: 'check_circle',
+      [RecordStatus.REVIEWED]: 'task_alt',
+      [RecordStatus.LOCKED]: 'lock',
+      [RecordStatus.CANCELLED]: 'cancel'
+    };
+    return icons[status] || 'help';
   }
 }

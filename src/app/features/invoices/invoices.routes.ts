@@ -1,68 +1,77 @@
 // ===================================================================
-// src/app/features/invoices/invoices.routes.ts
+// src/app/features/medical-records/medical-records.routes.ts
+// Medical Records Feature Routing Configuration
 // ===================================================================
+
 import { Routes } from '@angular/router';
+import { AuthGuard } from '../../core/guards/auth.guard';
 import { RoleGuard } from '../../core/guards/role.guard';
+import { InvoiceDetailsComponent } from './components/invoice-details/invoice-details.component';
+import { InvoiceFormComponent } from './components/invoice-form/invoice-form.component';
+import { InvoiceListComponent } from './components/invoice-list/invoice-list.component';
 
 export const INVOICES_ROUTES: Routes = [
   {
     path: '',
-    loadComponent: () =>
-      import('./components/invoice-list/invoice-list.component')
-        .then(m => m.InvoiceListComponent),
-    title: 'إدارة الفواتير'
-  },
-  {
-    path: 'new',
-    loadComponent: () =>
-      import('./components/invoice-form/invoice-form.component')
-        .then(m => m.InvoiceFormComponent),
-    title: 'إنشاء فاتورة جديدة'
-  },
-  {
-    path: ':id',
-    loadComponent: () =>
-      import('./components/invoice-details/invoice-details.component')
-        .then(m => m.InvoiceDetailsComponent),
-    title: 'تفاصيل الفاتورة'
-  },
-  {
-    path: ':id/edit',
-    loadComponent: () =>
-      import('./components/invoice-form/invoice-form.component')
-        .then(m => m.InvoiceFormComponent),
-    canActivate: [RoleGuard],
-    data: { roles: ['ADMIN', 'SYSTEM_ADMIN', 'RECEPTIONIST'] },
-    title: 'تعديل الفاتورة'
-  },
-  {
-    path: ':id/preview',
-    loadComponent: () =>
-      import('./components/invoice-preview/invoice-preview.component')
-        .then(m => m.InvoicePreviewComponent),
-    title: 'معاينة الفاتورة'
-  },
-  {
-    path: ':id/payments',
-    loadComponent: () =>
-      import('./components/payment-tracker/payment-tracker.component')
-        .then(m => m.PaymentTrackerComponent),
-    title: 'تتبع المدفوعات'
-  },
-  {
-    path: 'patient/:patientId',
-    loadComponent: () =>
-      import('./components/invoice-list/invoice-list.component')
-        .then(m => m.InvoiceListComponent),
-    title: 'فواتير المريض'
-  },
-  {
-    path: 'reports/summary',
-    loadComponent: () =>
-      import('./components/invoice-summary/invoice-summary.component')
-        .then(m => m.InvoiceSummaryComponent),
-    canActivate: [RoleGuard],
-    data: { roles: ['ADMIN', 'SYSTEM_ADMIN'] },
-    title: 'ملخص الفواتير'
+    canActivate: [AuthGuard],
+    children: [
+      {
+        path: '',
+        component: InvoiceListComponent,
+        data: {
+          title: 'قائمة الفواتير',
+          roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE']
+        }
+      },
+      {
+        path: 'create',
+        component: InvoiceFormComponent,
+        canActivate: [RoleGuard],
+        data: {
+          title: 'إنشاء فاتورة جديدة',
+          roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'RECEPTIONIST']
+        }
+      },
+
+      // Payment Details - تفاصيل الدفعة
+      // NOTE: This route must be before ':id' to prevent 'payments' being treated as an ID
+      {
+        path: 'payments/:id',
+        loadComponent: () => import('./components/payment-details/payment-details.component')
+          .then(m => m.PaymentDetailsComponent),
+        data: {
+          title: 'تفاصيل الدفعة',
+          roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE']
+        }
+      },
+
+      {
+        path: ':id',
+        component: InvoiceDetailsComponent,
+        data: {
+          title: 'تفاصيل الفاتورة',
+          roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE']
+        }
+      },
+      {
+        path: ':id/edit',
+        component: InvoiceFormComponent,
+        canActivate: [RoleGuard],
+        data: {
+          title: 'تعديل الفاتورة',
+          roles: ['SYSTEM_ADMIN', 'ADMIN', 'RECEPTIONIST']
+        }
+      },
+      {
+        path: ':id/payment',
+        loadComponent: () => import('./components/payment-form/payment-form.component')
+          .then(m => m.PaymentFormComponent),
+        canActivate: [RoleGuard],
+        data: {
+          title: 'إضافة دفعة',
+          roles: ['SYSTEM_ADMIN', 'ADMIN', 'RECEPTIONIST']
+        }
+      }
+    ]
   }
 ];

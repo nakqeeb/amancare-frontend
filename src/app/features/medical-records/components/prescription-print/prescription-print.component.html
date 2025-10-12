@@ -1,0 +1,199 @@
+<app-header />
+<app-sidebar>
+  <div class="prescription-print-container" [class.print-mode]="printMode()">
+    <!-- Print Actions (hidden when printing) -->
+    <div class="print-actions no-print">
+      <button mat-button (click)="onBack()">
+        <mat-icon>arrow_back</mat-icon>
+        رجوع
+      </button>
+      <button mat-raised-button color="primary" (click)="onPrint()">
+        <mat-icon>print</mat-icon>
+        طباعة
+      </button>
+      <button mat-button (click)="onDownloadPDF()">
+        <mat-icon>download</mat-icon>
+        تحميل PDF
+      </button>
+    </div>
+
+    @if (loading()) {
+    <div class="loading-container">
+      <mat-spinner></mat-spinner>
+      <p>جاري التحميل...</p>
+    </div>
+    } @else if (medicalRecord() && patient()) {
+    <!-- Prescription Document -->
+    <div class="prescription-document">
+      <!-- Clinic Header -->
+      <div class="clinic-header">
+        <div class="clinic-logo">
+          <img src="assets/images/clinic-logo.png" alt="شعار العيادة" />
+        </div>
+        <div class="clinic-info">
+          <h1>عيادة أمان كير الطبية</h1>
+          <p>التخصصات: طب عام - طب أطفال - طب باطني</p>
+          <div class="contact-info">
+            <span><mat-icon>phone</mat-icon> 0123456789</span>
+            <span
+              ><mat-icon>location_on</mat-icon> الرياض، المملكة العربية
+              السعودية</span
+            >
+          </div>
+        </div>
+        <div class="license-info">
+          <p>ترخيص رقم: 12345</p>
+          <p>سجل تجاري: 67890</p>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Prescription Title -->
+      <div class="prescription-title">
+        <h2>وصفة طبية</h2>
+        <span class="prescription-number"
+          >رقم: {{ medicalRecord()!.id }}/{{ getCurrentYear() }}</span
+        >
+      </div>
+
+      <!-- Patient Information -->
+      <div class="patient-section">
+        <h3>بيانات المريض</h3>
+        <div class="patient-grid">
+          <div class="info-item">
+            <label>الاسم:</label>
+            <span>{{ patient()!.fullName }}</span>
+          </div>
+          <div class="info-item">
+            <label>رقم الملف:</label>
+            <span>{{ patient()!.patientNumber }}</span>
+          </div>
+          <div class="info-item">
+            <label>العمر:</label>
+            <span>{{ calculateAge() }} سنة</span>
+          </div>
+          <div class="info-item">
+            <label>الجنس:</label>
+            <span>{{ patient()!.gender === "MALE" ? "ذكر" : "أنثى" }}</span>
+          </div>
+          @if (patient()!.phone) {
+          <div class="info-item">
+            <label>رقم الهاتف:</label>
+            <span>{{ patient()!.phone }}</span>
+          </div>
+          }
+          <div class="info-item">
+            <label>التاريخ:</label>
+            <span>{{ formatDate(medicalRecord()!.visitDate) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diagnosis -->
+      @if (medicalRecord()!.diagnosis && medicalRecord()!.diagnosis.length > 0)
+      {
+      <div class="diagnosis-section">
+        <h3>التشخيص</h3>
+        <div class="diagnosis-list">
+          @for (diagnosis of medicalRecord()!.diagnosis; track diagnosis.id) {
+          <div class="diagnosis-item">
+            <span class="diagnosis-text">{{ diagnosis.description }}</span>
+            @if (diagnosis.icdCode) {
+            <span class="icd-code">({{ diagnosis.icdCode }})</span>
+            }
+          </div>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- Prescriptions -->
+      <div class="prescriptions-section">
+        <h3>الوصفة الطبية</h3>
+        <div class="rx-symbol">℞</div>
+
+        <div class="medications-list">
+          @for (prescription of medicalRecord()!.prescriptions; track
+          prescription.id; let i = $index) {
+          <div class="medication-item">
+            <div class="medication-number">{{ i + 1 }}.</div>
+            <div class="medication-details">
+              <div class="medication-header">
+                <strong>{{ prescription.medicationName }}</strong>
+                @if (prescription.genericName) {
+                <span class="generic">({{ prescription.genericName }})</span>
+                }
+              </div>
+              <div class="medication-info">
+                <div class="dosage">
+                  <span class="label">الجرعة:</span>
+                  <span>{{ prescription.dosage }}</span>
+                </div>
+                <div class="frequency">
+                  <span class="label">التكرار:</span>
+                  <span>{{ prescription.frequency }}</span>
+                </div>
+                <div class="duration">
+                  <span class="label">المدة:</span>
+                  <span>{{ prescription.duration }}</span>
+                </div>
+                <div class="route">
+                  <span class="label">طريقة الاستخدام:</span>
+                  <span>{{ getRouteLabel(prescription.route) }}</span>
+                </div>
+                @if (prescription.quantity) {
+                <div class="quantity">
+                  <span class="label">الكمية:</span>
+                  <span>{{ prescription.quantity }}</span>
+                </div>
+                } @if (prescription.instructions) {
+                <div class="instructions">
+                  <span class="label">تعليمات:</span>
+                  <span>{{ prescription.instructions }}</span>
+                </div>
+                }
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- Doctor Signature -->
+      <div class="signature-section">
+        <div class="doctor-info">
+          <h4>الطبيب المعالج</h4>
+          <p>{{ medicalRecord()!.doctorName }}</p>
+          <p>رقم الترخيص: 98765</p>
+        </div>
+        <div class="signature-box">
+          <p>التوقيع</p>
+          <div class="signature-line"></div>
+        </div>
+        <div class="stamp-box">
+          <p>الختم</p>
+          <div class="stamp-area"></div>
+        </div>
+      </div>
+
+      <!-- Footer Instructions -->
+      <div class="footer-instructions">
+        <h4>تعليمات مهمة:</h4>
+        <ul>
+          <li>يجب اتباع تعليمات الطبيب بدقة</li>
+          <li>في حالة ظهور أي أعراض جانبية، يرجى مراجعة الطبيب فوراً</li>
+          <li>احفظ الأدوية بعيداً عن متناول الأطفال</li>
+          <li>لا تشارك الأدوية مع الآخرين</li>
+        </ul>
+      </div>
+
+      <!-- Footer -->
+      <div class="document-footer">
+        <p>هذه الوصفة صالحة لمدة 7 أيام من تاريخ الإصدار</p>
+        <p>تمت الطباعة: {{ getCurrentDateTime() }}</p>
+      </div>
+    </div>
+    }
+  </div>
+</app-sidebar>

@@ -1,447 +1,523 @@
 // ===================================================================
 // src/app/features/invoices/components/invoice-list/invoice-list.component.scss
+// Invoice List Styles - Using Global SCSS Variables
 // ===================================================================
 
-.invoice-list-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background-color: #f5f5f5;
+.main-content {
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  min-height: calc(100vh - 64px);
+}
 
-  .main-content {
-    flex: 1;
-    padding: 20px;
-    // margin-top: 64px; // Account for header
-    // margin-right: 240px; // Account for sidebar
-    transition: margin-right 0.3s ease;
-    overflow: auto;
+.invoices-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+// ===================================================================
+// PAGE HEADER
+// ===================================================================
+
+.page-header {
+  margin-bottom: var(--spacing-xl);
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-lg);
 
     @media (max-width: 768px) {
-      margin-right: 0;
-      padding: 16px;
-    }
-
-    .page-header {
-      margin-bottom: 24px;
-
-      .header-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-
-        .title-section {
-          .page-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 0;
-            font-size: 28px;
-            font-weight: 600;
-            color: #1976d2;
-
-            mat-icon {
-              font-size: 32px;
-              width: 32px;
-              height: 32px;
-            }
-          }
-
-          .page-subtitle {
-            margin: 8px 0 0 44px;
-            color: #666;
-            font-size: 16px;
-          }
-        }
-
-        .header-actions {
-          display: flex;
-          gap: 12px;
-
-          button {
-            min-width: 120px;
-          }
-        }
-      }
-
-      .summary-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 16px;
-        margin-bottom: 24px;
-
-        .summary-card {
-          border-radius: 12px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-          mat-card-content {
-            padding: 20px;
-
-            .card-content {
-              display: flex;
-              align-items: center;
-              gap: 16px;
-
-              .card-icon {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 48px;
-                height: 48px;
-                border-radius: 50%;
-                background-color: #1976d2;
-                color: white;
-
-                &.success {
-                  background-color: #4caf50;
-                }
-
-                &.warning {
-                  background-color: #ff9800;
-                }
-
-                mat-icon {
-                  font-size: 24px;
-                  width: 24px;
-                  height: 24px;
-                }
-              }
-
-              .card-info {
-                flex: 1;
-
-                .card-value {
-                  font-size: 24px;
-                  font-weight: 600;
-                  color: #333;
-                  margin-bottom: 4px;
-                }
-
-                .card-label {
-                  font-size: 14px;
-                  color: #666;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    .filters-card {
-      margin-bottom: 24px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-      mat-card-header {
-        padding: 20px 20px 0;
-
-        mat-card-title {
-          font-size: 18px;
-          font-weight: 600;
-          color: #333;
-        }
-      }
-
-      mat-card-content {
-        padding: 20px;
-
-        .filters-form {
-          .filter-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 16px;
-
-            mat-form-field {
-              width: 100%;
-            }
-          }
-
-          .filter-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-top: 20px;
-          }
-        }
-      }
-    }
-
-    .table-card {
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-      mat-card-content {
-        padding: 0;
-
-        .bulk-actions {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 16px 20px;
-          background-color: #f8f9fa;
-          border-bottom: 1px solid #e0e0e0;
-
-          .selected-count {
-            font-weight: 500;
-            color: #1976d2;
-          }
-
-          .bulk-action-buttons {
-            display: flex;
-            gap: 8px;
-          }
-        }
-
-        .loading-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 60px 20px;
-
-          mat-spinner {
-            margin-bottom: 20px;
-          }
-
-          p {
-            color: #666;
-            font-size: 16px;
-          }
-        }
-
-        .table-container {
-          overflow: auto;
-          max-height: 60vh;
-
-          .invoices-table {
-            width: 100%;
-
-            .mat-mdc-header-row {
-              background-color: #fafafa;
-            }
-
-            .mat-mdc-row {
-              cursor: pointer;
-              transition: background-color 0.2s;
-
-              &:hover {
-                background-color: #f5f5f5;
-              }
-
-              &.selected {
-                background-color: #e3f2fd;
-              }
-            }
-
-            .mat-mdc-cell,
-            .mat-mdc-header-cell {
-              padding: 16px 12px;
-              vertical-align: middle;
-            }
-
-            .invoice-number {
-              font-weight: 600;
-              color: #1976d2;
-              cursor: pointer;
-
-              &:hover {
-                text-decoration: underline;
-              }
-            }
-
-            .patient-info {
-              .patient-name {
-                font-weight: 500;
-                color: #333;
-              }
-
-              .patient-phone {
-                font-size: 12px;
-                color: #666;
-                margin-top: 4px;
-              }
-            }
-
-            .due-date {
-              display: flex;
-              align-items: center;
-              gap: 4px;
-
-              &.overdue {
-                color: #f44336;
-                font-weight: 500;
-
-                .overdue-icon {
-                  font-size: 16px;
-                  width: 16px;
-                  height: 16px;
-                }
-              }
-            }
-
-            .amount {
-              font-weight: 600;
-              text-align: right;
-
-              &.total {
-                color: #333;
-              }
-
-              &.paid {
-                color: #4caf50;
-              }
-
-              &.remaining {
-                color: #ff9800;
-              }
-            }
-
-            mat-chip-set {
-              display: flex;
-              justify-content: center;
-
-              mat-chip {
-                min-height: 28px;
-                font-size: 12px;
-
-                mat-icon {
-                  font-size: 16px;
-                  width: 16px;
-                  height: 16px;
-                  margin-left: 4px;
-                }
-              }
-            }
-
-            .priority-high {
-              color: #ff9800;
-            }
-
-            .priority-urgent {
-              color: #f44336;
-              animation: pulse 2s infinite;
-            }
-
-            .delete-action {
-              color: #f44336;
-            }
-          }
-        }
-
-        .empty-state {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 80px 20px;
-          text-align: center;
-
-          .empty-icon {
-            font-size: 64px;
-            width: 64px;
-            height: 64px;
-            color: #ccc;
-            margin-bottom: 20px;
-          }
-
-          h3 {
-            margin: 0 0 12px;
-            color: #666;
-            font-weight: 500;
-          }
-
-          p {
-            margin: 0 0 24px;
-            color: #999;
-            max-width: 400px;
-          }
-        }
-      }
+      flex-direction: column;
+      align-items: flex-start;
     }
   }
-}
 
-// Animations
-@keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
-
-// Responsive Design
-@media (max-width: 1200px) {
-  .invoice-list-container .main-content {
-    .page-header .summary-cards {
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .invoice-list-container .main-content {
-    .page-header {
-      .header-content {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-
-        .header-actions {
-          width: 100%;
-          justify-content: flex-end;
-        }
-      }
-
-      .summary-cards {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .filters-card mat-card-content .filters-form .filter-row {
-      grid-template-columns: 1fr;
-    }
-
-    .table-card mat-card-content .table-container {
-      .invoices-table {
-        min-width: 800px; // Ensure horizontal scrolling on mobile
-      }
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .invoice-list-container .main-content {
-    padding: 12px;
-
-    .page-header .header-content .title-section .page-title {
-      font-size: 24px;
+  .title-section {
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      font-size: var(--font-size-2xl);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
 
       mat-icon {
-        font-size: 28px;
-        width: 28px;
-        height: 28px;
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+        color: var(--primary-color);
+      }
+    }
+
+    .page-subtitle {
+      color: var(--text-secondary);
+      font-size: var(--font-size-base);
+      margin: var(--spacing-xs) 0 0 40px;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+  }
+}
+
+// ===================================================================
+// STATISTICS CARDS
+// ===================================================================
+
+.statistics-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+
+  .stat-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-base);
+    cursor: pointer;
+
+    &:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      mat-icon {
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+        color: white;
+      }
+
+      &.primary {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      }
+
+      &.success {
+        background: linear-gradient(135deg, var(--success-color), #38a169);
+      }
+
+      &.info {
+        background: linear-gradient(135deg, var(--info-color), #3182ce);
+      }
+
+      &.warning {
+        background: linear-gradient(135deg, var(--warning-color), #dd6b20);
+      }
+    }
+
+    .stat-content {
+      display: flex;
+      flex-direction: column;
+
+      .stat-label {
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+        margin-bottom: var(--spacing-xs);
+      }
+
+      .stat-value {
+        font-size: var(--font-size-2xl);
+        font-weight: 700;
+        color: var(--text-primary);
       }
     }
   }
 }
 
-// RTL Support
-[dir="rtl"] {
-  .invoice-list-container .main-content {
-    margin-right: 0;
-    margin-left: 240px;
+// ===================================================================
+// SEARCH CARD
+// ===================================================================
 
-    @media (max-width: 768px) {
-      margin-left: 0;
+.search-card {
+  margin-bottom: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+
+  mat-card-content {
+    padding: var(--spacing-lg);
+  }
+
+  .search-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+
+    .basic-search {
+      display: grid;
+      grid-template-columns: 1fr 200px auto;
+      gap: var(--spacing-md);
+      align-items: center;
+
+      @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+      }
+
+      .search-field {
+        flex: 1;
+      }
     }
+
+    .advanced-filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+      background: var(--bg-light);
+      border-radius: var(--radius-md);
+    }
+
+    .search-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+      justify-content: flex-end;
+
+      @media (max-width: 768px) {
+        justify-content: stretch;
+
+        button {
+          flex: 1;
+        }
+      }
+    }
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+// ===================================================================
+// RESULTS SUMMARY
+// ===================================================================
+
+.results-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+
+  .results-text {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .view-controls {
+    display: flex;
+    gap: var(--spacing-xs);
+  }
+}
+
+// ===================================================================
+// LOADING STATE
+// ===================================================================
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+
+  p {
+    margin-top: var(--spacing-md);
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+  }
+}
+
+// ===================================================================
+// TABLE VIEW
+// ===================================================================
+
+.table-container {
+  .table-card {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  .invoices-table {
+    width: 100%;
+    background: var(--bg-primary);
+
+    th {
+      background: var(--bg-light);
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: var(--font-size-sm);
+      padding: var(--spacing-md);
+      text-align: right;
+    }
+
+    td {
+      padding: var(--spacing-md);
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .invoice-row {
+      transition: var(--transition-fast);
+      // cursor: pointer;
+
+      &:hover {
+        background: var(--bg-light);
+      }
+    }
+
+    .invoice-number {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    .patient-info {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+
+      .patient-name {
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+
+      .patient-phone {
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+      }
+    }
+
+    .amount {
+      font-weight: 600;
+      color: var(--text-primary);
+
+      &.paid {
+        color: var(--success-color);
+      }
+
+      &.due {
+        color: var(--error-color);
+      }
+    }
+
+    mat-chip {
+      font-size: var(--font-size-xs);
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+        margin-left: var(--spacing-xs);
+      }
+    }
+
+    .delete-action {
+      color: var(--error-color);
+    }
+  }
+
+  mat-paginator {
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-light);
+  }
+}
+
+// ===================================================================
+// CARDS VIEW
+// ===================================================================
+
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--spacing-lg);
+
+  .invoice-card {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-base);
+
+    &:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    mat-card-header {
+      padding: var(--spacing-lg);
+      border-bottom: 1px solid var(--border-light);
+
+      .invoice-header {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+
+        .invoice-title {
+          display: flex;
+          flex-direction: column;
+          gap: var(--spacing-xs);
+
+          h3 {
+            margin: 0;
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--primary-color);
+          }
+
+          .invoice-date {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+          }
+        }
+      }
+    }
+
+    mat-card-content {
+      padding: var(--spacing-lg);
+
+      .invoice-info {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-md);
+
+        .info-row {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+
+          mat-icon {
+            color: var(--text-secondary);
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+          }
+
+          &.balance-due {
+            color: var(--error-color);
+            font-weight: 600;
+
+            mat-icon {
+              color: var(--error-color);
+            }
+          }
+        }
+      }
+    }
+
+    mat-card-actions {
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      justify-content: space-between;
+    }
+  }
+}
+
+// ===================================================================
+// EMPTY STATE
+// ===================================================================
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  text-align: center;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-md);
+  }
+
+  h3 {
+    font-size: var(--font-size-xl);
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-sm) 0;
+  }
+
+  p {
+    color: var(--text-secondary);
+    margin: 0 0 var(--spacing-lg) 0;
+    max-width: 500px;
+  }
+}
+
+// ===================================================================
+// RESPONSIVE DESIGN
+// ===================================================================
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: var(--spacing-md);
+  }
+
+  .statistics-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .table-container {
+    .invoices-table {
+      font-size: var(--font-size-sm);
+
+      th,
+      td {
+        padding: var(--spacing-sm);
+      }
+    }
+  }
+
+  .cards-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ===================================================================
+// RTL SUPPORT
+// ===================================================================
+
+[dir="rtl"] {
+  .invoices-table {
+
+    th,
+    td {
+      text-align: right;
+    }
+  }
+
+  mat-chip mat-icon {
+    margin-left: 0;
+    margin-right: var(--spacing-xs);
   }
 }

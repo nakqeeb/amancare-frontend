@@ -1,425 +1,482 @@
-// ===================================================================
-// 3. APPOINTMENT SERVICE
 // src/app/features/appointments/services/appointment.service.ts
-// ===================================================================
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, delay, map, tap } from 'rxjs';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { tap, catchError, map } from 'rxjs/operators';
+import { environment } from '../../../../environments/environment';
+import { NotificationService } from '../../../core/services/notification.service';
+import { ApiResponse } from '../../../core/models/api-response.model';
 import {
   Appointment,
+  AppointmentResponse,
+  AppointmentSummaryResponse,
+  AppointmentPageResponse,
+  AppointmentStatistics,
   CreateAppointmentRequest,
   UpdateAppointmentRequest,
-  AppointmentSearchCriteria,
-  TimeSlot,
-  DoctorSchedule,
   AppointmentStatus,
   AppointmentType
 } from '../models/appointment.model';
-import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../../core/services/auth.service';
+import { SystemAdminService } from '../../../core/services/system-admin.service';
+import { ActivityService } from '../../../core/services/activity.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AppointmentService {
-  private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/appointments`;
+  private readonly http = inject(HttpClient);
+  private readonly notificationService = inject(NotificationService);
+  private readonly authService = inject(AuthService);
+  private readonly systemAdminService = inject(SystemAdminService);
+  private activityService = inject(ActivityService);
 
-  // Signals for state management
-  appointments = signal<Appointment[]>([]);
-  selectedAppointment = signal<Appointment | null>(null);
-  loading = signal(false);
+  private readonly apiUrl = `${environment.apiUrl}/appointments`;
 
-  // Mock data for development
-  private mockAppointments: Appointment[] = [
-    {
-      id: 1,
-      patientId: 1,
-      patientName: 'أحمد محمد علي',
-      patientPhone: '0501234567',
-      doctorId: 1,
-      doctorName: 'د. سارة أحمد',
-      appointmentDate: '2024-08-29',
-      appointmentTime: '10:00',
-      duration: 30,
-      type: AppointmentType.CONSULTATION,
-      status: AppointmentStatus.SCHEDULED,
-      chiefComplaint: 'صداع مستمر',
-      notes: 'المريض يعاني من صداع منذ أسبوع',
-      createdAt: '2024-08-25T10:00:00Z',
-      createdBy: 'admin'
-    },
-    {
-      id: 2,
-      patientId: 2,
-      patientName: 'فاطمة عبدالله',
-      patientPhone: '0509876543',
-      doctorId: 1,
-      doctorName: 'د. سارة أحمد',
-      appointmentDate: '2024-08-29',
-      appointmentTime: '10:30',
-      duration: 30,
-      type: AppointmentType.FOLLOW_UP,
-      status: AppointmentStatus.CONFIRMED,
-      chiefComplaint: 'متابعة ضغط الدم',
-      createdAt: '2024-08-24T14:00:00Z',
-      createdBy: 'receptionist'
-    },
-    {
-      id: 3,
-      patientId: 3,
-      patientName: 'محمد سالم',
-      patientPhone: '0555555555',
-      doctorId: 2,
-      doctorName: 'د. محمد خالد',
-      appointmentDate: '2024-08-29',
-      appointmentTime: '11:00',
-      duration: 45,
-      type: AppointmentType.ROUTINE_CHECK,
-      status: AppointmentStatus.CHECKED_IN,
-      chiefComplaint: 'فحص دوري',
-      createdAt: '2024-08-23T09:00:00Z',
-      createdBy: 'admin'
+  // State management with signals
+  public readonly loading = signal(false);
+  public readonly error = signal<string | null>(null);
+  public readonly appointments = signal<AppointmentResponse[]>([]);
+  public readonly selectedAppointment = signal<AppointmentResponse | null>(null);
+  public readonly todayAppointments = signal<AppointmentSummaryResponse[]>([]);
+  public readonly upcomingAppointments = signal<AppointmentResponse[]>([]);
+  public readonly statistics = signal<AppointmentStatistics | null>(null);
+
+  // Pagination state
+  public readonly currentPage = signal(0);
+  public readonly pageSize = signal(10);
+  public readonly totalElements = signal(0);
+  public readonly totalPages = signal(0);
+
+  // BehaviorSubjects for reactive updates
+  private appointmentsSubject = new BehaviorSubject<AppointmentResponse[]>([]);
+  public appointments$ = this.appointmentsSubject.asObservable();
+
+  // 1. Create Appointment
+  createAppointment(request: CreateAppointmentRequest): Observable<AppointmentResponse> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    // Validate SYSTEM_ADMIN context for write operations
+    const currentUser = this.authService.currentUser();
+    if (currentUser?.role === 'SYSTEM_ADMIN') {
+      if (!this.systemAdminService.canPerformWriteOperation()) {
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل إنشاء موعد جديد'));
+      }
+
+      // Add clinic ID from context if not provided
+      const actingClinicId = this.systemAdminService.getActingClinicId();
+      if (actingClinicId && !request.clinicId) {
+        request.clinicId = actingClinicId;
+      }
     }
-  ];
 
-  // Get all appointments with optional search criteria
-  getAppointments(criteria?: AppointmentSearchCriteria): Observable<Appointment[]> {
-    // Mock implementation
-    return of(this.mockAppointments).pipe(
-      delay(500),
-      map(appointments => {
-        let filtered = [...appointments];
+    return this.http.post<ApiResponse<AppointmentResponse>>(this.apiUrl, request).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.notificationService.success('تم إنشاء الموعد بنجاح');
+          // Add to appointments list
+          const currentAppointments = this.appointments();
+          this.appointments.set([response.data, ...currentAppointments]);
+          this.appointmentsSubject.next(this.appointments());
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في إنشاء الموعد', error);
+        return throwError(() => error);
+      })
+    );
+  }
 
-        if (criteria) {
-          if (criteria.patientId) {
-            filtered = filtered.filter(a => a.patientId === criteria.patientId);
+  // 2. Get All Appointments with Filtering
+  getAllAppointments(
+    date?: string,
+    doctorId?: number,
+    status?: AppointmentStatus,
+    page: number = 0,
+    size: number = 10,
+    sortBy: string = 'appointmentDate',
+    sortDirection: string = 'asc'
+  ): Observable<AppointmentPageResponse> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sortBy', sortBy)
+      .set('sortDirection', sortDirection);
+
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId.toString());
+    }
+
+    if (date) params = params.set('date', date);
+    if (doctorId) params = params.set('doctorId', doctorId.toString());
+    if (status) params = params.set('status', status);
+
+    return this.http.get<ApiResponse<AppointmentPageResponse>>(this.apiUrl, { params }).pipe(
+      tap(response => {
+        console.log('getAllAppointments: ', response.data);
+        if (response.success && response.data) {
+          this.appointments.set(response.data.appointments);
+          this.appointmentsSubject.next(response.data.appointments);
+          this.currentPage.set(response.data.pageNumber);
+          this.totalElements.set(response.data.totalElements);
+          this.totalPages.set(response.data.totalPages);
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في جلب المواعيد', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // 3. Get Today's Appointments
+  getTodayAppointments(): Observable<AppointmentSummaryResponse[]> {
+    const today = new Date().toISOString().split('T')[0];
+    let params = new HttpParams().set('date', today);
+
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId.toString());
+    }
+
+    return this.http.get<ApiResponse<AppointmentSummaryResponse[]>>(`${this.apiUrl}/today`, { params }).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.todayAppointments.set(response.data);
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في جلب مواعيد اليوم', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // 4. Get Appointment by ID
+  getAppointmentById(id: number): Observable<AppointmentResponse> {
+    this.loading.set(true);
+    this.error.set(null);
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
+    let params = new HttpParams();
+    if (clinicId) {
+      params = params.set('clinicId', clinicId.toString());
+    }
+    return this.http.get<ApiResponse<AppointmentResponse>>(`${this.apiUrl}/${id}`, { params }).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.selectedAppointment.set(response.data);
+          console.log(this.selectedAppointment());
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في جلب تفاصيل الموعد', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // 5. Get Doctor's Appointments
+  getDoctorAppointments(
+    doctorId: number,
+    date?: string,
+    status?: AppointmentStatus,
+    page: number = 0,
+    size: number = 10
+  ): Observable<AppointmentPageResponse> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    if (date) params = params.set('date', date);
+    if (status) params = params.set('status', status);
+
+    return this.http.get<ApiResponse<AppointmentPageResponse>>(
+      `${this.apiUrl}/doctor/${doctorId}`,
+      { params }
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.appointments.set(response.data.appointments);
+          this.appointmentsSubject.next(response.data.appointments);
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في جلب مواعيد الطبيب', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // 6. Get Patient's Upcoming Appointments
+  getPatientUpcomingAppointments(patientId: number): Observable<AppointmentResponse[]> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
+    let params = new HttpParams();
+    if (clinicId) {
+      params = params.set('clinicId', clinicId.toString());
+    }
+
+    return this.http.get<ApiResponse<AppointmentResponse[]>>(
+      `${this.apiUrl}/patient/${patientId}/upcoming`, { params }
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.upcomingAppointments.set(response.data);
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في جلب المواعيد القادمة', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // 7. Get Overdue Appointments
+  getOverdueAppointments(): Observable<AppointmentSummaryResponse[]> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    return this.http.get<ApiResponse<AppointmentSummaryResponse[]>>(`${this.apiUrl}/overdue`).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          // Can store in a signal if needed
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في جلب المواعيد المتأخرة', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // 8. Get Appointment Statistics
+  getAppointmentStatistics(date?: string): Observable<AppointmentStatistics> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    let params = new HttpParams();
+    if (date) params = params.set('date', date);
+
+    return this.http.get<ApiResponse<AppointmentStatistics>>(
+      `${this.apiUrl}/statistics`,
+      { params }
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.statistics.set(response.data);
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في جلب الإحصائيات', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // 9. Update Appointment
+  updateAppointment(id: number, request: UpdateAppointmentRequest): Observable<AppointmentResponse> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    // Validate SYSTEM_ADMIN context for write operations
+    const currentUser = this.authService.currentUser();
+    if (currentUser?.role === 'SYSTEM_ADMIN') {
+      if (!this.systemAdminService.canPerformWriteOperation()) {
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل تحديث الموعد'));
+      }
+
+      // Add clinic ID from context if not provided
+      const actingClinicId = this.systemAdminService.getActingClinicId();
+      if (actingClinicId && !request.clinicId) {
+        request.clinicId = actingClinicId;
+      }
+    }
+
+    return this.http.put<ApiResponse<AppointmentResponse>>(`${this.apiUrl}/${id}`, request).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.notificationService.success('تم تحديث الموعد بنجاح');
+          // Update in appointments list
+          const appointments = this.appointments();
+          const index = appointments.findIndex(a => a.id === id);
+          if (index !== -1) {
+            appointments[index] = response.data;
+            this.appointments.set([...appointments]);
+            this.appointmentsSubject.next(appointments);
           }
-          if (criteria.doctorId) {
-            filtered = filtered.filter(a => a.doctorId === criteria.doctorId);
+          this.selectedAppointment.set(response.data);
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في تحديث الموعد', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // 10. Update Appointment Status
+  updateAppointmentStatus(id: number, status: AppointmentStatus): Observable<AppointmentResponse> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    const params = new HttpParams().set('status', status);
+
+    return this.http.patch<ApiResponse<AppointmentResponse>>(
+      `${this.apiUrl}/${id}/status`,
+      null,
+      { params }
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.notificationService.success('تم تحديث حالة الموعد بنجاح');
+          // Update in appointments list
+          const appointments = this.appointments();
+          const index = appointments.findIndex(a => a.id === id);
+          if (index !== -1) {
+            appointments[index] = response.data;
+            this.appointments.set([...appointments]);
+            this.appointmentsSubject.next(appointments);
           }
-          if (criteria.status) {
-            filtered = filtered.filter(a => a.status === criteria.status);
-          }
-          if (criteria.type) {
-            filtered = filtered.filter(a => a.type === criteria.type);
-          }
-          if (criteria.fromDate) {
-            filtered = filtered.filter(a => a.appointmentDate >= criteria.fromDate!);
-          }
-          if (criteria.toDate) {
-            filtered = filtered.filter(a => a.appointmentDate <= criteria.toDate!);
-          }
-          if (criteria.searchQuery) {
-            const query = criteria.searchQuery.toLowerCase();
-            filtered = filtered.filter(a =>
-              a.patientName?.toLowerCase().includes(query) ||
-              a.doctorName?.toLowerCase().includes(query) ||
-              a.chiefComplaint?.toLowerCase().includes(query)
-            );
+          switch (status) {
+            case AppointmentStatus.SCHEDULED:
+              return this.activityService.logAppointmentScheduled(id, response.data.patient.fullName, response.data.appointmentDate);
+            case AppointmentStatus.CONFIRMED:
+              return this.activityService.logAppointmentConfirmed(id, response.data.patient.fullName);
+            case AppointmentStatus.IN_PROGRESS:
+              return this.activityService.logAppointmentInProgress(id, response.data.patient.fullName);
+            case AppointmentStatus.COMPLETED:
+              return this.activityService.logAppointmentCompleted(id, response.data.patient.fullName);
+            case AppointmentStatus.CANCELLED:
+              return this.activityService.logAppointmentCancelled(id, response.data.patient.fullName);
+            case AppointmentStatus.NO_SHOW:
+              return this.activityService.logAppointmentNoShow(id, response.data.patient.fullName);
+            default:
+              return 'غير معروف';
           }
         }
-
-        return filtered;
+        this.loading.set(false);
       }),
-      tap(appointments => this.appointments.set(appointments))
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في تحديث حالة الموعد', error);
+        return throwError(() => error);
+      })
     );
-
-    // Real implementation (commented for now)
-    // let params = new HttpParams();
-    // if (criteria) {
-    //   Object.keys(criteria).forEach(key => {
-    //     const value = (criteria as any)[key];
-    //     if (value !== undefined && value !== null) {
-    //       params = params.set(key, value.toString());
-    //     }
-    //   });
-    // }
-    // return this.http.get<Appointment[]>(this.apiUrl, { params })
-    //   .pipe(tap(appointments => this.appointments.set(appointments)));
   }
 
-  // Get appointment by ID
-  getAppointmentById(id: number): Observable<Appointment> {
-    // Mock implementation
-    const appointment = this.mockAppointments.find(a => a.id === id);
-    return of(appointment!).pipe(
-      delay(300),
-      tap(appointment => this.selectedAppointment.set(appointment))
-    );
-
-    // Real implementation
-    // return this.http.get<Appointment>(`${this.apiUrl}/${id}`)
-    //   .pipe(tap(appointment => this.selectedAppointment.set(appointment)));
-  }
-
-  // Create new appointment
-  createAppointment(request: CreateAppointmentRequest): Observable<Appointment> {
-    // Mock implementation
-    const newAppointment: Appointment = {
-      ...request,
-      id: Math.floor(Math.random() * 10000),
-      status: AppointmentStatus.SCHEDULED,
-      createdAt: new Date().toISOString(),
-      createdBy: 'current_user'
-    };
-    this.mockAppointments.push(newAppointment);
-    return of(newAppointment).pipe(delay(500));
-
-    // Real implementation
-    // return this.http.post<Appointment>(this.apiUrl, request);
-  }
-
-  // Update appointment
-  updateAppointment(id: number, request: UpdateAppointmentRequest): Observable<Appointment> {
-    // Mock implementation
-    const index = this.mockAppointments.findIndex(a => a.id === id);
-    if (index !== -1) {
-      this.mockAppointments[index] = {
-        ...this.mockAppointments[index],
-        ...request,
-        updatedAt: new Date().toISOString()
-      };
-      return of(this.mockAppointments[index]).pipe(delay(500));
-    }
-    throw new Error('Appointment not found');
-
-    // Real implementation
-    // return this.http.put<Appointment>(`${this.apiUrl}/${id}`, request);
-  }
-
-  // Update appointment status
-  updateAppointmentStatus(id: number, status: AppointmentStatus): Observable<Appointment> {
-    // Mock implementation
-    const index = this.mockAppointments.findIndex(a => a.id === id);
-    if (index !== -1) {
-      this.mockAppointments[index].status = status;
-      this.mockAppointments[index].updatedAt = new Date().toISOString();
-      return of(this.mockAppointments[index]).pipe(delay(300));
-    }
-    throw new Error('Appointment not found');
-
-    // Real implementation
-    // return this.http.patch<Appointment>(`${this.apiUrl}/${id}/status`, { status });
-  }
-
-  // Cancel appointment
+  // 11. Cancel Appointment
   cancelAppointment(id: number, reason?: string): Observable<void> {
-    // Mock implementation
-    const index = this.mockAppointments.findIndex(a => a.id === id);
-    if (index !== -1) {
-      this.mockAppointments[index].status = AppointmentStatus.CANCELLED;
-      if (reason) {
-        this.mockAppointments[index].notes =
-          `${this.mockAppointments[index].notes || ''}\nسبب الإلغاء: ${reason}`;
-      }
-      return of(void 0).pipe(delay(300));
-    }
-    throw new Error('Appointment not found');
+    this.loading.set(true);
+    this.error.set(null);
 
-    // Real implementation
-    // return this.http.patch<void>(`${this.apiUrl}/${id}/cancel`, { reason });
-  }
-
-  // Reschedule appointment
-  rescheduleAppointment(
-    id: number,
-    newDate: string,
-    newTime: string
-  ): Observable<Appointment> {
-    // Mock implementation
-    const index = this.mockAppointments.findIndex(a => a.id === id);
-    if (index !== -1) {
-      this.mockAppointments[index].appointmentDate = newDate;
-      this.mockAppointments[index].appointmentTime = newTime;
-      this.mockAppointments[index].status = AppointmentStatus.RESCHEDULED;
-      this.mockAppointments[index].updatedAt = new Date().toISOString();
-      return of(this.mockAppointments[index]).pipe(delay(500));
-    }
-    throw new Error('Appointment not found');
-
-    // Real implementation
-    // return this.http.patch<Appointment>(`${this.apiUrl}/${id}/reschedule`, {
-    //   appointmentDate: newDate,
-    //   appointmentTime: newTime
-    // });
-  }
-
-  // Get available time slots for a doctor on a specific date
-  getAvailableTimeSlots(doctorId: number, date: string): Observable<TimeSlot[]> {
-    // Mock implementation
-    const slots: TimeSlot[] = [];
-    const startHour = 9;
-    const endHour = 17;
-    const slotDuration = 30; // minutes
-
-    for (let hour = startHour; hour < endHour; hour++) {
-      for (let minute = 0; minute < 60; minute += slotDuration) {
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-
-        // Check if slot is already booked
-        const isBooked = this.mockAppointments.some(a =>
-          a.doctorId === doctorId &&
-          a.appointmentDate === date &&
-          a.appointmentTime === time &&
-          a.status !== AppointmentStatus.CANCELLED
-        );
-
-        const bookedAppointment = isBooked ?
-          this.mockAppointments.find(a =>
-            a.doctorId === doctorId &&
-            a.appointmentDate === date &&
-            a.appointmentTime === time
-          ) : undefined;
-
-        slots.push({
-          time,
-          available: !isBooked,
-          appointmentId: bookedAppointment?.id,
-          patientName: bookedAppointment?.patientName
-        });
-      }
-    }
-
-    // Mark break time as unavailable (12:00 - 13:00)
-    slots.forEach(slot => {
-      const hour = parseInt(slot.time.split(':')[0]);
-      if (hour === 12) {
-        slot.available = false;
-      }
+    let deletedAppointment: AppointmentResponse;
+    this.getAppointmentById(id).subscribe(response => {
+      deletedAppointment = response!;
     });
 
-    return of(slots).pipe(delay(500));
+    let params = new HttpParams();
+    if (reason) params = params.set('reason', reason);
 
-    // Real implementation
-    // return this.http.get<TimeSlot[]>(`${this.apiUrl}/slots`, {
-    //   params: { doctorId: doctorId.toString(), date }
-    // });
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`, { params }).pipe(
+      tap(response => {
+        if (response.success) {
+          this.notificationService.success('تم إلغاء الموعد بنجاح');
+          // Remove from appointments list or update status
+          const appointments = this.appointments();
+          const index = appointments.findIndex(a => a.id === id);
+          if (index !== -1) {
+            appointments[index].status = AppointmentStatus.CANCELLED;
+            if (reason) appointments[index].cancellationReason = reason;
+            this.appointments.set([...appointments]);
+            this.appointmentsSubject.next(appointments);
+          }
+          this.activityService.logAppointmentCancelled(id, deletedAppointment.patient.fullName);
+        }
+        this.loading.set(false);
+      }),
+      map(() => undefined),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في إلغاء الموعد', error);
+        return throwError(() => error);
+      })
+    );
   }
 
-  // Get doctor's schedule
-  getDoctorSchedule(doctorId: number): Observable<DoctorSchedule> {
-    // Mock implementation
-    const schedule: DoctorSchedule = {
-      doctorId,
-      doctorName: 'د. سارة أحمد',
-      availableDays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'],
-      workingHours: {
-        start: '09:00',
-        end: '17:00'
-      },
-      breakTime: {
-        start: '12:00',
-        end: '13:00'
-      },
-      slotDuration: 30
-    };
-
-    return of(schedule).pipe(delay(300));
-
-    // Real implementation
-    // return this.http.get<DoctorSchedule>(`${this.apiUrl}/doctors/${doctorId}/schedule`);
+  // Utility Methods
+  private handleError(message: string, error: any): void {
+    console.error(message, error);
+    const errorMessage = error?.error?.message || message;
+    this.error.set(errorMessage);
+    this.notificationService.error(errorMessage);
   }
 
-  // Get today's appointments
-  getTodayAppointments(doctorId?: number): Observable<Appointment[]> {
-    const today = new Date().toISOString().split('T')[0];
-    const criteria: AppointmentSearchCriteria = {
-      fromDate: today,
-      toDate: today
-    };
-
-    if (doctorId) {
-      criteria.doctorId = doctorId;
-    }
-
-    return this.getAppointments(criteria);
+  // Clear selected appointment
+  clearSelectedAppointment(): void {
+    this.selectedAppointment.set(null);
   }
 
-  // Get upcoming appointments for a patient
-  getPatientUpcomingAppointments(patientId: number): Observable<Appointment[]> {
-    const today = new Date().toISOString().split('T')[0];
-    return this.getAppointments({
-      patientId,
-      fromDate: today,
-      status: AppointmentStatus.SCHEDULED
-    });
-  }
-
-  // Check for appointment conflicts
-  checkAppointmentConflict(
-    doctorId: number,
-    date: string,
-    time: string,
-    duration: number,
-    excludeAppointmentId?: number
-  ): Observable<boolean> {
-    // Mock implementation
-    const hasConflict = this.mockAppointments.some(appointment => {
-      if (appointment.doctorId !== doctorId ||
-          appointment.appointmentDate !== date ||
-          appointment.status === AppointmentStatus.CANCELLED ||
-          (excludeAppointmentId && appointment.id === excludeAppointmentId)) {
-        return false;
-      }
-
-      const appointmentStart = this.timeToMinutes(appointment.appointmentTime);
-      const appointmentEnd = appointmentStart + appointment.duration;
-      const newStart = this.timeToMinutes(time);
-      const newEnd = newStart + duration;
-
-      return (newStart < appointmentEnd && newEnd > appointmentStart);
-    });
-
-    return of(hasConflict).pipe(delay(200));
-
-    // Real implementation
-    // return this.http.post<boolean>(`${this.apiUrl}/check-conflict`, {
-    //   doctorId, date, time, duration, excludeAppointmentId
-    // });
-  }
-
-  // Helper method to convert time string to minutes
-  private timeToMinutes(time: string): number {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
-  }
-
-  // Send appointment reminder
-  sendAppointmentReminder(appointmentId: number): Observable<void> {
-    // Mock implementation
-    console.log(`Sending reminder for appointment ${appointmentId}`);
-    return of(void 0).pipe(delay(500));
-
-    // Real implementation
-    // return this.http.post<void>(`${this.apiUrl}/${appointmentId}/send-reminder`, {});
-  }
-
-  // Export appointments
-  exportAppointments(
-    criteria?: AppointmentSearchCriteria,
-    format: 'excel' | 'pdf' = 'excel'
-  ): Observable<Blob> {
-    // Mock implementation
-    const mockBlob = new Blob(['Mock appointment data'], {
-      type: format === 'excel' ?
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' :
-        'application/pdf'
-    });
-    return of(mockBlob).pipe(delay(1000));
-
-    // Real implementation
-    // let params = new HttpParams().set('format', format);
-    // if (criteria) {
-    //   Object.keys(criteria).forEach(key => {
-    //     const value = (criteria as any)[key];
-    //     if (value !== undefined && value !== null) {
-    //       params = params.set(key, value.toString());
-    //     }
-    //   });
-    // }
-    // return this.http.get(`${this.apiUrl}/export`, {
-    //   params,
-    //   responseType: 'blob'
-    // });
+  // Clear all appointments
+  clearAppointments(): void {
+    this.appointments.set([]);
+    this.appointmentsSubject.next([]);
+    this.todayAppointments.set([]);
+    this.upcomingAppointments.set([]);
+    this.statistics.set(null);
   }
 }

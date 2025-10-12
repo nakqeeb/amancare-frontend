@@ -52,63 +52,63 @@ export const CLINICS_ROUTES: Routes = [
     data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
     title: 'إعدادات العيادة - نظام أمان كير'
   },
-  {
-    path: ':id/services',
-    loadComponent: () =>
-      import('./components/clinic-services/clinic-services.component').then(c => c.ClinicServicesComponent),
-    canActivate: [RoleGuard],
-    data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
-    title: 'خدمات العيادة - نظام أمان كير'
-  },
-  {
-    path: ':id/users',
-    loadComponent: () =>
-      import('./components/clinic-users/clinic-users.component').then(c => c.ClinicUsersComponent),
-    canActivate: [RoleGuard],
-    data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
-    title: 'مستخدمي العيادة - نظام أمان كير'
-  },
-  {
-    path: ':id/analytics',
-    loadComponent: () =>
-      import('./components/clinic-analytics/clinic-analytics.component').then(c => c.ClinicAnalyticsComponent),
-    canActivate: [RoleGuard],
-    data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
-    title: 'تحليلات العيادة - نظام أمان كير'
-  },
+  // {
+  //   path: ':id/services',
+  //   loadComponent: () =>
+  //     import('./components/clinic-services/clinic-services.component').then(c => c.ClinicServicesComponent),
+  //   canActivate: [RoleGuard],
+  //   data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
+  //   title: 'خدمات العيادة - نظام أمان كير'
+  // },
+  // {
+  //   path: ':id/users',
+  //   loadComponent: () =>
+  //     import('./components/clinic-users/clinic-users.component').then(c => c.ClinicUsersComponent),
+  //   canActivate: [RoleGuard],
+  //   data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
+  //   title: 'مستخدمي العيادة - نظام أمان كير'
+  // },
+  // {
+  //   path: ':id/analytics',
+  //   loadComponent: () =>
+  //     import('./components/clinic-analytics/clinic-analytics.component').then(c => c.ClinicAnalyticsComponent),
+  //   canActivate: [RoleGuard],
+  //   data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
+  //   title: 'تحليلات العيادة - نظام أمان كير'
+  // },
 
-  {
-    path: ':id/services',
-    loadComponent: () =>
-      import('./components/clinic-services/clinic-services.component').then(c => c.ClinicServicesComponent),
-    canActivate: [RoleGuard],
-    data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
-    title: 'خدمات العيادة - نظام أمان كير'
-  },
-  {
-    path: ':id/services/:serviceId/edit',
-    loadComponent: () =>
-      import('./components/clinic-service-form/clinic-service-form.component').then(c => c.ClinicServiceFormComponent),
-    canActivate: [RoleGuard],
-    data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
-    title: 'تعديل الخدمة - نظام أمان كير'
-  },
-  {
-    path: ':id/services/new',
-    loadComponent: () =>
-      import('./components/clinic-service-form/clinic-service-form.component').then(c => c.ClinicServiceFormComponent),
-    canActivate: [RoleGuard],
-    data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
-    title: 'إضافة خدمة جديدة - نظام أمان كير'
-  },
-  {
-    path: ':id/users/invite',
-    loadComponent: () =>
-      import('./components/clinic-user-invite/clinic-user-invite.component').then(c => c.ClinicUserInviteComponent),
-    canActivate: [RoleGuard],
-    data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
-    title: 'دعوة مستخدم جديد - نظام أمان كير'
-  },
+  // {
+  //   path: ':id/services',
+  //   loadComponent: () =>
+  //     import('./components/clinic-services/clinic-services.component').then(c => c.ClinicServicesComponent),
+  //   canActivate: [RoleGuard],
+  //   data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
+  //   title: 'خدمات العيادة - نظام أمان كير'
+  // },
+  // {
+  //   path: ':id/services/:serviceId/edit',
+  //   loadComponent: () =>
+  //     import('./components/clinic-service-form/clinic-service-form.component').then(c => c.ClinicServiceFormComponent),
+  //   canActivate: [RoleGuard],
+  //   data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
+  //   title: 'تعديل الخدمة - نظام أمان كير'
+  // },
+  // {
+  //   path: ':id/services/new',
+  //   loadComponent: () =>
+  //     import('./components/clinic-service-form/clinic-service-form.component').then(c => c.ClinicServiceFormComponent),
+  //   canActivate: [RoleGuard],
+  //   data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
+  //   title: 'إضافة خدمة جديدة - نظام أمان كير'
+  // },
+  // {
+  //   path: ':id/users/invite',
+  //   loadComponent: () =>
+  //     import('./components/clinic-user-invite/clinic-user-invite.component').then(c => c.ClinicUserInviteComponent),
+  //   canActivate: [RoleGuard],
+  //   data: { roles: ['SYSTEM_ADMIN', 'ADMIN'] },
+  //   title: 'دعوة مستخدم جديد - نظام أمان كير'
+  // },
   // ===================================================================
   // ERROR HANDLING
   // ===================================================================

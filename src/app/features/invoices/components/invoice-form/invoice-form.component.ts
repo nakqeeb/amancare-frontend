@@ -1,24 +1,32 @@
 // ===================================================================
 // src/app/features/invoices/components/invoice-form/invoice-form.component.ts
+// Invoice Form Component - Create & Edit
 // ===================================================================
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
-import { MatStepperModule } from '@angular/material/stepper';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+import {
+  FormBuilder,
+  FormGroup,
+  FormArray,
+  Validators,
+  ReactiveFormsModule
+} from '@angular/forms';
+
+// Angular Material
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatTableModule } from '@angular/material/table';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { Observable, startWith, map, switchMap } from 'rxjs';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatTableModule } from '@angular/material/table';
 
 // Shared Components
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -27,18 +35,18 @@ import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.
 // Services & Models
 import { InvoiceService } from '../../services/invoice.service';
 import { PatientService } from '../../../patients/services/patient.service';
-import { NotificationService } from '../../../../core/services/notification.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 import {
-  Invoice,
-  InvoiceItem,
   CreateInvoiceRequest,
+  CreateInvoiceItemRequest,
   UpdateInvoiceRequest,
   ServiceCategory,
-  InvoicePriority
+  SERVICE_CATEGORY_OPTIONS
 } from '../../models/invoice.model';
 import { Patient } from '../../../patients/models/patient.model';
-import { MatNativeDateModule } from '@angular/material/core';
+import { Observable } from 'rxjs';
+import { startWith, map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-invoice-form',
@@ -47,7 +55,6 @@ import { MatNativeDateModule } from '@angular/material/core';
     CommonModule,
     RouterModule,
     ReactiveFormsModule,
-    MatStepperModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -55,12 +62,12 @@ import { MatNativeDateModule } from '@angular/material/core';
     MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatAutocompleteModule,
     MatProgressSpinnerModule,
-    MatDividerModule,
-    MatTableModule,
     MatCheckboxModule,
-    MatSlideToggleModule,
+    MatDividerModule,
+    MatTooltipModule,
+    MatAutocompleteModule,
+    MatTableModule,
     HeaderComponent,
     SidebarComponent
   ],
@@ -68,95 +75,85 @@ import { MatNativeDateModule } from '@angular/material/core';
   styleUrl: './invoice-form.component.scss'
 })
 export class InvoiceFormComponent implements OnInit {
+  minDate: Date = new Date();
+
   // Services
   private invoiceService = inject(InvoiceService);
   private patientService = inject(PatientService);
-  private notificationService = inject(NotificationService);
   private authService = inject(AuthService);
+  private notificationService = inject(NotificationService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
 
-  // Signals
-  loading = signal(false);
-  isEditMode = signal(false);
-  invoiceId = signal<number | null>(null);
-  selectedPatient = signal<Patient | null>(null);
-  predefinedServices = signal<InvoiceItem[]>([]);
+  // ===================================================================
+  // STATE MANAGEMENT
+  // ===================================================================
 
-  // Forms
   invoiceForm!: FormGroup;
-  currentStep = signal(0);
+  invoiceId = signal<number | null>(null);
+  editMode = signal(false);
+  loading = signal(false);
+  calculating = signal(false);
 
-  // Data
-  patients: Patient[] = [];
+  patients = signal<Patient[]>([]);
   filteredPatients$!: Observable<Patient[]>;
+  selectedPatient = signal<Patient | null>(null);
 
-  // Computed values
-  subtotal = computed(() => {
-    const items = this.invoiceItemsArray.value as InvoiceItem[];
-    return items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
-  });
+  serviceCategoryOptions = SERVICE_CATEGORY_OPTIONS;
 
-  taxAmount = computed(() => {
-    const taxPercentage = this.invoiceForm?.get('taxPercentage')?.value || 15;
-    return (this.subtotal() * taxPercentage) / 100;
-  });
-
-  discountAmount = computed(() => {
-    const discountPercentage = this.invoiceForm?.get('discountPercentage')?.value || 0;
-    const discountFixed = this.invoiceForm?.get('discountAmount')?.value || 0;
-
-    if (discountPercentage > 0) {
-      return (this.subtotal() * discountPercentage) / 100;
-    }
-    return discountFixed;
-  });
-
-  totalAmount = computed(() => {
-    return this.subtotal() + this.taxAmount() - this.discountAmount();
-  });
+  // Calculations
+  subtotal = signal(0);
+  taxAmount = signal(0);
+  totalAmount = signal(0);
 
   // Table columns for items
-  itemsColumns = ['serviceName', 'quantity', 'unitPrice', 'totalPrice', 'actions'];
+  itemColumns: string[] = ['service', 'category', 'quantity', 'price', 'taxable', 'total', 'actions'];
 
-  // Enums for template
-  ServiceCategory = ServiceCategory;
-  InvoicePriority = InvoicePriority;
+  // ===================================================================
+  // LIFECYCLE HOOKS
+  // ===================================================================
 
   ngOnInit(): void {
     this.initializeForm();
-    this.loadData();
+    this.loadPatients();
+    this.setupPatientAutocomplete();
+    this.subscribeToFormChanges();
     this.checkEditMode();
   }
 
+  // ===================================================================
+  // FORM INITIALIZATION
+  // ===================================================================
+
   private initializeForm(): void {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 30);
+
     this.invoiceForm = this.fb.group({
-      // Patient Information
-      patientId: ['', Validators.required],
+      patientId: [null, Validators.required],
       patientSearch: [''],
-      appointmentId: [''],
-
-      // Invoice Details
-      dueDate: [this.getDefaultDueDate(), Validators.required],
-      priority: [InvoicePriority.NORMAL],
-
-      // Items
+      appointmentId: [null],
+      dueDate: [tomorrow, Validators.required],
       items: this.fb.array([], Validators.required),
-
-      // Calculations
-      taxPercentage: [15, [Validators.min(0), Validators.max(100)]],
-      discountPercentage: [0, [Validators.min(0), Validators.max(100)]],
-      discountAmount: [0, Validators.min(0)],
-
-      // Additional Information
+      taxPercentage: [15, [Validators.required, Validators.min(0), Validators.max(100)]],
+      discountAmount: [0, [Validators.min(0)]],
       notes: [''],
-      terms: ['الرجاء السداد خلال 30 يوماً من تاريخ الفاتورة'],
-      internalNotes: ['']
+      terms: ['الدفع خلال 30 يوم من تاريخ الفاتورة']
     });
 
-    this.setupPatientAutocomplete();
-    this.setupFormSubscriptions();
+    // Add initial item
+    this.addItem();
+  }
+
+  private loadPatients(): void {
+    this.patientService.getAllPatients().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.patients.set(response.data.patients);
+        }
+      }
+    });
   }
 
   private setupPatientAutocomplete(): void {
@@ -166,316 +163,328 @@ export class InvoiceFormComponent implements OnInit {
     );
   }
 
-  private setupFormSubscriptions(): void {
-    // Update calculations when relevant fields change
-    this.invoiceForm.get('taxPercentage')?.valueChanges.subscribe(() => {
-      this.updateCalculations();
+  private _filterPatients(value: string): Patient[] {
+    if (typeof value !== 'string') return this.patients();
+
+    const filterValue = value.toLowerCase();
+    return this.patients().filter(patient =>
+      patient.fullName.toLowerCase().includes(filterValue) ||
+      patient.patientNumber.toLowerCase().includes(filterValue) ||
+      (patient.phone && patient.phone.includes(filterValue))
+    );
+  }
+
+  private subscribeToFormChanges(): void {
+    this.items.valueChanges.subscribe(() => {
+      this.calculateTotals();
     });
 
-    this.invoiceForm.get('discountPercentage')?.valueChanges.subscribe(() => {
-      // Clear fixed discount when percentage is used
-      if (this.invoiceForm.get('discountPercentage')?.value > 0) {
-        this.invoiceForm.get('discountAmount')?.setValue(0, { emitEvent: false });
-      }
-      this.updateCalculations();
+    this.invoiceForm.get('taxPercentage')?.valueChanges.subscribe(() => {
+      this.calculateTotals();
     });
 
     this.invoiceForm.get('discountAmount')?.valueChanges.subscribe(() => {
-      // Clear percentage discount when fixed amount is used
-      if (this.invoiceForm.get('discountAmount')?.value > 0) {
-        this.invoiceForm.get('discountPercentage')?.setValue(0, { emitEvent: false });
-      }
-      this.updateCalculations();
-    });
-  }
-
-  private loadData(): void {
-    // Load patients
-    this.patientService.getPatients().subscribe({
-      next: (patients) => {
-        this.patients = patients.content;
-      }
-    });
-
-    // Load predefined services
-    this.invoiceService.getPredefinedServices().subscribe({
-      next: (services) => {
-        this.predefinedServices.set(services);
-      }
+      this.calculateTotals();
     });
   }
 
   private checkEditMode(): void {
-    this.route.params.subscribe(params => {
-      if (params['id']) {
-        this.isEditMode.set(true);
-        this.invoiceId.set(+params['id']);
-        this.loadInvoice(+params['id']);
-      }
-    });
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.invoiceId.set(Number(id));
+      this.editMode.set(true);
+      this.loadInvoiceForEdit(Number(id));
+    }
   }
 
-  private loadInvoice(id: number): void {
+  private loadInvoiceForEdit(id: number): void {
     this.loading.set(true);
 
     this.invoiceService.getInvoiceById(id).subscribe({
-      next: (invoice) => {
-        this.populateForm(invoice);
+      next: (response) => {
+        if (response.success && response.data) {
+          this.populateForm(response.data);
+        }
         this.loading.set(false);
       },
-      error: (error) => {
-        this.notificationService.error('خطأ في تحميل الفاتورة: ' + error.message);
+      error: () => {
         this.loading.set(false);
         this.router.navigate(['/invoices']);
       }
     });
   }
 
-  private populateForm(invoice: Invoice): void {
-    // Find and set patient
-    const patient = this.patients.find(p => p.id === invoice.patientId);
+  private populateForm(invoice: any): void {
+    // Clear existing items
+    while (this.items.length) {
+      this.items.removeAt(0);
+    }
+
+    // Set patient
+    const patient = this.patients().find(p => p.id === invoice.patientId);
     if (patient) {
       this.selectedPatient.set(patient);
       this.invoiceForm.patchValue({
-        patientSearch: patient.firstName + ' ' + patient.lastName
+        patientSearch: patient.fullName
       });
     }
 
+    // Set form values
     this.invoiceForm.patchValue({
       patientId: invoice.patientId,
       appointmentId: invoice.appointmentId,
-      dueDate: invoice.dueDate,
-      priority: invoice.priority,
+      dueDate: new Date(invoice.dueDate),
       taxPercentage: invoice.taxPercentage,
-      discountPercentage: invoice.discountPercentage,
       discountAmount: invoice.discountAmount,
       notes: invoice.notes,
       terms: invoice.terms
     });
 
-    // Populate items
-    this.clearItems();
-    invoice.items.forEach(item => {
-      this.addItem(item);
+    // Add items
+    invoice.items.forEach((item: any) => {
+      this.items.push(this.createItemFromData(item));
     });
+
+    this.calculateTotals();
   }
 
-  // Form array getters
-  get invoiceItemsArray(): FormArray {
+  // ===================================================================
+  // FORM ARRAY MANAGEMENT
+  // ===================================================================
+
+  get items(): FormArray {
     return this.invoiceForm.get('items') as FormArray;
   }
 
-  // Item management methods
-  addItem(item?: InvoiceItem): void {
-    const itemForm = this.fb.group({
-      id: [item?.id || null],
-      serviceName: [item?.serviceName || '', Validators.required],
-      description: [item?.description || ''],
-      category: [item?.category || ServiceCategory.OTHER, Validators.required],
-      quantity: [item?.quantity || 1, [Validators.required, Validators.min(1)]],
-      unitPrice: [item?.unitPrice || 0, [Validators.required, Validators.min(0)]],
-      totalPrice: [{ value: item?.totalPrice || 0, disabled: true }],
-      taxable: [item?.taxable !== false] // Default to true
+  private createItem(): FormGroup {
+    return this.fb.group({
+      serviceName: ['', Validators.required],
+      serviceCode: [''],
+      description: [''],
+      category: [ServiceCategory.CONSULTATION, Validators.required],
+      quantity: [1, [Validators.required, Validators.min(1)]],
+      unitPrice: [0, [Validators.required, Validators.min(0)]],
+      taxable: [true]
     });
+  }
 
-    // Update total price when quantity or unit price changes
-    itemForm.get('quantity')?.valueChanges.subscribe(() => this.updateItemTotal(itemForm));
-    itemForm.get('unitPrice')?.valueChanges.subscribe(() => this.updateItemTotal(itemForm));
+  private createItemFromData(item: any): FormGroup {
+    return this.fb.group({
+      serviceName: [item.serviceName, Validators.required],
+      serviceCode: [item.serviceCode || ''],
+      description: [item.description || ''],
+      category: [item.category, Validators.required],
+      quantity: [item.quantity, [Validators.required, Validators.min(1)]],
+      unitPrice: [item.unitPrice, [Validators.required, Validators.min(0)]],
+      taxable: [item.taxable]
+    });
+  }
 
-    this.invoiceItemsArray.push(itemForm);
-    this.updateCalculations();
+  addItem(): void {
+    this.items.push(this.createItem());
   }
 
   removeItem(index: number): void {
-    this.invoiceItemsArray.removeAt(index);
-    this.updateCalculations();
-  }
-
-  clearItems(): void {
-    while (this.invoiceItemsArray.length > 0) {
-      this.invoiceItemsArray.removeAt(0);
+    if (this.items.length > 1) {
+      this.items.removeAt(index);
+    } else {
+      this.notificationService.warning('يجب أن تحتوي الفاتورة على خدمة واحدة على الأقل');
     }
   }
 
-  addPredefinedService(service: InvoiceItem): void {
-    this.addItem({
-      ...service,
-      quantity: 1,
-      totalPrice: service.unitPrice
+  // ===================================================================
+  // CALCULATIONS
+  // ===================================================================
+
+  private calculateTotals(): void {
+    this.calculating.set(true);
+
+    let subtotal = 0;
+
+    this.items.controls.forEach(item => {
+      const quantity = item.get('quantity')?.value || 0;
+      const unitPrice = item.get('unitPrice')?.value || 0;
+      subtotal += quantity * unitPrice;
     });
+
+    this.subtotal.set(subtotal);
+
+    const taxPercentage = this.invoiceForm.get('taxPercentage')?.value || 0;
+    const discountAmount = this.invoiceForm.get('discountAmount')?.value || 0;
+
+    const taxAmount = (subtotal * taxPercentage) / 100;
+    const totalAmount = subtotal + taxAmount - discountAmount;
+
+    this.taxAmount.set(taxAmount);
+    this.totalAmount.set(Math.max(0, totalAmount));
+
+    this.calculating.set(false);
   }
 
-  private updateItemTotal(itemForm: FormGroup): void {
-    const quantity = itemForm.get('quantity')?.value || 0;
-    const unitPrice = itemForm.get('unitPrice')?.value || 0;
-    const totalPrice = quantity * unitPrice;
-
-    itemForm.get('totalPrice')?.setValue(totalPrice);
-    this.updateCalculations();
+  getItemTotal(index: number): number {
+    const item = this.items.at(index);
+    const quantity = item.get('quantity')?.value || 0;
+    const unitPrice = item.get('unitPrice')?.value || 0;
+    return quantity * unitPrice;
   }
 
-  private updateCalculations(): void {
-    // Trigger computed signal updates
-    // The computed signals will automatically recalculate
-  }
+  // ===================================================================
+  // PATIENT SELECTION
+  // ===================================================================
 
-  // Patient selection methods
   onPatientSelected(patient: Patient): void {
     this.selectedPatient.set(patient);
     this.invoiceForm.patchValue({
       patientId: patient.id,
-      patientSearch: patient.firstName + ' ' + patient.lastName
+      patientSearch: patient.fullName
     });
   }
 
-  displayPatient(patient: Patient): string {
-    return patient ? `${patient.firstName} ${patient.lastName}` : '';
+  displayPatientFn(patient: Patient | null): string {
+    return patient ? `${patient.fullName} - ${patient.patientNumber}` : '';
   }
 
-  private _filterPatients(value: string): Patient[] {
-    const filterValue = value.toLowerCase();
-    return this.patients.filter(patient =>
-      `${patient.firstName} ${patient.lastName}`.toLowerCase().includes(filterValue) ||
-      patient.phone?.includes(filterValue) ||
-      patient.email?.toLowerCase().includes(filterValue)
-    );
+  clearPatient(): void {
+    this.selectedPatient.set(null);
+    this.invoiceForm.patchValue({
+      patientId: null,
+      patientSearch: ''
+    });
   }
 
-  // Navigation methods
-  nextStep(): void {
-    if (this.currentStep() < 2) {
-      this.currentStep.update(step => step + 1);
-    }
-  }
+  // ===================================================================
+  // FORM SUBMISSION
+  // ===================================================================
 
-  previousStep(): void {
-    if (this.currentStep() > 0) {
-      this.currentStep.update(step => step - 1);
-    }
-  }
-
-  // Form submission
   onSubmit(): void {
-    if (this.invoiceForm.valid) {
-      this.loading.set(true);
+    if (this.invoiceForm.invalid) {
+      this.notificationService.error('الرجاء تعبئة جميع الحقول المطلوبة');
+      this.markFormGroupTouched(this.invoiceForm);
+      return;
+    }
 
-      if (this.isEditMode()) {
-        this.updateInvoice();
-      } else {
-        this.createInvoice();
-      }
+    if (this.editMode()) {
+      this.updateInvoice();
     } else {
-      this.markFormGroupTouched();
-      this.notificationService.error('يرجى تصحيح الأخطاء في النموذج');
+      this.createInvoice();
     }
   }
 
   private createInvoice(): void {
-    const formValue = this.invoiceForm.value;
+    this.loading.set(true);
 
+    const formValue = this.invoiceForm.value;
     const request: CreateInvoiceRequest = {
       patientId: formValue.patientId,
-      appointmentId: formValue.appointmentId,
-      doctorId: this.authService.currentUser()?.id || 1, // Default to current user
-      clinicId: this.authService.currentUser()?.clinicId || 1, // Default clinic
-      dueDate: formValue.dueDate,
-      items: formValue.items.map((item: any) => ({
-        serviceName: item.serviceName,
-        description: item.description,
-        category: item.category,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: item.quantity * item.unitPrice,
-        taxable: item.taxable
-      })),
-      discountAmount: formValue.discountAmount,
-      discountPercentage: formValue.discountPercentage,
+      appointmentId: formValue.appointmentId || undefined,
+      dueDate: this.formatDate(formValue.dueDate),
+      items: this.mapItemsToRequest(formValue.items),
       taxPercentage: formValue.taxPercentage,
-      notes: formValue.notes,
-      terms: formValue.terms,
-      priority: formValue.priority
+      discountAmount: formValue.discountAmount || 0,
+      notes: formValue.notes || undefined,
+      terms: formValue.terms || undefined
     };
 
     this.invoiceService.createInvoice(request).subscribe({
-      next: (invoice) => {
+      next: (response) => {
+        if (response.success && response.data) {
+          this.notificationService.success('تم إنشاء الفاتورة بنجاح');
+          this.router.navigate(['/invoices', response.data.id]);
+        }
         this.loading.set(false);
-        this.notificationService.success('تم إنشاء الفاتورة بنجاح');
-        this.router.navigate(['/invoices', invoice.id]);
       },
-      error: (error) => {
+      error: () => {
         this.loading.set(false);
-        this.notificationService.error('خطأ في إنشاء الفاتورة: ' + error.message);
       }
     });
   }
 
   private updateInvoice(): void {
-    const formValue = this.invoiceForm.value;
+    this.loading.set(true);
 
+    const formValue = this.invoiceForm.value;
     const request: UpdateInvoiceRequest = {
-      dueDate: formValue.dueDate,
-      items: formValue.items.map((item: any) => ({
-        serviceName: item.serviceName,
-        description: item.description,
-        category: item.category,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: item.quantity * item.unitPrice,
-        taxable: item.taxable
-      })),
-      discountAmount: formValue.discountAmount,
-      discountPercentage: formValue.discountPercentage,
+      dueDate: this.formatDate(formValue.dueDate),
+      items: this.mapItemsToRequest(formValue.items),
       taxPercentage: formValue.taxPercentage,
-      notes: formValue.notes,
-      terms: formValue.terms,
-      priority: formValue.priority
+      discountAmount: formValue.discountAmount || 0,
+      notes: formValue.notes || undefined,
+      terms: formValue.terms || undefined
     };
 
     this.invoiceService.updateInvoice(this.invoiceId()!, request).subscribe({
-      next: (invoice) => {
+      next: (response) => {
+        if (response.success && response.data) {
+          this.notificationService.success('تم تحديث الفاتورة بنجاح');
+          this.router.navigate(['/invoices', response.data.id]);
+        }
         this.loading.set(false);
-        this.notificationService.success('تم تحديث الفاتورة بنجاح');
-        this.router.navigate(['/invoices', invoice.id]);
       },
-      error: (error) => {
+      error: () => {
         this.loading.set(false);
-        this.notificationService.error('خطأ في تحديث الفاتورة: ' + error.message);
       }
     });
   }
 
-  // Helper methods
-  private getDefaultDueDate(): string {
-    const date = new Date();
-    date.setDate(date.getDate() + 30); // 30 days from now
+  private mapItemsToRequest(items: any[]): CreateInvoiceItemRequest[] {
+    return items.map(item => ({
+      serviceName: item.serviceName,
+      serviceCode: item.serviceCode || undefined,
+      description: item.description || undefined,
+      category: item.category,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      taxable: item.taxable
+    }));
+  }
+
+  onCancel(): void {
+    if (this.editMode()) {
+      this.router.navigate(['/invoices', this.invoiceId()]);
+    } else {
+      this.router.navigate(['/invoices']);
+    }
+  }
+
+  // ===================================================================
+  // UTILITY METHODS
+  // ===================================================================
+
+  private formatDate(date: Date): string {
     return date.toISOString().split('T')[0];
   }
 
-  private markFormGroupTouched(): void {
-    Object.keys(this.invoiceForm.controls).forEach(key => {
-      const control = this.invoiceForm.get(key);
+  formatCurrency(amount: number): string {
+    return this.invoiceService.formatCurrency(amount);
+  }
+
+  private markFormGroupTouched(formGroup: FormGroup): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
       control?.markAsTouched();
 
-      if (control instanceof FormArray) {
-        control.controls.forEach(arrayControl => {
-          if (arrayControl instanceof FormGroup) {
-            Object.keys(arrayControl.controls).forEach(nestedKey => {
-              arrayControl.get(nestedKey)?.markAsTouched();
-            });
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      } else if (control instanceof FormArray) {
+        control.controls.forEach(c => {
+          if (c instanceof FormGroup) {
+            this.markFormGroupTouched(c);
           }
         });
       }
     });
   }
 
-  formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR'
-    }).format(amount);
+  isFieldInvalid(fieldName: string): boolean {
+    const field = this.invoiceForm.get(fieldName);
+    return !!(field && field.invalid && (field.dirty || field.touched));
   }
 
-  onCancel(): void {
-    this.router.navigate(['/invoices']);
+  getFieldError(fieldName: string): string {
+    const field = this.invoiceForm.get(fieldName);
+    if (field?.hasError('required')) return 'هذا الحقل مطلوب';
+    if (field?.hasError('min')) return 'القيمة يجب أن تكون أكبر من أو تساوي الحد الأدنى';
+    if (field?.hasError('max')) return 'القيمة يجب أن تكون أقل من أو تساوي الحد الأقصى';
+    return '';
   }
 }

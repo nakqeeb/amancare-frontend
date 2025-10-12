@@ -1,0 +1,129 @@
+<div class="permanent-delete-dialog">
+  <h2 mat-dialog-title class="danger-title">
+    <mat-icon class="danger-icon">warning</mat-icon>
+    تحذير: حذف نهائي للمريض
+  </h2>
+
+  <mat-dialog-content>
+    <div class="warning-banner">
+      <mat-icon>error_outline</mat-icon>
+      <div>
+        <strong>هذا الإجراء لا يمكن التراجع عنه!</strong>
+        <p>
+          سيتم حذف جميع البيانات المرتبطة بالمريض نهائياً من قاعدة البيانات.
+        </p>
+      </div>
+    </div>
+
+    <div class="patient-info">
+      <h3>معلومات المريض:</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">الاسم:</span>
+          <span class="value">{{ data.patient.fullName }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">رقم المريض:</span>
+          <span class="value">{{ data.patient.patientNumber }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">الهاتف:</span>
+          <span class="value">{{ data.patient.phone }}</span>
+        </div>
+        <!-- <div class="info-item" *ngIf="data.patient.nationalId">
+          <span class="label">الرقم الوطني:</span>
+          <span class="value">{{ data.patient.nationalId }}</span>
+        </div> -->
+      </div>
+    </div>
+
+    <div class="data-to-delete" *ngIf="data.dataToDelete">
+      <h3>البيانات التي سيتم حذفها:</h3>
+      <div class="deletion-stats">
+        <div class="stat-item">
+          <mat-icon>event</mat-icon>
+          <span>{{ data.dataToDelete.appointments }} موعد</span>
+        </div>
+        <div class="stat-item">
+          <mat-icon>folder_special</mat-icon>
+          <span>{{ data.dataToDelete.medicalRecords }} سجل طبي</span>
+        </div>
+        <div class="stat-item">
+          <mat-icon>receipt</mat-icon>
+          <span>{{ data.dataToDelete.invoices }} فاتورة</span>
+        </div>
+        <div class="stat-item">
+          <mat-icon>description</mat-icon>
+          <span>{{ data.dataToDelete.documents }} مستند</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="confirmation-section">
+      <h3>للمتابعة، يجب تأكيد ما يلي:</h3>
+
+      <mat-checkbox
+        [(ngModel)]="understand"
+        color="warn"
+        class="confirmation-checkbox"
+      >
+        أفهم أن هذا الإجراء سيحذف جميع بيانات المريض نهائياً
+      </mat-checkbox>
+
+      <mat-checkbox
+        [(ngModel)]="confirmed"
+        color="warn"
+        class="confirmation-checkbox"
+      >
+        أؤكد أنني قمت بأخذ نسخة احتياطية من البيانات المهمة
+      </mat-checkbox>
+
+      <mat-checkbox
+        [(ngModel)]="authorized"
+        color="warn"
+        class="confirmation-checkbox"
+      >
+        لدي الصلاحية والموافقة اللازمة لحذف هذه البيانات
+      </mat-checkbox>
+
+      <mat-form-field class="confirmation-input" appearance="outline">
+        <mat-label>اكتب "DELETE-CONFIRM" للمتابعة</mat-label>
+        <input
+          matInput
+          [(ngModel)]="confirmationCode"
+          placeholder="DELETE-CONFIRM"
+          [style.font-family]="'monospace'"
+        />
+        <mat-hint>يجب كتابة الكود بالأحرف الكبيرة</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <div class="final-warning">
+      <mat-icon>report</mat-icon>
+      <p>
+        <strong>تذكير أخير:</strong>
+        سيتم تسجيل هذا الإجراء في سجل النظام مع معرف المستخدم والوقت. هذا
+        الإجراء غير قابل للإلغاء ولا يمكن استرجاع البيانات المحذوفة.
+      </p>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()" [disabled]="loading()">
+      إلغاء
+    </button>
+    <button
+      mat-raised-button
+      color="warn"
+      (click)="onConfirm()"
+      [disabled]="!canDelete() || loading()"
+    >
+      <mat-spinner *ngIf="loading()" diameter="20" class="inline-spinner">
+      </mat-spinner>
+      <span *ngIf="!loading()">
+        <mat-icon>delete_forever</mat-icon>
+        حذف نهائي
+      </span>
+    </button>
+  </mat-dialog-actions>
+</div>

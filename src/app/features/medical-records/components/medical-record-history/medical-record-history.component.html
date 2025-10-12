@@ -1,0 +1,218 @@
+<app-header />
+<app-sidebar>
+  <div class="medical-record-history-container">
+    <!-- Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <button mat-icon-button (click)="onBack()" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+
+        <div class="title-section">
+          <h1 class="page-title">
+            <mat-icon>history</mat-icon>
+            سجل التعديلات
+          </h1>
+          <p class="page-subtitle">
+            عرض جميع التغييرات والأنشطة على السجل الطبي
+          </p>
+        </div>
+
+        <div class="header-actions">
+          <button mat-button (click)="onExportHistory()">
+            <mat-icon>download</mat-icon>
+            تصدير السجل
+          </button>
+          <button mat-icon-button (click)="onRefresh()">
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="summary-cards">
+        <div class="summary-card">
+          <mat-icon>edit</mat-icon>
+          <div class="summary-content">
+            <span class="value">{{ totalChanges() }}</span>
+            <span class="label">إجمالي التعديلات</span>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <mat-icon>person</mat-icon>
+          <div class="summary-content">
+            <span class="value">{{ uniqueUsers() }}</span>
+            <span class="label">المستخدمون</span>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <mat-icon>event</mat-icon>
+          <div class="summary-content">
+            <span class="value">{{ daysSinceCreation() }}</span>
+            <span class="label">يوم منذ الإنشاء</span>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <mat-icon>visibility</mat-icon>
+          <div class="summary-content">
+            <span class="value">{{ totalViews() }}</span>
+            <span class="label">مرات العرض</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="history-content">
+      @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner></mat-spinner>
+        <p>جاري تحميل سجل التعديلات...</p>
+      </div>
+      } @else if (auditEntries().length === 0) {
+      <div class="empty-state">
+        <mat-icon>history_toggle_off</mat-icon>
+        <h3>لا يوجد سجل تعديلات</h3>
+        <p>لم يتم تسجيل أي تعديلات على هذا السجل الطبي</p>
+      </div>
+      } @else {
+      <!-- Timeline View -->
+      <div class="timeline-container">
+        @for (entry of auditEntries(); track entry.id) {
+        <div
+          class="timeline-item"
+          [class.expanded]="expandedEntry() === entry.id"
+        >
+          <div
+            class="timeline-marker"
+            [class]="'action-' + entry.action.toLowerCase()"
+          >
+            <mat-icon>{{ getActionIcon(entry.action) }}</mat-icon>
+          </div>
+
+          <mat-card class="timeline-card">
+            <mat-card-header>
+              <div class="entry-header">
+                <div class="entry-info">
+                  <span class="action-label">{{
+                    getActionLabel(entry.action)
+                  }}</span>
+                  <span class="user-info">
+                    <mat-icon>person</mat-icon>
+                    {{ entry.performedBy }}
+                    <span class="role">({{ entry.performedByRole }})</span>
+                  </span>
+                </div>
+                <div class="entry-timestamp">
+                  <mat-icon>schedule</mat-icon>
+                  {{ formatDateTime(entry.timestamp) }}
+                </div>
+              </div>
+            </mat-card-header>
+
+            <mat-card-content>
+              <p class="entry-description">{{ entry.description }}</p>
+
+              @if (entry.changes && entry.changes.length > 0) {
+              <button
+                mat-button
+                (click)="toggleExpanded(entry.id)"
+                class="show-changes-button"
+              >
+                <mat-icon>{{
+                  expandedEntry() === entry.id ? "expand_less" : "expand_more"
+                }}</mat-icon>
+                {{ expandedEntry() === entry.id ? "إخفاء" : "عرض" }} التفاصيل
+                ({{ entry.changes.length }})
+              </button>
+
+              @if (expandedEntry() === entry.id) {
+              <div class="changes-list">
+                <h4>التغييرات:</h4>
+                @for (change of entry.changes; track change.field) {
+                <div
+                  class="change-item"
+                  [class]="'change-type-' + change.changeType.toLowerCase()"
+                >
+                  <div class="change-header">
+                    <span class="field-label">
+                      <mat-icon>{{
+                        getChangeIcon(change.changeType)
+                      }}</mat-icon>
+                      {{ change.fieldLabel }}
+                    </span>
+                    <span class="change-type-badge">{{
+                      getChangeTypeLabel(change.changeType)
+                    }}</span>
+                  </div>
+                  <div class="change-values">
+                    @if (change.changeType === 'UPDATE') {
+                    <div class="old-value">
+                      <span class="label">القيمة السابقة:</span>
+                      <span class="value">{{
+                        formatValue(change.oldValue)
+                      }}</span>
+                    </div>
+                    <mat-icon class="arrow">arrow_forward</mat-icon>
+                    <div class="new-value">
+                      <span class="label">القيمة الجديدة:</span>
+                      <span class="value">{{
+                        formatValue(change.newValue)
+                      }}</span>
+                    </div>
+                    } @else if (change.changeType === 'ADD') {
+                    <div class="new-value">
+                      <span class="label">القيمة المضافة:</span>
+                      <span class="value">{{
+                        formatValue(change.newValue)
+                      }}</span>
+                    </div>
+                    } @else {
+                    <div class="old-value">
+                      <span class="label">القيمة المحذوفة:</span>
+                      <span class="value">{{
+                        formatValue(change.oldValue)
+                      }}</span>
+                    </div>
+                    }
+                  </div>
+                </div>
+                }
+              </div>
+              } } @if (entry.ipAddress || entry.userAgent) {
+              <div class="technical-info">
+                @if (entry.ipAddress) {
+                <span class="info-item">
+                  <mat-icon>computer</mat-icon>
+                  {{ entry.ipAddress }}
+                </span>
+                } @if (entry.userAgent) {
+                <span class="info-item" [matTooltip]="entry.userAgent">
+                  <mat-icon>devices</mat-icon>
+                  {{ getTruncatedUserAgent(entry.userAgent) }}
+                </span>
+                }
+              </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        </div>
+        }
+      </div>
+
+      <!-- Pagination -->
+      <mat-paginator
+        [length]="totalRecords()"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        (page)="onPageChange($event)"
+        showFirstLastButtons
+      >
+      </mat-paginator>
+      }
+    </div>
+  </div>
+</app-sidebar>

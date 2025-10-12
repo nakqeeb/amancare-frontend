@@ -1,0 +1,207 @@
+ .doctor-records-container {
+   padding: var(--spacing-lg);
+   background: var(--background-secondary);
+   min-height: 100vh;
+
+   .page-header {
+     background: var(--surface);
+     padding: var(--spacing-lg);
+     border-radius: var(--border-radius-lg);
+     margin-bottom: var(--spacing-lg);
+     box-shadow: var(--shadow-sm);
+
+     .header-content {
+       display: flex;
+       align-items: center;
+       gap: var(--spacing-md);
+       margin-bottom: var(--spacing-lg);
+
+       .back-button {
+         background: var(--background-secondary);
+
+         &:hover {
+           background: var(--hover-overlay);
+         }
+       }
+
+       .title-section {
+         flex: 1;
+
+         .page-title {
+           display: flex;
+           align-items: center;
+           gap: var(--spacing-sm);
+           font-size: var(--font-size-xl);
+           font-weight: var(--font-weight-semibold);
+           color: var(--text-primary);
+           margin: 0 0 var(--spacing-sm) 0;
+
+           mat-icon {
+             color: var(--primary);
+           }
+         }
+
+         .doctor-info {
+           display: flex;
+           align-items: center;
+           gap: var(--spacing-md);
+
+           .doctor-name {
+             font-size: var(--font-size-lg);
+             color: var(--primary);
+             font-weight: var(--font-weight-medium);
+           }
+
+           .doctor-specialty {
+             padding: var(--spacing-xs) var(--spacing-sm);
+             background: var(--background-secondary);
+             border-radius: var(--border-radius-sm);
+             color: var(--text-secondary);
+             font-size: var(--font-size-sm);
+           }
+         }
+       }
+
+       .header-actions {
+         display: flex;
+         gap: var(--spacing-sm);
+       }
+     }
+
+     .doctor-stats {
+       display: grid;
+       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+       gap: var(--spacing-md);
+
+       .stat-card {
+         display: flex;
+         align-items: center;
+         gap: var(--spacing-md);
+         padding: var(--spacing-md);
+         background: var(--background-secondary);
+         border-radius: var(--border-radius-md);
+
+         mat-icon {
+           font-size: 32px;
+           width: 32px;
+           height: 32px;
+           color: var(--primary);
+         }
+
+         .stat-content {
+           display: flex;
+           flex-direction: column;
+
+           .stat-value {
+             font-size: var(--font-size-xl);
+             font-weight: var(--font-weight-bold);
+             color: var(--text-primary);
+           }
+
+           .stat-label {
+             font-size: var(--font-size-sm);
+             color: var(--text-secondary);
+           }
+         }
+       }
+     }
+   }
+
+   .filters-card {
+     margin-bottom: var(--spacing-lg);
+
+     .filters-row {
+       display: grid;
+       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+       gap: var(--spacing-md);
+
+       mat-form-field {
+         width: 100%;
+       }
+     }
+   }
+
+   .records-card {
+     .loading-container {
+       display: flex;
+       flex-direction: column;
+       align-items: center;
+       justify-content: center;
+       padding: var(--spacing-2xl);
+
+       mat-spinner {
+         margin-bottom: var(--spacing-md);
+       }
+     }
+
+     .empty-state {
+       text-align: center;
+       padding: var(--spacing-2xl);
+
+       mat-icon {
+         font-size: 64px;
+         width: 64px;
+         height: 64px;
+         color: var(--text-disabled);
+       }
+
+       h3 {
+         color: var(--text-primary);
+         margin: var(--spacing-md) 0;
+       }
+
+       p {
+         color: var(--text-secondary);
+       }
+     }
+
+     .records-table {
+       width: 100%;
+
+       .clickable-row {
+         cursor: pointer;
+
+         &:hover {
+           background: var(--hover-overlay);
+         }
+       }
+
+       .patient-info {
+         display: flex;
+         flex-direction: column;
+
+         .patient-number {
+           font-size: var(--font-size-sm);
+           color: var(--text-secondary);
+         }
+       }
+
+       mat-chip {
+         font-size: var(--font-size-sm);
+       }
+     }
+   }
+ }
+
+ @media (max-width: 768px) {
+   .doctor-records-container {
+     padding: var(--spacing-md);
+
+     .page-header {
+       .header-content {
+         flex-direction: column;
+         align-items: flex-start;
+       }
+
+       .doctor-stats {
+         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+       }
+     }
+
+     .filters-card {
+       .filters-row {
+         grid-template-columns: 1fr;
+       }
+     }
+   }
+ }

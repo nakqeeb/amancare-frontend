@@ -1,387 +1,845 @@
+// ===================================================================
+// Patient List Component - Complete Stylesheet
+// src/app/features/patients/components/patient-list/patient-list.component.scss
+// ===================================================================
+
+// ===================================================================
+// CONTAINER & LAYOUT
+// ===================================================================
 .patients-container {
-  padding: 2rem;
-  background: var(--bg-secondary);
-  min-height: calc(100vh - 64px);
+  padding: 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+
+  @media (max-width: 480px) {
+    padding: 16px;
+  }
 }
 
-/* Page Header */
+// ===================================================================
+// PAGE HEADER
+// ===================================================================
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 2rem;
-  gap: 2rem;
-}
+  margin-bottom: 24px;
+  gap: 20px;
 
-.header-content {
-  flex: 1;
-}
-
-.page-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 2rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 0.5rem 0;
-}
-
-.page-icon {
-  font-size: 2.2rem;
-  width: 2.2rem;
-  height: 2.2rem;
-  color: var(--primary-color);
-}
-
-.page-subtitle {
-  color: var(--text-secondary);
-  font-size: 1rem;
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.add-button {
-  height: 44px;
-  font-weight: 600;
-}
-
-.export-button {
-  height: 44px;
-}
-
-/* Search Card */
-.search-card {
-  margin-bottom: 1.5rem;
-  border-radius: var(--radius-lg);
-}
-
-.search-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.search-row {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-end;
-  flex-wrap: wrap;
-}
-
-.search-field {
-  flex: 2;
-  min-width: 250px;
-}
-
-.filter-field {
-  flex: 1;
-  min-width: 150px;
-}
-
-.age-range-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.age-field {
-  width: 100px;
-}
-
-.age-separator {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  padding: 0 0.5rem;
-}
-
-.status-checkbox {
-  margin-left: auto;
-}
-
-.search-actions {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.advanced-search {
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-light);
-}
-
-.advanced-row {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-/* Results Summary */
-.results-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  background: var(--bg-primary);
-  border-radius: var(--radius-md);
-  margin-bottom: 1rem;
-  border-left: 4px solid var(--primary-color);
-}
-
-.summary-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--text-secondary);
-}
-
-.summary-info strong {
-  color: var(--primary-color);
-  font-weight: 600;
-}
-
-.view-options {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.view-options button.active {
-  background-color: var(--primary-color);
-  color: white;
-}
-
-/* Cards View */
-.cards-container {
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-}
-
-.patient-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.patient-card {
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: var(--radius-lg);
-  position: relative;
-}
-
-.patient-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.patient-card.inactive {
-  opacity: 0.6;
-  background: var(--bg-light);
-}
-
-.patient-card.inactive::before {
-  content: 'غير نشط';
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  background: var(--warning-color);
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.7rem;
-  font-weight: 500;
-  z-index: 1;
-}
-
-.patient-avatar {
-  background-color: var(--primary-color) !important;
-  color: white !important;
-}
-
-.patient-avatar.male {
-  background-color: var(--info-color) !important;
-}
-
-.card-actions {
-  margin-right: auto;
-}
-
-.patient-info {
-  margin-bottom: 1rem;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.info-icon {
-  font-size: 1.1rem;
-  width: 1.1rem;
-  height: 1.1rem;
-  color: var(--text-muted);
-}
-
-.patient-stats {
-  display: flex;
-  justify-content: space-around;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-light);
-}
-
-.stat {
-  text-align: center;
-}
-
-.stat-value {
-  display: block;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.cards-pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--bg-light);
-  border-radius: var(--radius-md);
-}
-
-.pagination-info {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  min-width: 120px;
-  text-align: center;
-}
-
-/* Loading & Empty States */
-.loading-container,
-.empty-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-}
-
-.loading-card,
-.empty-card {
-  max-width: 400px;
-  text-align: center;
-}
-
-.loading-content,
-.empty-content {
-  padding: 2rem;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--border-light);
-  border-top: 4px solid var(--primary-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 1rem;
-}
-
-.empty-icon {
-  font-size: 4rem;
-  width: 4rem;
-  height: 4rem;
-  color: var(--text-muted);
-  opacity: 0.5;
-  margin-bottom: 1rem;
-}
-
-.empty-content h2 {
-  color: var(--text-secondary);
-  margin: 0 0 0.5rem 0;
-}
-
-.empty-content p {
-  color: var(--text-muted);
-  margin: 0 0 2rem 0;
-}
-
-.text-warn {
-  color: var(--error-color) !important;
-}
-
-/* RTL Adjustments */
-[dir="rtl"] .results-summary {
-  border-left: none;
-  border-right: 4px solid var(--primary-color);
-}
-
-[dir="rtl"] .patient-card.inactive::before {
-  left: auto;
-  right: 0.5rem;
-}
-
-/* Mobile Responsive */
-@media (max-width: 768px) {
-  .patients-container {
-    padding: 1rem;
+  @media (max-width: 768px) {
+    flex-direction: column;
   }
 
-  .page-header {
-    flex-direction: column;
-    gap: 1rem;
+  .header-content {
+    flex: 1;
+
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--primary-color, #1976d2);
+      margin: 0 0 8px 0;
+
+      .page-icon {
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    .page-subtitle {
+      color: #666;
+      font-size: 16px;
+      margin: 0 0 16px 0;
+    }
   }
 
   .header-actions {
-    align-self: stretch;
-    justify-content: center;
+    display: flex;
+    gap: 12px;
+
+    @media (max-width: 768px) {
+      width: 100%;
+
+      button {
+        flex: 1;
+      }
+    }
+  }
+}
+
+// ===================================================================
+// STATISTICS SUMMARY CHIPS
+// ===================================================================
+.statistics-summary {
+  margin-top: 16px;
+
+  .stats-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    mat-chip-option {
+      font-size: 14px;
+      cursor: default;
+
+      &.warn-chip {
+        background-color: #ffebee !important;
+        color: #c62828 !important;
+      }
+
+      &.accent-chip {
+        background-color: #e8f5e9 !important;
+        color: #2e7d32 !important;
+      }
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        margin-right: 4px;
+      }
+    }
+  }
+}
+
+// ===================================================================
+// STATISTICS CARDS GRID
+// ===================================================================
+.statistics-cards-section {
+  margin: 24px 0;
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+
+    @media (max-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+    }
   }
 
-  .search-row {
+  .stat-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    overflow: hidden;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    mat-card-content {
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .stat-icon-wrapper {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      .stat-icon {
+        font-size: 28px;
+        width: 28px;
+        height: 28px;
+        color: white;
+      }
+    }
+
+    .stat-info {
+      flex: 1;
+
+      .stat-value {
+        font-size: 28px;
+        font-weight: 600;
+        line-height: 1.2;
+        margin-bottom: 4px;
+        color: #1a1a1a;
+
+        @media (max-width: 768px) {
+          font-size: 24px;
+        }
+      }
+
+      .stat-label {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 4px;
+      }
+
+      .stat-detail {
+        font-size: 12px;
+        color: #999;
+
+        .active {
+          color: #4caf50;
+        }
+
+        .inactive {
+          color: #f44336;
+        }
+
+        .separator {
+          margin: 0 8px;
+          color: #ccc;
+        }
+      }
+
+      .stat-progress {
+        margin-top: 8px;
+        height: 6px;
+        border-radius: 3px;
+      }
+
+      // Gender distribution bar
+      .gender-bar {
+        display: flex;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 8px;
+        background: #f5f5f5;
+
+        .male-bar {
+          background: #2196f3;
+          transition: width 0.3s ease;
+        }
+
+        .female-bar {
+          background: #e91e63;
+          transition: width 0.3s ease;
+        }
+      }
+    }
+
+    // Card-specific colors
+    &.total-card {
+      border-top: 3px solid #2196f3;
+      .stat-icon-wrapper {
+        background: linear-gradient(135deg, #2196f3, #1976d2);
+      }
+    }
+
+    &.active-card {
+      border-top: 3px solid #4caf50;
+      .stat-icon-wrapper {
+        background: linear-gradient(135deg, #4caf50, #43a047);
+      }
+    }
+
+    &.gender-card {
+      border-top: 3px solid #9c27b0;
+      .stat-icon-wrapper {
+        background: linear-gradient(135deg, #9c27b0, #8e24aa);
+      }
+
+      .stat-value {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .male-count { color: #2196f3; }
+        .female-count { color: #e91e63; }
+        .separator { color: #999; }
+      }
+    }
+
+    &.age-card {
+      border-top: 3px solid #ff9800;
+      .stat-icon-wrapper {
+        background: linear-gradient(135deg, #ff9800, #fb8c00);
+      }
+    }
+
+    &.new-card {
+      border-top: 3px solid #00bcd4;
+      .stat-icon-wrapper {
+        background: linear-gradient(135deg, #00bcd4, #00acc1);
+      }
+    }
+
+    &.appointments-card {
+      border-top: 3px solid #673ab7;
+      .stat-icon-wrapper {
+        background: linear-gradient(135deg, #673ab7, #5e35b1);
+      }
+    }
+
+    &.invoices-card {
+      border-top: 3px solid #ff5722;
+      .stat-icon-wrapper {
+        background: linear-gradient(135deg, #ff5722, #f4511e);
+      }
+    }
+
+    &.balance-card {
+      border-top: 3px solid #795548;
+      .stat-icon-wrapper {
+        background: linear-gradient(135deg, #795548, #6d4c41);
+      }
+      .stat-value {
+        color: #d32f2f;
+        font-size: 24px;
+      }
+    }
+  }
+}
+
+// ===================================================================
+// SEARCH & FILTER CARD
+// ===================================================================
+.search-card {
+  margin: 24px 0;
+  border-radius: 12px;
+
+  .search-form {
+    display: flex;
     flex-direction: column;
-    align-items: stretch;
+    gap: 16px;
+
+    .search-field {
+      flex: 1;
+      min-width: 300px;
+
+      @media (max-width: 480px) {
+        min-width: 100%;
+      }
+    }
+
+    .advanced-toggle {
+      align-self: flex-start;
+    }
+
+    .advanced-filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      padding: 16px;
+      background: #f5f5f5;
+      border-radius: 8px;
+
+      .status-checkbox {
+        align-self: center;
+      }
+    }
+
+    .search-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+
+      @media (max-width: 768px) {
+        justify-content: stretch;
+        button {
+          flex: 1;
+        }
+      }
+    }
+  }
+}
+
+// ===================================================================
+// RESULTS SUMMARY
+// ===================================================================
+.results-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 16px;
+
+  .results-text {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
   }
 
-  .search-field,
-  .filter-field {
-    min-width: unset;
+  mat-spinner {
+    margin-left: 12px;
+  }
+}
+
+// ===================================================================
+// TABLE CONTAINER & SCROLLABLE WRAPPER
+// ===================================================================
+.table-container {
+  margin: 24px 0;
+  position: relative;
+
+  @media (max-width: 480px) {
+    margin: 16px -16px;
   }
 
-  .age-range-group {
+  .table-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    @media (max-width: 480px) {
+      border-radius: 0;
+      box-shadow: none;
+      border-top: 1px solid #e0e0e0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+  }
+
+  // Mobile scroll indicator
+  .scroll-indicator {
+    display: none;
+    align-items: center;
     justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: linear-gradient(90deg, #f5f5f5, #fafafa);
+    border-bottom: 1px solid #e0e0e0;
+    color: #666;
+    font-size: 13px;
+
+    mat-icon {
+      font-size: 18px;
+      animation: swipe 2s infinite;
+    }
+
+    @media (max-width: 768px) {
+      display: flex;
+    }
   }
 
-  .status-checkbox {
-    margin-left: 0;
-    align-self: flex-start;
+  // Scrollable wrapper
+  .table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+
+    &::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #c0c0c0;
+      border-radius: 4px;
+
+      &:hover {
+        background: #a0a0a0;
+      }
+    }
+
+    scrollbar-width: thin;
+    scrollbar-color: #c0c0c0 #f5f5f5;
   }
 
-  .results-summary {
+  // Scroll shadows
+  .scroll-shadow-left,
+  .scroll-shadow-right {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+
+    &.visible {
+      opacity: 1;
+    }
+  }
+
+  .scroll-shadow-left {
+    left: 0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.06), transparent);
+  }
+
+  .scroll-shadow-right {
+    right: 0;
+    background: linear-gradient(to left, rgba(0, 0, 0, 0.06), transparent);
+  }
+}
+
+// ===================================================================
+// TABLE STYLES
+// ===================================================================
+.patients-table {
+  width: 100%;
+  min-width: 1000px;
+  background: white;
+
+  @media (max-width: 768px) {
+    min-width: 800px;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 700px;
+  }
+
+  // Sticky header
+  mat-header-row {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e0e0e0;
+  }
+
+  mat-header-cell {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+    background: #f8f9fa;
+  }
+
+  mat-cell {
+    padding: 12px 16px;
+    font-size: 14px;
+    vertical-align: middle;
+  }
+
+  // Row styling
+  .patient-row {
+    &.clickable {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: #f5f5f5;
+      }
+    }
+  }
+
+  // Column widths
+  .checkbox-cell { width: 50px; min-width: 50px; }
+  .patient-number-col { width: 120px; min-width: 120px; }
+  .name-col { width: 250px; min-width: 200px; }
+  .age-col { width: 80px; min-width: 80px; }
+  .gender-col { width: 100px; min-width: 100px; }
+  .phone-col { width: 150px; min-width: 150px; }
+  .blood-col { width: 100px; min-width: 100px; }
+  .visit-col { width: 150px; min-width: 150px; }
+  .status-col { width: 100px; min-width: 100px; }
+  .actions-col {
+    width: 150px;
+    min-width: 150px;
+    text-align: center;
+  }
+
+  // Hide columns on mobile
+  @media (max-width: 768px) {
+    .blood-col, .visit-col { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .age-col, .gender-col { display: none; }
+  }
+}
+
+// ===================================================================
+// TABLE CELL CONTENT
+// ===================================================================
+.patient-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .patient-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+
+    &.male {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    &.female {
+      background: #fce4ec;
+      color: #c2185b;
+    }
+  }
+
+  .patient-info {
+    display: flex;
     flex-direction: column;
-    gap: 1rem;
+    min-width: 0;
+
+    .patient-name {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .patient-id-mobile {
+      display: none;
+      font-size: 12px;
+      color: #999;
+
+      @media (max-width: 768px) {
+        display: block;
+      }
+    }
+  }
+}
+
+.gender-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 13px;
+
+  &.male {
+    background: #e3f2fd;
+    color: #1565c0;
   }
 
-  .patient-cards {
+  &.female {
+    background: #fce4ec;
+    color: #ad1457;
+  }
+
+  .gender-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.phone-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #1976d2;
+  text-decoration: none;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #1565c0;
+    text-decoration: underline;
+  }
+
+  .phone-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.blood-type-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+mat-chip {
+  font-size: 12px;
+  height: 24px !important;
+  padding: 0 8px !important;
+
+  &.active {
+    background: #e8f5e9 !important;
+    color: #2e7d32 !important;
+  }
+
+  &.inactive {
+    background: #ffebee !important;
+    color: #c62828 !important;
+  }
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.delete-action {
+  color: #f44336 !important;
+}
+
+// No data row
+.no-data-row {
+  .no-data-message {
+    padding: 48px;
+    text-align: center;
+    color: #999;
+
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      color: #ccc;
+      margin-bottom: 16px;
+    }
+
+    p {
+      margin: 0;
+      font-size: 16px;
+    }
+  }
+}
+
+// ===================================================================
+// VIEW CONTROLS & LOADING
+// ===================================================================
+.view-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+
+  mat-spinner {
+    margin-bottom: 16px;
+  }
+
+  p {
+    color: #666;
+    font-size: 16px;
+    margin: 0;
+  }
+}
+
+// ===================================================================
+// PAGINATION
+// ===================================================================
+.table-paginator {
+  border-top: 1px solid #e0e0e0;
+  background: #fafafa;
+  margin-top: 0;
+
+  @media (max-width: 480px) {
+    ::ng-deep .mat-paginator-container {
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 8px;
+    }
+
+    ::ng-deep .mat-paginator-range-label {
+      margin: 8px 0;
+    }
+  }
+}
+
+// ===================================================================
+// CARDS VIEW (Alternative View Mode)
+// ===================================================================
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin: 24px 0;
+
+  @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
+}
 
-  .page-title {
-    font-size: 1.5rem;
+.patient-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
   }
+
+  mat-card-header {
+    padding-bottom: 8px;
+  }
+
+  mat-card-content {
+    padding-top: 8px;
+
+    .card-info-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 14px;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        color: #666;
+      }
+
+      .info-label {
+        color: #666;
+        margin-right: 4px;
+      }
+
+      .info-value {
+        font-weight: 500;
+      }
+    }
+  }
+
+  mat-card-actions {
+    padding: 8px 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    border-top: 1px solid #e0e0e0;
+  }
+}
+
+// ===================================================================
+// ANIMATIONS
+// ===================================================================
+@keyframes swipe {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(10px); }
 }

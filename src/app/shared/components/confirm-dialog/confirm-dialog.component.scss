@@ -1,0 +1,78 @@
+// src/app/shared/components/confirm-dialog/confirm-dialog.component.scss
+.confirm-dialog {
+  .dialog-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+
+    .dialog-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+
+      &.primary {
+        color: #1976d2;
+      }
+
+      &.warn {
+        color: #ff9800;
+      }
+
+      &.danger {
+        color: #f44336;
+      }
+
+      &.info {
+        color: #2196f3;
+      }
+    }
+
+    .dialog-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 500;
+      color: #333;
+    }
+  }
+
+  .dialog-message {
+    margin-bottom: 24px;
+
+    p {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #666;
+    }
+  }
+
+  .reason-input-section {
+    margin-top: 16px;
+
+    .full-width {
+      width: 100%;
+    }
+  }
+}
+
+mat-dialog-content {
+  min-width: 400px;
+  max-width: 600px;
+  padding: 24px !important;
+
+  @media (max-width: 600px) {
+    min-width: 280px;
+  }
+}
+
+mat-dialog-actions {
+  padding: 16px 24px !important;
+  gap: 12px;
+
+  button {
+    mat-icon {
+      margin-inline-end: 8px;
+    }
+  }
+}

@@ -2,6 +2,7 @@
   padding: 1rem;
   min-width: 300px;
   max-width: 500px;
+  background-color: var(--bg-light);
 }
 
 .dialog-header {
@@ -15,6 +16,7 @@
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
+  color: var(--bg-muted);
 }
 
 .dialog-icon {

@@ -1,0 +1,347 @@
+.schedule-form-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.content-area {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-content {
+  .page-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: #1976d2;
+  }
+
+  .page-description {
+    margin: 0;
+    color: #666;
+    font-size: 16px;
+  }
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+// Doctor Selection Styles
+.doctor-selection-form {
+  .selected-doctor-info {
+    .doctor-card {
+      display: flex;
+      align-items: center;
+      padding: 24px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 2px solid #1976d2;
+
+      .doctor-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        color: #1976d2;
+        margin-left: 16px;
+      }
+
+      .doctor-details {
+        h3 {
+          margin: 0 0 8px 0;
+          color: #1976d2;
+        }
+
+        p {
+          margin: 0;
+          color: #666;
+        }
+      }
+    }
+  }
+
+  .doctor-option {
+    .doctor-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .doctor-spec {
+      font-size: 12px;
+      color: #666;
+    }
+  }
+
+  .selected-doctor-preview {
+    margin-top: 16px;
+
+    .doctor-preview-card {
+      background: #e3f2fd;
+      border: 1px solid #1976d2;
+    }
+
+    .doctor-preview {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      .doctor-icon {
+        color: #1976d2;
+      }
+
+      h4 {
+        margin: 0 0 4px 0;
+        color: #1976d2;
+      }
+
+      p {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+// Days Selection Styles
+.days-form {
+  .days-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .day-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+
+    &.selected {
+      border-color: #1976d2;
+      background-color: #e3f2fd;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .day-info {
+      text-align: center;
+
+      .day-name {
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .day-name-en {
+        font-size: 12px;
+        color: #666;
+      }
+    }
+  }
+
+  .selected-days-summary {
+    .days-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+  }
+}
+
+// Hours Form Styles
+.hours-form {
+  .working-hours-section {
+    margin-bottom: 32px;
+
+    h4 {
+      margin-bottom: 16px;
+      color: #1976d2;
+    }
+
+    .time-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .hours-summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background: #e3f2fd;
+      border-radius: 4px;
+      color: #1976d2;
+      font-weight: 600;
+    }
+  }
+
+  .break-section {
+    .break-header {
+      margin-bottom: 16px;
+    }
+
+    .break-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .break-summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background: #fff3e0;
+      border-radius: 4px;
+      color: #f57c00;
+      font-weight: 600;
+    }
+  }
+}
+
+// Settings Form Styles
+.settings-form {
+  .settings-section {
+    .date-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+  }
+}
+
+// Schedule Preview Styles
+.schedule-preview {
+  .preview-section {
+    margin-bottom: 24px;
+
+    h4 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      color: #1976d2;
+      font-weight: 600;
+    }
+
+    .doctor-preview {
+      .doctor-name {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .doctor-spec {
+        color: #666;
+      }
+    }
+
+    .days-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .hours-preview {
+      .working-hours {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .break-hours {
+        color: #f57c00;
+        margin-bottom: 8px;
+      }
+
+      .total-hours {
+        color: #1976d2;
+        font-weight: 600;
+      }
+    }
+
+    .settings-preview {
+      .setting-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+
+        .label {
+          font-weight: 600;
+          color: #666;
+        }
+
+        .value {
+          color: #333;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .content-area {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .time-inputs,
+  .break-inputs,
+  .date-inputs {
+    grid-template-columns: 1fr !important;
+  }
+
+  .days-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

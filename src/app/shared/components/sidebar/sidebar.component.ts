@@ -10,13 +10,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService, UserRole } from '../../../core/services/auth.service';
 
 interface MenuItem {
   title: string;
   icon: string;
   route: string;
-  roles?: string[];
+  roles?: UserRole[];
   children?: MenuItem[];
   badge?: number;
   expanded?: boolean;
@@ -74,78 +74,246 @@ export class SidebarComponent implements OnInit, OnDestroy {
         icon: 'dashboard',
         route: '/dashboard'
       },
+      // {
+      //   title: 'تحديد سياق العيادة',
+      //   icon: 'business',
+      //   route: '/admin/select-clinic-context',
+      //   roles: ['SYSTEM_ADMIN']
+      // },
+      // ===================================================================
+      // ADMIN SECTION - إدارة النظام (SYSTEM_ADMIN Only)
+      // ===================================================================
       {
-        title: 'إدارة المرضى',
-        icon: 'people',
-        route: '/patients',
-        badge: 5
+        title: 'إدارة النظام',
+        icon: 'admin_panel_settings',
+        route: '',
+        roles: ['SYSTEM_ADMIN'],
+        expanded: false,
+        children: [
+          {
+            title: 'إدارة الإعلانات',
+            icon: 'campaign',
+            route: '/admin/announcements',
+            roles: ['SYSTEM_ADMIN']
+          },
+          {
+            title: 'سجلات المراجعة',
+            icon: 'security',
+            route: '/admin/audit/logs',
+            roles: ['SYSTEM_ADMIN']
+          },
+          {
+            title: 'إحصائيات المراجعة',
+            icon: 'bar_chart',
+            route: '/admin/audit/statistics',
+            roles: ['SYSTEM_ADMIN']
+          },
+          {
+            title: 'تحديد سياق العيادة',
+            icon: 'business',
+            route: '/system/select-clinic-context',
+            roles: ['SYSTEM_ADMIN']
+          }
+        ]
       },
       {
         title: 'المواعيد',
         icon: 'event',
-        route: '/appointments',
-        badge: 12
+        expanded: false,
+        roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
+        route: '',
+        children: [
+          {
+            title: 'جميع المواعيد',
+            icon: 'list',
+            route: '/appointments',
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'موعد جديد',
+            icon: 'add_circle',
+            route: '/appointments/new',
+            roles: ['ADMIN', 'DOCTOR', 'RECEPTIONIST']
+          },
+          {
+            title: 'التقويم',
+            icon: 'calendar_today',
+            route: '/appointments/calendar',
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'مواعيد اليوم',
+            icon: 'today',
+            route: '/appointments/today',
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          }
+        ],
+      },
+      {
+        title: 'المرضى',
+        icon: 'people',
+        expanded: false,
+        roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
+        route: '',
+        badge: 5,
+        children: [
+          {
+            title: 'قائمة المرضى',
+            icon: 'list',
+            route: '/patients',
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'البحث المتقدم',
+            icon: 'person_search',
+            route: '/patients/search',
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'إضافة مريض',
+            icon: 'person_add',
+            route: '/patients/new',
+            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          }
+        ]
+      },
+      // ===================================================================
+      // SCHEDULES MENU - New Addition
+      // ===================================================================
+      {
+        title: 'جداول الأطباء',
+        icon: 'schedule',
+        route: '/schedules',
+        roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
+        badge: 5,
+        children: [
+          {
+            title: 'عرض الجداول',
+            icon: 'view_list',
+            route: '/schedules',
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'التقويم',
+            icon: 'calendar_month',
+            route: '/schedules/calendar',
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'فحص التوفر',
+            icon: 'check_circle',
+            route: '/schedules/availability',
+            roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
+          {
+            title: 'إنشاء جدولة',
+            icon: 'add_circle',
+            route: '/schedules/create',
+            roles: ['ADMIN', 'DOCTOR']
+          },
+          {
+            title: 'إدارة عدم التوفر',
+            icon: 'event_busy',
+            route: '/schedules/unavailability/create',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
+          }
+        ]
       },
       {
         title: 'السجلات الطبية',
-        icon: 'folder_shared',
-        route: '/medical-records',
-        roles: ['DOCTOR', 'NURSE', 'ADMIN', 'SYSTEM_ADMIN']
+        icon: 'description',
+        expanded: false,
+        roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE'],
+        route: '',
+        children: [
+          {
+            title: 'قائمة السجلات',
+            icon: 'list',
+            route: '/medical-records/list',
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE']
+          },
+          {
+            title: 'سجل جديد',
+            icon: 'add_circle',
+            route: '/medical-records/new',
+            roles: ['DOCTOR', 'ADMIN', 'SYSTEM_ADMIN']
+          },
+          {
+            title: 'البحث المتقدم',
+            icon: 'search',
+            route: '/medical-records/search',
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE']
+          },
+          {
+            title: 'الإحصائيات',
+            icon: 'analytics',
+            route: '/medical-records/statistics',
+            roles: ['DOCTOR', 'ADMIN', 'SYSTEM_ADMIN']
+          }
+        ]
       },
       {
         title: 'الفواتير',
         icon: 'receipt_long',
         route: '/invoices',
-        badge: 3
+        roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE'],
       },
+      // {
+      //   title: 'المواعيد',
+      //   icon: 'event',
+      //   route: '/appointments',
+      //   badge: 12
+      // },
       {
-        title: 'التقارير',
-        icon: 'assessment',
-        route: '/reports',
-        roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR'],
-        children: [
-          {
-            title: 'التقارير المالية',
-            icon: 'attach_money',
-            route: '/reports/financial'
-          },
-          {
-            title: 'تقارير المرضى',
-            icon: 'person_search',
-            route: '/reports/patients'
-          },
-          {
-            title: 'تقارير المواعيد',
-            icon: 'event_note',
-            route: '/reports/appointments'
-          }
-        ]
-      },
-      {
-        title: 'الإدارة',
+        title: 'إدارة المستخدمين',
         icon: 'admin_panel_settings',
-        route: '/management',
+        route: '/users',
         roles: ['ADMIN', 'SYSTEM_ADMIN'],
         children: [
           {
-            title: 'إدارة المستخدمين',
-            icon: 'group',
-            route: '/users',
+            title: 'جميع المستخدمين',
+            icon: 'people',
+            route: '/users/list',
             roles: ['ADMIN', 'SYSTEM_ADMIN']
           },
           {
-            title: 'إدارة العيادات',
+            title: 'مستخدمو العيادة',
             icon: 'business',
-            route: '/clinics',
-            roles: ['SYSTEM_ADMIN']
+            route: '/users/clinic-users',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
           },
           {
-            title: 'الإعدادات',
-            icon: 'settings',
-            route: '/settings'
+            title: 'قائمة الأطباء',
+            icon: 'medical_services',
+            route: '/users/doctors',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
+          },
+          {
+            title: 'إحصائيات المستخدمين',
+            icon: 'analytics',
+            route: '/users/statistics',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
+          },
+          {
+            title: 'الممرضين',
+            icon: 'health_and_safety',
+            route: '/users/nurses',
+            roles: ['ADMIN', 'SYSTEM_ADMIN', 'DOCTOR']
+          },
+          {
+            title: 'موظفو الاستقبال',
+            icon: 'support_agent',
+            route: '/users/receptionists',
+            roles: ['ADMIN', 'SYSTEM_ADMIN']
           }
         ]
-      }
+      },
+      {
+        title: 'سجل الأنشطة',
+        icon: 'history',
+        route: '/admin/activities',
+        roles: ['SYSTEM_ADMIN', 'ADMIN'],
+      },
     ];
 
     this.menuItems.set(items);
@@ -177,7 +345,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
   }
 
-  hasPermission(roles?: string[]): boolean {
+  hasPermission(roles?: UserRole[]): boolean {
     if (!roles || roles.length === 0) {
       return true;
     }

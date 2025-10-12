@@ -4,38 +4,62 @@
 // ===================================================================
 
 // Main User interface matching your backend User entity
+// export interface User {
+//   id?: number;
+//   username: string;
+//   email: string;
+//   firstName: string;
+//   lastName: string;
+//   fullName?: string; // Computed field: firstName + lastName
+//   phone?: string;
+//   profilePicture?: string;
+
+//   // Role and permissions
+//   role: UserRole;
+//   isActive: boolean;
+
+//   // Clinic association
+//   clinicId?: number;
+//   clinicName?: string;
+
+//   // Professional information (for doctors)
+//   specialization?: string;
+//   licenseNumber?: string;
+
+//   // Timestamps
+//   createdAt?: string;
+//   updatedAt?: string;
+//   lastLoginAt?: string;
+
+//   // Audit fields
+//   createdBy?: string;
+//   updatedBy?: string;
+// }
+
 export interface User {
-  id?: number;
+  id: number;
   username: string;
   email: string;
   firstName: string;
   lastName: string;
-  fullName?: string; // Computed field: firstName + lastName
+  fullName: string;
   phone?: string;
-  profilePicture?: string;
-
-  // Role and permissions
   role: UserRole;
-  isActive: boolean;
-
-  // Clinic association
-  clinicId?: number;
-  clinicName?: string;
-
-  // Professional information (for doctors)
   specialization?: string;
-  licenseNumber?: string;
-
-  // Timestamps
-  createdAt?: string;
+  isActive: boolean;
+  clinicId: number;
+  clinicName: string;
+  createdAt: string;
   updatedAt?: string;
-  lastLoginAt?: string;
-
-  // Audit fields
-  createdBy?: string;
-  updatedBy?: string;
+  lastLogin?: string;
 }
 
+export interface DoctorsResponse {
+  message: string;
+  success: boolean;
+  timestamp: string;
+  data: User[]
+}
 // User roles enum matching your backend
 export enum UserRole {
   SYSTEM_ADMIN = 'SYSTEM_ADMIN',
@@ -70,6 +94,7 @@ export interface UpdateUserRequest {
   licenseNumber?: string;
   profilePicture?: string;
   isActive?: boolean;
+  newPassword?: string;
 }
 
 // Password management requests
@@ -404,8 +429,8 @@ export const canManageUser = (currentUser: User, targetUser: User): boolean => {
   // Admin can manage non-admin users in their clinic
   if (isAdmin(currentUser)) {
     return !isAdmin(targetUser) &&
-           currentUser.clinicId === targetUser.clinicId &&
-           currentUser.id !== targetUser.id;
+      currentUser.clinicId === targetUser.clinicId &&
+      currentUser.id !== targetUser.id;
   }
 
   return false;

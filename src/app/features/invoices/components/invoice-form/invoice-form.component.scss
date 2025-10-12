@@ -1,593 +1,458 @@
 // ===================================================================
 // src/app/features/invoices/components/invoice-form/invoice-form.component.scss
+// Invoice Form Styles
 // ===================================================================
 
+.main-content {
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  min-height: calc(100vh - 64px);
+}
+
 .invoice-form-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background-color: #f5f5f5;
+  max-width: 1200px;
+  margin: 0 auto;
+}
 
-  .main-content {
-    flex: 1;
-    padding: 20px;
-    // margin-top: 64px; // Account for header
-    // margin-right: 240px; // Account for sidebar
-    transition: margin-right 0.3s ease;
-    overflow: auto;
+// ===================================================================
+// PAGE HEADER
+// ===================================================================
 
-    @media (max-width: 768px) {
-      margin-right: 0;
-      padding: 16px;
-    }
+.page-header {
+  margin-bottom: var(--spacing-xl);
 
-    .page-header {
-      margin-bottom: 24px;
-
-      .header-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-
-        .title-section {
-          .page-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 0;
-            font-size: 28px;
-            font-weight: 600;
-            color: #1976d2;
-
-            mat-icon {
-              font-size: 32px;
-              width: 32px;
-              height: 32px;
-            }
-          }
-
-          .page-subtitle {
-            margin: 8px 0 0 44px;
-            color: #666;
-            font-size: 16px;
-          }
-        }
-
-        .header-actions {
-          display: flex;
-          gap: 12px;
-        }
-      }
-    }
-
-    .loading-container {
+  .header-content {
+    .title-section {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 80px 20px;
+      gap: var(--spacing-sm);
 
-      mat-spinner {
-        margin-bottom: 20px;
-      }
+      .page-title {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        font-size: var(--font-size-2xl);
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
 
-      p {
-        color: #666;
-        font-size: 16px;
-      }
-    }
-
-    .form-card {
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-      mat-card-content {
-        padding: 20px;
-
-        mat-stepper {
-          .mat-stepper-header {
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-
-            .mat-stepper-label {
-              font-size: 16px;
-              font-weight: 500;
-            }
-          }
-
-          .step-content {
-            padding: 24px 0;
-
-            h3 {
-              margin: 0 0 20px;
-              font-size: 20px;
-              font-weight: 600;
-              color: #333;
-            }
-
-            .step-header {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 24px;
-
-              h3 {
-                margin: 0;
-              }
-            }
-
-            .form-row {
-              display: grid;
-              grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-              gap: 16px;
-              margin-bottom: 20px;
-
-              &.single-column {
-                grid-template-columns: 1fr;
-              }
-
-              .full-width {
-                grid-column: 1 / -1;
-              }
-            }
-
-            .selected-patient-card {
-              margin: 20px 0;
-              background-color: #e8f5e8;
-              border: 2px solid #4caf50;
-
-              mat-card-content {
-                padding: 16px;
-
-                .patient-info {
-                  display: flex;
-                  align-items: center;
-                  gap: 16px;
-
-                  .patient-avatar {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    width: 60px;
-                    height: 60px;
-                    border-radius: 50%;
-                    background-color: #4caf50;
-                    color: white;
-
-                    mat-icon {
-                      font-size: 32px;
-                      width: 32px;
-                      height: 32px;
-                    }
-                  }
-
-                  .patient-details {
-                    flex: 1;
-
-                    h4 {
-                      margin: 0 0 8px;
-                      font-size: 18px;
-                      font-weight: 600;
-                      color: #333;
-                    }
-
-                    .detail-row {
-                      display: flex;
-                      align-items: center;
-                      gap: 8px;
-                      margin-bottom: 4px;
-                      font-size: 14px;
-                      color: #666;
-
-                      mat-icon {
-                        font-size: 16px;
-                        width: 16px;
-                        height: 16px;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-
-            .predefined-services-card {
-              margin-bottom: 24px;
-              background-color: #f8f9fa;
-
-              mat-card-header {
-                padding: 16px 16px 0;
-
-                mat-card-title {
-                  font-size: 16px;
-                  font-weight: 600;
-                }
-              }
-
-              mat-card-content {
-                padding: 16px;
-
-                .services-grid {
-                  display: grid;
-                  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                  gap: 12px;
-
-                  .service-item {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    padding: 16px;
-                    border: 2px solid #e0e0e0;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                    background-color: white;
-
-                    &:hover {
-                      border-color: #1976d2;
-                      background-color: #f0f7ff;
-                      transform: translateY(-2px);
-                    }
-
-                    .service-name {
-                      font-weight: 500;
-                      color: #333;
-                      margin-bottom: 8px;
-                      text-align: center;
-                    }
-
-                    .service-price {
-                      font-size: 18px;
-                      font-weight: 600;
-                      color: #1976d2;
-                      margin-bottom: 8px;
-                    }
-
-                    mat-icon {
-                      color: #4caf50;
-                      font-size: 20px;
-                      width: 20px;
-                      height: 20px;
-                    }
-                  }
-                }
-              }
-            }
-
-            .items-table-container {
-              margin: 20px 0;
-              border: 1px solid #e0e0e0;
-              border-radius: 8px;
-              overflow: hidden;
-
-              .items-table {
-                width: 100%;
-                background-color: white;
-
-                .mat-mdc-header-row {
-                  background-color: #f5f5f5;
-                }
-
-                .mat-mdc-cell,
-                .mat-mdc-header-cell {
-                  padding: 12px;
-                  vertical-align: top;
-
-                  mat-form-field {
-                    width: 100%;
-                    margin-bottom: 8px;
-
-                    &:last-child {
-                      margin-bottom: 0;
-                    }
-                  }
-
-                  .total-price {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #333;
-                    text-align: right;
-                    padding: 16px;
-                  }
-                }
-              }
-            }
-
-            .empty-items-state {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              padding: 60px 20px;
-              text-align: center;
-              border: 2px dashed #ccc;
-              border-radius: 8px;
-              background-color: #fafafa;
-
-              .empty-icon {
-                font-size: 64px;
-                width: 64px;
-                height: 64px;
-                color: #ccc;
-                margin-bottom: 16px;
-              }
-
-              h4 {
-                margin: 0 0 8px;
-                color: #666;
-                font-weight: 500;
-              }
-
-              p {
-                margin: 0 0 20px;
-                color: #999;
-                max-width: 400px;
-              }
-            }
-
-            .calculations-card {
-              margin-bottom: 20px;
-
-              mat-card-header {
-                padding: 16px 16px 0;
-              }
-
-              mat-card-content {
-                padding: 16px;
-
-                .calculations-grid {
-                  display: grid;
-                  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                  gap: 24px;
-                  margin-bottom: 24px;
-
-                  .calculation-section {
-                    h4 {
-                      margin: 0 0 12px;
-                      font-size: 16px;
-                      font-weight: 600;
-                      color: #333;
-                    }
-
-                    .or-divider {
-                      text-align: center;
-                      color: #666;
-                      margin: 12px 0;
-                      font-weight: 500;
-                    }
-                  }
-                }
-
-                .invoice-summary {
-                  background-color: #f8f9fa;
-                  padding: 20px;
-                  border-radius: 8px;
-                  border: 1px solid #e0e0e0;
-
-                  .summary-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 8px 0;
-                    font-size: 14px;
-
-                    &.discount {
-                      color: #4caf50;
-                    }
-
-                    &.total {
-                      font-size: 18px;
-                      font-weight: 600;
-                      color: #1976d2;
-                      padding: 12px 0;
-                    }
-
-                    .amount {
-                      font-weight: 600;
-                      text-align: right;
-                    }
-                  }
-
-                  mat-divider {
-                    margin: 12px 0;
-                  }
-                }
-              }
-            }
-
-            .notes-card {
-              margin-bottom: 20px;
-
-              mat-card-header {
-                padding: 16px 16px 0;
-              }
-
-              mat-card-content {
-                padding: 16px;
-              }
-            }
-
-            .step-actions {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-top: 32px;
-              padding-top: 20px;
-              border-top: 1px solid #e0e0e0;
-
-              button {
-                min-width: 120px;
-
-                mat-spinner {
-                  margin-right: 8px;
-                }
-              }
-            }
-          }
+        mat-icon {
+          font-size: 32px;
+          width: 32px;
+          height: 32px;
+          color: var(--primary-color);
         }
       }
     }
   }
 }
 
-// Patient autocomplete option styling
+// ===================================================================
+// LOADING STATE
+// ===================================================================
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+
+  p {
+    margin-top: var(--spacing-md);
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+  }
+}
+
+// ===================================================================
+// FORM CARDS
+// ===================================================================
+
+.form-card {
+  margin-bottom: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+
+  mat-card-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    mat-card-title {
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .add-item-btn {
+      margin-left: auto;
+    }
+  }
+
+  mat-card-content {
+    padding: var(--spacing-lg);
+  }
+
+  &.totals-card {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-light) 100%);
+  }
+}
+
+// ===================================================================
+// FORM LAYOUT
+// ===================================================================
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.full-width {
+  width: 100%;
+}
+
+// ===================================================================
+// PATIENT SELECTION
+// ===================================================================
+
 .patient-option {
-  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) 0;
 
   .patient-name {
     font-weight: 500;
-    color: #333;
-    margin-bottom: 4px;
+    color: var(--text-primary);
   }
 
   .patient-details {
-    font-size: 12px;
-    color: #666;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+  }
+}
 
-    span {
-      margin-right: 8px;
+.patient-info-display {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-light);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-md);
+
+  mat-icon {
+    color: var(--info-color);
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .info-content {
+    flex: 1;
+
+    p {
+      margin: 0 0 var(--spacing-xs) 0;
+      color: var(--text-primary);
+      font-size: var(--font-size-sm);
+
+      strong {
+        color: var(--text-secondary);
+        font-weight: 600;
+        margin-left: var(--spacing-xs);
+      }
     }
   }
 }
 
-// Responsive Design
-@media (max-width: 1200px) {
-  .invoice-form-container .main-content {
-    .form-card mat-card-content mat-stepper .step-content {
-      .calculations-card mat-card-content .calculations-grid {
-        grid-template-columns: 1fr;
+// ===================================================================
+// ITEMS TABLE
+// ===================================================================
+
+.items-table-container {
+  overflow-x: auto;
+  margin-bottom: var(--spacing-md);
+}
+
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-primary);
+
+  thead {
+    background: var(--bg-light);
+
+    th {
+      padding: var(--spacing-md);
+      text-align: right;
+      font-weight: 600;
+      font-size: var(--font-size-sm);
+      color: var(--text-primary);
+      border-bottom: 2px solid var(--border-color);
+      white-space: nowrap;
+    }
+  }
+
+  tbody {
+    .item-row {
+      border-bottom: 1px solid var(--border-light);
+      transition: var(--transition-fast);
+
+      &:hover {
+        background: var(--bg-light);
       }
+
+      td {
+        padding: var(--spacing-sm);
+        vertical-align: middle;
+
+        &.checkbox-cell {
+          text-align: center;
+        }
+
+        &.total-cell {
+          text-align: left;
+          font-weight: 600;
+          color: var(--primary-color);
+
+          .item-total {
+            font-size: var(--font-size-base);
+          }
+        }
+
+        &.actions-cell {
+          text-align: center;
+          width: 60px;
+        }
+      }
+    }
+  }
+
+  .compact-field {
+    margin: 0;
+    width: 100%;
+
+    ::ng-deep {
+      .mat-mdc-form-field-wrapper {
+        padding-bottom: 0;
+      }
+
+      .mat-mdc-form-field-subscript-wrapper {
+        display: none;
+      }
+
+      .mat-mdc-text-field-wrapper {
+        padding: 0;
+      }
+
+      .mat-mdc-form-field-infix {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        min-height: 36px;
+      }
+    }
+  }
+
+  .number-field {
+    max-width: 100px;
+
+    input {
+      text-align: center;
+    }
+  }
+}
+
+.empty-items {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-2xl);
+  text-align: center;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-md);
+  }
+
+  p {
+    color: var(--text-secondary);
+    margin: 0;
+  }
+}
+
+// ===================================================================
+// TOTALS SUMMARY
+// ===================================================================
+
+.totals-summary {
+  margin-top: var(--spacing-lg);
+
+  mat-divider {
+    margin: var(--spacing-md) 0;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+
+    .total-label {
+      font-size: var(--font-size-base);
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .total-value {
+      font-size: var(--font-size-lg);
+      color: var(--text-primary);
+      font-weight: 600;
+
+      &.discount {
+        color: var(--success-color);
+      }
+    }
+
+    &.grand-total {
+      padding: var(--spacing-md) 0;
+      margin-top: var(--spacing-sm);
+
+      .total-label {
+        font-size: var(--font-size-lg);
+        color: var(--text-primary);
+        font-weight: 700;
+      }
+
+      .total-value {
+        font-size: var(--font-size-2xl);
+        color: var(--primary-color);
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+// ===================================================================
+// FORM ACTIONS
+// ===================================================================
+
+.form-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  padding: var(--spacing-lg) 0;
+  margin-top: var(--spacing-lg);
+  border-top: 2px solid var(--border-light);
+
+  button {
+    min-width: 150px;
+
+    mat-icon {
+      margin-left: var(--spacing-xs);
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column-reverse;
+
+    button {
+      width: 100%;
+    }
+  }
+}
+
+// ===================================================================
+// RESPONSIVE DESIGN
+// ===================================================================
+
+@media (max-width: 1024px) {
+  .items-table {
+    font-size: var(--font-size-sm);
+
+    thead th,
+    tbody td {
+      padding: var(--spacing-xs);
     }
   }
 }
 
 @media (max-width: 768px) {
-  .invoice-form-container .main-content {
-    .page-header .header-content {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 16px;
+  .main-content {
+    padding: var(--spacing-md);
+  }
 
-      .header-actions {
-        width: 100%;
-        justify-content: flex-end;
-      }
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .items-table-container {
+    .items-table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
     }
+  }
 
-    .form-card mat-card-content mat-stepper .step-content {
-      .form-row {
-        grid-template-columns: 1fr;
+  .totals-summary {
+    .total-row {
+      .total-label {
+        font-size: var(--font-size-sm);
       }
 
-      .step-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
+      .total-value {
+        font-size: var(--font-size-base);
       }
 
-      .predefined-services-card mat-card-content .services-grid {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      }
-
-      .items-table-container {
-        overflow-x: auto;
-
-        .items-table {
-          min-width: 600px;
+      &.grand-total {
+        .total-label {
+          font-size: var(--font-size-base);
         }
-      }
 
-      .step-actions {
-        flex-direction: column;
-        gap: 12px;
-
-        button {
-          width: 100%;
+        .total-value {
+          font-size: var(--font-size-xl);
         }
       }
     }
   }
 }
 
-@media (max-width: 480px) {
-  .invoice-form-container .main-content {
-    padding: 12px;
+// ===================================================================
+// RTL SUPPORT
+// ===================================================================
 
-    .page-header .header-content .title-section .page-title {
-      font-size: 24px;
-
-      mat-icon {
-        font-size: 28px;
-        width: 28px;
-        height: 28px;
-      }
-    }
-
-    .form-card mat-card-content mat-stepper .step-content {
-      .predefined-services-card mat-card-content .services-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .empty-items-state {
-        padding: 40px 16px;
-
-        .empty-icon {
-          font-size: 48px;
-          width: 48px;
-          height: 48px;
-        }
-      }
-    }
-  }
-}
-
-// RTL Support
 [dir="rtl"] {
-  .invoice-form-container .main-content {
-    margin-right: 0;
-    margin-left: 240px;
-
-    @media (max-width: 768px) {
-      margin-left: 0;
+  .items-table {
+    thead th {
+      text-align: right;
     }
 
-    .page-header .header-content .title-section .page-subtitle {
-      margin: 8px 44px 0 0;
+    .total-cell {
+      text-align: right;
     }
   }
 
-  .patient-option .patient-details span {
-    margin-right: 0;
-    margin-left: 8px;
-  }
-}
-
-// Animations
-.service-item {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.selected-patient-card {
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-// Form validation styles
-.mat-mdc-form-field {
-  &.mat-form-field-invalid {
-    .mat-mdc-form-field-outline {
-      border-color: #f44336;
-    }
+  .form-actions button mat-icon {
+    margin-left: 0;
+    margin-right: var(--spacing-xs);
   }
 }

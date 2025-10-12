@@ -1,0 +1,251 @@
+<div class="schedule-calendar-container">
+  <app-header></app-header>
+
+  <app-sidebar>
+    <div class="main-content">
+      <main class="content-area">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="header-content">
+            <h1 class="page-title">
+              <mat-icon>calendar_month</mat-icon>
+              تقويم الجداول
+            </h1>
+            <p class="page-description">عرض جداول الأطباء في تقويم شهري</p>
+          </div>
+
+          <div class="header-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              [routerLink]="['/schedules/create']"
+            >
+              <mat-icon>add</mat-icon>
+              إضافة جدولة
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <mat-card class="filters-card">
+          <mat-card-content>
+            <form [formGroup]="filtersForm" class="filters-form">
+              <div class="filters-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>الطبيب</mat-label>
+                  <mat-select
+                    formControlName="doctorId"
+                    (selectionChange)="onFiltersChange()"
+                  >
+                    <mat-option value="">جميع الأطباء</mat-option>
+                    @for (doctor of doctors(); track doctor.id) {
+                    <mat-option [value]="doctor.id">{{
+                      doctor.fullName
+                    }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>نوع الجدولة</mat-label>
+                  <mat-select
+                    formControlName="scheduleType"
+                    (selectionChange)="onFiltersChange()"
+                  >
+                    <mat-option value="">جميع الأنواع</mat-option>
+                    @for (type of scheduleTypes; track type.value) {
+                    <mat-option [value]="type.value">{{
+                      type.label
+                    }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>الشهر والسنة</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="monthPicker"
+                    formControlName="monthYear"
+                    (dateChange)="onMonthChange()"
+                    readonly
+                  />
+                  <mat-datepicker-toggle
+                    matSuffix
+                    [for]="monthPicker"
+                  ></mat-datepicker-toggle>
+                  <mat-datepicker
+                    #monthPicker
+                    startView="multi-year"
+                  ></mat-datepicker>
+                </mat-form-field>
+
+                <div class="view-toggle">
+                  <button
+                    mat-button
+                    [class.active]="showUnavailabilities()"
+                    (click)="toggleUnavailabilities()"
+                  >
+                    <mat-icon>event_busy</mat-icon>
+                    عدم التوفر
+                  </button>
+                </div>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Calendar Navigation -->
+        <div class="calendar-navigation">
+          <div class="nav-buttons">
+            <button
+              mat-icon-button
+              (click)="previousMonth()"
+              [matTooltip]="'الشهر السابق'"
+            >
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+
+            <button mat-button (click)="goToToday()" class="today-btn">
+              اليوم
+            </button>
+
+            <button
+              mat-icon-button
+              (click)="nextMonth()"
+              [matTooltip]="'الشهر التالي'"
+            >
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+          </div>
+
+          <div class="month-title">
+            <h2>{{ currentMonthTitle() }}</h2>
+          </div>
+
+          <div class="calendar-legend">
+            <div class="legend-item">
+              <div class="legend-color has-schedules"></div>
+              <span>يوجد جداول</span>
+            </div>
+            @if (showUnavailabilities()) {
+            <div class="legend-item">
+              <div class="legend-color has-unavailability"></div>
+              <span>عدم توفر</span>
+            </div>
+            }
+            <div class="legend-item">
+              <div class="legend-color is-today"></div>
+              <span>اليوم</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calendar -->
+        <mat-card class="calendar-card">
+          <mat-card-content>
+            @if (scheduleService.loading()) {
+            <div class="loading-container">
+              <mat-progress-spinner diameter="50"></mat-progress-spinner>
+              <p>جاري تحميل التقويم...</p>
+            </div>
+            } @else {
+            <div class="calendar">
+              <!-- Days Header -->
+              <div class="calendar-header">
+                @for (dayName of dayNames; track dayName) {
+                <div class="day-header">{{ dayName }}</div>
+                }
+              </div>
+
+              <!-- Calendar Weeks -->
+              <div class="calendar-body">
+                @for (week of calendarWeeks(); track week) {
+                <div class="calendar-week">
+                  @for (day of week.days; track day.date) {
+                  <div
+                    class="calendar-day"
+                    [class.other-month]="!day.isCurrentMonth"
+                    [class.today]="day.isToday"
+                    [class.past]="day.isPast"
+                    [class.has-schedules]="day.schedules.length > 0"
+                    [class.has-unavailability]="
+                      showUnavailabilities() && day.unavailabilities.length > 0
+                    "
+                    [matTooltip]="getDayTooltip(day)"
+                    (click)="onDayClick(day)"
+                  >
+                    <div class="day-number">
+                      {{ day.date.getDate() }}
+                    </div>
+
+                    <div class="day-content">
+                      <!-- Schedule indicators -->
+                      @if (day.schedules.length > 0) {
+                      <div class="schedules-indicators">
+                        @for (schedule of day.schedules.slice(0, 3); track
+                        schedule.id) {
+                        <div
+                          class="schedule-indicator"
+                          [style.background-color]="getScheduleColor(schedule)"
+                          [matTooltip]="getScheduleTooltip(schedule)"
+                        ></div>
+                        } @if (day.schedules.length > 3) {
+                        <div class="more-indicator">
+                          +{{ day.schedules.length - 3 }}
+                        </div>
+                        }
+                      </div>
+                      }
+
+                      <!-- Unavailability indicators -->
+                      @if (showUnavailabilities() && day.unavailabilities.length
+                      > 0) {
+                      <div class="unavailability-indicators">
+                        @for (unavailability of day.unavailabilities.slice(0,
+                        2); track unavailability.id) {
+                        <div
+                          class="unavailability-indicator"
+                          [style.background-color]="
+                            getUnavailabilityColor(unavailability)
+                          "
+                          [matTooltip]="
+                            getUnavailabilityTooltip(unavailability)
+                          "
+                        ></div>
+                        } @if (day.unavailabilities.length > 2) {
+                        <div class="more-unavailability">!</div>
+                        }
+                      </div>
+                      }
+
+                      <!-- Stats -->
+                      @if (day.isCurrentMonth && (day.availableDoctors > 0 ||
+                      day.totalSlots > 0)) {
+                      <div class="day-stats">
+                        @if (day.availableDoctors > 0) {
+                        <span class="stat doctors"
+                          >{{ day.availableDoctors }}د</span
+                        >
+                        } @if (day.totalSlots > 0) {
+                        <span class="stat slots">{{ day.totalSlots }}ف</span>
+                        }
+                      </div>
+                      }
+                    </div>
+                  </div>
+                  }
+                </div>
+                }
+              </div>
+            </div>
+            }
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Day Details Modal would go here -->
+        <!-- This would be a separate component or dialog -->
+      </main>
+    </div>
+  </app-sidebar>
+</div>

@@ -1,12 +1,12 @@
-// ===================================================================
-// 4. APPOINTMENT LIST COMPONENT
 // src/app/features/appointments/components/appointment-list/appointment-list.component.ts
-// ===================================================================
-import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { RouterModule, Router } from '@angular/router';
+import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -15,27 +15,29 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatDividerModule } from '@angular/material/divider';
-import { PageEvent } from '@angular/material/paginator';
 
 // Shared Components
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.component';
-import { DataTableComponent, TableColumn, TableAction } from '../../../../shared/components/data-table/data-table.component';
-import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 // Services & Models
 import { AppointmentService } from '../../services/appointment.service';
+import { UserService } from '../../../users/services/user.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { LoadingService } from '../../../../core/services/loading.service';
 import {
-  Appointment,
-  AppointmentSearchCriteria,
+  AppointmentResponse,
   AppointmentStatus,
-  AppointmentType
+  AppointmentType,
+  APPOINTMENT_STATUS_LABELS,
+  APPOINTMENT_TYPE_LABELS,
+  APPOINTMENT_STATUS_COLORS
 } from '../../models/appointment.model';
-import { forkJoin } from 'rxjs';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-appointment-list',
@@ -45,6 +47,9 @@ import { forkJoin } from 'rxjs';
     RouterModule,
     ReactiveFormsModule,
     MatCardModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
     MatButtonModule,
     MatIconModule,
     MatInputModule,
@@ -53,462 +58,193 @@ import { forkJoin } from 'rxjs';
     MatNativeDateModule,
     MatChipsModule,
     MatMenuModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule,
     MatDialogModule,
     MatDividerModule,
     HeaderComponent,
-    SidebarComponent,
-    DataTableComponent
+    SidebarComponent
   ],
   templateUrl: './appointment-list.component.html',
   styleUrl: './appointment-list.component.scss'
 })
+export class AppointmentListComponent implements OnInit, OnDestroy {
+  appointmentStatus = AppointmentStatus;
+  readonly appointmentService = inject(AppointmentService);
+  private readonly userService = inject(UserService);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
+  private readonly notificationService = inject(NotificationService);
+  private readonly fb = inject(FormBuilder);
 
-export class AppointmentListComponent implements OnInit {
-  @ViewChild('dataTable') dataTable!: DataTableComponent;
+  // Component state
+  appointments = this.appointmentService.appointments;  // FIXED: Keep signal reference
+  loading = this.appointmentService.loading;
+  currentPage = this.appointmentService.currentPage;
+  pageSize = this.appointmentService.pageSize;
+  totalElements = this.appointmentService.totalElements;
 
-  // Services
-  private appointmentService = inject(AppointmentService);
-  private notificationService = inject(NotificationService);
-  private loadingService = inject(LoadingService);
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
-  private fb = inject(FormBuilder);
-  private dialog = inject(MatDialog);
+  // Filter form
+  filterForm = this.fb.group({
+    date: [null as Date | null],
+    doctorId: [null as number | null],
+    status: [null as AppointmentStatus | null],
+    searchTerm: ['']
+  });
 
-  // Signals
-  appointments = signal<Appointment[]>([]);
-  loading = signal(false);
-  totalAppointments = signal(0);
-  selectedDate = signal<Date | null>(null);
-
-  // Filter Form
-  filterForm!: FormGroup;
-
-  // Table Configuration
-  columns: TableColumn[] = [
-    {
-      key: 'appointmentTime',
-      label: 'الوقت',
-      sortable: true,
-      width: '100px'
-    },
-    {
-      key: 'patientName',
-      label: 'المريض',
-      sortable: true,
-      searchable: true
-    },
-    {
-      key: 'doctorName',
-      label: 'الطبيب',
-      sortable: true
-    },
-    {
-      key: 'type',
-      label: 'النوع',
-      sortable: true,
-      width: '120px',
-      cellTemplate: (appointment: Appointment) => this.getAppointmentTypeLabel(appointment.type)
-    },
-    {
-      key: 'chiefComplaint',
-      label: 'الشكوى',
-      width: '200px'
-    },
-    {
-      key: 'status',
-      label: 'الحالة',
-      sortable: true,
-      width: '120px',
-      cellTemplate: (appointment: Appointment) =>
-        `<span class="status-chip status-${appointment.status.toLowerCase()}">
-          ${this.getStatusLabel(appointment.status)}
-        </span>`
-    }
+  // Table configuration
+  displayedColumns = [
+    'patientName',
+    'doctorName',
+    'dateTime',
+    'type',
+    'status',
+    'actions'
   ];
 
-  actions: TableAction[] = [
-    {
-      icon: 'visibility',
-      label: 'عرض',
-      color: 'primary',
-      action: (appointment: Appointment) => this.onViewAppointment(appointment)
-    },
-    {
-      icon: 'edit',
-      label: 'تعديل',
-      color: 'accent',
-      action: (appointment: Appointment) => this.onEditAppointment(appointment),
-      show: (appointment: Appointment) =>
-        appointment.status === AppointmentStatus.SCHEDULED ||
-        appointment.status === AppointmentStatus.CONFIRMED
-    },
-    {
-      icon: 'check_circle',
-      label: 'تأكيد',
-      color: 'success',
-      action: (appointment: Appointment) => this.onConfirmAppointment(appointment),
-      show: (appointment: Appointment) =>
-        appointment.status === AppointmentStatus.SCHEDULED
-    },
-    {
-      icon: 'how_to_reg',
-      label: 'تسجيل حضور',
-      color: 'info',
-      action: (appointment: Appointment) => this.onCheckInAppointment(appointment),
-      show: (appointment: Appointment) =>
-        appointment.status === AppointmentStatus.CONFIRMED
-    },
-    {
-      icon: 'cancel',
-      label: 'إلغاء',
-      color: 'warn',
-      action: (appointment: Appointment) => this.onCancelAppointment(appointment),
-      show: (appointment: Appointment) =>
-        appointment.status !== AppointmentStatus.CANCELLED &&
-        appointment.status !== AppointmentStatus.COMPLETED
-    }
-  ];
+  // Dropdown options
+  statusOptions = Object.values(AppointmentStatus);
+  typeOptions = Object.values(AppointmentType);
+  doctors = signal<any[]>([]);
 
-  // Status options
-  statusOptions = [
-    { value: '', label: 'جميع الحالات' },
-    { value: AppointmentStatus.SCHEDULED, label: 'مجدول' },
-    { value: AppointmentStatus.CONFIRMED, label: 'مؤكد' },
-    { value: AppointmentStatus.CHECKED_IN, label: 'تم تسجيل الحضور' },
-    { value: AppointmentStatus.IN_PROGRESS, label: 'جاري' },
-    { value: AppointmentStatus.COMPLETED, label: 'مكتمل' },
-    { value: AppointmentStatus.CANCELLED, label: 'ملغي' },
-    { value: AppointmentStatus.NO_SHOW, label: 'لم يحضر' }
-  ];
+  // Labels
+  statusLabels = APPOINTMENT_STATUS_LABELS;
+  typeLabels = APPOINTMENT_TYPE_LABELS;
+  statusColors = APPOINTMENT_STATUS_COLORS;
 
-  // Type options
-  typeOptions = [
-    { value: '', label: 'جميع الأنواع' },
-    { value: AppointmentType.CONSULTATION, label: 'استشارة' },
-    { value: AppointmentType.FOLLOW_UP, label: 'متابعة' },
-    { value: AppointmentType.EMERGENCY, label: 'طوارئ' },
-    { value: AppointmentType.ROUTINE_CHECK, label: 'فحص دوري' },
-    { value: AppointmentType.VACCINATION, label: 'تطعيم' },
-    { value: AppointmentType.LAB_TEST, label: 'فحص مخبري' }
-  ];
+  // Sort configuration
+  sortBy = signal('appointmentDate');
+  sortDirection = signal<'asc' | 'desc'>('desc');
 
   ngOnInit(): void {
-    this.initializeFilterForm();
     this.loadAppointments();
-    this.checkQueryParams();
+    this.loadDoctors();
+    this.setupFilterSubscription();
   }
 
-  getTodayCount(status: string): number {
-    const today = new Date();
-    const todayStr = this.formatDate(today);
-
-    return this.appointments().filter(appointment =>
-      appointment.status === status &&
-      appointment.appointmentDate === todayStr
-    ).length;
+  ngOnDestroy(): void {
+    this.appointmentService.clearAppointments();
   }
 
-  onBulkDelete(appointments: Appointment[]): void {
-    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
-      data: {
-        title: 'حذف متعدد',
-        message: `هل أنت متأكد من حذف ${appointments.length} موعد؟`,
-        confirmText: 'حذف',
-        cancelText: 'إلغاء',
-        type: 'danger'
-      }
-    });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        // Implement bulk delete logic
-        const deleteRequests = appointments.map(appointment =>
-          this.appointmentService.cancelAppointment(appointment.id!)
-        );
-
-        forkJoin(deleteRequests).subscribe({
-          next: () => {
-            this.notificationService.success(`تم حذف ${appointments.length} موعد بنجاح`);
-            this.loadAppointments();
-          },
-          error: () => {
-            this.notificationService.error('حدث خطأ أثناء حذف المواعيد');
-          }
-        });
-      }
-    });
-  }
-
-  private initializeFilterForm(): void {
-    const today = new Date();
-    this.filterForm = this.fb.group({
-      searchQuery: [''],
-      status: [''],
-      type: [''],
-      fromDate: [today],
-      toDate: [today],
-      doctorId: [''],
-      patientId: ['']
-    });
-
-    // Subscribe to form changes
+  private setupFilterSubscription(): void {
     this.filterForm.valueChanges.subscribe(() => {
+      this.currentPage.set(0);
       this.loadAppointments();
-    });
-  }
-
-  private checkQueryParams(): void {
-    this.route.queryParams.subscribe(params => {
-      if (params['filter'] === 'today') {
-        const today = new Date();
-        this.filterForm.patchValue({
-          fromDate: today,
-          toDate: today
-        });
-      }
-      if (params['patientId']) {
-        this.filterForm.patchValue({
-          patientId: params['patientId']
-        });
-      }
-      if (params['doctorId']) {
-        this.filterForm.patchValue({
-          doctorId: params['doctorId']
-        });
-      }
     });
   }
 
   loadAppointments(): void {
-    this.loading.set(true);
+    const filters = this.filterForm.value;
+    const date = filters.date ? this.formatDate(filters.date) : undefined;
 
-    if (this.dataTable) {
-      this.dataTable.setLoading(true);
-    }
-
-    const criteria: AppointmentSearchCriteria = {
-      ...this.filterForm.value,
-      fromDate: this.formatDate(this.filterForm.value.fromDate),
-      toDate: this.formatDate(this.filterForm.value.toDate)
-    };
-
-    // Remove empty values
-    Object.keys(criteria).forEach(key => {
-      if (!criteria[key as keyof AppointmentSearchCriteria]) {
-        delete criteria[key as keyof AppointmentSearchCriteria];
-      }
-    });
-
-    this.appointmentService.getAppointments(criteria).subscribe({
-      next: (appointments) => {
-        this.appointments.set(appointments);
-        this.totalAppointments.set(appointments.length);
-        this.loading.set(false);
-
-        if (this.dataTable) {
-          this.dataTable.setData(appointments);
-          this.dataTable.setTotalItems(appointments.length);
-          this.dataTable.setLoading(false);
-        }
-      },
-      error: (error) => {
-        // ... error handling
-        if (this.dataTable) {
-          this.dataTable.setLoading(false);
-        }
-      }
-    });
-    // this.appointmentService.getAppointments(criteria).subscribe({
-    //   next: (appointments) => {
-    //     this.appointments.set(appointments);
-    //     this.totalAppointments.set(appointments.length);
-    //     this.loading.set(false);
-    //   },
-    //   error: (error) => {
-    //     console.error('Error loading appointments:', error);
-    //     this.notificationService.error('حدث خطأ في تحميل المواعيد');
-    //     this.loading.set(false);
-    //   }
-    // });
+    this.appointmentService.getAllAppointments(
+      date,
+      filters.doctorId || undefined,
+      filters.status || undefined,
+      this.currentPage(),
+      this.pageSize(),
+      this.sortBy(),
+      this.sortDirection()
+    ).subscribe();
   }
 
-  onViewAppointment(appointment: Appointment): void {
+  loadDoctors(): void {
+    this.userService.getDoctors().subscribe({
+      next: (res) => {
+        this.doctors.set(res.data!);
+      },
+      error: (error) => {
+        console.error('Error loading doctors:', error);
+      }
+    });
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage.set(event.pageIndex);
+    this.pageSize.set(event.pageSize);
+    this.loadAppointments();
+  }
+
+  onSortChange(sort: Sort): void {
+    this.sortBy.set(sort.active);
+    this.sortDirection.set(sort.direction as 'asc' | 'desc' || 'asc');
+    this.loadAppointments();
+  }
+
+  viewAppointment(appointment: AppointmentResponse): void {
     this.router.navigate(['/appointments', appointment.id]);
   }
 
-  onEditAppointment(appointment: Appointment): void {
+  editAppointment(appointment: AppointmentResponse): void {
     this.router.navigate(['/appointments', appointment.id, 'edit']);
   }
 
-  onConfirmAppointment(appointment: Appointment): void {
-    this.appointmentService.updateAppointmentStatus(
-      appointment.id!,
-      AppointmentStatus.CONFIRMED
-    ).subscribe({
-      next: () => {
-        this.notificationService.success('تم تأكيد الموعد بنجاح');
-        this.loadAppointments();
-      },
-      error: () => {
-        this.notificationService.error('حدث خطأ في تأكيد الموعد');
-      }
-    });
-  }
-
-  onCheckInAppointment(appointment: Appointment): void {
-    this.appointmentService.updateAppointmentStatus(
-      appointment.id!,
-      AppointmentStatus.CHECKED_IN
-    ).subscribe({
-      next: () => {
-        this.notificationService.success('تم تسجيل حضور المريض');
-        this.loadAppointments();
-      },
-      error: () => {
-        this.notificationService.error('حدث خطأ في تسجيل الحضور');
-      }
-    });
-  }
-
-  onCancelAppointment(appointment: Appointment): void {
-    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+  updateStatus(appointment: AppointmentResponse, status: AppointmentStatus): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
-        title: 'إلغاء الموعد',
-        message: `هل أنت متأكد من إلغاء موعد ${appointment.patientName}؟`,
-        confirmText: 'إلغاء الموعد',
-        cancelText: 'رجوع',
-        type: 'warning'
+        title: 'تأكيد تغيير الحالة',
+        message: `هل تريد تغيير حالة الموعد إلى ${this.statusLabels[status]}؟`
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.appointmentService.cancelAppointment(appointment.id!).subscribe({
+        this.appointmentService.updateAppointmentStatus(appointment.id, status).subscribe({
           next: () => {
-            this.notificationService.success('تم إلغاء الموعد بنجاح');
             this.loadAppointments();
-          },
-          error: () => {
-            this.notificationService.error('حدث خطأ في إلغاء الموعد');
           }
         });
       }
     });
   }
 
-  onBulkStatusUpdate(appointments: Appointment[], status: AppointmentStatus): void {
-    // Implement bulk status update logic
-    const updatePromises = appointments.map(appointment =>
-      this.appointmentService.updateAppointmentStatus(appointment.id!, status).toPromise()
-    );
-
-    Promise.all(updatePromises).then(() => {
-      this.notificationService.success(`تم تحديث حالة ${appointments.length} موعد`);
-      this.loadAppointments();
-    }).catch(() => {
-      this.notificationService.error('حدث خطأ في تحديث الحالات');
+  cancelAppointment(appointment: AppointmentResponse): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'إلغاء الموعد',
+        message: 'هل تريد إلغاء هذا الموعد؟',
+        showReasonInput: true
+      }
     });
-  }
 
-  onExport(event: { format: string }): void {
-    this.loadingService.startLoading();
-
-    const criteria: AppointmentSearchCriteria = {
-      ...this.filterForm.value,
-      fromDate: this.formatDate(this.filterForm.value.fromDate),
-      toDate: this.formatDate(this.filterForm.value.toDate)
-    };
-
-    this.appointmentService.exportAppointments(
-      criteria,
-      event.format as 'excel' | 'pdf'
-    ).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `appointments.${event.format === 'excel' ? 'xlsx' : 'pdf'}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        this.loadingService.stopLoading();
-        this.notificationService.success('تم تصدير البيانات بنجاح');
-      },
-      error: () => {
-        this.loadingService.stopLoading();
-        this.notificationService.error('حدث خطأ في تصدير البيانات');
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.confirmed) {
+        this.appointmentService.cancelAppointment(appointment.id, result.reason).subscribe({
+          next: () => {
+            this.loadAppointments();
+          }
+        });
       }
     });
   }
 
-  onRefresh(): void {
-    this.loadAppointments();
+  clearFilters(): void {
+    this.filterForm.reset();
   }
 
-  onDateChange(date: Date | null): void {
-    if (date) {
-      this.filterForm.patchValue({
-        fromDate: date,
-        toDate: date
-      });
-    }
+  exportAppointments(): void {
+    // TODO: Implement export functionality
+    this.notificationService.info('جاري تصدير المواعيد...');
   }
 
-  onResetFilters(): void {
-    const today = new Date();
-    this.filterForm.reset({
-      searchQuery: '',
-      status: '',
-      type: '',
-      fromDate: today,
-      toDate: today,
-      doctorId: '',
-      patientId: ''
-    });
-  }
-
-  // Helper methods
-  private formatDate(date: Date | string | null): string {
-    if (!date) return '';
-
-    if (typeof date === 'string') {
-      return date;
-    }
-
+  private formatDate(date: Date): string {
     const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
+  getStatusColor(status: AppointmentStatus): string {
+    return this.statusColors[status] || 'default';
+  }
+
   getStatusLabel(status: AppointmentStatus): string {
-    const option = this.statusOptions.find(s => s.value === status);
-    return option ? option.label : status;
+    return this.statusLabels[status] || status;
   }
 
-  getAppointmentTypeLabel(type: AppointmentType): string {
-    const option = this.typeOptions.find(t => t.value === type);
-    return option ? option.label : type;
-  }
-
-  getStatusClass(status: AppointmentStatus): string {
-    const statusClasses: Record<AppointmentStatus, string> = {
-      [AppointmentStatus.SCHEDULED]: 'status-scheduled',
-      [AppointmentStatus.CONFIRMED]: 'status-confirmed',
-      [AppointmentStatus.CHECKED_IN]: 'status-checked-in',
-      [AppointmentStatus.IN_PROGRESS]: 'status-in-progress',
-      [AppointmentStatus.COMPLETED]: 'status-completed',
-      [AppointmentStatus.CANCELLED]: 'status-cancelled',
-      [AppointmentStatus.NO_SHOW]: 'status-no-show',
-      [AppointmentStatus.RESCHEDULED]: 'status-rescheduled'
-    };
-    return statusClasses[status] || '';
-  }
-
-  trackByAppointment(index: number, appointment: Appointment): number {
-    return appointment.id!;
+  getTypeLabel(type: AppointmentType): string {
+    return this.typeLabels[type] || type;
   }
 }

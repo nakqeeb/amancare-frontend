@@ -29,6 +29,7 @@ import { UserService } from '../../services/user.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { User, UserRole } from '../../models/user.model';
+import { firstValueFrom } from 'rxjs';
 
 // Activity Log Interface
 interface ActivityLog {
@@ -204,9 +205,9 @@ export class UserProfileComponent implements OnInit {
     this.userId.set(userId);
     this.loading.set(true);
 
-    this.userService.getUserById(userId).subscribe({
-      next: (user) => {
-        this.user.set(user);
+    this.userService.getClinicUserById(userId).subscribe({
+      next: (res) => {
+        this.user.set(res.data!);
         this.loading.set(false);
       },
       error: (error) => {
@@ -256,36 +257,38 @@ export class UserProfileComponent implements OnInit {
     });
   }
 
-  onToggleStatus(): void {
-    const user = this.user();
-    if (!user) return;
+ async onToggleStatus(): Promise<void> {
+  const user = this.user();
+  if (!user) return;
 
-    const action = user.isActive ? 'إلغاء تفعيل' : 'تفعيل';
-    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
-      width: '400px',
-      data: {
-        title: `${action} المستخدم`,
-        message: `هل أنت متأكد من ${action} المستخدم "${user.fullName}"؟`,
-        confirmText: action,
-        cancelText: 'إلغاء',
-        type: user.isActive ? 'warn' : 'primary'
-      }
-    });
+  const action = user.isActive ? 'إلغاء تفعيل' : 'تفعيل';
+  const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+    width: '400px',
+    data: {
+      title: `${action} المستخدم`,
+      message: `هل أنت متأكد من ${action} المستخدم "${user.fullName}"؟`,
+      confirmText: action,
+      cancelText: 'إلغاء',
+      type: user.isActive ? 'warn' : 'primary'
+    }
+  });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result && user.id) {
-        const operation = user.isActive ?
-          this.userService.deactivateUser(user.id) :
-          this.userService.activateUser(user.id);
+  const confirmed = await firstValueFrom(dialogRef.afterClosed());
+  if (confirmed) {
+    this.userService.toggleUserStatus(user.id, !user.isActive).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.user.update(u => u ? { ...u, isActive: !u.isActive } : u);
 
-        operation.subscribe({
-          next: (updatedUser) => {
-            this.user.set(updatedUser);
-          }
-        });
+          this.notificationService.success(`تم ${action} المستخدم بنجاح`);
+        }
+      },
+      error: (error) => {
+        console.error('Error toggling user status:', error);
       }
     });
   }
+}
 
   onSendNotification(): void {
     // TODO: Implement send notification functionality

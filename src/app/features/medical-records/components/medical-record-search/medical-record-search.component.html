@@ -1,0 +1,387 @@
+<app-header />
+<app-sidebar>
+<div class="search-container">
+  <!-- Header -->
+  <div class="page-header">
+    <h1 class="page-title">
+      <mat-icon>search</mat-icon>
+      البحث المتقدم في السجلات الطبية
+    </h1>
+    <p class="page-subtitle">ابحث في السجلات الطبية باستخدام معايير متعددة</p>
+  </div>
+
+  <!-- Search Form -->
+  <mat-expansion-panel expanded class="search-panel">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <mat-icon>filter_list</mat-icon>
+        معايير البحث
+      </mat-panel-title>
+      <mat-panel-description>
+        @if (activeFiltersCount() > 0) {
+        <mat-chip-set>
+          <mat-chip>{{ activeFiltersCount() }} فلتر نشط</mat-chip>
+        </mat-chip-set>
+        }
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+
+    <form [formGroup]="searchForm" class="search-form">
+      <!-- Quick Search -->
+      <div class="quick-search">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>البحث السريع</mat-label>
+          <input
+            matInput
+            formControlName="searchTerm"
+            placeholder="ابحث بالتشخيص، الشكوى، الملاحظات..."
+            (keyup.enter)="onSearch()"
+          />
+          <mat-icon matPrefix>search</mat-icon>
+          <button
+            mat-icon-button
+            matSuffix
+            (click)="clearSearchTerm()"
+            *ngIf="searchForm.get('searchTerm')?.value"
+          >
+            <mat-icon>clear</mat-icon>
+          </button>
+        </mat-form-field>
+      </div>
+
+      <!-- Advanced Filters -->
+      <div class="advanced-filters">
+        <div class="filter-row">
+          <!-- Patient Filter -->
+          <mat-form-field appearance="outline">
+            <mat-label>المريض</mat-label>
+            <input
+              matInput
+              formControlName="patientName"
+              [matAutocomplete]="patientAuto"
+              placeholder="اسم أو رقم المريض"
+            />
+            <mat-icon matPrefix>person</mat-icon>
+            @if (loadingPatients()) {
+            <mat-spinner matSuffix diameter="20"></mat-spinner>
+            }
+            <mat-autocomplete
+              #patientAuto="matAutocomplete"
+              [displayWith]="displayPatient"
+            >
+              @for (patient of filteredPatients(); track patient.id) {
+              <mat-option [value]="patient" (click)="selectPatient(patient)">
+                <div class="option-content">
+                  <span>{{ patient.fullName }}</span>
+                  <span class="secondary">{{ patient.patientNumber }}</span>
+                </div>
+              </mat-option>
+              } @if (filteredPatients().length === 0 && !loadingPatients() &&
+              searchForm.get('patientName')?.value) {
+              <mat-option disabled>
+                <span class="no-results-text">لا توجد نتائج</span>
+              </mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <!-- Doctor Filter -->
+          <mat-form-field appearance="outline">
+            <mat-label>الطبيب</mat-label>
+            <mat-select formControlName="doctorId">
+              <mat-option value="">الكل</mat-option>
+              @for (doctor of doctors(); track doctor.id) {
+              <mat-option [value]="doctor.id">
+                {{ doctor.fullName }}
+              </mat-option>
+              }
+            </mat-select>
+            <mat-icon matPrefix>medical_services</mat-icon>
+          </mat-form-field>
+
+          <!-- Visit Type Filter -->
+          <mat-form-field appearance="outline">
+            <mat-label>نوع الزيارة</mat-label>
+            <mat-select formControlName="visitType">
+              <mat-option value="">الكل</mat-option>
+              <mat-option value="FIRST_VISIT">زيارة أولى</mat-option>
+              <mat-option value="FOLLOW_UP">متابعة</mat-option>
+              <mat-option value="EMERGENCY">طوارئ</mat-option>
+              <mat-option value="ROUTINE_CHECK">فحص دوري</mat-option>
+              <mat-option value="CONSULTATION">استشارة</mat-option>
+              <mat-option value="VACCINATION">تطعيم</mat-option>
+            </mat-select>
+            <mat-icon matPrefix>event</mat-icon>
+          </mat-form-field>
+
+          <!-- Status Filter -->
+          <mat-form-field appearance="outline">
+            <mat-label>الحالة</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="">الكل</mat-option>
+              <mat-option value="DRAFT">مسودة</mat-option>
+              <mat-option value="COMPLETED">مكتمل</mat-option>
+              <mat-option value="LOCKED">مقفل</mat-option>
+            </mat-select>
+            <mat-icon matPrefix>pending</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="filter-row">
+          <!-- Date Range -->
+          <mat-form-field appearance="outline">
+            <mat-label>من تاريخ</mat-label>
+            <input
+              matInput
+              [matDatepicker]="fromPicker"
+              formControlName="visitDateFrom"
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="fromPicker"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #fromPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>إلى تاريخ</mat-label>
+            <input
+              matInput
+              [matDatepicker]="toPicker"
+              formControlName="visitDateTo"
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="toPicker"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #toPicker></mat-datepicker>
+          </mat-form-field>
+
+          <!-- Confidential Filter -->
+          <mat-checkbox
+            formControlName="isConfidential"
+            class="confidential-checkbox"
+          >
+            السجلات السرية فقط
+          </mat-checkbox>
+
+          <!-- Quick Date Filters -->
+          <div class="quick-date-filters">
+            <button mat-stroked-button (click)="setDateRange('today')">
+              اليوم
+            </button>
+            <button mat-stroked-button (click)="setDateRange('week')">
+              هذا الأسبوع
+            </button>
+            <button mat-stroked-button (click)="setDateRange('month')">
+              هذا الشهر
+            </button>
+            <button mat-stroked-button (click)="setDateRange('year')">
+              هذه السنة
+            </button>
+          </div>
+        </div>
+
+        <!-- Diagnosis & Medication Filters -->
+        <div class="filter-row">
+          <mat-form-field appearance="outline">
+            <mat-label>التشخيص</mat-label>
+            <input
+              matInput
+              formControlName="diagnosis"
+              placeholder="ابحث بالتشخيص أو رمز ICD"
+            />
+            <mat-icon matPrefix>medical_information</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>الدواء</mat-label>
+            <input
+              matInput
+              formControlName="medication"
+              placeholder="ابحث بإسم الدواء"
+            />
+            <mat-icon matPrefix>medication</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>الفحص المخبري</mat-label>
+            <input
+              matInput
+              formControlName="labTest"
+              placeholder="ابحث بإسم الفحص"
+            />
+            <mat-icon matPrefix>biotech</mat-icon>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Search Actions -->
+      <div class="search-actions">
+        <button mat-raised-button color="primary" (click)="onSearch()">
+          <mat-icon>search</mat-icon>
+          بحث
+        </button>
+        <button mat-button (click)="onReset()">
+          <mat-icon>clear</mat-icon>
+          إعادة تعيين
+        </button>
+        <button mat-button (click)="saveSearchCriteria()">
+          <mat-icon>save</mat-icon>
+          حفظ معايير البحث
+        </button>
+      </div>
+    </form>
+  </mat-expansion-panel>
+
+  <!-- Saved Searches -->
+  @if (savedSearches().length > 0) {
+  <div class="saved-searches">
+    <h3>عمليات البحث المحفوظة</h3>
+    <mat-chip-set>
+      @for (search of savedSearches(); track search.id) {
+      <mat-chip (click)="loadSavedSearch(search)">
+        <mat-icon>bookmark</mat-icon>
+        {{ search.name }}
+        <button matChipRemove (click)="deleteSavedSearch(search.id, $event)">
+          <mat-icon>cancel</mat-icon>
+        </button>
+      </mat-chip>
+      }
+    </mat-chip-set>
+  </div>
+  }
+
+  <!-- Search Results -->
+  <div class="search-results">
+    @if (loading()) {
+    <div class="loading-container">
+      <mat-spinner></mat-spinner>
+      <p>جاري البحث...</p>
+    </div>
+    } @else if (searchPerformed() && searchResults().length === 0) {
+    <div class="no-results">
+      <mat-icon>search_off</mat-icon>
+      <h3>لا توجد نتائج</h3>
+      <p>جرب تغيير معايير البحث</p>
+    </div>
+    } @else if (searchResults().length > 0) {
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>
+          نتائج البحث ({{ totalResults() }} سجل)
+        </mat-card-title>
+        <div class="result-actions">
+          <button mat-button (click)="exportResults()">
+            <mat-icon>download</mat-icon>
+            تصدير النتائج
+          </button>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        <table mat-table [dataSource]="searchResults()" class="results-table">
+          <!-- Record ID Column -->
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef>رقم السجل</th>
+            <td mat-cell *matCellDef="let record">{{ record.id }}</td>
+          </ng-container>
+
+          <!-- Patient Column -->
+          <ng-container matColumnDef="patient">
+            <th mat-header-cell *matHeaderCellDef>المريض</th>
+            <td mat-cell *matCellDef="let record">
+              <div class="patient-info">
+                <span>{{ record.patientName }}</span>
+                <span class="secondary">{{ record.patientNumber }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Doctor Column -->
+          <ng-container matColumnDef="doctor">
+            <th mat-header-cell *matHeaderCellDef>الطبيب</th>
+            <td mat-cell *matCellDef="let record">{{ record.doctorName }}</td>
+          </ng-container>
+
+          <!-- Visit Date Column -->
+          <ng-container matColumnDef="visitDate">
+            <th mat-header-cell *matHeaderCellDef>تاريخ الزيارة</th>
+            <td mat-cell *matCellDef="let record">
+              {{ formatDate(record.visitDate) }}
+            </td>
+          </ng-container>
+
+          <!-- Visit Type Column -->
+          <ng-container matColumnDef="visitType">
+            <th mat-header-cell *matHeaderCellDef>نوع الزيارة</th>
+            <td mat-cell *matCellDef="let record">
+              <mat-chip-set>
+                <mat-chip>{{ getVisitTypeLabel(record.visitType) }}</mat-chip>
+              </mat-chip-set>
+            </td>
+          </ng-container>
+
+          <!-- Chief Complaint Column -->
+          <ng-container matColumnDef="chiefComplaint">
+            <th mat-header-cell *matHeaderCellDef>الشكوى الرئيسية</th>
+            <td mat-cell *matCellDef="let record">
+              <span class="truncate">{{ record.chiefComplaint }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>الحالة</th>
+            <td mat-cell *matCellDef="let record">
+              <span
+                class="status-badge"
+                [class]="'status-' + record.status.toLowerCase()"
+              >
+                {{ getStatusLabel(record.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>الإجراءات</th>
+            <td mat-cell *matCellDef="let record">
+              <button mat-icon-button [matMenuTriggerFor]="menu">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button mat-menu-item (click)="viewRecord(record)">
+                  <mat-icon>visibility</mat-icon>
+                  عرض
+                </button>
+                <button mat-menu-item (click)="editRecord(record)">
+                  <mat-icon>edit</mat-icon>
+                  تعديل
+                </button>
+                <button mat-menu-item (click)="printRecord(record)">
+                  <mat-icon>print</mat-icon>
+                  طباعة
+                </button>
+              </mat-menu>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+
+        <mat-paginator
+          [length]="totalResults()"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[10, 25, 50, 100]"
+          (page)="onPageChange($event)"
+          showFirstLastButtons
+        >
+        </mat-paginator>
+      </mat-card-content>
+    </mat-card>
+    }
+  </div>
+</div>
+</app-sidebar>

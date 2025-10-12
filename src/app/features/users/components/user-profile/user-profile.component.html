@@ -62,14 +62,14 @@
             </mat-menu>
 
             <!-- Primary Actions -->
-            <button
+            <!-- <button
               mat-stroked-button
               *ngIf="canResetPassword()"
               (click)="onResetPassword()"
             >
               <mat-icon>key</mat-icon>
               إعادة تعيين كلمة المرور
-            </button>
+            </button> -->
 
             <button
               mat-stroked-button
@@ -103,7 +103,6 @@
               <div class="avatar-section">
                 <img
                   [src]="
-                    user()!.profilePicture ||
                     '/assets/images/default-avatar.png'
                   "
                   [alt]="user()!.fullName"
@@ -168,13 +167,13 @@
                 </div>
               </div>
 
-              <div class="contact-item" *ngIf="user()!.licenseNumber">
+              <!-- <div class="contact-item" *ngIf="user()!.licenseNumber">
                 <mat-icon>verified</mat-icon>
                 <div class="contact-details">
                   <span class="contact-label">رقم الترخيص</span>
                   <span class="contact-value">{{ user()!.licenseNumber }}</span>
                 </div>
-              </div>
+              </div> -->
             </div>
           </div>
         </mat-card-content>
@@ -346,12 +345,12 @@
                       }}</span>
                     </div>
 
-                    <div class="info-item">
+                    <!-- <div class="info-item">
                       <span class="info-label">رقم الترخيص</span>
                       <span class="info-value">{{
                         user()!.licenseNumber || "غير محدد"
                       }}</span>
-                    </div>
+                    </div> -->
                   </div>
                 </div>
               </div>
@@ -429,7 +428,7 @@
                   </h3>
 
                   <div class="security-items">
-                    <div class="security-item">
+                    <!-- <div class="security-item">
                       <div class="security-info">
                         <div class="security-title">
                           <mat-icon>key</mat-icon>
@@ -451,7 +450,7 @@
                       </div>
                     </div>
 
-                    <mat-divider></mat-divider>
+                    <mat-divider></mat-divider> -->
 
                     <div class="security-item">
                       <div class="security-info">
