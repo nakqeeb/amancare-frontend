@@ -1,123 +1,130 @@
 // src/app/public/components/doctor-availability/doctor-availability.component.scss
 
 .doctor-availability-container {
-  padding: 60px 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 0;
 
   .section-header {
     text-align: center;
-    margin-bottom: 50px;
+    margin-bottom: var(--spacing-2xl);
 
     h2 {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      font-size: 36px;
+      gap: var(--spacing-md);
+      font-size: var(--font-size-3xl);
       font-weight: 700;
-      color: #333;
-      margin-bottom: 16px;
+      color: var(--text-primary);
+      margin-bottom: var(--spacing-md);
 
       mat-icon {
         font-size: 40px;
         width: 40px;
         height: 40px;
-        color: #4caf50;
+        color: var(--success-color);
       }
     }
 
     p {
-      font-size: 18px;
-      color: #666;
+      font-size: var(--font-size-lg);
+      color: var(--text-secondary);
+      margin: 0;
     }
   }
 
   .loading-state {
     text-align: center;
-    padding: 60px 20px;
+    padding: var(--spacing-2xl);
 
     mat-spinner {
-      margin: 0 auto 20px;
+      margin: 0 auto var(--spacing-lg);
     }
 
     p {
-      color: #666;
-      font-size: 16px;
+      color: var(--text-secondary);
+      font-size: var(--font-size-md);
+      margin: 0;
     }
   }
 
   .empty-state {
     text-align: center;
-    padding: 80px 20px;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    border-radius: 16px;
+    padding: var(--spacing-2xl);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-xl);
+    border: 2px dashed var(--border-color);
 
     mat-icon {
       font-size: 80px;
       width: 80px;
       height: 80px;
-      color: #ccc;
-      margin-bottom: 20px;
+      color: var(--text-tertiary);
+      margin-bottom: var(--spacing-lg);
     }
 
     h3 {
-      font-size: 24px;
-      color: #666;
-      margin-bottom: 12px;
+      font-size: var(--font-size-2xl);
+      color: var(--text-secondary);
+      margin-bottom: var(--spacing-sm);
     }
 
     p {
-      font-size: 16px;
-      color: #888;
-      margin-bottom: 30px;
+      font-size: var(--font-size-md);
+      color: var(--text-tertiary);
+      margin-bottom: var(--spacing-xl);
     }
 
     button {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
-      margin: 0 auto;
+      gap: var(--spacing-sm);
+      height: 48px;
+      padding: 0 var(--spacing-xl);
+      font-weight: 600;
     }
   }
 
   .doctors-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 30px;
+    gap: var(--spacing-xl);
 
     .doctor-card {
       position: relative;
-      border-radius: 16px;
-      transition: all 0.3s ease;
-      overflow: visible;
+      border-radius: var(--radius-xl);
+      transition: all var(--transition-base);
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      background: var(--bg-primary);
 
       &:hover {
         transform: translateY(-8px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        box-shadow: var(--shadow-xl);
+        border-color: var(--success-color);
       }
 
       .status-badge {
         position: absolute;
-        top: 16px;
-        right: 16px;
-        background-color: #4caf50;
+        top: var(--spacing-md);
+        right: var(--spacing-md);
+        background: var(--success-color);
         color: white;
-        padding: 6px 12px;
-        border-radius: 20px;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--radius-full);
         display: flex;
         align-items: center;
-        gap: 6px;
-        font-size: 12px;
+        gap: var(--spacing-xs);
+        font-size: var(--font-size-xs);
         font-weight: 600;
-        box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+        box-shadow: var(--shadow-md);
+        z-index: 1;
         animation: pulse-badge 2s infinite;
 
         .pulse-dot {
           width: 8px;
           height: 8px;
-          background-color: white;
-          border-radius: 50%;
+          background: white;
+          border-radius: var(--radius-full);
           animation: pulse-dot 2s infinite;
         }
       }
@@ -125,33 +132,33 @@
       .doctor-avatar {
         display: flex;
         justify-content: center;
-        padding-top: 40px;
-        margin-bottom: 20px;
+        padding: var(--spacing-xl) var(--spacing-lg) 0;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
 
         img {
           width: 120px;
           height: 120px;
-          border-radius: 50%;
+          border-radius: var(--radius-full);
           object-fit: cover;
-          border: 4px solid #667eea;
-          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+          border: 4px solid white;
+          box-shadow: var(--shadow-lg);
         }
 
         .avatar-placeholder {
           width: 120px;
           height: 120px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: var(--radius-full);
+          background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 4px solid #667eea;
-          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+          border: 4px solid white;
+          box-shadow: var(--shadow-lg);
 
           mat-icon {
-            font-size: 60px;
-            width: 60px;
-            height: 60px;
+            font-size: 56px;
+            width: 56px;
+            height: 56px;
             color: white;
           }
         }
@@ -159,20 +166,21 @@
 
       mat-card-content {
         text-align: center;
-        padding: 0 20px 20px;
+        padding: var(--spacing-lg);
 
         h3 {
-          font-size: 22px;
+          font-size: var(--font-size-xl);
           font-weight: 600;
-          color: #333;
-          margin-bottom: 8px;
+          color: var(--text-primary);
+          margin-bottom: var(--spacing-xs);
         }
 
         .specialization {
-          font-size: 16px;
-          color: #667eea;
+          font-size: var(--font-size-md);
+          color: var(--primary-color);
           font-weight: 500;
-          margin-bottom: 20px;
+          margin-bottom: var(--spacing-lg);
+          display: block;
         }
 
         .clinic-info,
@@ -180,32 +188,43 @@
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          margin-bottom: 12px;
-          color: #666;
-          font-size: 14px;
+          gap: var(--spacing-sm);
+          margin-bottom: var(--spacing-md);
+          padding: var(--spacing-sm) var(--spacing-md);
+          background: var(--bg-secondary);
+          border-radius: var(--radius-md);
+          color: var(--text-secondary);
+          font-size: var(--font-size-sm);
 
           mat-icon {
             font-size: 18px;
             width: 18px;
             height: 18px;
-            color: #667eea;
+            color: var(--primary-color);
           }
         }
       }
 
       mat-card-actions {
-        padding: 20px;
-        border-top: 1px solid #eee;
+        padding: var(--spacing-lg);
+        border-top: 1px solid var(--border-color);
+        background: var(--bg-secondary);
 
         button {
           width: 100%;
-          height: 45px;
+          height: 48px;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          gap: var(--spacing-sm);
           font-weight: 600;
+          border-radius: var(--radius-full);
+          transition: all var(--transition-base);
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+          }
         }
       }
     }
@@ -216,11 +235,11 @@
 
   0%,
   100% {
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
   }
 
   50% {
-    box-shadow: 0 2px 20px rgba(76, 175, 80, 0.8);
+    box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
   }
 }
 
@@ -238,27 +257,26 @@
 
 @media (max-width: 768px) {
   .doctor-availability-container {
-    padding: 40px 15px;
-
     .section-header {
       h2 {
-        font-size: 28px;
+        font-size: var(--font-size-2xl);
+        flex-direction: column;
 
         mat-icon {
-          font-size: 32px;
-          width: 32px;
-          height: 32px;
+          font-size: 36px;
+          width: 36px;
+          height: 36px;
         }
       }
 
       p {
-        font-size: 16px;
+        font-size: var(--font-size-md);
       }
     }
 
     .doctors-grid {
       grid-template-columns: 1fr;
-      gap: 20px;
+      gap: var(--spacing-lg);
     }
   }
 }

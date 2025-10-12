@@ -5,6 +5,8 @@
 // custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 @import 'ngx-toastr/toastr';
+// AOS Animation Library
+@import 'aos/dist/aos.css';
 
 /* ===================================================================
    المتغيرات الأساسية - SCSS Variables
@@ -71,6 +73,13 @@
   --transition-fast: 0.15s ease;
   --transition-base: 0.3s ease;
   --transition-slow: 0.5s ease;
+
+  // Z-index
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal: 1040;
+  --z-tooltip: 1050;
 }
 
 /* ===================================================================

@@ -1,14 +1,24 @@
 // src/app/features/guest-booking/components/booking-success/booking-success.component.ts
 
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatChipsModule } from '@angular/material/chips';
-import { GuestBookingResponse } from '../../models/guest-booking.model';
+
+interface BookingDetails {
+  confirmationCode: string;
+  clinicName: string;
+  doctorName: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  patientName: string;
+  patientEmail: string;
+  patientPhone: string;
+  notes?: string;
+}
 
 @Component({
   selector: 'app-booking-success',
@@ -19,51 +29,38 @@ import { GuestBookingResponse } from '../../models/guest-booking.model';
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatDividerModule,
-    MatChipsModule
+    MatDividerModule
   ],
   templateUrl: './booking-success.component.html',
   styleUrl: './booking-success.component.scss'
 })
 export class BookingSuccessComponent implements OnInit {
-  private readonly router = inject(Router);
+  bookingDetails = signal<BookingDetails | null>(null);
 
-  bookingData = signal<GuestBookingResponse | null>(null);
-  patientNumberCopied = signal(false);
+  constructor(private router: Router) {
+    const navigation = this.router.getCurrentNavigation();
+    const state = navigation?.extras.state as { bookingDetails?: BookingDetails };
+
+    if (state?.bookingDetails) {
+      this.bookingDetails.set(state.bookingDetails);
+    }
+  }
 
   ngOnInit(): void {
-    // Get booking data from router state
-    const navigation = this.router.getCurrentNavigation();
-    const state = navigation?.extras?.state || history.state;
-
-    if (state?.['bookingData']) {
-      this.bookingData.set(state['bookingData']);
-    } else {
-      // If no data, redirect to booking page
-      this.router.navigate(['/guest/book']);
+    if (!this.bookingDetails()) {
+      this.router.navigate(['/']);
     }
   }
 
-  copyPatientNumber(): void {
-    const patientNumber = this.bookingData()?.patientNumber;
-    if (patientNumber) {
-      navigator.clipboard.writeText(patientNumber).then(() => {
-        this.patientNumberCopied.set(true);
-        setTimeout(() => this.patientNumberCopied.set(false), 3000);
-      });
-    }
+  navigateToHome(): void {
+    this.router.navigate(['/']);
   }
 
-  goToManageAppointments(): void {
-    const patientNumber = this.bookingData()?.patientNumber;
-    if (patientNumber) {
-      this.router.navigate(['/guest/appointments'], {
-        queryParams: { patientNumber }
-      });
-    }
+  navigateToManageAppointments(): void {
+    this.router.navigate(['/guest/appointments']);
   }
 
-  bookAnotherAppointment(): void {
-    this.router.navigate(['/guest/book']);
+  printConfirmation(): void {
+    window.print();
   }
 }

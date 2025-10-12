@@ -9,12 +9,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subscription } from 'rxjs';
-import { AnnouncementService } from '../../services/announcement.service';
+import { PublicService } from '../../services/public.service';
 import {
   Announcement,
-  AnnouncementType,
-  ANNOUNCEMENT_TYPE_LABELS,
-  ANNOUNCEMENT_TYPE_ICONS
+  getAnnouncementTypeLabel,
+  getAnnouncementTypeIcon,
+  getAnnouncementTypeColor
 } from '../../models/announcement.model';
 
 @Component({
@@ -33,17 +33,12 @@ import {
   styleUrl: './announcements.component.scss'
 })
 export class AnnouncementsComponent implements OnInit, OnDestroy {
-  private readonly announcementService = inject(AnnouncementService);
+  private readonly publicService = inject(PublicService);
   private subscription?: Subscription;
 
-  // Signals
   announcements = signal<Announcement[]>([]);
   loading = signal(false);
   currentIndex = signal(0);
-
-  // Enums for template
-  ANNOUNCEMENT_TYPE_LABELS = ANNOUNCEMENT_TYPE_LABELS;
-  ANNOUNCEMENT_TYPE_ICONS = ANNOUNCEMENT_TYPE_ICONS;
 
   ngOnInit(): void {
     this.loadAnnouncements();
@@ -56,7 +51,7 @@ export class AnnouncementsComponent implements OnInit, OnDestroy {
 
   private loadAnnouncements(): void {
     this.loading.set(true);
-    this.subscription = this.announcementService.startAutoRefresh().subscribe({
+    this.subscription = this.publicService.startAnnouncementsAutoRefresh().subscribe({
       next: (announcements) => {
         this.announcements.set(announcements);
         this.loading.set(false);
@@ -76,7 +71,7 @@ export class AnnouncementsComponent implements OnInit, OnDestroy {
           (index + 1) % announcements.length
         );
       }
-    }, 5000); // Rotate every 5 seconds
+    }, 5000);
   }
 
   nextAnnouncement(): void {
@@ -97,18 +92,11 @@ export class AnnouncementsComponent implements OnInit, OnDestroy {
     }
   }
 
-  getAnnouncementColor(type: AnnouncementType): string {
-    switch (type) {
-      case AnnouncementType.DOCTOR_AVAILABLE:
-        return '#4caf50';
-      case AnnouncementType.EMERGENCY:
-        return '#f44336';
-      case AnnouncementType.SPECIAL_OFFER:
-        return '#ff9800';
-      case AnnouncementType.HEALTH_TIP:
-        return '#2196f3';
-      default:
-        return '#667eea';
-    }
+  goToAnnouncement(index: number): void {
+    this.currentIndex.set(index);
   }
+
+  getTypeLabel = getAnnouncementTypeLabel;
+  getTypeIcon = getAnnouncementTypeIcon;
+  getTypeColor = getAnnouncementTypeColor;
 }

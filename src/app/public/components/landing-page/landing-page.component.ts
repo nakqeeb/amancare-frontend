@@ -1,22 +1,23 @@
 // src/app/public/components/landing-page/landing-page.component.ts
 
-import { Component, inject, signal, OnInit, HostListener } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy, HostListener, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatChipsModule } from '@angular/material/chips';
 import { PublicNavbarComponent } from '../public-navbar/public-navbar.component';
 import { AnnouncementsComponent } from '../announcements/announcements.component';
 import { DoctorAvailabilityComponent } from '../doctor-availability/doctor-availability.component';
 import { QuickBookingWidgetComponent } from '../quick-booking-widget/quick-booking-widget.component';
+import AOS from 'aos';
 
 interface Feature {
   icon: string;
   title: string;
   description: string;
-  color: string;
 }
 
 interface Step {
@@ -30,7 +31,6 @@ interface Statistic {
   value: string;
   label: string;
   icon: string;
-  color: string;
 }
 
 @Component({
@@ -43,6 +43,7 @@ interface Statistic {
     MatIconModule,
     MatCardModule,
     MatDividerModule,
+    MatChipsModule,
     PublicNavbarComponent,
     AnnouncementsComponent,
     DoctorAvailabilityComponent,
@@ -51,117 +52,108 @@ interface Statistic {
   templateUrl: './landing-page.component.html',
   styleUrl: './landing-page.component.scss'
 })
-export class LandingPageComponent implements OnInit {
+export class LandingPageComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly router = inject(Router);
 
-  // Signals
   showScrollTop = signal(false);
   currentYear = new Date().getFullYear();
 
-  // Features
   features: Feature[] = [
     {
       icon: 'schedule',
       title: 'حجز سريع وسهل',
-      description: 'احجز موعدك في دقائق معدودة بدون الحاجة لإنشاء حساب',
-      color: '#667eea'
+      description: 'احجز موعدك في دقائق معدودة بدون الحاجة لإنشاء حساب'
     },
     {
       icon: 'notifications_active',
       title: 'تنبيهات فورية',
-      description: 'احصل على تذكير بموعدك عبر البريد الإلكتروني والرسائل النصية',
-      color: '#f093fb'
+      description: 'احصل على تذكير بموعدك عبر البريد الإلكتروني'
     },
     {
       icon: 'history',
       title: 'تاريخ طبي شامل',
-      description: 'جميع سجلاتك الطبية في مكان واحد يسهل الوصول إليه',
-      color: '#4facfe'
+      description: 'جميع سجلاتك الطبية في مكان واحد آمن'
     },
     {
       icon: 'verified_user',
       title: 'أمان وخصوصية',
-      description: 'بياناتك محمية بأعلى معايير الأمان والخصوصية',
-      color: '#43e97b'
+      description: 'بياناتك محمية بأعلى معايير الأمان'
     },
     {
       icon: 'support_agent',
       title: 'دعم على مدار الساعة',
-      description: 'فريق الدعم متواجد دائماً للإجابة على استفساراتك',
-      color: '#fa709a'
+      description: 'فريق الدعم متواجد للإجابة على استفساراتك'
     },
     {
-      icon: 'smartphone',
+      icon: 'devices',
       title: 'متاح على جميع الأجهزة',
-      description: 'استخدم النظام من الكمبيوتر أو الهاتف أو التابلت',
-      color: '#30cfd0'
+      description: 'استخدم النظام من أي جهاز في أي وقت'
     }
   ];
 
-  // How it works steps
   steps: Step[] = [
     {
       number: 1,
       icon: 'search',
       title: 'اختر العيادة والطبيب',
-      description: 'ابحث عن العيادة والطبيب المناسب لحالتك'
+      description: 'ابحث عن العيادة والطبيب المناسب'
     },
     {
       number: 2,
       icon: 'calendar_today',
       title: 'اختر الوقت المناسب',
-      description: 'اختر التاريخ والوقت الذي يناسبك من الأوقات المتاحة'
+      description: 'حدد التاريخ والوقت من الأوقات المتاحة'
     },
     {
       number: 3,
       icon: 'person_add',
       title: 'أدخل بياناتك',
-      description: 'املأ نموذج بسيط ببياناتك الشخصية'
+      description: 'املأ نموذج بسيط ببياناتك'
     },
     {
       number: 4,
       icon: 'check_circle',
       title: 'تأكيد الموعد',
-      description: 'استلم رسالة تأكيد بموعدك عبر البريد الإلكتروني'
+      description: 'استلم تأكيد بموعدك فوراً'
     }
   ];
 
-  // Statistics
   statistics: Statistic[] = [
-    {
-      value: '10,000+',
-      label: 'موعد ناجح',
-      icon: 'event_available',
-      color: '#667eea'
-    },
-    {
-      value: '500+',
-      label: 'طبيب متخصص',
-      icon: 'people',
-      color: '#f093fb'
-    },
-    {
-      value: '50+',
-      label: 'عيادة معتمدة',
-      icon: 'local_hospital',
-      color: '#4facfe'
-    },
-    {
-      value: '98%',
-      label: 'رضا المرضى',
-      icon: 'sentiment_satisfied',
-      color: '#43e97b'
-    }
+    { value: '10,000+', label: 'موعد ناجح', icon: 'event_available' },
+    { value: '500+', label: 'طبيب متخصص', icon: 'people' },
+    { value: '50+', label: 'عيادة معتمدة', icon: 'local_hospital' },
+    { value: '98%', label: 'رضا المرضى', icon: 'sentiment_satisfied' }
   ];
 
   ngOnInit(): void {
-    // Scroll to top on init
     window.scrollTo(0, 0);
   }
 
+  ngAfterViewInit(): void {
+    // Initialize AOS
+    AOS.init({
+      duration: 800,
+      easing: 'ease-in-out',
+      once: true,
+      mirror: false,
+      anchorPlacement: 'top-bottom',
+      offset: 100,
+      delay: 0,
+      disable: false
+    });
+  }
+
+  ngOnDestroy(): void {
+    // Cleanup AOS
+    AOS.refresh();
+  }
+
   @HostListener('window:scroll', [])
-  onWindowScroll() {
+  onWindowScroll(): void {
     this.showScrollTop.set(window.scrollY > 300);
+
+    // Refresh AOS on scroll
+    AOS.refresh();
   }
 
   scrollToTop(): void {

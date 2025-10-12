@@ -28,13 +28,11 @@
   <div class="doctors-grid">
     @for (doctor of availableDoctors(); track doctor.doctorId) {
     <mat-card class="doctor-card">
-      <!-- Status Badge -->
       <div class="status-badge">
         <div class="pulse-dot"></div>
         <span>متاح الآن</span>
       </div>
 
-      <!-- Doctor Info -->
       <div class="doctor-avatar">
         @if (doctor.profileImage) {
         <img [src]="doctor.profileImage" [alt]="doctor.doctorName" />
@@ -47,7 +45,9 @@
 
       <mat-card-content>
         <h3>{{ doctor.doctorName }}</h3>
+        @if (doctor.specialization) {
         <p class="specialization">{{ doctor.specialization }}</p>
+        }
 
         <div class="clinic-info">
           <mat-icon>local_hospital</mat-icon>

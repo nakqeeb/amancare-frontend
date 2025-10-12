@@ -3,37 +3,47 @@
 <mat-toolbar [class.scrolled]="isScrolled()" class="public-navbar">
   <div class="navbar-container">
     <!-- Logo -->
-    <div class="logo" routerLink="/">
-      <mat-icon class="logo-icon">local_hospital</mat-icon>
+    <div class="logo" (click)="navigateToHome()">
+      <div class="logo-icon">
+        <!-- <mat-icon>local_hospital</mat-icon> -->
+        <img class="app-logo" src="images/logo.png" />
+      </div>
       <span class="logo-text">أمان كير</span>
     </div>
 
     <!-- Desktop Navigation -->
     <nav class="desktop-nav">
-      <button mat-button (click)="scrollToSection('home')">
+      <button mat-button class="nav-link" (click)="scrollToSection('home')">
         <mat-icon>home</mat-icon>
-        الرئيسية
+        <span>الرئيسية</span>
       </button>
-      <button mat-button (click)="scrollToSection('features')">
+      <button mat-button class="nav-link" (click)="scrollToSection('features')">
         <mat-icon>stars</mat-icon>
-        المميزات
+        <span>المميزات</span>
       </button>
-      <button mat-button (click)="scrollToSection('how-it-works')">
+      <button
+        mat-button
+        class="nav-link"
+        (click)="scrollToSection('how-it-works')"
+      >
         <mat-icon>info</mat-icon>
-        كيف يعمل
+        <span>كيف يعمل</span>
       </button>
-      <button mat-button (click)="scrollToSection('doctors')">
+      <button mat-button class="nav-link" (click)="scrollToSection('doctors')">
         <mat-icon>people</mat-icon>
-        الأطباء
+        <span>الأطباء</span>
       </button>
-      <button mat-button (click)="navigateToMyAppointments()">
+      <button mat-button class="nav-link" (click)="navigateToMyAppointments()">
         <mat-icon>event_note</mat-icon>
-        مواعيدي
+        <span>مواعيدي</span>
       </button>
     </nav>
 
     <!-- Actions -->
     <div class="nav-actions">
+      <!-- Theme Toggle -->
+      <app-theme-toggle></app-theme-toggle>
+
       <!-- Book Appointment Button -->
       <button
         mat-raised-button
@@ -42,16 +52,16 @@
         (click)="navigateToBooking()"
       >
         <mat-icon>add</mat-icon>
-        احجز موعد
+        <span>احجز موعد</span>
       </button>
 
       <!-- Login Menu -->
-      <button mat-button [matMenuTriggerFor]="loginMenu" class="login-button">
+      <!-- <button mat-button [matMenuTriggerFor]="loginMenu" class="login-button">
         <mat-icon>login</mat-icon>
-        تسجيل الدخول
+        <span>تسجيل الدخول</span>
       </button>
 
-      <mat-menu #loginMenu="matMenu" xPosition="before">
+      <mat-menu #loginMenu="matMenu" xPosition="before" class="login-menu">
         <button mat-menu-item (click)="navigateToLogin('staff')">
           <mat-icon>badge</mat-icon>
           <span>موظف العيادة</span>
@@ -60,17 +70,28 @@
           <mat-icon>business</mat-icon>
           <span>صاحب عيادة</span>
         </button>
+        <mat-divider></mat-divider>
         <button mat-menu-item (click)="navigateToLogin('system-admin')">
           <mat-icon>admin_panel_settings</mat-icon>
           <span>مدير النظام</span>
         </button>
-      </mat-menu>
+      </mat-menu> -->
 
+      <button
+        mat-raised-button
+        color="primary"
+        class="login-button"
+        (click)="navigateToLogin()"
+      >
+        <mat-icon>login</mat-icon>
+        <span>تسجيل الدخول</span>
+      </button>
       <!-- Mobile Menu Toggle -->
       <button
         mat-icon-button
         class="mobile-menu-toggle"
         (click)="toggleMobileMenu()"
+        [attr.aria-label]="isMobileMenuOpen() ? 'إغلاق القائمة' : 'فتح القائمة'"
       >
         <mat-icon>{{ isMobileMenuOpen() ? "close" : "menu" }}</mat-icon>
       </button>
@@ -79,39 +100,57 @@
 
   <!-- Mobile Menu -->
   @if (isMobileMenuOpen()) {
+  <div class="mobile-menu-overlay" (click)="toggleMobileMenu()"></div>
+
   <div class="mobile-menu">
-    <button mat-menu-item (click)="scrollToSection('home')">
-      <mat-icon>home</mat-icon>
-      <span>الرئيسية</span>
-    </button>
-    <button mat-menu-item (click)="scrollToSection('features')">
-      <mat-icon>stars</mat-icon>
-      <span>المميزات</span>
-    </button>
-    <button mat-menu-item (click)="scrollToSection('how-it-works')">
-      <mat-icon>info</mat-icon>
-      <span>كيف يعمل</span>
-    </button>
-    <button mat-menu-item (click)="scrollToSection('doctors')">
-      <mat-icon>people</mat-icon>
-      <span>الأطباء</span>
-    </button>
-    <button mat-menu-item (click)="navigateToMyAppointments()">
-      <mat-icon>event_note</mat-icon>
-      <span>مواعيدي</span>
-    </button>
+    <div class="mobile-menu-header">
+      <h3>القائمة</h3>
+      <button mat-icon-button (click)="toggleMobileMenu()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <nav class="mobile-nav">
+      <button mat-menu-item (click)="scrollToSection('home')">
+        <mat-icon>home</mat-icon>
+        <span>الرئيسية</span>
+      </button>
+      <button mat-menu-item (click)="scrollToSection('features')">
+        <mat-icon>stars</mat-icon>
+        <span>المميزات</span>
+      </button>
+      <button mat-menu-item (click)="scrollToSection('how-it-works')">
+        <mat-icon>info</mat-icon>
+        <span>كيف يعمل</span>
+      </button>
+      <button mat-menu-item (click)="scrollToSection('doctors')">
+        <mat-icon>people</mat-icon>
+        <span>الأطباء</span>
+      </button>
+      <button mat-menu-item (click)="navigateToMyAppointments()">
+        <mat-icon>event_note</mat-icon>
+        <span>مواعيدي</span>
+      </button>
+    </nav>
 
     <mat-divider></mat-divider>
 
-    <button mat-menu-item (click)="navigateToBooking()">
-      <mat-icon>add</mat-icon>
-      <span>احجز موعد</span>
-    </button>
+    <div class="mobile-actions">
+      <button
+        mat-raised-button
+        color="primary"
+        class="mobile-book-button"
+        (click)="navigateToBooking()"
+      >
+        <mat-icon>add</mat-icon>
+        <span>احجز موعد</span>
+      </button>
+    </div>
 
     <mat-divider></mat-divider>
 
-    <div class="mobile-login-section">
-      <p class="section-title">تسجيل الدخول</p>
+    <!-- <div class="mobile-login-section">
+      <h4>تسجيل الدخول</h4>
       <button mat-menu-item (click)="navigateToLogin('staff')">
         <mat-icon>badge</mat-icon>
         <span>موظف العيادة</span>
@@ -123,6 +162,18 @@
       <button mat-menu-item (click)="navigateToLogin('system-admin')">
         <mat-icon>admin_panel_settings</mat-icon>
         <span>مدير النظام</span>
+      </button>
+    </div> -->
+    <div class="mobile-login-section">
+      <h4>تسجيل الدخول</h4>
+      <button
+        mat-raised-button
+        color="primary"
+        class="login-button"
+        (click)="navigateToLogin()"
+      >
+        <mat-icon>login</mat-icon>
+        <span>تسجيل الدخول</span>
       </button>
     </div>
   </div>

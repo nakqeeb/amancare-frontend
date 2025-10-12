@@ -1,118 +1,160 @@
 <!-- src/app/features/guest-booking/components/booking-success/booking-success.component.html -->
 
-<div class="success-container">
+<div class="booking-success-container">
   <mat-card class="success-card">
-    <!-- Success Icon -->
-    <div class="success-icon">
-      <mat-icon>check_circle</mat-icon>
+    <div class="success-header">
+      <div class="success-icon">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <h1>تم الحجز بنجاح!</h1>
+      <p class="success-message">تم تأكيد موعدك الطبي</p>
     </div>
 
-    <!-- Success Message -->
-    <h1>تم حجز موعدك بنجاح! 🎉</h1>
-    <p class="subtitle">تم إرسال تفاصيل موعدك إلى بريدك الإلكتروني</p>
-
-    <mat-divider></mat-divider>
-
-    <!-- Patient Number Section -->
-    @if (bookingData(); as data) {
-    <div class="patient-number-section">
-      <h2>⭐ رقمك الطبي</h2>
-      <div class="patient-number-box">
-        <div class="patient-number">{{ data.patientNumber }}</div>
-        <button
-          mat-stroked-button
-          color="primary"
-          (click)="copyPatientNumber()"
-          class="copy-button"
-        >
-          <mat-icon>{{
-            patientNumberCopied() ? "done" : "content_copy"
-          }}</mat-icon>
-          {{ patientNumberCopied() ? "تم النسخ" : "نسخ الرقم" }}
-        </button>
-      </div>
-      <p class="important-note">
-        <mat-icon>warning</mat-icon>
-        احتفظ بهذا الرقم! ستحتاجه لعرض وإدارة مواعيدك
-      </p>
-    </div>
-
-    <mat-divider></mat-divider>
-
-    <!-- Appointment Details -->
-    <div class="appointment-details">
-      <h3>📅 تفاصيل الموعد</h3>
-
-      <div class="detail-row">
-        <span class="label">المريض:</span>
-        <span class="value">{{ data.patientFullName }}</span>
+    @if (bookingDetails()) {
+    <mat-card-content>
+      <div class="confirmation-section">
+        <div class="confirmation-code">
+          <mat-icon>qr_code_2</mat-icon>
+          <div class="code-details">
+            <span class="label">رمز التأكيد</span>
+            <span class="code">{{ bookingDetails()!.confirmationCode }}</span>
+          </div>
+        </div>
+        <p class="code-instruction">احتفظ بهذا الرمز لإدارة موعدك</p>
       </div>
 
-      <div class="detail-row">
-        <span class="label">الطبيب:</span>
-        <span class="value">{{ data.doctorName }}</span>
+      <mat-divider></mat-divider>
+
+      <div class="booking-details-section">
+        <h3>
+          <mat-icon>event_note</mat-icon>
+          تفاصيل الموعد
+        </h3>
+
+        <div class="details-grid">
+          <div class="detail-item">
+            <mat-icon>local_hospital</mat-icon>
+            <div class="detail-content">
+              <span class="detail-label">العيادة</span>
+              <span class="detail-value">{{
+                bookingDetails()!.clinicName
+              }}</span>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <mat-icon>person</mat-icon>
+            <div class="detail-content">
+              <span class="detail-label">الطبيب</span>
+              <span class="detail-value">{{
+                bookingDetails()!.doctorName
+              }}</span>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <mat-icon>calendar_today</mat-icon>
+            <div class="detail-content">
+              <span class="detail-label">التاريخ</span>
+              <span class="detail-value">{{
+                bookingDetails()!.appointmentDate
+              }}</span>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <mat-icon>schedule</mat-icon>
+            <div class="detail-content">
+              <span class="detail-label">الوقت</span>
+              <span class="detail-value">{{
+                bookingDetails()!.appointmentTime
+              }}</span>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <mat-icon>badge</mat-icon>
+            <div class="detail-content">
+              <span class="detail-label">اسم المريض</span>
+              <span class="detail-value">{{
+                bookingDetails()!.patientName
+              }}</span>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <mat-icon>email</mat-icon>
+            <div class="detail-content">
+              <span class="detail-label">البريد الإلكتروني</span>
+              <span class="detail-value">{{
+                bookingDetails()!.patientEmail
+              }}</span>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <mat-icon>phone</mat-icon>
+            <div class="detail-content">
+              <span class="detail-label">رقم الهاتف</span>
+              <span class="detail-value">{{
+                bookingDetails()!.patientPhone
+              }}</span>
+            </div>
+          </div>
+
+          @if (bookingDetails()!.notes) {
+          <div class="detail-item full-width">
+            <mat-icon>notes</mat-icon>
+            <div class="detail-content">
+              <span class="detail-label">ملاحظات</span>
+              <span class="detail-value">{{ bookingDetails()!.notes }}</span>
+            </div>
+          </div>
+          }
+        </div>
       </div>
 
-      @if (data.specialization) {
-      <div class="detail-row">
-        <span class="label">التخصص:</span>
-        <span class="value">{{ data.specialization }}</span>
-      </div>
-      }
+      <mat-divider></mat-divider>
 
-      <div class="detail-row">
-        <span class="label">العيادة:</span>
-        <span class="value">{{ data.clinicName }}</span>
+      <div class="notification-section">
+        <mat-icon>mark_email_read</mat-icon>
+        <div class="notification-content">
+          <h4>تم إرسال رسالة تأكيد</h4>
+          <p>تم إرسال تفاصيل الموعد إلى بريدك الإلكتروني</p>
+        </div>
       </div>
 
-      <div class="detail-row">
-        <span class="label">التاريخ:</span>
-        <span class="value">{{ data.appointmentDate }}</span>
+      <div class="important-note">
+        <mat-icon>info</mat-icon>
+        <div class="note-content">
+          <h4>ملاحظة هامة</h4>
+          <ul>
+            <li>يرجى الحضور قبل موعدك بـ 15 دقيقة</li>
+            <li>احتفظ برمز التأكيد معك</li>
+            <li>في حالة الإلغاء أو التعديل، استخدم صفحة إدارة المواعيد</li>
+          </ul>
+        </div>
       </div>
+    </mat-card-content>
 
-      <div class="detail-row">
-        <span class="label">الوقت:</span>
-        <span class="value">{{ data.appointmentTime }}</span>
-      </div>
-    </div>
-
-    <mat-divider></mat-divider>
-
-    <!-- Next Steps -->
-    <div class="next-steps">
-      <h3>📋 الخطوات التالية</h3>
-      <ol>
-        <li>
-          <mat-icon>email</mat-icon>
-          تحقق من بريدك الإلكتروني ({{ data.email }})
-        </li>
-        <li>
-          <mat-icon>link</mat-icon>
-          اضغط على رابط التأكيد في البريد
-        </li>
-        <li>
-          <mat-icon>event</mat-icon>
-          احضر قبل موعدك بـ 15 دقيقة
-        </li>
-      </ol>
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="action-buttons">
+    <mat-card-actions>
       <button
         mat-raised-button
         color="primary"
-        (click)="goToManageAppointments()"
+        (click)="navigateToManageAppointments()"
       >
-        <mat-icon>event_note</mat-icon>
-        عرض مواعيدي
+        <mat-icon>settings</mat-icon>
+        <span>إدارة المواعيد</span>
       </button>
-
-      <button mat-stroked-button (click)="bookAnotherAppointment()">
-        <mat-icon>add</mat-icon>
-        حجز موعد آخر
+      <button mat-stroked-button (click)="printConfirmation()">
+        <mat-icon>print</mat-icon>
+        <span>طباعة</span>
       </button>
-    </div>
+      <button mat-button (click)="navigateToHome()">
+        <mat-icon>home</mat-icon>
+        <span>الرئيسية</span>
+      </button>
+    </mat-card-actions>
     }
   </mat-card>
 </div>

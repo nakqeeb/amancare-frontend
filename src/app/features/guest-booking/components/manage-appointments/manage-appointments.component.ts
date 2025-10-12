@@ -2,21 +2,19 @@
 
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatTableModule } from '@angular/material/table';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatTooltipModule } from '@angular/material/tooltip';
-
+import { MatChipsModule } from '@angular/material/chips';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { GuestBookingService } from '../../services/guest-booking.service';
-import { ConfirmDialogComponent } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { AppointmentResponse, AppointmentStatus, APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_COLORS } from '../../../appointments/models/appointment.model';
+import { AppointmentResponse, AppointmentStatus } from '../../../appointments/models/appointment.model';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-manage-appointments',
@@ -29,128 +27,158 @@ import { AppointmentResponse, AppointmentStatus, APPOINTMENT_STATUS_LABELS, APPO
     MatButtonModule,
     MatIconModule,
     MatInputModule,
-    MatTableModule,
-    MatChipsModule,
     MatProgressSpinnerModule,
+    MatChipsModule,
     MatDialogModule,
-    MatTooltipModule
+    MatSnackBarModule,
+    MatDividerModule
   ],
   templateUrl: './manage-appointments.component.html',
   styleUrl: './manage-appointments.component.scss'
 })
 export class ManageAppointmentsComponent implements OnInit {
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
-  private readonly dialog = inject(MatDialog);
+  private readonly route = inject(ActivatedRoute);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly guestBookingService = inject(GuestBookingService);
 
-  // Signals
+  searchForm: FormGroup;
   appointments = signal<AppointmentResponse[]>([]);
   loading = signal(false);
-  patientNumber = signal<string | null>(null);
-  showLoginForm = signal(true);
+  searched = signal(false);
 
-  // Form
-  loginForm!: FormGroup;
-
-  // Table
-  displayedColumns = ['appointmentDate', 'appointmentTime', 'doctor', 'status', 'actions'];
-
-  // Enums for template
-  AppointmentStatus = AppointmentStatus;
-  APPOINTMENT_STATUS_LABELS = APPOINTMENT_STATUS_LABELS;
-  APPOINTMENT_STATUS_COLORS = APPOINTMENT_STATUS_COLORS;
-
-  ngOnInit(): void {
-    this.initializeForm();
-
-    // Check if patient number is in query params
-    const patientNumberFromQuery = this.route.snapshot.queryParamMap.get('patientNumber');
-    if (patientNumberFromQuery) {
-      this.loginForm.patchValue({ patientNumber: patientNumberFromQuery });
-      this.loadAppointments();
-    }
-  }
-
-  private initializeForm(): void {
-    this.loginForm = this.fb.group({
-      patientNumber: ['', [
-        Validators.required,
-        // Validators.pattern(/^P\d{11}$/)
-      ]]
+  constructor() {
+    this.searchForm = this.fb.group({
+      patientNumber: ['', [Validators.required, Validators.minLength(5)]]
     });
   }
 
-  loadAppointments(): void {
-    if (this.loginForm.invalid) {
+  ngOnInit(): void {
+    // Check if patientNumber was passed from query params (e.g., from booking success page)
+    this.route.queryParams.subscribe(params => {
+      if (params['patientNumber']) {
+        this.searchForm.patchValue({ patientNumber: params['patientNumber'] });
+        this.onSearch();
+      }
+    });
+  }
+
+  onSearch(): void {
+    if (this.searchForm.invalid) {
+      this.showError('يرجى إدخال رقم المريض');
       return;
     }
 
-    const patientNumber = this.loginForm.get('patientNumber')?.value;
     this.loading.set(true);
+    this.searched.set(true);
 
-    this.guestBookingService.getMyAppointments(patientNumber).subscribe({
+    const { patientNumber } = this.searchForm.value;
+
+    this.guestBookingService.getGuestAppointments(patientNumber).subscribe({
       next: (appointments) => {
         this.appointments.set(appointments);
-        this.patientNumber.set(patientNumber);
-        this.showLoginForm.set(false);
         this.loading.set(false);
+
+        if (appointments.length === 0) {
+          this.showError('لم يتم العثور على مواعيد لهذا الرقم');
+        }
       },
       error: (error) => {
-        console.error('Error loading appointments:', error);
+        console.error('Error searching appointments:', error);
         this.loading.set(false);
+        this.showError('حدث خطأ في البحث. يرجى التحقق من رقم المريض');
       }
     });
-  }
-
-  cancelAppointment(appointment: AppointmentResponse): void {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      data: {
-        title: 'تأكيد الإلغاء',
-        message: `هل أنت متأكد من إلغاء موعدك مع ${appointment.doctor.fullName} بتاريخ ${appointment.appointmentDate}؟`,
-        confirmText: 'نعم، إلغاء',
-        cancelText: 'لا، تراجع'
-      }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.guestBookingService.cancelAppointment(
-          appointment.id,
-          this.patientNumber()!
-        ).subscribe({
-          next: () => {
-            // Remove from list or reload
-            this.loadAppointments();
-          },
-          error: (error) => console.error('Error cancelling appointment:', error)
-        });
-      }
-    });
-  }
-
-  canCancelAppointment(appointment: AppointmentResponse): boolean {
-    return appointment.status !== AppointmentStatus.COMPLETED &&
-      appointment.status !== AppointmentStatus.CANCELLED;
-  }
-
-  logout(): void {
-    this.showLoginForm.set(true);
-    this.appointments.set([]);
-    this.patientNumber.set(null);
-    this.loginForm.reset();
-    this.router.navigate(['/guest/appointments']);
-  }
-
-  bookNewAppointment(): void {
-    this.router.navigate(['/guest/book']);
-  }
-  getStatusColor(status: AppointmentStatus): string {
-    return this.APPOINTMENT_STATUS_COLORS[status];
   }
 
   getStatusLabel(status: AppointmentStatus): string {
-    return this.APPOINTMENT_STATUS_LABELS[status];
+    const labels: Record<AppointmentStatus, string> = {
+      [AppointmentStatus.SCHEDULED]: 'مجدول',
+      [AppointmentStatus.CONFIRMED]: 'مؤكد',
+      [AppointmentStatus.IN_PROGRESS]: 'قيد التنفيذ',
+      [AppointmentStatus.COMPLETED]: 'مكتمل',
+      [AppointmentStatus.CANCELLED]: 'ملغي',
+      [AppointmentStatus.NO_SHOW]: 'لم يحضر'
+    };
+    return labels[status] || status;
+  }
+
+  getStatusColor(status: AppointmentStatus): 'primary' | 'accent' | 'warn' | undefined {
+    const colors: Record<AppointmentStatus, 'primary' | 'accent' | 'warn' | undefined> = {
+      [AppointmentStatus.SCHEDULED]: 'primary',
+      [AppointmentStatus.CONFIRMED]: 'accent',
+      [AppointmentStatus.IN_PROGRESS]: 'accent',
+      [AppointmentStatus.COMPLETED]: undefined,
+      [AppointmentStatus.CANCELLED]: 'warn',
+      [AppointmentStatus.NO_SHOW]: 'warn'
+    };
+    return colors[status];
+  }
+
+  canCancelAppointment(appointment: AppointmentResponse): boolean {
+    // Can cancel if status is SCHEDULED or CONFIRMED and date is in the future
+    const canCancelStatuses = [AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED];
+    const isFutureAppointment = new Date(appointment.appointmentDate) >= new Date();
+    return canCancelStatuses.includes(appointment.status) && isFutureAppointment;
+  }
+
+  onCancelAppointment(appointment: AppointmentResponse): void {
+    if (!confirm('هل أنت متأكد من إلغاء هذا الموعد؟')) {
+      return;
+    }
+
+    const patientNumber = this.searchForm.get('patientNumber')?.value;
+
+    this.guestBookingService.cancelAppointment(appointment.id, patientNumber).subscribe({
+      next: (success) => {
+        if (success) {
+          this.showSuccess('تم إلغاء الموعد بنجاح');
+          // Refresh appointments list
+          this.onSearch();
+        } else {
+          this.showError('فشل إلغاء الموعد');
+        }
+      },
+      error: (error) => {
+        console.error('Error canceling appointment:', error);
+        this.showError('حدث خطأ في إلغاء الموعد');
+      }
+    });
+  }
+
+  formatDate(date: string): string {
+    try {
+      return new Date(date).toLocaleDateString('ar-EG', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch {
+      return date;
+    }
+  }
+
+  formatTime(time: string): string {
+    if (!time) return '';
+    // If time is in HH:mm:ss format, return only HH:mm
+    return time.substring(0, 5);
+  }
+
+  private showError(message: string): void {
+    this.snackBar.open(message, 'حسناً', {
+      duration: 3000,
+      horizontalPosition: 'center',
+      verticalPosition: 'top'
+    });
+  }
+
+  private showSuccess(message: string): void {
+    this.snackBar.open(message, 'حسناً', {
+      duration: 3000,
+      horizontalPosition: 'center',
+      verticalPosition: 'top',
+      panelClass: ['success-snackbar']
+    });
   }
 }

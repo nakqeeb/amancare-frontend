@@ -4,6 +4,7 @@
   @if (loading() && announcements().length === 0) {
   <div class="loading-state">
     <mat-spinner diameter="40"></mat-spinner>
+    <p>جارٍ تحميل الإعلانات...</p>
   </div>
   } @if (announcements().length > 0) {
   <div class="announcements-carousel">
@@ -11,18 +12,15 @@
     $index) { @if (i === currentIndex()) {
     <mat-card
       class="announcement-card"
-      [style.border-color]="getAnnouncementColor(announcement.type)"
-      [@slideIn]
+      [style.border-right-color]="getTypeColor(announcement.type)"
     >
       <div class="announcement-header">
         <div class="announcement-type">
-          <mat-icon [style.color]="getAnnouncementColor(announcement.type)">
-            {{ ANNOUNCEMENT_TYPE_ICONS[announcement.type] }}
+          <mat-icon [style.color]="getTypeColor(announcement.type)">
+            {{ getTypeIcon(announcement.type) }}
           </mat-icon>
-          <mat-chip
-            [style.background-color]="getAnnouncementColor(announcement.type)"
-          >
-            {{ ANNOUNCEMENT_TYPE_LABELS[announcement.type] }}
+          <mat-chip [style.background-color]="getTypeColor(announcement.type)">
+            {{ getTypeLabel(announcement.type) }}
           </mat-chip>
         </div>
 
@@ -61,7 +59,7 @@
         <a
           mat-raised-button
           [routerLink]="announcement.actionUrl"
-          [style.background-color]="getAnnouncementColor(announcement.type)"
+          [style.background-color]="getTypeColor(announcement.type)"
         >
           {{ announcement.actionText }}
           <mat-icon>arrow_back</mat-icon>
@@ -69,15 +67,13 @@
       </mat-card-actions>
       }
     </mat-card>
-    } }
-
-    <!-- Navigation -->
-    @if (announcements().length > 1) {
+    } } @if (announcements().length > 1) {
     <div class="carousel-controls">
       <button
         mat-icon-button
         (click)="previousAnnouncement()"
         class="nav-button"
+        [attr.aria-label]="'الإعلان السابق'"
       >
         <mat-icon>chevron_right</mat-icon>
       </button>
@@ -88,12 +84,18 @@
         <button
           class="dot"
           [class.active]="i === currentIndex()"
-          (click)="currentIndex.set(i)"
+          (click)="goToAnnouncement(i)"
+          [attr.aria-label]="'الإعلان ' + (i + 1)"
         ></button>
         }
       </div>
 
-      <button mat-icon-button (click)="nextAnnouncement()" class="nav-button">
+      <button
+        mat-icon-button
+        (click)="nextAnnouncement()"
+        class="nav-button"
+        [attr.aria-label]="'الإعلان التالي'"
+      >
         <mat-icon>chevron_left</mat-icon>
       </button>
     </div>

@@ -1,16 +1,17 @@
 // src/app/features/guest-booking/services/guest-booking.service.ts
 
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, tap, map } from 'rxjs/operators';
+import { Observable, of, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../../core/models/api-response.model';
-import { NotificationService } from '../../../core/services/notification.service';
 import {
+  ClinicSummary,
+  ClinicDoctorSummary,
+  DoctorScheduleSummary,
   GuestBookingRequest,
-  GuestBookingResponse,
-  ClinicDoctorSummary
+  GuestBookingResponse
 } from '../models/guest-booking.model';
 import { AppointmentResponse } from '../../appointments/models/appointment.model';
 
@@ -19,45 +20,66 @@ import { AppointmentResponse } from '../../appointments/models/appointment.model
 })
 export class GuestBookingService {
   private readonly http = inject(HttpClient);
-  private readonly notificationService = inject(NotificationService);
   private readonly apiUrl = `${environment.apiUrl}/guest`;
 
-  // Signals
-  loading = signal(false);
-  error = signal<string | null>(null);
-
   /**
-   * Get clinic doctors
+   * Get all active clinics
+   * Endpoint: GET /guest/clinics
    */
-  getClinicDoctors(clinicId: number): Observable<ClinicDoctorSummary[]> {
-    this.loading.set(true);
-    this.error.set(null);
-
-    return this.http.get<ApiResponse<ClinicDoctorSummary[]>>(
-      `${this.apiUrl}/clinics/${clinicId}/doctors`
-    ).pipe(
-      tap(() => this.loading.set(false)),
-      map(response => response.data!),
+  getClinics(): Observable<ClinicSummary[]> {
+    return this.http.get<ApiResponse<ClinicSummary[]>>(`${this.apiUrl}/clinics`).pipe(
+      map(response => response.data || []),
       catchError(error => {
-        this.loading.set(false);
-        this.handleError('فشل في تحميل قائمة الأطباء', error);
-        return throwError(() => error);
+        console.error('Error fetching clinics:', error);
+        return of([]);
       })
     );
   }
 
   /**
-   * Get available time slots
+   * Get doctors for a specific clinic
+   * Endpoint: GET /guest/clinics/{clinicId}/doctors
    */
-  getAvailableTimeSlots(
+  getClinicDoctors(clinicId: number): Observable<ClinicDoctorSummary[]> {
+    return this.http.get<ApiResponse<ClinicDoctorSummary[]>>(
+      `${this.apiUrl}/clinics/${clinicId}/doctors`
+    ).pipe(
+      map(response => response.data || []),
+      catchError(error => {
+        console.error('Error fetching doctors:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get doctor's schedules for a specific clinic
+   * Endpoint: GET /guest/doctor/{doctorId}/schedules
+   */
+  getDoctorSchedules(clinicId: number, doctorId: number): Observable<DoctorScheduleSummary[]> {
+    const params = new HttpParams()
+      .set('clinicId', clinicId)
+    return this.http.get<ApiResponse<DoctorScheduleSummary[]>>(
+      `${this.apiUrl}/doctor/${doctorId}/schedules`, { params }
+    ).pipe(
+      map(response => response.data || []),
+      catchError(error => {
+        console.error('Error fetching schedules:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get available time slots for a doctor on a specific date
+   * Endpoint: GET /guest/clinics/{clinicId}/doctors/{doctorId}/available-slots?date=YYYY-MM-DD&durationMinutes=30
+   */
+  getAvailableTimes(
     clinicId: number,
     doctorId: number,
     date: string,
     durationMinutes: number = 30
   ): Observable<string[]> {
-    this.loading.set(true);
-    this.error.set(null);
-
     const params = new HttpParams()
       .set('date', date)
       .set('durationMinutes', durationMinutes.toString());
@@ -66,11 +88,9 @@ export class GuestBookingService {
       `${this.apiUrl}/clinics/${clinicId}/doctors/${doctorId}/available-slots`,
       { params }
     ).pipe(
-      tap(() => this.loading.set(false)),
-      map(response => response.data!),
+      map(response => response.data || []),
       catchError(error => {
-        this.loading.set(false);
-        this.handleError('فشل في تحميل الأوقات المتاحة', error);
+        console.error('Error fetching available times:', error);
         return throwError(() => error);
       })
     );
@@ -78,37 +98,50 @@ export class GuestBookingService {
 
   /**
    * Book appointment as guest
+   * Endpoint: POST /guest/book-appointment
    */
-  bookAppointment(request: GuestBookingRequest): Observable<GuestBookingResponse> {
-    this.loading.set(true);
-    this.error.set(null);
-
+  createAppointment(request: GuestBookingRequest): Observable<GuestBookingResponse> {
     return this.http.post<ApiResponse<GuestBookingResponse>>(
       `${this.apiUrl}/book-appointment`,
       request
     ).pipe(
-      tap(response => {
-        if (response.success) {
-          this.notificationService.success('تم حجز موعدك بنجاح! تحقق من بريدك الإلكتروني');
+      map(response => {
+        if (response.success && response.data) {
+          return response.data;
         }
-        this.loading.set(false);
+        throw new Error(response.message || 'فشل في إنشاء الموعد');
       }),
-      map(response => response.data!),
       catchError(error => {
-        this.loading.set(false);
-        this.handleError('فشل في حجز الموعد', error);
+        console.error('Error creating appointment:', error);
         return throwError(() => error);
       })
     );
   }
 
   /**
-   * Confirm appointment
+   * Get guest appointments by patient number
+   * Endpoint: GET /guest/appointments?patientNumber=XXX
    */
-  confirmAppointment(token: string): Observable<void> {
-    this.loading.set(true);
-    this.error.set(null);
+  getGuestAppointments(patientNumber: string): Observable<AppointmentResponse[]> {
+    const params = new HttpParams().set('patientNumber', patientNumber);
 
+    return this.http.get<ApiResponse<AppointmentResponse[]>>(
+      `${this.apiUrl}/appointments`,
+      { params }
+    ).pipe(
+      map(response => response.data || []),
+      catchError(error => {
+        console.error('Error fetching appointments:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Confirm a guest appointment via token
+   * Endpoint: POST /guest/confirm-appointment?token=XXX
+   */
+  confirmAppointment(token: string): Observable<boolean> {
     const params = new HttpParams().set('token', token);
 
     return this.http.post<ApiResponse<void>>(
@@ -116,71 +149,30 @@ export class GuestBookingService {
       null,
       { params }
     ).pipe(
-      tap(() => {
-        this.notificationService.success('تم تأكيد موعدك بنجاح!');
-        this.loading.set(false);
-      }),
-      map(response => response.data!),
+      map(response => response.success),
       catchError(error => {
-        this.loading.set(false);
-        this.handleError('فشل في تأكيد الموعد', error);
-        return throwError(() => error);
+        console.error('Error confirming appointment:', error);
+        return of(false);
       })
     );
   }
 
   /**
-   * Get patient appointments
+   * Cancel a guest appointment
+   * Endpoint: DELETE /guest/appointments/{appointmentId}?patientNumber=XXX
    */
-  getMyAppointments(patientNumber: string): Observable<AppointmentResponse[]> {
-    this.loading.set(true);
-    this.error.set(null);
-
-    const params = new HttpParams().set('patientNumber', patientNumber);
-
-    return this.http.get<ApiResponse<AppointmentResponse[]>>(
-      `${this.apiUrl}/appointments`,
-      { params }
-    ).pipe(
-      tap(() => this.loading.set(false)),
-      map(response => response.data!),
-      catchError(error => {
-        this.loading.set(false);
-        this.handleError('فشل في تحميل المواعيد', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  /**
-   * Cancel appointment
-   */
-  cancelAppointment(appointmentId: number, patientNumber: string): Observable<void> {
-    this.loading.set(true);
-    this.error.set(null);
-
+  cancelAppointment(appointmentId: number, patientNumber: string): Observable<boolean> {
     const params = new HttpParams().set('patientNumber', patientNumber);
 
     return this.http.delete<ApiResponse<void>>(
       `${this.apiUrl}/appointments/${appointmentId}`,
       { params }
     ).pipe(
-      tap(() => {
-        this.notificationService.success('تم إلغاء الموعد بنجاح');
-        this.loading.set(false);
-      }),
-      map(response => response.data!),
+      map(response => response.success),
       catchError(error => {
-        this.loading.set(false);
-        this.handleError('فشل في إلغاء الموعد', error);
-        return throwError(() => error);
+        console.error('Error canceling appointment:', error);
+        return of(false);
       })
     );
-  }
-
-  private handleError(message: string, error: any): void {
-    const errorMessage = error?.error?.message || message;
-    this.error.set(errorMessage);
-    this.notificationService.error(errorMessage);
   }
 }

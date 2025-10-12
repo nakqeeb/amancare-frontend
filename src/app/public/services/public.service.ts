@@ -1,9 +1,9 @@
-// src/app/public/services/announcement.service.ts
+// src/app/public/services/public.service.ts
 
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, interval } from 'rxjs';
-import { tap, map, catchError, switchMap, startWith } from 'rxjs/operators';
+import { Observable, of, interval } from 'rxjs';
+import { map, catchError, switchMap, startWith, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../../core/models/api-response.model';
 import { Announcement, DoctorAvailability } from '../models/announcement.model';
@@ -11,11 +11,10 @@ import { Announcement, DoctorAvailability } from '../models/announcement.model';
 @Injectable({
   providedIn: 'root'
 })
-export class AnnouncementService {
+export class PublicService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/public`;
 
-  // Signals
   announcements = signal<Announcement[]>([]);
   availableDoctors = signal<DoctorAvailability[]>([]);
   loading = signal(false);
@@ -24,8 +23,6 @@ export class AnnouncementService {
    * Get active announcements
    */
   getActiveAnnouncements(): Observable<Announcement[]> {
-    this.loading.set(true);
-
     return this.http.get<ApiResponse<Announcement[]>>(
       `${this.apiUrl}/announcements/active`
     ).pipe(
@@ -33,13 +30,11 @@ export class AnnouncementService {
         if (response.success && response.data) {
           this.announcements.set(response.data);
         }
-        this.loading.set(false);
       }),
       map(response => response.data || []),
       catchError(error => {
         console.error('Error fetching announcements:', error);
-        this.loading.set(false);
-        return [];
+        return of([]);
       })
     );
   }
@@ -65,7 +60,7 @@ export class AnnouncementService {
       map(response => response.data || []),
       catchError(error => {
         console.error('Error fetching available doctors:', error);
-        return [];
+        return of([]);
       })
     );
   }
@@ -73,7 +68,7 @@ export class AnnouncementService {
   /**
    * Auto-refresh announcements every 5 minutes
    */
-  startAutoRefresh(): Observable<Announcement[]> {
+  startAnnouncementsAutoRefresh(): Observable<Announcement[]> {
     return interval(5 * 60 * 1000).pipe(
       startWith(0),
       switchMap(() => this.getActiveAnnouncements())
@@ -83,7 +78,7 @@ export class AnnouncementService {
   /**
    * Auto-refresh available doctors every 2 minutes
    */
-  startDoctorAvailabilityRefresh(): Observable<DoctorAvailability[]> {
+  startDoctorsAutoRefresh(): Observable<DoctorAvailability[]> {
     return interval(2 * 60 * 1000).pipe(
       startWith(0),
       switchMap(() => this.getAvailableDoctors())

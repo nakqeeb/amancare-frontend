@@ -1,68 +1,77 @@
 <!-- src/app/features/guest-booking/components/confirm-appointment/confirm-appointment.component.html -->
 
-<div class="confirm-container">
+<div class="confirm-appointment-container">
   <mat-card class="confirm-card">
-    <!-- Loading State -->
-    @if (confirming()) {
-    <div class="loading-state">
-      <mat-spinner diameter="60"></mat-spinner>
-      <h2>جارٍ تأكيد موعدك...</h2>
-      <p>الرجاء الانتظار</p>
+    @if (!confirmed()) {
+    <!-- Confirmation Form -->
+    <div class="confirm-header">
+      <mat-icon class="header-icon">check_circle_outline</mat-icon>
+      <h1>تأكيد الموعد</h1>
+      <p class="subtitle">تم حجز موعدك وتأكيده بنجاح</p>
     </div>
-    }
 
+    <mat-card-actions>
+      <button mat-button (click)="navigateToHome()">
+        <mat-icon>arrow_forward</mat-icon>
+        <span>العودة للرئيسية</span>
+      </button>
+    </mat-card-actions>
+    } @else {
     <!-- Success State -->
-    @if (confirmed() && !confirming()) {
     <div class="success-state">
-      <div class="success-icon">
-        <mat-icon>check_circle</mat-icon>
+      <div class="success-icon-wrapper">
+        <mat-icon class="success-icon">check_circle</mat-icon>
       </div>
-      <h1>تم تأكيد موعدك بنجاح! ✅</h1>
-      <p class="message">
-        تم تأكيد موعدك الطبي. سنكون في انتظارك في الموعد المحدد.
+      <h1>تم التأكيد بنجاح!</h1>
+      <p class="success-message">
+        تم تأكيد موعدك بنجاح. سيتم إرسال رسالة تأكيد إلى بريدك الإلكتروني.
       </p>
 
-      <div class="info-box">
-        <mat-icon>info</mat-icon>
-        <p>يرجى الحضور قبل موعدك بـ 15 دقيقة مع إحضار بطاقة الهوية.</p>
+      <div class="success-info">
+        <div class="info-card">
+          <mat-icon>schedule</mat-icon>
+          <div class="info-content">
+            <h4>موعدك مؤكد</h4>
+            <p>تم حجز موعدك وتأكيده بنجاح</p>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <mat-icon>notifications_active</mat-icon>
+          <div class="info-content">
+            <h4>تنبيه تلقائي</h4>
+            <p>سنرسل لك تذكير قبل موعدك</p>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <mat-icon>local_hospital</mat-icon>
+          <div class="info-content">
+            <h4>استعد للزيارة</h4>
+            <p>احضر قبل موعدك بـ 15 دقيقة</p>
+          </div>
+        </div>
       </div>
 
-      <div class="action-buttons">
-        <button mat-raised-button color="primary" (click)="goToHomePage()">
-          <mat-icon>home</mat-icon>
-          الصفحة الرئيسية
+      <div class="success-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="navigateToManageAppointments()"
+        >
+          <mat-icon>event_note</mat-icon>
+          <span>عرض مواعيدي</span>
         </button>
-
-        <button mat-stroked-button (click)="bookAnotherAppointment()">
+        <button mat-stroked-button (click)="navigateToBooking()">
           <mat-icon>add</mat-icon>
-          حجز موعد آخر
+          <span>حجز موعد جديد</span>
         </button>
       </div>
-    </div>
-    }
 
-    <!-- Error State -->
-    @if (error() && !confirming()) {
-    <div class="error-state">
-      <div class="error-icon">
-        <mat-icon>error</mat-icon>
-      </div>
-      <h1>فشل التأكيد ❌</h1>
-      <p class="error-message">{{ error() }}</p>
-
-      <div class="help-box">
-        <h3>ماذا يمكنني فعله؟</h3>
-        <ul>
-          <li>تحقق من صحة الرابط</li>
-          <li>تأكد من أن الرابط لم تنته صلاحيته (48 ساعة)</li>
-          <li>تواصل مع العيادة للحصول على المساعدة</li>
-        </ul>
-      </div>
-
-      <div class="action-buttons">
-        <button mat-raised-button color="primary" (click)="goToHomePage()">
+      <div class="home-link">
+        <button mat-button (click)="navigateToHome()">
           <mat-icon>home</mat-icon>
-          الصفحة الرئيسية
+          <span>العودة للرئيسية</span>
         </button>
       </div>
     </div>

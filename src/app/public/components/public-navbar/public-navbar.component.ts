@@ -7,8 +7,8 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
+import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component';
 
 @Component({
   selector: 'app-public-navbar',
@@ -20,8 +20,8 @@ import { MatDividerModule } from '@angular/material/divider';
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
-    MatBadgeModule,
-    MatDividerModule
+    MatDividerModule,
+    ThemeToggleComponent
   ],
   templateUrl: './public-navbar.component.html',
   styleUrl: './public-navbar.component.scss'
@@ -29,53 +29,64 @@ import { MatDividerModule } from '@angular/material/divider';
 export class PublicNavbarComponent {
   private readonly router = inject(Router);
 
-  // Signals
   isScrolled = signal(false);
   isMobileMenuOpen = signal(false);
 
   @HostListener('window:scroll', [])
-  onWindowScroll() {
+  onWindowScroll(): void {
     this.isScrolled.set(window.scrollY > 50);
   }
 
-  toggleMobileMenu() {
+  toggleMobileMenu(): void {
     this.isMobileMenuOpen.update(value => !value);
   }
 
-  scrollToSection(sectionId: string) {
+  scrollToSection(sectionId: string): void {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const offset = 80;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
       this.isMobileMenuOpen.set(false);
     }
   }
 
-  navigateToBooking() {
+  navigateToBooking(): void {
     this.router.navigate(['/guest/book']);
     this.isMobileMenuOpen.set(false);
   }
 
-  navigateToLogin(userType: 'system-admin' | 'clinic' | 'staff') {
+  /* navigateToLogin(userType: 'system-admin' | 'clinic' | 'staff'): void {
+    const queryParams: any = {};
+
     switch (userType) {
       case 'system-admin':
-        this.router.navigate(['/auth/login'], {
-          queryParams: { type: 'system-admin' }
-        });
+        queryParams.type = 'system-admin';
         break;
       case 'clinic':
-        this.router.navigate(['/auth/login'], {
-          queryParams: { type: 'clinic-owner' }
-        });
-        break;
-      case 'staff':
-        this.router.navigate(['/auth/login']);
+        queryParams.type = 'clinic-owner';
         break;
     }
+
+    this.router.navigate(['/auth/login'], { queryParams });
+    this.isMobileMenuOpen.set(false);
+  } */
+  navigateToLogin(): void {
+    this.router.navigate(['/auth/login']);
+    this.isMobileMenuOpen.set(false);
+  }
+  navigateToMyAppointments(): void {
+    this.router.navigate(['/guest/appointments']);
     this.isMobileMenuOpen.set(false);
   }
 
-  navigateToMyAppointments() {
-    this.router.navigate(['/guest/appointments']);
+  navigateToHome(): void {
+    this.router.navigate(['/']);
     this.isMobileMenuOpen.set(false);
   }
 }

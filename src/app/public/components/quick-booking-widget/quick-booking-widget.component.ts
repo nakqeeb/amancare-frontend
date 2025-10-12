@@ -12,10 +12,11 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ClinicService } from '../../../features/clinics/services/clinic.service';
 import { GuestBookingService } from '../../../features/guest-booking/services/guest-booking.service';
-import { Clinic } from '../../../features/clinics/models/clinic.model';
-import { ClinicDoctorSummary } from '../../../features/guest-booking/models/guest-booking.model';
+import {
+  ClinicSummary,
+  ClinicDoctorSummary
+} from '../../../features/guest-booking/models/guest-booking.model';
 
 @Component({
   selector: 'app-quick-booking-widget',
@@ -39,17 +40,20 @@ import { ClinicDoctorSummary } from '../../../features/guest-booking/models/gues
 export class QuickBookingWidgetComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
-  private readonly clinicService = inject(ClinicService);
   private readonly guestBookingService = inject(GuestBookingService);
 
-  // Signals
-  clinics = signal<Clinic[]>([]);
-  doctors = signal<ClinicDoctorSummary[]>([]);
-  loading = signal(false);
-
-  // Form
   quickBookingForm!: FormGroup;
+  clinics = signal<ClinicSummary[]>([]);
+  doctors = signal<ClinicDoctorSummary[]>([]);
+  loadingClinics = signal(false);
+  loadingDoctors = signal(false);
+
   minDate = new Date();
+  maxDate = (() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 3);
+    return date;
+  })();
 
   ngOnInit(): void {
     this.initializeForm();
@@ -63,53 +67,69 @@ export class QuickBookingWidgetComponent implements OnInit {
       appointmentDate: ['']
     });
 
-    // Watch for clinic changes
     this.quickBookingForm.get('clinicId')?.valueChanges.subscribe(clinicId => {
       if (clinicId) {
+        this.quickBookingForm.patchValue({ doctorId: '' });
+        this.doctors.set([]);
         this.loadDoctors(clinicId);
+      } else {
+        this.doctors.set([]);
       }
     });
   }
 
   private loadClinics(): void {
-    this.clinicService.getClinics().subscribe({
-      next: (response) => {
-        this.clinics.set(response.data!);
+    this.loadingClinics.set(true);
+    this.guestBookingService.getClinics().subscribe({
+      next: (clinics) => {
+        this.clinics.set(clinics);
+        this.loadingClinics.set(false);
       },
-      error: (error) => console.error('Error loading clinics:', error)
+      error: () => this.loadingClinics.set(false)
     });
   }
 
   private loadDoctors(clinicId: number): void {
-    this.loading.set(true);
+    this.loadingDoctors.set(true);
     this.guestBookingService.getClinicDoctors(clinicId).subscribe({
       next: (doctors) => {
         this.doctors.set(doctors);
-        this.loading.set(false);
+        this.loadingDoctors.set(false);
       },
-      error: (error) => {
-        console.error('Error loading doctors:', error);
-        this.loading.set(false);
-      }
+      error: () => this.loadingDoctors.set(false)
     });
   }
 
   onQuickBook(): void {
-    if (this.quickBookingForm.get('clinicId')?.value) {
-      const queryParams: any = {
-        clinicId: this.quickBookingForm.get('clinicId')?.value
-      };
-
-      if (this.quickBookingForm.get('doctorId')?.value) {
-        queryParams.doctorId = this.quickBookingForm.get('doctorId')?.value;
-      }
-
-      if (this.quickBookingForm.get('appointmentDate')?.value) {
-        const date = this.quickBookingForm.get('appointmentDate')?.value;
-        queryParams.date = date.toISOString().split('T')[0];
-      }
-
-      this.router.navigate(['/guest/book'], { queryParams });
+    if (this.quickBookingForm.get('clinicId')?.invalid) {
+      return;
     }
+
+    const queryParams: any = {
+      clinicId: this.quickBookingForm.get('clinicId')?.value
+    };
+
+    if (this.quickBookingForm.get('doctorId')?.value) {
+      queryParams.doctorId = this.quickBookingForm.get('doctorId')?.value;
+    }
+
+    if (this.quickBookingForm.get('appointmentDate')?.value) {
+      const date = this.quickBookingForm.get('appointmentDate')?.value;
+      queryParams.date = this.formatDate(date);
+    }
+
+    this.router.navigate(['/guest/book'], { queryParams });
+  }
+
+  private formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  getSelectedClinic(): ClinicSummary | undefined {
+    const clinicId = this.quickBookingForm.get('clinicId')?.value;
+    return this.clinics().find(c => c.id === clinicId);
   }
 }

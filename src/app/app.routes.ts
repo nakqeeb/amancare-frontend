@@ -8,11 +8,12 @@ export const routes: Routes = [
   // ===================================================================
   // PUBLIC ROUTES (No Authentication Required)
   // ===================================================================
+  // Landing Page (Public)
+  // Landing Page (Public)
   {
     path: '',
     loadComponent: () => import('./public/components/landing-page/landing-page.component')
-      .then(m => m.LandingPageComponent),
-    title: 'أمان كير - نظام إدارة المواعيد الطبية'
+      .then(m => m.LandingPageComponent)
   },
 
   // Guest Booking Routes
@@ -22,26 +23,22 @@ export const routes: Routes = [
       {
         path: 'book',
         loadComponent: () => import('./features/guest-booking/components/book-appointment/book-appointment.component')
-          .then(m => m.BookAppointmentComponent),
-        title: 'احجز موعدك - أمان كير'
+          .then(m => m.BookAppointmentComponent)
       },
       {
         path: 'booking-success',
         loadComponent: () => import('./features/guest-booking/components/booking-success/booking-success.component')
-          .then(m => m.BookingSuccessComponent),
-        title: 'تم الحجز بنجاح - أمان كير'
-      },
-      {
-        path: 'confirm-appointment',
-        loadComponent: () => import('./features/guest-booking/components/confirm-appointment/confirm-appointment.component')
-          .then(m => m.ConfirmAppointmentComponent),
-        title: 'تأكيد الموعد - أمان كير'
+          .then(m => m.BookingSuccessComponent)
       },
       {
         path: 'appointments',
         loadComponent: () => import('./features/guest-booking/components/manage-appointments/manage-appointments.component')
-          .then(m => m.ManageAppointmentsComponent),
-        title: 'إدارة مواعيدي - أمان كير'
+          .then(m => m.ManageAppointmentsComponent)
+      },
+      {
+        path: 'confirm-appointment',
+        loadComponent: () => import('./features/guest-booking/components/confirm-appointment/confirm-appointment.component')
+          .then(m => m.ConfirmAppointmentComponent)
       }
     ]
   },

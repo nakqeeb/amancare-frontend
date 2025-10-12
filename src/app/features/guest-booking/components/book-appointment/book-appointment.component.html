@@ -2,234 +2,320 @@
 
 <div class="booking-container">
   <mat-card class="booking-card">
-    <!-- Header -->
     <div class="booking-header">
       <mat-icon class="header-icon">event_available</mat-icon>
-      <h1>احجز موعدك الطبي</h1>
-      <p class="subtitle">احجز موعدك بسهولة بدون الحاجة لإنشاء حساب</p>
+      <h1>احجز موعدك</h1>
+      <p class="subtitle">اختر العيادة والطبيب والوقت المناسب لك</p>
     </div>
 
-    <!-- Stepper -->
-    <mat-stepper #stepper orientation="horizontal" linear>
-      <!-- ============================================= -->
-      <!-- STEP 1: SELECT CLINIC & DOCTOR -->
-      <!-- ============================================= -->
-      <mat-step [stepControl]="clinicForm" label="اختر العيادة والطبيب">
-        <form [formGroup]="clinicForm">
-          <div class="step-content">
-            <h2>
-              <mat-icon>local_hospital</mat-icon>
-              اختر العيادة والطبيب
-            </h2>
+    <mat-stepper [linear]="false" #stepper>
+      <!-- Step 1: Clinic & Doctor Selection -->
+      <mat-step [stepControl]="clinicForm" [editable]="true">
+        <ng-template matStepLabel>اختر العيادة والطبيب</ng-template>
 
+        <div class="step-content">
+          <h2>
+            <mat-icon>local_hospital</mat-icon>
+            اختر العيادة والطبيب
+          </h2>
+
+          <form [formGroup]="clinicForm">
             <!-- Clinic Selection -->
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>اختر العيادة</mat-label>
+              <mat-label>العيادة</mat-label>
               <mat-select formControlName="clinicId" required>
                 <mat-option>-- اختر العيادة --</mat-option>
                 @for (clinic of clinics(); track clinic.id) {
                 <mat-option [value]="clinic.id">
                   {{ clinic.name }}
+                  @if (clinic.address) {
+                  <span class="option-hint"> - {{ clinic.address }}</span>
+                  }
                 </mat-option>
                 }
               </mat-select>
               <mat-icon matPrefix>local_hospital</mat-icon>
-              @if (clinicForm.get('clinicId')?.hasError('required')) {
+              @if (clinicForm.get('clinicId')?.hasError('required') &&
+              clinicForm.get('clinicId')?.touched) {
               <mat-error>يرجى اختيار العيادة</mat-error>
               }
             </mat-form-field>
 
-            <!-- Doctor Selection -->
-            @if (clinicForm.get('clinicId')?.value && doctors().length > 0) {
+            <!-- Loading Clinics -->
+            @if (loadingClinics()) {
+            <div class="loading-state">
+              <mat-spinner diameter="30"></mat-spinner>
+              <span>جارٍ تحميل العيادات...</span>
+            </div>
+            }
+
+            <!-- No Clinics Available -->
+            @if (!loadingClinics() && clinics().length === 0) {
+            <div class="no-data-message">
+              <mat-icon>local_hospital</mat-icon>
+              <p>لا توجد عيادات متاحة حالياً</p>
+            </div>
+            }
+
+            <!-- Doctor Selection Section -->
+            @if (clinicForm.get('clinicId')?.value && !loadingClinics()) {
+            <mat-divider></mat-divider>
+
+            <h3>
+              <mat-icon>person</mat-icon>
+              اختر الطبيب
+            </h3>
+
+            <!-- Loading Doctors -->
+            @if (loadingDoctors()) {
+            <div class="loading-state">
+              <mat-spinner diameter="30"></mat-spinner>
+              <span>جارٍ تحميل الأطباء...</span>
+            </div>
+            }
+
+            <!-- No Doctors Available -->
+            @if (!loadingDoctors() && doctors().length === 0) {
+            <div class="no-data-message">
+              <mat-icon>people_outline</mat-icon>
+              <p>لا يوجد أطباء متاحون في هذه العيادة حالياً</p>
+            </div>
+            }
+
+            <!-- Doctor Select -->
+            @if (!loadingDoctors() && doctors().length > 0) {
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>اختر الطبيب</mat-label>
+              <mat-label>الطبيب</mat-label>
               <mat-select formControlName="doctorId" required>
                 <mat-option>-- اختر الطبيب --</mat-option>
                 @for (doctor of doctors(); track doctor.doctorId) {
                 <mat-option [value]="doctor.doctorId">
-                  <div class="doctor-option">
-                    <strong>{{ doctor.fullName }}</strong>
-                    @if (doctor.specialization) {
-                    <span class="specialization">{{
-                      " " + doctor.specialization
-                    }}</span>
-                    }
-                  </div>
+                  {{ doctor.fullName }}
+                  @if (doctor.specialization) {
+                  <span class="option-hint">
+                    - {{ doctor.specialization }}</span
+                  >
+                  }
                 </mat-option>
                 }
               </mat-select>
               <mat-icon matPrefix>person</mat-icon>
-              @if (clinicForm.get('doctorId')?.hasError('required')) {
+              @if (clinicForm.get('doctorId')?.hasError('required') &&
+              clinicForm.get('doctorId')?.touched) {
               <mat-error>يرجى اختيار الطبيب</mat-error>
               }
             </mat-form-field>
+            } }
 
-            <!-- Doctor's Working Days Info -->
-            @if (selectedDoctor()) {
+            <!-- Doctor Schedule Info -->
+            @if (selectedDoctor() && schedules().length > 0 &&
+            !loadingSchedules()) {
             <div class="doctor-info-card">
               <h3>
                 <mat-icon>schedule</mat-icon>
-                أيام عمل الطبيب
+                أوقات عمل الطبيب
               </h3>
               <div class="working-days">
-                @for (day of selectedDoctor()!.workingDays; track day.day) {
+                @for (schedule of schedules(); track schedule.id) {
                 <mat-chip class="day-chip">
                   <div class="day-info">
-                    <strong>{{ day.dayArabic }}</strong>
-                    <span class="time-range">
-                      {{ day.startTime }} - {{ day.endTime }}
-                    </span>
+                    <strong>{{ getDayLabel(schedule.dayOfWeek) }}</strong>
+                    <span class="time-range"
+                      >{{ schedule.startTime }} - {{ schedule.endTime }}</span
+                    >
                   </div>
                 </mat-chip>
                 }
               </div>
             </div>
-            } } @if (clinicForm.get('clinicId')?.value && doctors().length === 0
-            && !loading()) {
-            <div class="no-doctors-message">
-              <mat-icon>info</mat-icon>
-              <p>لا يوجد أطباء متاحين في هذه العيادة حالياً</p>
-            </div>
             }
 
-            <!-- Loading State -->
-            @if (loading()) {
+            <!-- Loading Schedules -->
+            @if (loadingSchedules()) {
             <div class="loading-state">
-              <mat-spinner diameter="40"></mat-spinner>
-              <p>جارٍ التحميل...</p>
+              <mat-spinner diameter="30"></mat-spinner>
+              <span>جارٍ تحميل جدول الطبيب...</span>
             </div>
             }
-          </div>
+          </form>
 
-          <!-- Step Actions -->
           <div class="step-actions">
+            <button mat-button (click)="navigateToHome()">
+              <mat-icon>arrow_forward</mat-icon>
+              <span>إلغاء</span>
+            </button>
             <button
               mat-raised-button
               color="primary"
               matStepperNext
               [disabled]="clinicForm.invalid"
             >
-              التالي
+              <span>التالي</span>
               <mat-icon>arrow_back</mat-icon>
             </button>
           </div>
-        </form>
+        </div>
       </mat-step>
 
-      <!-- ============================================= -->
-      <!-- STEP 2: PATIENT INFORMATION -->
-      <!-- ============================================= -->
-      <mat-step [stepControl]="patientForm" label="معلومات المريض">
-        <form [formGroup]="patientForm">
-          <div class="step-content">
-            <h2>
-              <mat-icon>person_add</mat-icon>
-              معلومات المريض
-            </h2>
+      <!-- Step 2: Date & Time Selection -->
+      <mat-step [stepControl]="dateTimeForm" [editable]="true">
+        <ng-template matStepLabel>اختر التاريخ والوقت</ng-template>
 
+        <div class="step-content">
+          <h2>
+            <mat-icon>calendar_today</mat-icon>
+            اختر التاريخ والوقت
+          </h2>
+
+          <form [formGroup]="dateTimeForm">
+            <!-- Date Selection -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>التاريخ</mat-label>
+              <input
+                matInput
+                [matDatepicker]="picker"
+                formControlName="appointmentDate"
+                [min]="minDate"
+                [max]="maxDate()"
+                [matDatepickerFilter]="dateFilter"
+                required
+              />
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="picker"
+              ></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+              <mat-icon matPrefix>calendar_today</mat-icon>
+              @if (dateTimeForm.get('appointmentDate')?.hasError('required') &&
+              dateTimeForm.get('appointmentDate')?.touched) {
+              <mat-error>يرجى اختيار التاريخ</mat-error>
+              }
+              <mat-hint>اختر أحد أيام عمل الطبيب</mat-hint>
+            </mat-form-field>
+
+            <!-- Time Slots Section -->
+            @if (hasAppointmentDate()) {
+            <mat-divider></mat-divider>
+
+            <div class="time-slots-section">
+              <h3>
+                <mat-icon>schedule</mat-icon>
+                اختر الوقت المناسب
+              </h3>
+
+              <!-- Loading Time Slots -->
+              @if (loadingTimeSlots()) {
+              <div class="loading-state">
+                <mat-spinner diameter="40"></mat-spinner>
+                <span>جارٍ تحميل الأوقات المتاحة...</span>
+              </div>
+              }
+
+              <!-- No Time Slots Available -->
+              @if (!loadingTimeSlots() && getAvailableTimeSlots().length === 0)
+              {
+              <div class="no-data-message">
+                <mat-icon>event_busy</mat-icon>
+                <p>لا توجد أوقات متاحة في هذا التاريخ</p>
+                <span class="hint-text">يرجى اختيار تاريخ آخر</span>
+              </div>
+              }
+
+              <!-- Time Slots Grid -->
+              @if (!loadingTimeSlots() && getAvailableTimeSlots().length > 0) {
+              <div class="time-slots-grid">
+                @for (slot of getAvailableTimeSlots(); track slot.time) {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  class="time-slot-button"
+                  [class.selected]="isTimeSlotSelected(slot.time)"
+                  (click)="selectTimeSlot(slot.time)"
+                >
+                  <mat-icon>schedule</mat-icon>
+                  <span>{{ slot.time }}</span>
+                </button>
+                }
+              </div>
+              @if (dateTimeForm.get('appointmentTime')?.hasError('required') &&
+              dateTimeForm.get('appointmentTime')?.touched) {
+              <p class="error-text">يرجى اختيار الوقت</p>
+              } }
+            </div>
+            }
+          </form>
+
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>
+              <mat-icon>arrow_forward</mat-icon>
+              <span>السابق</span>
+            </button>
+            <button
+              mat-raised-button
+              color="primary"
+              matStepperNext
+              [disabled]="dateTimeForm.invalid"
+            >
+              <span>التالي</span>
+              <mat-icon>arrow_back</mat-icon>
+            </button>
+          </div>
+        </div>
+      </mat-step>
+
+      <!-- Step 3: Patient Information -->
+      <mat-step [stepControl]="patientForm" [editable]="true">
+        <ng-template matStepLabel>أدخل بياناتك</ng-template>
+
+        <div class="step-content">
+          <h2>
+            <mat-icon>account_circle</mat-icon>
+            بيانات المريض
+          </h2>
+
+          <form [formGroup]="patientForm">
             <!-- Basic Information Section -->
             <div class="form-section">
               <h3>المعلومات الأساسية</h3>
 
               <div class="form-row">
                 <!-- First Name -->
-                <mat-form-field appearance="outline" class="half-width">
+                <mat-form-field appearance="outline" class="full-width">
                   <mat-label>الاسم الأول</mat-label>
-                  <input
-                    matInput
-                    formControlName="firstName"
-                    placeholder="أحمد"
-                    required
-                  />
+                  <input matInput formControlName="firstName" required />
                   <mat-icon matPrefix>person</mat-icon>
                   @if (patientForm.get('firstName')?.hasError('required')) {
                   <mat-error>الاسم الأول مطلوب</mat-error>
                   } @if (patientForm.get('firstName')?.hasError('minlength')) {
-                  <mat-error>الاسم يجب أن يكون على الأقل حرفين</mat-error>
+                  <mat-error>الاسم يجب أن يكون حرفين على الأقل</mat-error>
+                  } @if (patientForm.get('firstName')?.hasError('maxlength')) {
+                  <mat-error>الاسم يجب ألا يتجاوز 100 حرف</mat-error>
                   }
                 </mat-form-field>
 
                 <!-- Last Name -->
-                <mat-form-field appearance="outline" class="half-width">
+                <mat-form-field appearance="outline" class="full-width">
                   <mat-label>الاسم الأخير</mat-label>
-                  <input
-                    matInput
-                    formControlName="lastName"
-                    placeholder="علي"
-                    required
-                  />
-                  <mat-icon matPrefix>person</mat-icon>
+                  <input matInput formControlName="lastName" required />
+                  <mat-icon matPrefix>person_outline</mat-icon>
                   @if (patientForm.get('lastName')?.hasError('required')) {
                   <mat-error>الاسم الأخير مطلوب</mat-error>
                   } @if (patientForm.get('lastName')?.hasError('minlength')) {
-                  <mat-error>الاسم يجب أن يكون على الأقل حرفين</mat-error>
+                  <mat-error>الاسم يجب أن يكون حرفين على الأقل</mat-error>
+                  } @if (patientForm.get('lastName')?.hasError('maxlength')) {
+                  <mat-error>الاسم يجب ألا يتجاوز 100 حرف</mat-error>
                   }
                 </mat-form-field>
               </div>
 
               <div class="form-row">
-                <!-- Date of Birth -->
-                <mat-form-field appearance="outline" class="half-width">
-                  <mat-label>تاريخ الميلاد</mat-label>
-                  <input
-                    matInput
-                    [matDatepicker]="dobPicker"
-                    formControlName="dateOfBirth"
-                    [max]="minDate"
-                    placeholder="اختياري"
-                  />
-                  <mat-datepicker-toggle
-                    matSuffix
-                    [for]="dobPicker"
-                  ></mat-datepicker-toggle>
-                  <mat-datepicker #dobPicker></mat-datepicker>
-                  <mat-icon matPrefix>cake</mat-icon>
-                </mat-form-field>
-
-                <!-- Gender -->
-                <mat-form-field appearance="outline" class="half-width">
-                  <mat-label>الجنس</mat-label>
-                  <mat-select formControlName="gender" required>
-                    @for (gender of genderOptions; track gender) {
-                    <mat-option [value]="gender">
-                      @if (gender === Gender.MALE) { ذكر } @else { أنثى }
-                    </mat-option>
-                    }
-                  </mat-select>
-                  <mat-icon matPrefix>wc</mat-icon>
-                  @if (patientForm.get('gender')?.hasError('required')) {
-                  <mat-error>الجنس مطلوب</mat-error>
-                  }
-                </mat-form-field>
-              </div>
-
-              <div class="form-row">
-                <!-- Phone -->
-                <mat-form-field appearance="outline" class="half-width">
-                  <mat-label>رقم الهاتف</mat-label>
-                  <input
-                    matInput
-                    formControlName="phone"
-                    placeholder="777123456"
-                    required
-                  />
-                  <mat-icon matPrefix>phone</mat-icon>
-                  @if (patientForm.get('phone')?.hasError('required')) {
-                  <mat-error>رقم الهاتف مطلوب</mat-error>
-                  } @if (patientForm.get('phone')?.hasError('pattern')) {
-                  <mat-error>رقم الهاتف غير صحيح</mat-error>
-                  }
-                  <mat-hint>مثال: 777123456 أو 00967777123456</mat-hint>
-                </mat-form-field>
-
                 <!-- Email -->
-                <mat-form-field appearance="outline" class="half-width">
+                <mat-form-field appearance="outline" class="full-width">
                   <mat-label>البريد الإلكتروني</mat-label>
                   <input
                     matInput
-                    formControlName="email"
                     type="email"
-                    placeholder="example@email.com"
+                    formControlName="email"
                     required
                   />
                   <mat-icon matPrefix>email</mat-icon>
@@ -239,71 +325,120 @@
                   <mat-error>البريد الإلكتروني غير صحيح</mat-error>
                   }
                 </mat-form-field>
+
+                <!-- Phone -->
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>رقم الهاتف</mat-label>
+                  <input
+                    matInput
+                    type="tel"
+                    formControlName="phone"
+                    required
+                    placeholder="77XXXXXXX"
+                  />
+                  <mat-icon matPrefix>phone</mat-icon>
+                  @if (patientForm.get('phone')?.hasError('required')) {
+                  <mat-error>رقم الهاتف مطلوب</mat-error>
+                  } @if (patientForm.get('phone')?.hasError('pattern')) {
+                  <mat-error
+                    >رقم الهاتف يجب أن يبدأ بـ 77، 78، 73، 71 أو 70 ويتكون من 9
+                    أرقام</mat-error
+                  >
+                  }
+                </mat-form-field>
               </div>
 
-              <!-- Address -->
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>العنوان</mat-label>
-                <textarea
-                  matInput
-                  formControlName="address"
-                  placeholder="العنوان التفصيلي (اختياري)"
-                  rows="2"
-                ></textarea>
-                <mat-icon matPrefix>home</mat-icon>
-              </mat-form-field>
+              <div class="form-row">
+                <!-- Gender (Required) -->
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>الجنس</mat-label>
+                  <mat-select formControlName="gender" required>
+                    <mat-option value="">-- اختيار --</mat-option>
+                    <mat-option value="MALE">ذكر</mat-option>
+                    <mat-option value="FEMALE">أنثى</mat-option>
+                  </mat-select>
+                  <mat-icon matPrefix>wc</mat-icon>
+                  @if (patientForm.get('gender')?.hasError('required')) {
+                  <mat-error>الجنس مطلوب</mat-error>
+                  }
+                </mat-form-field>
+
+                <!-- Date of Birth -->
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>تاريخ الميلاد</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="birthPicker"
+                    formControlName="dateOfBirth"
+                    [max]="minDate"
+                  />
+                  <mat-datepicker-toggle
+                    matSuffix
+                    [for]="birthPicker"
+                  ></mat-datepicker-toggle>
+                  <mat-datepicker #birthPicker></mat-datepicker>
+                  <mat-icon matPrefix>cake</mat-icon>
+                </mat-form-field>
+              </div>
             </div>
 
             <mat-divider></mat-divider>
 
-            <!-- Emergency Contact Section -->
+            <!-- Additional Information Section -->
             <div class="form-section">
-              <h3>جهة الاتصال في حالات الطوارئ (اختياري)</h3>
+              <h3>معلومات إضافية (اختيارية)</h3>
+
+              <!-- Address -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>العنوان</mat-label>
+                <input matInput formControlName="address" />
+                <mat-icon matPrefix>location_on</mat-icon>
+              </mat-form-field>
 
               <div class="form-row">
-                <mat-form-field appearance="outline" class="half-width">
-                  <mat-label>اسم جهة الاتصال</mat-label>
-                  <input
-                    matInput
-                    formControlName="emergencyContactName"
-                    placeholder="اسم قريب أو صديق"
-                  />
+                <!-- Emergency Contact Name -->
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>اسم جهة الاتصال في حالات الطوارئ</mat-label>
+                  <input matInput formControlName="emergencyContactName" />
                   <mat-icon matPrefix>contact_phone</mat-icon>
                 </mat-form-field>
 
-                <mat-form-field appearance="outline" class="half-width">
-                  <mat-label>رقم الهاتف</mat-label>
+                <!-- Emergency Contact Phone -->
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>رقم هاتف الطوارئ</mat-label>
                   <input
                     matInput
+                    type="tel"
                     formControlName="emergencyContactPhone"
-                    placeholder="777123456"
+                    placeholder="77XXXXXXX"
                   />
                   <mat-icon matPrefix>phone</mat-icon>
                   @if
                   (patientForm.get('emergencyContactPhone')?.hasError('pattern'))
                   {
-                  <mat-error>رقم الهاتف غير صحيح</mat-error>
+                  <mat-error
+                    >رقم الهاتف يجب أن يبدأ بـ 77، 78، 73، 71 أو 70 ويتكون من 9
+                    أرقام</mat-error
+                  >
                   }
                 </mat-form-field>
               </div>
-            </div>
-
-            <mat-divider></mat-divider>
-
-            <!-- Medical Information Section -->
-            <div class="form-section">
-              <h3>المعلومات الطبية (اختياري)</h3>
 
               <!-- Blood Type -->
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>فصيلة الدم</mat-label>
                 <mat-select formControlName="bloodType">
-                  <mat-option>-- اختياري --</mat-option>
-                  @for (bloodType of bloodTypeOptions; track bloodType) {
-                  <mat-option [value]="bloodType">{{ bloodType }}</mat-option>
-                  }
+                  <mat-option value="">-- اختيار --</mat-option>
+                  <mat-option value="A_POSITIVE">A+</mat-option>
+                  <mat-option value="A_NEGATIVE">A-</mat-option>
+                  <mat-option value="B_POSITIVE">B+</mat-option>
+                  <mat-option value="B_NEGATIVE">B-</mat-option>
+                  <mat-option value="AB_POSITIVE">AB+</mat-option>
+                  <mat-option value="AB_NEGATIVE">AB-</mat-option>
+                  <mat-option value="O_POSITIVE">O+</mat-option>
+                  <mat-option value="O_NEGATIVE">O-</mat-option>
                 </mat-select>
-                <mat-icon matPrefix>bloodtype</mat-icon>
+                <mat-icon matPrefix>water_drop</mat-icon>
               </mat-form-field>
 
               <!-- Allergies -->
@@ -312,8 +447,8 @@
                 <textarea
                   matInput
                   formControlName="allergies"
-                  placeholder="هل لديك أي حساسية من أدوية أو أطعمة؟"
                   rows="2"
+                  placeholder="مثال: حساسية من البنسلين"
                 ></textarea>
                 <mat-icon matPrefix>warning</mat-icon>
               </mat-form-field>
@@ -324,10 +459,22 @@
                 <textarea
                   matInput
                   formControlName="chronicDiseases"
-                  placeholder="هل لديك أي أمراض مزمنة؟"
                   rows="2"
+                  placeholder="مثال: السكري، ضغط الدم"
                 ></textarea>
-                <mat-icon matPrefix>medical_services</mat-icon>
+                <mat-icon matPrefix>medical_information</mat-icon>
+              </mat-form-field>
+
+              <!-- Chief Complaint -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>الشكوى الرئيسية</mat-label>
+                <textarea
+                  matInput
+                  formControlName="chiefComplaint"
+                  rows="2"
+                  placeholder="اذكر السبب الرئيسي للزيارة"
+                ></textarea>
+                <mat-icon matPrefix>description</mat-icon>
               </mat-form-field>
 
               <!-- Notes -->
@@ -336,197 +483,98 @@
                 <textarea
                   matInput
                   formControlName="notes"
-                  placeholder="أي ملاحظات أخرى تود إضافتها"
-                  rows="2"
+                  rows="3"
+                  placeholder="أي معلومات إضافية تود إضافتها"
                 ></textarea>
-                <mat-icon matPrefix>note</mat-icon>
+                <mat-icon matPrefix>notes</mat-icon>
               </mat-form-field>
             </div>
-          </div>
 
-          <!-- Step Actions -->
-          <div class="step-actions">
-            <button mat-button matStepperPrevious>
-              <mat-icon>arrow_forward</mat-icon>
-              السابق
-            </button>
-            <button
-              mat-raised-button
-              color="primary"
-              matStepperNext
-              [disabled]="patientForm.invalid"
-            >
-              التالي
-              <mat-icon>arrow_back</mat-icon>
-            </button>
-          </div>
-        </form>
-      </mat-step>
-
-      <!-- ============================================= -->
-      <!-- STEP 3: APPOINTMENT DETAILS -->
-      <!-- ============================================= -->
-      <mat-step [stepControl]="appointmentForm" label="تفاصيل الموعد">
-        <form [formGroup]="appointmentForm">
-          <div class="step-content">
-            <h2>
-              <mat-icon>event</mat-icon>
-              اختر موعدك
-            </h2>
-
-            <!-- Appointment Date -->
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>تاريخ الموعد</mat-label>
-              <input
-                matInput
-                [matDatepicker]="appointmentDatePicker"
-                formControlName="appointmentDate"
-                [min]="minDate"
-                required
-              />
-              <mat-datepicker-toggle
-                matSuffix
-                [for]="appointmentDatePicker"
-              ></mat-datepicker-toggle>
-              <mat-datepicker #appointmentDatePicker></mat-datepicker>
-              <mat-icon matPrefix>calendar_today</mat-icon>
-              @if (appointmentForm.get('appointmentDate')?.hasError('required'))
-              {
-              <mat-error>تاريخ الموعد مطلوب</mat-error>
-              }
-            </mat-form-field>
-
-            <!-- Available Time Slots -->
-            @if (appointmentForm.get('appointmentDate')?.value &&
-            availableSlots().length > 0) {
-            <div class="time-slots-section">
-              <h3>
-                <mat-icon>access_time</mat-icon>
-                الأوقات المتاحة
-              </h3>
-              <div class="time-slots-grid">
-                @for (slot of availableSlots(); track slot) {
-                <button
-                  type="button"
-                  mat-raised-button
-                  [color]="
-                    appointmentForm.get('appointmentTime')?.value === slot
-                      ? 'primary'
-                      : ''
-                  "
-                  (click)="
-                    appointmentForm.patchValue({ appointmentTime: slot })
-                  "
-                  class="time-slot-button"
-                >
-                  <mat-icon>schedule</mat-icon>
-                  {{ slot }}
-                </button>
-                }
-              </div>
-              @if (appointmentForm.get('appointmentTime')?.hasError('required'))
-              {
-              <mat-error class="time-error">يرجى اختيار الوقت</mat-error>
-              }
-            </div>
-            } @if (appointmentForm.get('appointmentDate')?.value &&
-            availableSlots().length === 0 && !loading()) {
-            <div class="no-slots-message">
-              <mat-icon>event_busy</mat-icon>
-              <p>لا توجد أوقات متاحة في هذا التاريخ</p>
-              <p class="hint">يرجى اختيار تاريخ آخر</p>
-            </div>
-            }
-
-            <!-- Chief Complaint -->
-            @if (appointmentForm.get('appointmentTime')?.value) {
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>سبب الزيارة (اختياري)</mat-label>
-              <textarea
-                matInput
-                formControlName="chiefComplaint"
-                placeholder="اذكر باختصار سبب زيارتك للطبيب"
-                rows="3"
-              ></textarea>
-              <mat-icon matPrefix>description</mat-icon>
-              <mat-hint>سيساعد هذا الطبيب في الاستعداد لموعدك</mat-hint>
-            </mat-form-field>
-            }
-
-            <!-- Loading State -->
-            @if (loading()) {
-            <div class="loading-state">
-              <mat-spinner diameter="40"></mat-spinner>
-              <p>جارٍ تحميل الأوقات المتاحة...</p>
-            </div>
-            }
+            <mat-divider></mat-divider>
 
             <!-- Booking Summary -->
-            @if (appointmentForm.get('appointmentTime')?.value) {
+            @if (selectedClinic() && selectedDoctor() && hasAppointmentDate() &&
+            getAppointmentTime()) {
             <div class="booking-summary">
               <h3>
                 <mat-icon>summarize</mat-icon>
-                ملخص الموعد
+                ملخص الحجز
               </h3>
               <div class="summary-content">
                 <div class="summary-row">
-                  <span class="label">العيادة:</span>
-                  <span class="value">{{ selectedClinic()?.name }}</span>
+                  <span class="label">
+                    <mat-icon>local_hospital</mat-icon>
+                    العيادة:
+                  </span>
+                  <span class="value">{{ selectedClinic()!.name }}</span>
                 </div>
                 <div class="summary-row">
-                  <span class="label">الطبيب:</span>
-                  <span class="value">{{ selectedDoctor()?.fullName }}</span>
+                  <span class="label">
+                    <mat-icon>person</mat-icon>
+                    الطبيب:
+                  </span>
+                  <span class="value">{{ selectedDoctor()!.fullName }}</span>
                 </div>
+                @if (selectedDoctor()?.specialization) {
                 <div class="summary-row">
-                  <span class="label">التاريخ:</span>
+                  <span class="label">
+                    <mat-icon>medical_services</mat-icon>
+                    التخصص:
+                  </span>
                   <span class="value">{{
-                    appointmentForm.get("appointmentDate")?.value
-                      | date : "fullDate" : "" : "ar"
+                    selectedDoctor()!.specialization
                   }}</span>
                 </div>
+                }
                 <div class="summary-row">
-                  <span class="label">الوقت:</span>
-                  <span class="value">{{
-                    appointmentForm.get("appointmentTime")?.value
-                  }}</span>
+                  <span class="label">
+                    <mat-icon>calendar_today</mat-icon>
+                    التاريخ:
+                  </span>
+                  <span class="value">{{ getAppointmentDateDisplay() }}</span>
                 </div>
+                <div class="summary-row">
+                  <span class="label">
+                    <mat-icon>schedule</mat-icon>
+                    الوقت:
+                  </span>
+                  <span class="value">{{ getAppointmentTime() }}</span>
+                </div>
+                @if (getPatientFullName()) {
+                <div class="summary-row">
+                  <span class="label">
+                    <mat-icon>badge</mat-icon>
+                    اسم المريض:
+                  </span>
+                  <span class="value">{{ getPatientFullName() }}</span>
+                </div>
+                }
               </div>
             </div>
             }
-          </div>
+          </form>
 
-          <!-- Step Actions -->
           <div class="step-actions">
             <button mat-button matStepperPrevious>
               <mat-icon>arrow_forward</mat-icon>
-              السابق
+              <span>السابق</span>
             </button>
             <button
               mat-raised-button
               color="primary"
               (click)="onSubmit()"
-              [disabled]="
-                clinicForm.invalid ||
-                patientForm.invalid ||
-                appointmentForm.invalid ||
-                loading()
-              "
+              [disabled]="patientForm.invalid || submitting()"
             >
-              @if (loading()) {
+              @if (submitting()) {
               <mat-spinner diameter="20"></mat-spinner>
-              جارٍ الحجز... } @else {
+              } @else {
               <mat-icon>check_circle</mat-icon>
-              تأكيد الحجز }
+              }
+              <span>{{ submitting() ? "جارٍ الحجز..." : "تأكيد الحجز" }}</span>
             </button>
           </div>
-        </form>
+        </div>
       </mat-step>
     </mat-stepper>
-
-    <!-- Help Section -->
-    <div class="help-section">
-      <mat-icon>help_outline</mat-icon>
-      <p>هل تحتاج مساعدة؟ <a href="/contact">تواصل معنا</a></p>
-    </div>
   </mat-card>
 </div>

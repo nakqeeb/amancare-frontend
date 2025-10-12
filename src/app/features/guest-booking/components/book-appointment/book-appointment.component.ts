@@ -2,46 +2,33 @@
 
 import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
+import { MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { MatStepperModule } from '@angular/material/stepper';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
-
+import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { GuestBookingService } from '../../services/guest-booking.service';
-import { ClinicService } from '../../../clinics/services/clinic.service';
-import { ClinicDoctorSummary, GuestBookingRequest } from '../../models/guest-booking.model';
-import { Clinic } from '../../../clinics/models/clinic.model';
-
-// GENDER
-const GENDER = {
-  MALE: 'MALE',
-  FEMALE: 'FEMALE'
-} as const;
-
-type Gender = (typeof GENDER)[keyof typeof GENDER];
-
-// BLOOD TYPE
-const BLOOD_TYPE = {
-  O_POSITIVE: 'O+',
-  O_NEGATIVE: 'O-',
-  A_POSITIVE: 'A+',
-  A_NEGATIVE: 'A-',
-  B_POSITIVE: 'B+',
-  B_NEGATIVE: 'B-',
-  AB_POSITIVE: 'AB+',
-  AB_NEGATIVE: 'AB-'
-} as const;
-
-type BloodType = (typeof BLOOD_TYPE)[keyof typeof BLOOD_TYPE];
+import {
+  ClinicSummary,
+  ClinicDoctorSummary,
+  DoctorScheduleSummary,
+  TimeSlot,
+  GuestBookingRequest,
+  GuestBookingResponse,
+  getDayOfWeekLabel,
+  Gender,
+  DayOfWeek
+} from '../../models/guest-booking.model';
+import { NotificationService } from '../../../../core/services/notification.service';
 
 @Component({
   selector: 'app-book-appointment',
@@ -50,17 +37,18 @@ type BloodType = (typeof BLOOD_TYPE)[keyof typeof BLOOD_TYPE];
     CommonModule,
     RouterModule,
     ReactiveFormsModule,
-    MatCardModule,
+    MatStepperModule,
     MatButtonModule,
     MatIconModule,
+    MatCardModule,
     MatInputModule,
     MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatStepperModule,
-    MatProgressSpinnerModule,
+    MatDividerModule,
     MatChipsModule,
-    MatDividerModule
+    MatProgressSpinnerModule,
+    MatSnackBarModule
   ],
   templateUrl: './book-appointment.component.html',
   styleUrl: './book-appointment.component.scss'
@@ -68,162 +56,320 @@ type BloodType = (typeof BLOOD_TYPE)[keyof typeof BLOOD_TYPE];
 export class BookAppointmentComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly guestBookingService = inject(GuestBookingService);
-  private readonly clinicService = inject(ClinicService);
+  private readonly notificationService = inject(NotificationService);
 
-  // Signals
-  clinics = signal<Clinic[]>([]);
-  doctors = signal<ClinicDoctorSummary[]>([]);
-  availableSlots = signal<string[]>([]);
-  selectedClinic = signal<Clinic | null>(null);
-  selectedDoctor = signal<ClinicDoctorSummary | null>(null);
-  loading = computed(() => this.guestBookingService.loading());
-
-  // Forms
   clinicForm!: FormGroup;
+  dateTimeForm!: FormGroup;
   patientForm!: FormGroup;
-  appointmentForm!: FormGroup;
 
-  // Enums for template
-  Gender = GENDER;
-  BloodType = BLOOD_TYPE;
-  genderOptions = Object.values(GENDER);
-  bloodTypeOptions = Object.values(BLOOD_TYPE);
+  clinics = signal<ClinicSummary[]>([]);
+  doctors = signal<ClinicDoctorSummary[]>([]);
+  schedules = signal<DoctorScheduleSummary[]>([]);
+  timeSlots = signal<TimeSlot[]>([]);
 
-  // Today's date for date picker min
+  loadingClinics = signal(false);
+  loadingDoctors = signal(false);
+  loadingSchedules = signal(false);
+  loadingTimeSlots = signal(false);
+  submitting = signal(false);
+
   minDate = new Date();
+  maxDate = computed(() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 3);
+    return date;
+  });
+
+  selectedClinic = computed(() => {
+    const clinicId = this.clinicForm?.get('clinicId')?.value;
+    return this.clinics().find(c => c.id === clinicId);
+  });
+
+  selectedDoctor = computed(() => {
+    const doctorId = this.clinicForm?.get('doctorId')?.value;
+    return this.doctors().find(d => d.doctorId === doctorId);
+  });
 
   ngOnInit(): void {
     this.initializeForms();
     this.loadClinics();
+    this.checkQueryParams();
   }
 
   private initializeForms(): void {
-    // Step 1: Select Clinic & Doctor
     this.clinicForm = this.fb.group({
       clinicId: ['', Validators.required],
       doctorId: ['', Validators.required]
     });
 
-    // Step 2: Patient Information
+    this.dateTimeForm = this.fb.group({
+      appointmentDate: ['', Validators.required],
+      appointmentTime: ['', Validators.required]
+    });
+
     this.patientForm = this.fb.group({
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
-      dateOfBirth: [''],
-      gender: ['', Validators.required],
-      phone: ['', [Validators.required, Validators.pattern(/^(\+967|00967|0)?[0-9]{9}$/)]],
+      firstName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+      lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       email: ['', [Validators.required, Validators.email]],
+      phone: ['', [Validators.required, Validators.pattern(/^(77|78|73|71|70)[0-9]{7}$/)]],
+      gender: ['', Validators.required],
+      dateOfBirth: [''],
       address: [''],
       emergencyContactName: [''],
-      emergencyContactPhone: ['', Validators.pattern(/^(\+967|00967|0)?[0-9]{9}$/)],
+      emergencyContactPhone: ['', Validators.pattern(/^(77|78|73|71|70)[0-9]{7}$/)],
       bloodType: [''],
       allergies: [''],
       chronicDiseases: [''],
+      chiefComplaint: [''],
       notes: ['']
     });
 
-    // Step 3: Appointment Details
-    this.appointmentForm = this.fb.group({
-      appointmentDate: ['', Validators.required],
-      appointmentTime: ['', Validators.required],
-      chiefComplaint: ['']
-    });
-
-    // Watch for clinic changes
     this.clinicForm.get('clinicId')?.valueChanges.subscribe(clinicId => {
       if (clinicId) {
-        this.onClinicSelected(clinicId);
+        this.clinicForm.patchValue({ doctorId: '' });
+        this.doctors.set([]);
+        this.schedules.set([]);
+        this.timeSlots.set([]);
+        this.dateTimeForm.reset();
+        this.loadDoctors(clinicId);
       }
     });
 
-    // Watch for doctor changes
     this.clinicForm.get('doctorId')?.valueChanges.subscribe(doctorId => {
       if (doctorId) {
-        const doctor = this.doctors().find(d => d.doctorId === doctorId);
-        this.selectedDoctor.set(doctor || null);
+        this.schedules.set([]);
+        this.timeSlots.set([]);
+        this.dateTimeForm.reset();
+        this.loadDoctorSchedules(doctorId);
       }
     });
 
-    // Watch for date changes
-    this.appointmentForm.get('appointmentDate')?.valueChanges.subscribe(date => {
-      if (date && this.clinicForm.get('doctorId')?.value && this.clinicForm.get('clinicId')?.value) {
-        this.loadAvailableSlots(date);
+    this.dateTimeForm.get('appointmentDate')?.valueChanges.subscribe(date => {
+      if (date) {
+        const doctorId = this.clinicForm.get('doctorId')?.value;
+        if (doctorId) {
+          this.dateTimeForm.patchValue({ appointmentTime: '' });
+          this.loadAvailableTimes(doctorId, date);
+        }
+      }
+    });
+  }
+
+  private checkQueryParams(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['clinicId']) {
+        this.clinicForm.patchValue({ clinicId: Number(params['clinicId']) });
+      }
+      if (params['doctorId']) {
+        this.clinicForm.patchValue({ doctorId: Number(params['doctorId']) });
+      }
+      if (params['date']) {
+        this.dateTimeForm.patchValue({ appointmentDate: new Date(params['date']) });
       }
     });
   }
 
   private loadClinics(): void {
-    this.clinicService.getClinics().subscribe({
-      next: (response) => {
-        this.clinics.set(response.data!);
+    this.loadingClinics.set(true);
+    this.guestBookingService.getClinics().subscribe({
+      next: (clinics) => {
+        this.clinics.set(clinics);
+        this.loadingClinics.set(false);
       },
-      error: (error) => console.error('Error loading clinics:', error)
+      error: (error) => {
+        console.error('Error loading clinics:', error);
+        this.loadingClinics.set(false);
+        this.showError('فشل تحميل العيادات');
+      }
     });
   }
 
-  private onClinicSelected(clinicId: number): void {
-    const clinic = this.clinics().find(c => c.id === clinicId);
-    this.selectedClinic.set(clinic || null);
-
-    // Load doctors for selected clinic
+  private loadDoctors(clinicId: number): void {
+    this.loadingDoctors.set(true);
     this.guestBookingService.getClinicDoctors(clinicId).subscribe({
       next: (doctors) => {
         this.doctors.set(doctors);
+        this.loadingDoctors.set(false);
       },
-      error: (error) => console.error('Error loading doctors:', error)
+      error: (error) => {
+        console.error('Error loading doctors:', error);
+        this.loadingDoctors.set(false);
+        this.showError('فشل تحميل الأطباء');
+      }
     });
-
-    // Reset doctor selection
-    this.clinicForm.patchValue({ doctorId: '' });
-    this.availableSlots.set([]);
   }
 
-  private loadAvailableSlots(date: Date): void {
-    const clinicId = this.clinicForm.get('clinicId')?.value;
-    const doctorId = this.clinicForm.get('doctorId')?.value;
+  private loadDoctorSchedules(doctorId: number): void {
+    this.loadingSchedules.set(true);
+    this.guestBookingService.getDoctorSchedules(this.clinicForm.get('clinicId')?.value, doctorId).subscribe({
+      next: (schedules) => {
+        this.schedules.set(schedules);
+        this.loadingSchedules.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading schedules:', error);
+        this.loadingSchedules.set(false);
+        this.showError('فشل تحميل جدول الطبيب');
+      }
+    });
+  }
+
+  private loadAvailableTimes(doctorId: number, date: Date): void {
+    this.loadingTimeSlots.set(true);
     const dateStr = this.formatDate(date);
+    const clinicId = this.clinicForm.get('clinicId')?.value;
 
-    this.guestBookingService.getAvailableTimeSlots(clinicId, doctorId, dateStr).subscribe({
-      next: (slots) => {
-        this.availableSlots.set(slots);
+    this.guestBookingService.getAvailableTimes(clinicId, doctorId, dateStr).subscribe({
+      next: (timeStrings: string[]) => {
+        // Transform string[] to TimeSlot[] - all returned slots are available
+        const slots: TimeSlot[] = timeStrings.map(time => ({
+          time,
+          available: true
+        }));
+        this.timeSlots.set(slots);
+        this.loadingTimeSlots.set(false);
       },
-      error: (error) => console.error('Error loading slots:', error)
+      error: (error) => {
+        console.error('Error loading time slots:', error);
+        this.timeSlots.set([]);
+        this.loadingTimeSlots.set(false);
+        this.showError('فشل تحميل الأوقات المتاحة');
+      }
     });
   }
+
+  selectTimeSlot(time: string): void {
+    this.dateTimeForm.patchValue({ appointmentTime: time });
+  }
+
+  isTimeSlotSelected(time: string): boolean {
+    return this.dateTimeForm.get('appointmentTime')?.value === time;
+  }
+
+  getAvailableTimeSlots(): TimeSlot[] {
+    return this.timeSlots().filter(slot => slot.available);
+  }
+
+  getDayLabel(dayOfWeek: DayOfWeek): string {
+    return getDayOfWeekLabel(dayOfWeek);
+  }
+
+  dateFilter = (date: Date | null): boolean => {
+    if (!date) return false;
+    const schedules = this.schedules();
+    if (schedules.length === 0) return true;
+
+    const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase() as DayOfWeek;
+    return schedules.some(schedule => schedule.dayOfWeek === dayOfWeek);
+  };
 
   onSubmit(): void {
-    if (this.clinicForm.invalid || this.patientForm.invalid || this.appointmentForm.invalid) {
+    if (this.clinicForm.invalid || this.dateTimeForm.invalid || this.patientForm.invalid) {
+      this.showError('يرجى ملء جميع الحقول المطلوبة');
       return;
     }
 
+    this.submitting.set(true);
+
     const request: GuestBookingRequest = {
-      ...this.patientForm.value,
-      ...this.appointmentForm.value,
+      // Appointment Information
       clinicId: this.clinicForm.get('clinicId')?.value,
       doctorId: this.clinicForm.get('doctorId')?.value,
-      appointmentDate: this.formatDate(this.appointmentForm.get('appointmentDate')?.value),
-      dateOfBirth: this.patientForm.get('dateOfBirth')?.value
-        ? this.formatDate(this.patientForm.get('dateOfBirth')?.value)
-        : undefined
+      appointmentDate: this.formatDate(this.dateTimeForm.get('appointmentDate')?.value),
+      appointmentTime: this.dateTimeForm.get('appointmentTime')?.value,
+      durationMinutes: 30,
+
+      // Patient Information
+      firstName: this.patientForm.get('firstName')?.value,
+      lastName: this.patientForm.get('lastName')?.value,
+      email: this.patientForm.get('email')?.value,
+      phone: this.patientForm.get('phone')?.value,
+      gender: this.patientForm.get('gender')?.value,
+      dateOfBirth: this.patientForm.get('dateOfBirth')?.value ?
+        this.formatDate(this.patientForm.get('dateOfBirth')?.value) : undefined,
+      address: this.patientForm.get('address')?.value || undefined,
+      emergencyContactName: this.patientForm.get('emergencyContactName')?.value || undefined,
+      emergencyContactPhone: this.patientForm.get('emergencyContactPhone')?.value || undefined,
+      bloodType: this.patientForm.get('bloodType')?.value || undefined,
+      allergies: this.patientForm.get('allergies')?.value || undefined,
+      chronicDiseases: this.patientForm.get('chronicDiseases')?.value || undefined,
+      chiefComplaint: this.patientForm.get('chiefComplaint')?.value || undefined,
+      notes: this.patientForm.get('notes')?.value || undefined
     };
 
-    this.guestBookingService.bookAppointment(request).subscribe({
-      next: (response) => {
+    this.guestBookingService.createAppointment(request).subscribe({
+      next: (response: GuestBookingResponse) => {
+        this.submitting.set(false);
+        this.notificationService.success('تم حجز موعدك بنجاح! تحقق من بريدك الإلكتروني');
         this.router.navigate(['/guest/booking-success'], {
-          state: { bookingData: response }
+          state: {
+            bookingData: response
+          }
         });
       },
-      error: (error) => console.error('Booking error:', error)
+      error: (error) => {
+        console.error('Error creating appointment:', error);
+        this.submitting.set(false);
+        const errorMessage = error?.error?.message || 'فشل حجز الموعد. يرجى المحاولة مرة أخرى';
+        this.showError(errorMessage);
+      }
     });
   }
 
-  private formatDate(date: Date): string {
-    return date.toISOString().split('T')[0];
+  formatDate(date: Date): string {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
-  // Helper methods for template
-  getDayName(day: string): string {
-    // Convert day to Arabic
-    return day; // Implement proper conversion
+  formatDateForDisplay(date: Date): string {
+    if (!date) return '';
+    try {
+      return date.toLocaleDateString('ar-EG', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch {
+      return this.formatDate(date);
+    }
+  }
+
+  hasAppointmentDate(): boolean {
+    const dateValue = this.dateTimeForm?.get('appointmentDate')?.value;
+    return dateValue != null && dateValue !== '';
+  }
+
+  getAppointmentDateDisplay(): string {
+    const date = this.dateTimeForm?.get('appointmentDate')?.value;
+    return date ? this.formatDateForDisplay(date) : '';
+  }
+
+  getAppointmentTime(): string {
+    return this.dateTimeForm?.get('appointmentTime')?.value || '';
+  }
+
+  getPatientFullName(): string {
+    const firstName = this.patientForm?.get('firstName')?.value || '';
+    const lastName = this.patientForm?.get('lastName')?.value || '';
+    return `${firstName} ${lastName}`.trim();
+  }
+
+  navigateToHome(): void {
+    this.router.navigate(['/']);
+  }
+
+  private showError(message: string): void {
+    this.snackBar.open(message, 'حسناً', {
+      duration: 3000,
+      horizontalPosition: 'center',
+      verticalPosition: 'top'
+    });
   }
 }
