@@ -73,7 +73,7 @@
       </div>
     </div>
 
-    <div class="scroll-indicator" data-aos="fade-up" data-aos-delay="600">
+    <div class="scroll-indicator" data-aos="fade-up" data-aos-delay="600" (click)="scrollToSection('announcements')">
       <div class="mouse">
         <div class="wheel"></div>
       </div>
@@ -82,7 +82,7 @@
   </section>
 
   <!-- Announcements Section -->
-  <section class="announcements-section">
+  <section id="announcements" class="announcements-section">
     <div class="container" data-aos="fade-up">
       <app-announcements></app-announcements>
     </div>

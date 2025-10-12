@@ -1,4 +1,5 @@
 // src/app/public/components/announcements/announcements.component.ts
+// UPDATED: Added image error handling
 
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -94,6 +95,15 @@ export class AnnouncementsComponent implements OnInit, OnDestroy {
 
   goToAnnouncement(index: number): void {
     this.currentIndex.set(index);
+  }
+
+  // New: Handle image loading errors gracefully
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    // Hide the image container if image fails to load
+    if (img.parentElement) {
+      img.parentElement.style.display = 'none';
+    }
   }
 
   getTypeLabel = getAnnouncementTypeLabel;

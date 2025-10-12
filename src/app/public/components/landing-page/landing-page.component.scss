@@ -193,6 +193,7 @@
     }
 
     .scroll-indicator {
+      pointer-events: auto;
       position: absolute;
       bottom: var(--spacing-xl);
       left: 50%;
