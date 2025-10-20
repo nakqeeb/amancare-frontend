@@ -232,8 +232,17 @@
                   [class.selected]="isTimeSlotSelected(slot.time)"
                   (click)="selectTimeSlot(slot.time)"
                 >
-                  <mat-icon>schedule</mat-icon>
-                  <span>{{ slot.time }}</span>
+                  <div class="time-slot-content">
+                    <div class="icon-and-time">
+                      <mat-icon>schedule</mat-icon>
+                      <span class="time">{{ slot.time }}</span>
+                    </div>
+                    @if (slot.tokenNumber) {
+                    <span class="token-badge"
+                      >رقم الموعد #{{ slot.tokenNumber }}</span
+                    >
+                    }
+                  </div>
                 </button>
                 }
               </div>

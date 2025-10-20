@@ -25,6 +25,7 @@ export interface Appointment {
   appointmentDate: string;
   appointmentTime: string;
   durationMinutes: number;
+  tokenNumber?: number; // **NEW FIELD**
   appointmentType: AppointmentType;
   status: AppointmentStatus;
   chiefComplaint?: string;
@@ -98,6 +99,7 @@ export interface AppointmentResponse {
   appointmentDate: string;       // YYYY-MM-DD
   appointmentTime: string;       // HH:mm:ss
   durationMinutes: number;
+  tokenNumber?: number; // **NEW FIELD**
   appointmentType: AppointmentType;
   status: AppointmentStatus;
   chiefComplaint: string;  /** الشكوى الرئيسية */
@@ -114,6 +116,7 @@ export interface AppointmentSummaryResponse {
   doctorName: string;
   appointmentDate: string;
   appointmentTime: string;
+  tokenNumber?: number; // **NEW FIELD**
   status: AppointmentStatus;
   appointmentType: AppointmentType;
 }

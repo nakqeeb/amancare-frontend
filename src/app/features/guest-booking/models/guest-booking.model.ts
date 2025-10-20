@@ -51,6 +51,7 @@ export interface GuestBookingResponse {
   clinicName: string;
   appointmentDate: string;     // YYYY-MM-DD
   appointmentTime: string;     // HH:mm:ss
+  tokenNumber?: number; // **NEW FIELD**
   email: string;
   message: string;
 }
@@ -117,6 +118,7 @@ export enum DayOfWeek {
 export interface TimeSlot {
   time: string;
   available: boolean;
+  tokenNumber?: number; // **NEW FIELD**
 }
 
 export interface AvailableTimesResponse {
@@ -133,6 +135,7 @@ export interface GuestAppointmentResponse {
   doctorName: string;
   appointmentDate: string;
   appointmentTime: string;
+  tokenNumber?: number; // **NEW FIELD**
   status: AppointmentStatus;
   patientName: string;
   patientEmail: string;

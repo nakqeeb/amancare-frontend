@@ -78,7 +78,7 @@
                 {{ getStatusLabel(appointment.status) }}
               </mat-chip>
             </div>
-            <span class="appointment-id">رقم الموعد: #{{ appointment.id }}</span>
+            <span class="appointment-id">رقم الموعد: #{{ appointment.tokenNumber }}</span>
           </div>
 
           <div class="appointment-details">
@@ -125,6 +125,10 @@
               <div class="detail-row">
                 <mat-icon>schedule</mat-icon>
                 <span><strong>الوقت:</strong> {{ formatTime(appointment.appointmentTime) }}</span>
+              </div>
+              <div class="detail-row">
+                <mat-icon>schedule</mat-icon>
+                <span><strong>رقم الموعد:</strong> {{ appointment.tokenNumber }}</span>
               </div>
               <div class="detail-row">
                 <mat-icon>timer</mat-icon>

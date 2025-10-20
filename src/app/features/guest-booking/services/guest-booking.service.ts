@@ -11,7 +11,8 @@ import {
   ClinicDoctorSummary,
   DoctorScheduleSummary,
   GuestBookingRequest,
-  GuestBookingResponse
+  GuestBookingResponse,
+  TimeSlot
 } from '../models/guest-booking.model';
 import { AppointmentResponse } from '../../appointments/models/appointment.model';
 
@@ -95,6 +96,39 @@ export class GuestBookingService {
       })
     );
   }
+
+  // Update the getAvailableTimes method to include token numbers
+getAvailableTimesWithTokens(
+  clinicId: number,
+  doctorId: number,
+  date: string,
+  durationMinutes: number = 30
+): Observable<TimeSlot[]> {
+  const params = new HttpParams()
+    .set('date', date)
+    .set('durationMinutes', durationMinutes.toString());
+
+  return this.http.get<ApiResponse<{ [time: string]: number }>>(
+    `${environment.apiUrl}/schedules/doctor/${doctorId}/available-slots-with-tokens`,
+    { params }
+  ).pipe(
+    map(response => {
+      if (response.success && response.data) {
+        // Convert object to TimeSlot array
+        return Object.entries(response.data).map(([time, tokenNumber]) => ({
+          time,
+          available: true,
+          tokenNumber
+        }));
+      }
+      return [];
+    }),
+    catchError(error => {
+      console.error('Error fetching available times with tokens:', error);
+      return of([]);
+    })
+  );
+}
 
   /**
    * Book appointment as guest
