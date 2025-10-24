@@ -125,8 +125,28 @@ export class LandingPageComponent implements OnInit, AfterViewInit, OnDestroy {
     { value: '98%', label: 'رضا المرضى', icon: 'sentiment_satisfied' }
   ];
 
-  ngOnInit(): void {
+  async ngOnInit() {
     window.scrollTo(0, 0);
+    // Load CSS via link element (no TypeScript errors!)
+    this.loadAOSStylesheet();
+
+    // Load and initialize AOS
+    const AOS = (await import('aos')).default;
+    AOS.init({
+      duration: 800,
+      once: true,
+      offset: 100,
+      easing: 'ease'
+    });
+  }
+
+  private loadAOSStylesheet(): void {
+    if (document.querySelector('link[href*="aos.css"]')) return;
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'node_modules/aos/dist/aos.css';
+    document.head.appendChild(link);
   }
 
   ngAfterViewInit(): void {
