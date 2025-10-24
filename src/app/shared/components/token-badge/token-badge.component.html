@@ -1,0 +1,11 @@
+@if (tokenNumber) {
+<div
+  class="token-badge"
+  [class.large]="size === 'large'"
+  [class.small]="size === 'small'"
+  [matTooltip]="tooltipText"
+>
+  <mat-icon *ngIf="showIcon">confirmation_number</mat-icon>
+  <span class="token-number">#{{ tokenNumber }}</span>
+</div>
+}

@@ -1,347 +1,437 @@
 .schedule-form-container {
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-}
-
-.main-content {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
 }
 
 .content-area {
-  flex: 1;
   padding: 24px;
-  overflow-y: auto;
-  background-color: #f5f5f5;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 64px);
 }
 
+// Page Header
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 24px;
-}
 
-.header-content {
-  .page-title {
+  .header-content {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin: 0 0 8px 0;
-    font-size: 28px;
-    font-weight: 600;
-    color: #1976d2;
-  }
+    gap: 16px;
 
-  .page-description {
-    margin: 0;
-    color: #666;
-    font-size: 16px;
-  }
-}
-
-.back-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.form-container {
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.step-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 16px;
-}
-
-.full-width {
-  width: 100%;
-}
-
-// Doctor Selection Styles
-.doctor-selection-form {
-  .selected-doctor-info {
-    .doctor-card {
-      display: flex;
-      align-items: center;
-      padding: 24px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      border: 2px solid #1976d2;
-
-      .doctor-icon {
-        font-size: 48px;
-        width: 48px;
-        height: 48px;
-        color: #1976d2;
-        margin-left: 16px;
-      }
-
-      .doctor-details {
-        h3 {
-          margin: 0 0 8px 0;
-          color: #1976d2;
-        }
-
-        p {
-          margin: 0;
-          color: #666;
-        }
+    .back-button {
+      mat-icon {
+        color: var(--primary-color);
       }
     }
-  }
 
-  .doctor-option {
-    .doctor-name {
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .doctor-spec {
-      font-size: 12px;
-      color: #666;
-    }
-  }
-
-  .selected-doctor-preview {
-    margin-top: 16px;
-
-    .doctor-preview-card {
-      background: #e3f2fd;
-      border: 1px solid #1976d2;
-    }
-
-    .doctor-preview {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-
-      .doctor-icon {
-        color: #1976d2;
-      }
-
-      h4 {
-        margin: 0 0 4px 0;
-        color: #1976d2;
-      }
-
-      p {
+    .header-text {
+      h1 {
+        display: flex;
+        align-items: center;
+        gap: 12px;
         margin: 0;
-        color: #666;
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--text-primary);
+
+        mat-icon {
+          font-size: 32px;
+          width: 32px;
+          height: 32px;
+          color: var(--primary-color);
+        }
+      }
+
+      .subtitle {
+        margin: 4px 0 0;
+        color: var(--text-secondary);
         font-size: 14px;
       }
     }
   }
 }
 
-// Days Selection Styles
-.days-form {
-  .days-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+// Warning Card
+.warning-card {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border-left: 4px solid #ff9800;
+  margin-bottom: 24px;
+
+  .warning-content {
+    display: flex;
+    align-items: flex-start;
     gap: 16px;
-    margin-bottom: 24px;
+
+    mat-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      color: #f57c00;
+    }
+
+    .warning-text {
+      flex: 1;
+
+      h3 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
+    }
+  }
+}
+
+// Loading State
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px;
+  gap: 16px;
+
+  p {
+    color: var(--text-secondary);
+  }
+}
+
+// Stepper Customization
+::ng-deep {
+  .mat-horizontal-stepper-header {
+    padding: 0 16px;
   }
 
-  .day-card {
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
+  .mat-step-header .mat-step-icon-selected,
+  .mat-step-header .mat-step-icon-state-done {
+    background-color: var(--primary-color);
+  }
+}
+
+// Step Content
+.step-content {
+  padding: 32px 24px;
+
+  .step-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 24px;
+
+    mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+      color: var(--primary-color);
+    }
+  }
+
+  .step-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid #e0e0e0;
+
+    button {
+      min-width: 120px;
+
+      mat-spinner {
+        display: inline-block;
+        margin-right: 8px;
+      }
+    }
+  }
+}
+
+// Info Card
+.info-card {
+  background-color: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  margin-bottom: 24px;
+
+  .info-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    mat-icon {
+      color: #2196f3;
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+
+    p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+  }
+}
+
+// Form Fields
+.full-width {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.half-width {
+  width: 100%;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.error-text {
+  color: #f44336;
+  font-size: 12px;
+  margin: 8px 0;
+}
+
+// Doctor Selection
+.doctor-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .doctor-name {
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .doctor-spec {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+}
+
+.selected-doctor-card {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-left: 4px solid #4caf50;
+  margin-top: 16px;
+
+  .selected-doctor {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    mat-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      color: #4caf50;
+    }
+
+    .doctor-info {
+      h3 {
+        margin: 0 0 4px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--text-secondary);
+      }
+    }
+  }
+}
+
+// Days Selection
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+
+  .day-button {
+    height: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s;
 
     &.selected {
-      border-color: #1976d2;
-      background-color: #e3f2fd;
+      background-color: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+
+      mat-icon {
+        color: white;
+      }
     }
 
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    &:not(.selected):hover:not(:disabled) {
+      background-color: #f5f7fa;
+      border-color: var(--primary-color);
     }
 
-    .day-info {
-      text-align: center;
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
 
-      .day-name {
-        font-weight: 600;
-        margin-bottom: 4px;
+    span {
+      font-size: 13px;
+      font-weight: 500;
+    }
+  }
+}
+
+.selected-days-card {
+  background-color: #f5f7fa;
+  border-left: 4px solid var(--primary-color);
+
+  h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .selected-days-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    mat-chip {
+      height: 32px;
+      font-size: 13px;
+    }
+  }
+}
+
+// Break Section
+.break-section {
+  padding: 16px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  margin: 16px 0;
+
+  mat-checkbox {
+    margin-bottom: 16px;
+  }
+
+  .break-times {
+    margin-top: 16px;
+  }
+}
+
+// Duration Configuration
+.duration-config-section {
+  margin-top: 24px;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+
+    mat-icon {
+      color: var(--primary-color);
+    }
+  }
+}
+
+.preview-card {
+  margin-top: 16px;
+  background-color: #f5f7fa;
+
+  &.success {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border-left: 4px solid #4caf50;
+  }
+
+  &.warning {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border-left: 4px solid #ff9800;
+  }
+
+  .preview-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+
+    mat-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      color: var(--primary-color);
+    }
+
+    .preview-details {
+      flex: 1;
+
+      .preview-label {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
       }
 
-      .day-name-en {
+      .preview-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 4px;
+
+        &.large {
+          font-size: 32px;
+        }
+      }
+
+      .preview-hint {
         font-size: 12px;
-        color: #666;
+        color: var(--text-secondary);
+        font-style: italic;
       }
     }
-  }
 
-  .selected-days-summary {
-    .days-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
+    p {
+      margin: 0;
     }
   }
 }
 
-// Hours Form Styles
-.hours-form {
-  .working-hours-section {
-    margin-bottom: 32px;
-
-    h4 {
-      margin-bottom: 16px;
-      color: #1976d2;
-    }
-
-    .time-inputs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-
-    .hours-summary {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px;
-      background: #e3f2fd;
-      border-radius: 4px;
-      color: #1976d2;
-      font-weight: 600;
-    }
-  }
-
-  .break-section {
-    .break-header {
-      margin-bottom: 16px;
-    }
-
-    .break-inputs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-
-    .break-summary {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px;
-      background: #fff3e0;
-      border-radius: 4px;
-      color: #f57c00;
-      font-weight: 600;
-    }
-  }
-}
-
-// Settings Form Styles
-.settings-form {
-  .settings-section {
-    .date-inputs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-  }
-}
-
-// Schedule Preview Styles
-.schedule-preview {
-  .preview-section {
-    margin-bottom: 24px;
-
-    h4 {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 16px;
-      color: #1976d2;
-      font-weight: 600;
-    }
-
-    .doctor-preview {
-      .doctor-name {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 4px;
-      }
-
-      .doctor-spec {
-        color: #666;
-      }
-    }
-
-    .days-preview {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .hours-preview {
-      .working-hours {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 8px;
-      }
-
-      .break-hours {
-        color: #f57c00;
-        margin-bottom: 8px;
-      }
-
-      .total-hours {
-        color: #1976d2;
-        font-weight: 600;
-      }
-    }
-
-    .settings-preview {
-      .setting-item {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 8px;
-
-        .label {
-          font-weight: 600;
-          color: #666;
-        }
-
-        .value {
-          color: #333;
-        }
-      }
-    }
-  }
-}
-
+// Responsive Design
 @media (max-width: 768px) {
   .content-area {
     padding: 16px;
   }
 
-  .page-header {
-    flex-direction: column;
-    gap: 16px;
-    align-items: stretch;
-  }
-
-  .time-inputs,
-  .break-inputs,
-  .date-inputs {
-    grid-template-columns: 1fr !important;
+  .form-row {
+    grid-template-columns: 1fr;
   }
 
   .days-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .step-content {
+    padding: 24px 16px;
   }
 }

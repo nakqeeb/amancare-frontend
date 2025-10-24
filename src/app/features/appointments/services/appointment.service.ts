@@ -15,7 +15,8 @@ import {
   CreateAppointmentRequest,
   UpdateAppointmentRequest,
   AppointmentStatus,
-  AppointmentType
+  AppointmentType,
+  OverrideDurationRequest
 } from '../models/appointment.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { SystemAdminService } from '../../../core/services/system-admin.service';
@@ -453,6 +454,41 @@ export class AppointmentService {
       catchError(error => {
         this.loading.set(false);
         this.handleError('فشل في إلغاء الموعد', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Override appointment duration
+  overrideAppointmentDuration(
+    appointmentId: number,
+    request: OverrideDurationRequest
+  ): Observable<AppointmentResponse> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    return this.http.put<ApiResponse<AppointmentResponse>>(
+      `${this.apiUrl}/${appointmentId}/override-duration`,
+      request
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.notificationService.success('تم تجاوز مدة الموعد بنجاح');
+          // Update appointment in list
+          const currentAppointments = this.appointments();
+          const index = currentAppointments.findIndex(a => a.id === appointmentId);
+          if (index !== -1) {
+            currentAppointments[index] = response.data;
+            this.appointments.set([...currentAppointments]);
+            this.appointmentsSubject.next(this.appointments());
+          }
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في تجاوز مدة الموعد', error);
         return throwError(() => error);
       })
     );

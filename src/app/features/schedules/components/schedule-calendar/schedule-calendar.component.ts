@@ -1,63 +1,50 @@
-// ===================================================================
-// src/app/features/schedules/components/schedule-calendar/schedule-calendar.component.ts
-// Schedule Calendar Component - Standalone with new control flow syntax
-// ===================================================================
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatChipsModule } from '@angular/material/chips';
+import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-// Shared Components
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.component';
-
-// Services & Models
 import { ScheduleService } from '../../services/schedule.service';
-import { UserService } from '../../../users/services/user.service';
-import { AuthService } from '../../../../core/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import {
   DoctorScheduleResponse,
-  UnavailabilityResponse,
   DayOfWeek,
-  ScheduleType,
-  UnavailabilityType,
-  DAY_OF_WEEK_ARABIC,
-  SCHEDULE_TYPE_ARABIC,
-  UNAVAILABILITY_TYPE_ARABIC
+  getDurationConfigTypeLabel,
+  DurationConfigType
 } from '../../models/schedule.model';
+import { MatChipsModule } from '@angular/material/chips';
+import { UserService } from '../../../users/services/user.service';
+import { MatDivider } from "@angular/material/divider";
+import { getDayOfWeekLabel } from '../../../guest-booking/models/guest-booking.model';
 
 interface CalendarDay {
   date: Date;
+  dayOfWeek: DayOfWeek;
   isCurrentMonth: boolean;
   isToday: boolean;
-  isPast: boolean;
   schedules: DoctorScheduleResponse[];
-  unavailabilities: UnavailabilityResponse[];
-  availableDoctors: number;
+  hasSchedules: boolean;
+}
+
+interface WeekScheduleSummary {
+  doctorId: number;
+  doctorName: string;
+  doctorSpecialization?: string;
+  schedules: Map<DayOfWeek, DoctorScheduleResponse>;
+  totalHours: number;
   totalSlots: number;
-  bookedSlots: number;
-}
-
-interface CalendarWeek {
-  days: CalendarDay[];
-}
-
-interface Doctor {
-  id: number;
-  fullName: string;
-  specialization?: string;
+  averageDuration: number;
 }
 
 @Component({
@@ -66,181 +53,193 @@ interface Doctor {
   imports: [
     CommonModule,
     RouterModule,
-    ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatSelectModule,
     MatTooltipModule,
-    MatProgressSpinnerModule,
     MatChipsModule,
+    MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatInputModule,
+    MatProgressSpinnerModule,
     MatMenuModule,
+    MatBadgeModule,
+    MatDialogModule,
     HeaderComponent,
-    SidebarComponent
-  ],
+    SidebarComponent,
+    MatDivider
+],
   templateUrl: './schedule-calendar.component.html',
   styleUrl: './schedule-calendar.component.scss'
 })
 export class ScheduleCalendarComponent implements OnInit {
-  readonly scheduleService = inject(ScheduleService);
+  private readonly scheduleService = inject(ScheduleService);
   private readonly userService = inject(UserService);
-  private readonly authService = inject(AuthService);
   private readonly notificationService = inject(NotificationService);
-  private readonly fb = inject(FormBuilder);
+  private readonly dialog = inject(MatDialog);
 
-  // Component state
+  // State signals
+  public readonly loading = signal(false);
   public readonly currentDate = signal(new Date());
-  public readonly showUnavailabilities = signal(false);
-  public readonly doctors = signal<Doctor[]>([]);
+  public readonly selectedDate = signal<Date | null>(null);
+  public readonly viewMode = signal<'month' | 'week' | 'list'>('month');
+  public readonly selectedDoctorId = signal<number | null>(null);
 
-  // Filters form
-  public filtersForm = this.fb.group({
-    doctorId: [''],
-    scheduleType: [''],
-    monthYear: [new Date()]
-  });
+  // Data signals
+  public readonly doctors = signal<any[]>([]);
+  public readonly schedules = signal<DoctorScheduleResponse[]>([]);
+  public readonly calendarDays = signal<CalendarDay[]>([]);
+  public readonly weekSchedules = signal<WeekScheduleSummary[]>([]);
 
-  // Available options
-  public scheduleTypes = Object.entries(SCHEDULE_TYPE_ARABIC).map(([value, label]) => ({
-    value: value as ScheduleType,
-    label
-  }));
-
-  // Calendar data
-  public dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-
-  // Computed properties
-  public currentMonthTitle = computed(() => {
+  // Computed values
+  public readonly currentMonthYear = computed(() => {
     const date = this.currentDate();
-    const monthNames = [
-      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
-    ];
-
-    return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    return date.toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' });
   });
 
-  public calendarWeeks = computed((): CalendarWeek[] => {
-    const currentDate = this.currentDate();
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+  public readonly filteredSchedules = computed(() => {
+    const doctorId = this.selectedDoctorId();
+    const allSchedules = this.schedules();
 
-    // Get first day of month and last day of month
-    const firstDayOfMonth = new Date(year, month, 1);
-    const lastDayOfMonth = new Date(year, month + 1, 0);
-
-    // Get first Sunday of the calendar (might be from previous month)
-    const firstCalendarDay = new Date(firstDayOfMonth);
-    firstCalendarDay.setDate(firstCalendarDay.getDate() - firstDayOfMonth.getDay());
-
-    // Get last Saturday of the calendar (might be from next month)
-    const lastCalendarDay = new Date(lastDayOfMonth);
-    lastCalendarDay.setDate(lastCalendarDay.getDate() + (6 - lastDayOfMonth.getDay()));
-
-    const weeks: CalendarWeek[] = [];
-    const currentIterationDate = new Date(firstCalendarDay);
-
-    while (currentIterationDate <= lastCalendarDay) {
-      const week: CalendarWeek = { days: [] };
-
-      for (let i = 0; i < 7; i++) {
-        const day = this.createCalendarDay(new Date(currentIterationDate), month);
-        week.days.push(day);
-        currentIterationDate.setDate(currentIterationDate.getDate() + 1);
-      }
-
-      weeks.push(week);
-    }
-
-    return weeks;
+    if (!doctorId) return allSchedules;
+    return allSchedules.filter(s => s.doctorId === doctorId);
   });
+
+  public readonly scheduleStats = computed(() => {
+    const schedules = this.filteredSchedules();
+
+    return {
+      totalSchedules: schedules.length,
+      activeDoctors: new Set(schedules.map(s => s.doctorId)).size,
+      totalWorkingHours: schedules.reduce((sum, s) => sum + (s.workingHours || 0), 0),
+      totalSlots: schedules.reduce((sum, s) => sum + (s.expectedTokens || 0), 0),
+      averageDuration: schedules.length > 0
+        ? Math.round(schedules.reduce((sum, s) => sum + (s.effectiveDuration || 0), 0) / schedules.length)
+        : 0,
+      directConfig: schedules.filter(s => s.durationConfigType === 'DIRECT').length,
+      tokenBased: schedules.filter(s => s.durationConfigType === 'TOKEN_BASED').length
+    };
+  });
+
+  // Day of week labels
+  public readonly weekDays = [
+    { value: DayOfWeek.SUNDAY, label: 'الأحد' },
+    { value: DayOfWeek.MONDAY, label: 'الاثنين' },
+    { value: DayOfWeek.TUESDAY, label: 'الثلاثاء' },
+    { value: DayOfWeek.WEDNESDAY, label: 'الأربعاء' },
+    { value: DayOfWeek.THURSDAY, label: 'الخميس' },
+    { value: DayOfWeek.FRIDAY, label: 'الجمعة' },
+    { value: DayOfWeek.SATURDAY, label: 'السبت' }
+  ];
 
   ngOnInit(): void {
     this.loadDoctors();
     this.loadSchedules();
-    this.setupFormSubscriptions();
+    this.generateCalendar();
   }
-
-  // private loadDoctors(): void {
-  //   this.userService.getDoctors().subscribe({
-  //     next: (doctors) => {
-  //       this.doctors.set(doctors.map(d => ({
-  //         id: d.id,
-  //         fullName: d.fullName,
-  //         specialization: d.specialization
-  //       })));
-  //     },
-  //     error: (error) => {
-  //       console.error('Error loading doctors:', error);
-  //     }
-  //   });
-  // }
 
   private loadDoctors(): void {
     this.userService.getDoctors().subscribe({
-      next: (res) => {
-        // Filter out doctors without id or fullName, and provide defaults if needed
-        const validDoctors = res.data!
-          .filter(d => d.id !== undefined && d.fullName !== undefined)
-          .map(d => ({
-            id: d.id as number, // Assert that it's not undefined
-            fullName: d.fullName as string, // Assert that it's not undefined
-            specialization: d.specialization
-          }));
-
-        this.doctors.set(validDoctors);
+      next: (response) => {
+        this.doctors.set(response.data || []);
       },
       error: (error) => {
         console.error('Error loading doctors:', error);
-        this.notificationService.error('فشل في تحميل قائمة الأطباء');
       }
     });
   }
 
   private loadSchedules(): void {
-    this.scheduleService.getAllDoctorsSchedules().subscribe();
-  }
-
-  private setupFormSubscriptions(): void {
-    this.filtersForm.get('monthYear')?.valueChanges.subscribe(date => {
-      if (date) {
-        this.currentDate.set(new Date(date));
+    this.loading.set(true);
+    this.scheduleService.getAllDoctorsSchedules().subscribe({
+      next: (schedules) => {
+        this.schedules.set(schedules);
+        this.generateCalendar();
+        this.generateWeekSchedules();
+        this.loading.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading schedules:', error);
+        this.loading.set(false);
       }
     });
   }
 
-  private createCalendarDay(date: Date, currentMonth: number): CalendarDay {
+  private generateCalendar(): void {
+    const current = this.currentDate();
+    const year = current.getFullYear();
+    const month = current.getMonth();
+
+    // Get first day of month
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    // Get starting point (previous Sunday)
+    const startDate = new Date(firstDay);
+    startDate.setDate(firstDay.getDate() - firstDay.getDay());
+
+    // Generate calendar days (6 weeks)
+    const days: CalendarDay[] = [];
     const today = new Date();
-    const dayOfWeek = this.getDayOfWeekEnum(date.getDay());
+    today.setHours(0, 0, 0, 0);
 
-    // Get schedules for this day
-    const allSchedules = this.scheduleService.doctorSchedules();
-    const daySchedules = allSchedules.filter(schedule =>
-      schedule.dayOfWeek === dayOfWeek &&
-      this.isScheduleActiveOnDate(schedule, date) &&
-      this.matchesFilters(schedule)
-    );
+    for (let i = 0; i < 42; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
 
-    // Get unavailabilities for this day (placeholder - would need actual data)
-    const dayUnavailabilities: UnavailabilityResponse[] = [];
+      const dayOfWeek = this.getDayOfWeekEnum(date);
+      const daySchedules = this.getSchedulesForDay(dayOfWeek);
 
-    return {
-      date: new Date(date),
-      isCurrentMonth: date.getMonth() === currentMonth,
-      isToday: this.isSameDay(date, today),
-      isPast: date < today,
-      schedules: daySchedules,
-      unavailabilities: dayUnavailabilities,
-      availableDoctors: new Set(daySchedules.map(s => s.doctorId)).size,
-      totalSlots: daySchedules.reduce((sum, s) => sum + (s.totalSlots || 0), 0),
-      bookedSlots: 0 // Placeholder
-    };
+      days.push({
+        date: date,
+        dayOfWeek: dayOfWeek,
+        isCurrentMonth: date.getMonth() === month,
+        isToday: date.getTime() === today.getTime(),
+        schedules: daySchedules,
+        hasSchedules: daySchedules.length > 0
+      });
+    }
+
+    this.calendarDays.set(days);
   }
 
-  private getDayOfWeekEnum(dayIndex: number): DayOfWeek {
+  private generateWeekSchedules(): void {
+    const schedules = this.filteredSchedules();
+    const doctorMap = new Map<number, WeekScheduleSummary>();
+
+    schedules.forEach(schedule => {
+      if (!doctorMap.has(schedule.doctorId)) {
+        doctorMap.set(schedule.doctorId, {
+          doctorId: schedule.doctorId,
+          doctorName: schedule.doctorName,
+          doctorSpecialization: schedule.doctorSpecialization,
+          schedules: new Map(),
+          totalHours: 0,
+          totalSlots: 0,
+          averageDuration: 0
+        });
+      }
+
+      const summary = doctorMap.get(schedule.doctorId)!;
+      summary.schedules.set(schedule.dayOfWeek as DayOfWeek, schedule);
+      summary.totalHours += schedule.workingHours || 0;
+      summary.totalSlots += schedule.expectedTokens || 0;
+    });
+
+    // Calculate average duration
+    doctorMap.forEach(summary => {
+      const schedulesCount = summary.schedules.size;
+      if (schedulesCount > 0) {
+        const totalDuration = Array.from(summary.schedules.values())
+          .reduce((sum, s) => sum + (s.effectiveDuration || 0), 0);
+        summary.averageDuration = Math.round(totalDuration / schedulesCount);
+      }
+    });
+
+    this.weekSchedules.set(Array.from(doctorMap.values()));
+  }
+
+  private getDayOfWeekEnum(date: Date): DayOfWeek {
     const days = [
       DayOfWeek.SUNDAY,
       DayOfWeek.MONDAY,
@@ -250,136 +249,119 @@ export class ScheduleCalendarComponent implements OnInit {
       DayOfWeek.FRIDAY,
       DayOfWeek.SATURDAY
     ];
-    return days[dayIndex];
+    return days[date.getDay()];
   }
 
-  private isScheduleActiveOnDate(schedule: DoctorScheduleResponse, date: Date): boolean {
-    if (!schedule.isActive) return false;
-
-    if (schedule.effectiveDate) {
-      const effectiveDate = new Date(schedule.effectiveDate);
-      if (date < effectiveDate) return false;
-    }
-
-    if (schedule.endDate) {
-      const endDate = new Date(schedule.endDate);
-      if (date > endDate) return false;
-    }
-
-    return true;
+  private getSchedulesForDay(dayOfWeek: DayOfWeek): DoctorScheduleResponse[] {
+    return this.filteredSchedules().filter(s => s.dayOfWeek === dayOfWeek);
   }
 
-  private matchesFilters(schedule: DoctorScheduleResponse): boolean {
-    const filters = this.filtersForm.value;
-
-    if (filters.doctorId && schedule.doctorId !== Number(filters.doctorId)) {
-      return false;
-    }
-
-    if (filters.scheduleType && schedule.scheduleType !== filters.scheduleType) {
-      return false;
-    }
-
-    return true;
-  }
-
-  private isSameDay(date1: Date, date2: Date): boolean {
-    return date1.getFullYear() === date2.getFullYear() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getDate() === date2.getDate();
-  }
-
-  public onFiltersChange(): void {
-    // Trigger calendar rebuild with new filters
-    this.currentDate.set(new Date(this.currentDate()));
-  }
-
-  public onMonthChange(): void {
-    const newDate = this.filtersForm.get('monthYear')?.value;
-    if (newDate) {
-      this.currentDate.set(new Date(newDate));
-    }
-  }
-
+  // Navigation methods
   public previousMonth(): void {
     const current = this.currentDate();
     const newDate = new Date(current.getFullYear(), current.getMonth() - 1, 1);
     this.currentDate.set(newDate);
-    this.filtersForm.get('monthYear')?.setValue(newDate);
+    this.generateCalendar();
   }
 
   public nextMonth(): void {
     const current = this.currentDate();
     const newDate = new Date(current.getFullYear(), current.getMonth() + 1, 1);
     this.currentDate.set(newDate);
-    this.filtersForm.get('monthYear')?.setValue(newDate);
+    this.generateCalendar();
   }
 
   public goToToday(): void {
-    const today = new Date();
-    this.currentDate.set(today);
-    this.filtersForm.get('monthYear')?.setValue(today);
+    this.currentDate.set(new Date());
+    this.generateCalendar();
   }
 
-  public toggleUnavailabilities(): void {
-    this.showUnavailabilities.set(!this.showUnavailabilities());
+  public changeViewMode(mode: 'month' | 'week' | 'list'): void {
+    this.viewMode.set(mode);
   }
 
-  public getDayTooltip(day: CalendarDay): string {
-    const parts: string[] = [];
+  public onDoctorFilterChange(doctorId: number | null): void {
+    this.selectedDoctorId.set(doctorId);
+    this.generateCalendar();
+    this.generateWeekSchedules();
+  }
 
-    if (day.schedules.length > 0) {
-      parts.push(`${day.schedules.length} جدولة`);
+  public selectDay(day: CalendarDay): void {
+    this.selectedDate.set(day.date);
+    // You can open a dialog or navigate to day view
+  }
+
+  public getDayLabel(dayOfWeek: DayOfWeek): string {
+    return getDayOfWeekLabel(dayOfWeek);
+  }
+
+  public getDurationConfigLabel(type: string): string {
+    return getDurationConfigTypeLabel(type);
+  }
+
+  public getScheduleColorClass(schedule: DoctorScheduleResponse): string {
+    if (!schedule.isActive) return 'inactive';
+    if (schedule.durationConfigType === 'TOKEN_BASED') return 'token-based';
+    return 'direct';
+  }
+
+  public formatTime(time: string): string {
+    return time.substring(0, 5); // HH:mm
+  }
+
+  public formatDuration(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+
+    if (hours > 0 && mins > 0) {
+      return `${hours}س ${mins}د`;
+    } else if (hours > 0) {
+      return `${hours}س`;
+    } else {
+      return `${mins}د`;
     }
+  }
 
-    if (day.unavailabilities.length > 0) {
-      parts.push(`${day.unavailabilities.length} فترة عدم توفر`);
+  // Action methods
+  public editSchedule(scheduleId: number, event: Event): void {
+    event.stopPropagation();
+    // Navigate to edit form
+  }
+
+  public viewScheduleDetails(schedule: DoctorScheduleResponse, event: Event): void {
+    event.stopPropagation();
+    // Open details dialog
+  }
+
+  public cloneSchedule(schedule: DoctorScheduleResponse, event: Event): void {
+    event.stopPropagation();
+    // Open clone dialog
+  }
+
+  public deactivateSchedule(scheduleId: number, event: Event): void {
+    event.stopPropagation();
+    if (confirm('هل أنت متأكد من تعطيل هذا الجدول؟')) {
+      this.scheduleService.deactivateSchedule(scheduleId).subscribe({
+        next: () => {
+          this.notificationService.success('تم تعطيل الجدول بنجاح');
+          this.loadSchedules();
+        },
+        error: (error) => {
+          console.error('Error deactivating schedule:', error);
+        }
+      });
     }
-
-    if (day.availableDoctors > 0) {
-      parts.push(`${day.availableDoctors} طبيب متاح`);
-    }
-
-    return parts.join(' • ') || 'لا توجد جداول';
   }
 
-  public getScheduleTooltip(schedule: DoctorScheduleResponse): string {
-    return `${schedule.doctorName} - ${schedule.startTime.substring(0, 5)} إلى ${schedule.endTime.substring(0, 5)}`;
+  public getSchedulesByDoctor(doctorId: number): DoctorScheduleResponse[] {
+    return this.filteredSchedules().filter(s => s.doctorId === doctorId);
   }
 
-  public getUnavailabilityTooltip(unavailability: UnavailabilityResponse): string {
-    return `${unavailability.doctorName} - ${unavailability.reason}`;
+  public hasScheduleOnDay(summary: WeekScheduleSummary, day: DayOfWeek): boolean {
+    return summary.schedules.has(day);
   }
 
-  public getScheduleColor(schedule: DoctorScheduleResponse): string {
-    const colors: Record<ScheduleType, string> = {
-      [ScheduleType.REGULAR]: '#4caf50',
-      [ScheduleType.TEMPORARY]: '#ff9800',
-      [ScheduleType.EMERGENCY]: '#f44336',
-      [ScheduleType.ON_CALL]: '#9c27b0',
-      [ScheduleType.VACATION_COVER]: '#2196f3'
-    };
-    return colors[schedule.scheduleType] || '#4caf50';
-  }
-
-  public getUnavailabilityColor(unavailability: UnavailabilityResponse): string {
-    const colors: Record<UnavailabilityType, string> = {
-      [UnavailabilityType.VACATION]: '#ff5722',
-      [UnavailabilityType.SICK_LEAVE]: '#e91e63',
-      [UnavailabilityType.EMERGENCY]: '#f44336',
-      [UnavailabilityType.PERSONAL]: '#9c27b0',
-      [UnavailabilityType.CONFERENCE]: '#3f51b5',
-      [UnavailabilityType.TRAINING]: '#009688',
-      [UnavailabilityType.OTHER]: '#607d8b'
-    };
-    return colors[unavailability.unavailabilityType] || '#ff5722';
-  }
-
-  public onDayClick(day: CalendarDay): void {
-    if (day.schedules.length > 0 || day.unavailabilities.length > 0) {
-      // Here you would typically open a dialog or navigate to a detailed view
-      console.log('Day clicked:', day);
-      this.notificationService.info(`تم النقر على ${day.date.toLocaleDateString('ar-SA')}`);
-    }
+  public getScheduleForDay(summary: WeekScheduleSummary, day: DayOfWeek): DoctorScheduleResponse | undefined {
+    return summary.schedules.get(day);
   }
 }

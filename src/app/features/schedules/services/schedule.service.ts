@@ -27,6 +27,8 @@ import {
   UnavailabilitySearchCriteria,
   DayOfWeek
 } from '../models/schedule.model';
+import { AuthService } from '../../../core/services/auth.service';
+import { SystemAdminService } from '../../../core/services/system-admin.service';
 
 @Injectable({
   providedIn: 'root'
@@ -34,6 +36,8 @@ import {
 export class ScheduleService {
   private readonly http = inject(HttpClient);
   private readonly notificationService = inject(NotificationService);
+  private readonly authService = inject(AuthService);
+  private readonly systemAdminService = inject(SystemAdminService);
   private readonly apiUrl = `${environment.apiUrl}/schedules`;
 
   // ===================================================================
@@ -43,7 +47,7 @@ export class ScheduleService {
   public readonly error = signal<string | null>(null);
 
   // Schedules state
-  public readonly doctorSchedules = signal<DoctorScheduleResponse[]>([]);
+  public readonly doctorSchedules = signal<(DoctorScheduleResponse | DoctorSchedule)[]>([]);
   public readonly selectedDoctorSchedules = signal<DoctorScheduleResponse[]>([]);
 
   // Unavailabilities state
@@ -59,7 +63,7 @@ export class ScheduleService {
   public readonly weeklyScheduleView = signal<WeeklyScheduleView[]>([]);
 
   // Subjects for reactive updates
-  private schedulesSubject = new BehaviorSubject<DoctorScheduleResponse[]>([]);
+  private schedulesSubject = new BehaviorSubject<(DoctorScheduleResponse | DoctorSchedule)[]>([]);
   public schedules$ = this.schedulesSubject.asObservable();
 
   private unavailabilitiesSubject = new BehaviorSubject<UnavailabilityResponse[]>([]);
@@ -71,6 +75,14 @@ export class ScheduleService {
   createDoctorSchedule(request: CreateDoctorScheduleRequest): Observable<DoctorScheduleResponse[]> {
     this.loading.set(true);
     this.error.set(null);
+
+    // Validate SYSTEM_ADMIN context for write operations
+    const currentUser = this.authService.currentUser();
+    if (currentUser?.role === 'SYSTEM_ADMIN') {
+      if (!this.systemAdminService.canPerformWriteOperation()) {
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل إنشاء جدول جديد'));
+      }
+    }
 
     return this.http.post<ApiResponse<DoctorScheduleResponse[]>>(`${this.apiUrl}/doctor`, request).pipe(
       tap(response => {
@@ -129,8 +141,17 @@ export class ScheduleService {
   getAllDoctorsSchedules(): Observable<DoctorScheduleResponse[]> {
     this.loading.set(true);
     this.error.set(null);
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+    let params = new HttpParams();
 
-    return this.http.get<ApiResponse<DoctorScheduleResponse[]>>(`${this.apiUrl}/all`).pipe(
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
+
+    return this.http.get<ApiResponse<DoctorScheduleResponse[]>>(`${this.apiUrl}/all`, { params }).pipe(
       tap(response => {
         if (response.success && response.data) {
           this.doctorSchedules.set(response.data);
@@ -153,8 +174,17 @@ export class ScheduleService {
   getDoctorSchedule(doctorId: number): Observable<DoctorScheduleResponse[]> {
     this.loading.set(true);
     this.error.set(null);
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+    let params = new HttpParams();
 
-    return this.http.get<ApiResponse<DoctorScheduleResponse[]>>(`${this.apiUrl}/doctor/${doctorId}`).pipe(
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
+
+    return this.http.get<ApiResponse<DoctorScheduleResponse[]>>(`${this.apiUrl}/doctor/${doctorId}`, { params }).pipe(
       tap(response => {
         if (response.success && response.data) {
           this.selectedDoctorSchedules.set(response.data);
@@ -406,6 +436,33 @@ export class ScheduleService {
     );
   }
 
+  // Get duration info
+  getDurationInfo(scheduleId: number): Observable<DoctorScheduleResponse> {
+    this.loading.set(true);
+    this.error.set(null);
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+    let params = new HttpParams();
+
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
+
+    return this.http.get<ApiResponse<DoctorScheduleResponse>>(
+      `${this.apiUrl}/${scheduleId}/duration-info`, { params }
+    ).pipe(
+      tap(() => this.loading.set(false)),
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('خطأ في الحصول على معلومات المدة', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   // Build weekly schedule view from schedules
   private buildWeeklyScheduleView(schedules: DoctorScheduleResponse[]): WeeklyScheduleView[] {
     const doctorGroups = schedules.reduce((acc, schedule) => {
@@ -478,6 +535,141 @@ export class ScheduleService {
 
         this.scheduleStatistics.set(stats);
         return stats;
+      })
+    );
+  }
+
+  // update method
+  updateSchedule(scheduleId: number, request: UpdateDoctorScheduleRequest): Observable<DoctorSchedule> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    // Validate SYSTEM_ADMIN context for write operations
+    const currentUser = this.authService.currentUser();
+    if (currentUser?.role === 'SYSTEM_ADMIN') {
+      if (!this.systemAdminService.canPerformWriteOperation()) {
+        return throwError(() => new Error('يجب تحديد العيادة المستهدفة قبل تحديث الجدول'));
+      }
+    }
+
+    return this.http.put<ApiResponse<DoctorSchedule>>(
+      `${this.apiUrl}/${scheduleId}`,
+      request
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.notificationService.success('تم تحديث الجدول بنجاح');
+          // Update in schedules list
+          const currentSchedules = this.doctorSchedules();
+          const index = currentSchedules.findIndex(s => s.id === scheduleId);
+          if (index !== -1) {
+            currentSchedules[index] = response.data;
+            this.doctorSchedules.set([...currentSchedules]);
+          }
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في تحديث الجدول', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // batch update method
+  batchUpdateSchedules(
+    doctorId: number,
+    daysOfWeek: DayOfWeek[],
+    request: UpdateDoctorScheduleRequest
+  ): Observable<DoctorSchedule[]> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    const params = new HttpParams()
+      .set('daysOfWeek', daysOfWeek.join(','));
+
+    return this.http.put<ApiResponse<DoctorSchedule[]>>(
+      `${this.apiUrl}/batch/doctor/${doctorId}`,
+      request,
+      { params }
+    ).pipe(
+      tap(response => {
+        if (response.success) {
+          this.notificationService.success(
+            `تم تحديث ${response.data?.length || 0} جدول بنجاح`
+          );
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data || []),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في تحديث الجداول', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Add deactivate method
+  deactivateSchedule(scheduleId: number): Observable<void> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    return this.http.put<ApiResponse<void>>(
+      `${this.apiUrl}/${scheduleId}/deactivate`,
+      null
+    ).pipe(
+      tap(response => {
+        if (response.success) {
+          this.notificationService.success('تم تعطيل الجدول بنجاح');
+          // Remove from active schedules
+          const currentSchedules = this.doctorSchedules();
+          this.doctorSchedules.set(currentSchedules.filter(s => s.id !== scheduleId));
+        }
+        this.loading.set(false);
+      }),
+      map(() => void 0),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في تعطيل الجدول', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // clone method
+  cloneSchedule(scheduleId: number, targetDays: DayOfWeek[]): Observable<DoctorSchedule[]> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    const params = new HttpParams()
+      .set('targetDays', targetDays.join(','));
+
+    return this.http.post<ApiResponse<DoctorSchedule[]>>(
+      `${this.apiUrl}/${scheduleId}/clone`,
+      null,
+      { params }
+    ).pipe(
+      tap(response => {
+        if (response.success) {
+          this.notificationService.success(
+            `تم نسخ الجدول إلى ${response.data?.length || 0} أيام جديدة`
+          );
+          // Add cloned schedules to list
+          if (response.data) {
+            const currentSchedules = this.doctorSchedules();
+            this.doctorSchedules.set([...response.data, ...currentSchedules]);
+          }
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data || []),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في نسخ الجدول', error);
+        return throwError(() => error);
       })
     );
   }

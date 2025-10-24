@@ -38,6 +38,7 @@ import {
   APPOINTMENT_STATUS_COLORS
 } from '../../models/appointment.model';
 import { MatDividerModule } from '@angular/material/divider';
+import { TokenBadgeComponent } from "../../../../shared/components/token-badge/token-badge.component";
 
 @Component({
   selector: 'app-appointment-list',
@@ -63,8 +64,9 @@ import { MatDividerModule } from '@angular/material/divider';
     MatDialogModule,
     MatDividerModule,
     HeaderComponent,
-    SidebarComponent
-  ],
+    SidebarComponent,
+    TokenBadgeComponent
+],
   templateUrl: './appointment-list.component.html',
   styleUrl: './appointment-list.component.scss'
 })
@@ -94,10 +96,21 @@ export class AppointmentListComponent implements OnInit, OnDestroy {
   });
 
   // Table configuration
-  displayedColumns = [
+  // displayedColumns = [
+  //   'patientName',
+  //   'doctorName',
+  //   'dateTime',
+  //   'type',
+  //   'status',
+  //   'actions'
+  // ];
+  // Update displayedColumns to include token
+  displayedColumns: string[] = [
     'patientName',
     'doctorName',
-    'dateTime',
+    'date',
+    'time',
+    'token', // **NEW COLUMN**
     'type',
     'status',
     'actions'
@@ -246,5 +259,51 @@ export class AppointmentListComponent implements OnInit, OnDestroy {
 
   getTypeLabel(type: AppointmentType): string {
     return this.typeLabels[type] || type;
+  }
+
+  // Add these methods to your AppointmentListComponent class
+
+  // Check if the date is today
+  isToday(dateString: string): boolean {
+    if (!dateString) return false;
+
+    const today = new Date();
+    const appointmentDate = new Date(dateString);
+
+    return today.toDateString() === appointmentDate.toDateString();
+  }
+
+  // Format the date display
+  formatAppointmentDate(dateString: string): string {
+    if (!dateString) return '';
+
+    const today = new Date();
+    const appointmentDate = new Date(dateString);
+
+    // Check if it's today
+    if (today.toDateString() === appointmentDate.toDateString()) {
+      return 'اليوم';
+    }
+
+    // Check if it's tomorrow
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    if (tomorrow.toDateString() === appointmentDate.toDateString()) {
+      return 'غداً';
+    }
+
+    // Check if it's yesterday
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (yesterday.toDateString() === appointmentDate.toDateString()) {
+      return 'أمس';
+    }
+
+    // Format other dates as DD/MM/YYYY
+    const day = appointmentDate.getDate().toString().padStart(2, '0');
+    const month = (appointmentDate.getMonth() + 1).toString().padStart(2, '0');
+    const year = appointmentDate.getFullYear();
+
+    return `${day}/${month}/${year}`;
   }
 }

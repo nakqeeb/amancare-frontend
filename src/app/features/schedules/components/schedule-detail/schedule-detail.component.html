@@ -1,0 +1,530 @@
+<div class="schedule-detail-container">
+  <app-header></app-header>
+  <app-sidebar>
+    <div class="content-area">
+      <!-- Loading State -->
+      @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>جارٍ تحميل تفاصيل الجدول...</p>
+      </div>
+      }
+
+      <!-- Schedule Details -->
+      @if (!loading() && schedule()) {
+      <div class="detail-content">
+        <!-- Header -->
+        <div class="page-header">
+          <div class="header-content">
+            <button mat-icon-button (click)="goBack()" class="back-button">
+              <mat-icon>arrow_forward</mat-icon>
+            </button>
+            <div class="header-text">
+              <h1>
+                <mat-icon>event</mat-icon>
+                تفاصيل جدول الطبيب
+              </h1>
+              <div class="header-chips">
+                <mat-chip [class]="scheduleColorClass()">
+                  {{ getDurationConfigLabel(schedule()!.durationConfigType!) }}
+                </mat-chip>
+                @if (isActive()) {
+                <mat-chip color="primary" class="active-label" selected>
+                  <mat-icon>check_circle</mat-icon>
+                  نشط
+                </mat-chip>
+                } @else {
+                <mat-chip color="warn" class="active-label">
+                  <mat-icon>block</mat-icon>
+                  معطل
+                </mat-chip>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <button mat-button (click)="printSchedule()">
+              <mat-icon>print</mat-icon>
+              طباعة
+            </button>
+            <button mat-button (click)="cloneSchedule()">
+              <mat-icon>content_copy</mat-icon>
+              نسخ
+            </button>
+            <button mat-raised-button color="primary" (click)="editSchedule()">
+              <mat-icon>edit</mat-icon>
+              تعديل
+            </button>
+            @if (isActive()) {
+            <button
+              mat-raised-button
+              color="warn"
+              (click)="deactivateSchedule()"
+            >
+              <mat-icon>block</mat-icon>
+              تعطيل
+            </button>
+            }
+          </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="detail-grid">
+          <!-- Doctor Information Card -->
+          <mat-card class="info-card doctor-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>medical_services</mat-icon>
+                معلومات الطبيب
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-row">
+                <span class="label">اسم الطبيب:</span>
+                <span class="value">د. {{ schedule()!.doctorName }}</span>
+              </div>
+              @if (schedule()!.doctorSpecialization) {
+              <div class="info-row">
+                <span class="label">التخصص:</span>
+                <span class="value">{{
+                  schedule()!.doctorSpecialization
+                }}</span>
+              </div>
+              }
+              <div class="info-row">
+                <span class="label">يوم العمل:</span>
+                <span class="value day-chip">
+                  <mat-chip color="primary" selected>
+                    {{ getDayLabel(schedule()!.dayOfWeek) }}
+                  </mat-chip>
+                </span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Schedule Times Card -->
+          <mat-card class="info-card times-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>schedule</mat-icon>
+                أوقات العمل
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-row">
+                <span class="label">وقت البداية:</span>
+                <span class="value time-value">{{
+                  formatTime(schedule()!.startTime)
+                }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">وقت النهاية:</span>
+                <span class="value time-value">{{
+                  formatTime(schedule()!.endTime)
+                }}</span>
+              </div>
+              @if (hasBreak()) {
+              <mat-divider></mat-divider>
+              <div class="info-row break-info">
+                <mat-icon>local_cafe</mat-icon>
+                <div class="break-details">
+                  <span class="label">فترة الاستراحة:</span>
+                  <span class="value">
+                    {{ formatTime(schedule()!.breakStartTime!) }} -
+                    {{ formatTime(schedule()!.breakEndTime!) }}
+                  </span>
+                </div>
+              </div>
+              }
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Duration Configuration Card -->
+          <mat-card
+            class="info-card duration-card"
+            [class]="scheduleColorClass()"
+          >
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>settings</mat-icon>
+                تكوين المدة
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="config-type-badge">
+                <mat-chip
+                  [color]="isTokenBased() ? 'accent' : 'primary'"
+                  selected
+                >
+                  {{ getDurationConfigLabel(schedule()!.durationConfigType!) }}
+                </mat-chip>
+              </div>
+
+              @if (isDirect()) {
+              <!-- Direct Configuration -->
+              <div class="duration-details">
+                <div class="info-row highlight">
+                  <span class="label">مدة كل موعد:</span>
+                  <span class="value duration-value"
+                    >{{ schedule()!.durationMinutes }} دقيقة</span
+                  >
+                </div>
+                <div class="info-row">
+                  <span class="label">عدد المواعيد المتوقع:</span>
+                  <span class="value"
+                    >{{ schedule()!.expectedTokens }} موعد</span
+                  >
+                </div>
+              </div>
+              } @if (isTokenBased()) {
+              <!-- Token-Based Configuration -->
+              <div class="duration-details">
+                <div class="info-row">
+                  <span class="label">عدد المواعيد المستهدف:</span>
+                  <span class="value"
+                    >{{ schedule()!.targetTokensPerDay }} موعد</span
+                  >
+                </div>
+                <div class="info-row highlight">
+                  <span class="label">المدة المحسوبة:</span>
+                  <span class="value duration-value"
+                    >{{ schedule()!.calculatedDurationMinutes }} دقيقة</span
+                  >
+                </div>
+              </div>
+              }
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Statistics Card -->
+          <mat-card class="info-card stats-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>analytics</mat-icon>
+                الإحصائيات
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <mat-icon>access_time</mat-icon>
+                  <div class="stat-content">
+                    <span class="stat-value">{{
+                      schedule()!.workingHours
+                    }}</span>
+                    <span class="stat-label">ساعات العمل</span>
+                  </div>
+                </div>
+                <div class="stat-item">
+                  <mat-icon>confirmation_number</mat-icon>
+                  <div class="stat-content">
+                    <span class="stat-value">{{
+                      schedule()!.expectedTokens
+                    }}</span>
+                    <span class="stat-label">عدد المواعيد</span>
+                  </div>
+                </div>
+                <div class="stat-item">
+                  <mat-icon>schedule</mat-icon>
+                  <div class="stat-content">
+                    <span class="stat-value">{{
+                      schedule()!.availableWorkingMinutes
+                    }}</span>
+                    <span class="stat-label">دقائق العمل</span>
+                  </div>
+                </div>
+                <div class="stat-item">
+                  <mat-icon>timer</mat-icon>
+                  <div class="stat-content">
+                    <span class="stat-value">{{
+                      schedule()!.effectiveDuration
+                    }}</span>
+                    <span class="stat-label">مدة الموعد (د)</span>
+                  </div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Schedule Type & Dates Card -->
+          <mat-card class="info-card dates-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>calendar_today</mat-icon>
+                نوع الجدول والتواريخ
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-row">
+                <span class="label">نوع الجدول:</span>
+                <span class="value">
+                  <mat-chip>{{ schedule()!.scheduleType }}</mat-chip>
+                </span>
+              </div>
+              @if (schedule()!.effectiveDate) {
+              <div class="info-row">
+                <span class="label">تاريخ البداية:</span>
+                <span class="value">{{
+                  formatDate(schedule()!.effectiveDate!)
+                }}</span>
+              </div>
+              } @if (schedule()!.endDate) {
+              <div class="info-row">
+                <span class="label">تاريخ الانتهاء:</span>
+                <span class="value">{{
+                  formatDate(schedule()!.endDate!)
+                }}</span>
+              </div>
+              }
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Notes Card -->
+          @if (schedule()!.notes) {
+          <mat-card class="info-card notes-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>notes</mat-icon>
+                ملاحظات
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <p class="notes-text">{{ schedule()!.notes }}</p>
+            </mat-card-content>
+          </mat-card>
+          }
+        </div>
+
+        <!-- Tabs Section -->
+        <mat-card class="tabs-card">
+          <mat-tab-group>
+            <!-- Time Slots Tab -->
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon>schedule</mat-icon>
+                الفترات الزمنية والرموز ({{ timeSlots().length }})
+              </ng-template>
+
+              <div class="tab-content">
+                @if (timeSlots().length > 0) {
+                <div class="time-slots-info">
+                  <p class="info-message">
+                    <mat-icon>info</mat-icon>
+                    هذه هي جميع الفترات الزمنية المتاحة مع أرقام الرموز المقابلة
+                    لها. يتم تعيين الرمز تلقائياً عند حجز الموعد.
+                  </p>
+                </div>
+
+                <div class="time-slots-grid">
+                  @for (slot of timeSlots(); track slot.tokenNumber) {
+                  <mat-card class="time-slot-card">
+                    <mat-card-content>
+                      <div class="slot-header">
+                        <mat-chip color="primary" selected class="token-chip">
+                          رمز #{{ slot.tokenNumber }}
+                        </mat-chip>
+                        @if (slot.isAvailable) {
+                        <mat-chip color="accent" selected class="status-chip">
+                          <mat-icon>check_circle</mat-icon>
+                          متاح
+                        </mat-chip>
+                        }
+                      </div>
+                      <div class="slot-time">
+                        <mat-icon>schedule</mat-icon>
+                        <span>{{ slot.time }}</span>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                  }
+                </div>
+                } @else {
+                <div class="no-data">
+                  <mat-icon>event_busy</mat-icon>
+                  <p>لا توجد فترات زمنية متاحة</p>
+                </div>
+                }
+              </div>
+            </mat-tab>
+
+            <!-- Working Minutes Breakdown Tab -->
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon>pie_chart</mat-icon>
+                تفصيل الدقائق
+              </ng-template>
+
+              <div class="tab-content">
+                @if (workingMinutesBreakdown()) {
+                <div class="breakdown-container">
+                  <div class="breakdown-item total">
+                    <mat-icon>schedule</mat-icon>
+                    <div class="breakdown-content">
+                      <span class="breakdown-label">إجمالي الوقت</span>
+                      <span class="breakdown-value">{{
+                        formatDuration(workingMinutesBreakdown()!.total)
+                      }}</span>
+                    </div>
+                  </div>
+
+                  @if (workingMinutesBreakdown()!.break > 0) {
+                  <div class="breakdown-divider">
+                    <mat-icon>remove</mat-icon>
+                  </div>
+
+                  <div class="breakdown-item break">
+                    <mat-icon>local_cafe</mat-icon>
+                    <div class="breakdown-content">
+                      <span class="breakdown-label">فترة الاستراحة</span>
+                      <span class="breakdown-value">{{
+                        formatDuration(workingMinutesBreakdown()!.break)
+                      }}</span>
+                    </div>
+                  </div>
+                  }
+
+                  <div class="breakdown-divider">
+                    <mat-icon>drag_handle</mat-icon>
+                  </div>
+
+                  <div class="breakdown-item working">
+                    <mat-icon>work</mat-icon>
+                    <div class="breakdown-content">
+                      <span class="breakdown-label">وقت العمل الفعلي</span>
+                      <span class="breakdown-value">{{
+                        formatDuration(workingMinutesBreakdown()!.working)
+                      }}</span>
+                    </div>
+                  </div>
+
+                  <div class="breakdown-divider">
+                    <mat-icon>close</mat-icon>
+                  </div>
+
+                  <div class="breakdown-item slots">
+                    <mat-icon>confirmation_number</mat-icon>
+                    <div class="breakdown-content">
+                      <span class="breakdown-label">عدد المواعيد</span>
+                      <span class="breakdown-value"
+                        >{{ workingMinutesBreakdown()!.slots }} موعد</span
+                      >
+                    </div>
+                  </div>
+
+                  <div class="breakdown-divider">
+                    <mat-icon>drag_handle</mat-icon>
+                  </div>
+
+                  <div class="breakdown-item duration">
+                    <mat-icon>timer</mat-icon>
+                    <div class="breakdown-content">
+                      <span class="breakdown-label">مدة كل موعد</span>
+                      <span class="breakdown-value"
+                        >{{ workingMinutesBreakdown()!.duration }} دقيقة</span
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <mat-card class="calculation-card">
+                  <mat-card-content>
+                    <div class="calculation-formula">
+                      <mat-icon>calculate</mat-icon>
+                      <div class="formula-content">
+                        <h4>الحساب:</h4>
+                        <p>
+                          وقت العمل الفعلي ({{
+                            workingMinutesBreakdown()!.working
+                          }}
+                          دقيقة) ÷ عدد المواعيد ({{
+                            workingMinutesBreakdown()!.slots
+                          }}) = مدة كل موعد ({{
+                            workingMinutesBreakdown()!.duration
+                          }}
+                          دقيقة)
+                        </p>
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+                }
+              </div>
+            </mat-tab>
+
+            <!-- Audit Info Tab -->
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon>history</mat-icon>
+                معلومات التدقيق
+              </ng-template>
+
+              <div class="tab-content">
+                <div class="audit-info">
+                  <div class="audit-row">
+                    <mat-icon>event</mat-icon>
+                    <div class="audit-content">
+                      <span class="audit-label">تاريخ الإنشاء:</span>
+                      <span class="audit-value">{{
+                        formatDate(schedule()!.createdAt)
+                      }}</span>
+                    </div>
+                  </div>
+
+                  @if (schedule()!.updatedAt) {
+                  <div class="audit-row">
+                    <mat-icon>update</mat-icon>
+                    <div class="audit-content">
+                      <span class="audit-label">آخر تحديث:</span>
+                      <span class="audit-value">{{
+                        formatDate(schedule()!.updatedAt!)
+                      }}</span>
+                    </div>
+                  </div>
+                  }
+
+                  <div class="audit-row">
+                    <mat-icon>check_circle</mat-icon>
+                    <div class="audit-content">
+                      <span class="audit-label">الحالة:</span>
+                      <span class="audit-value">
+                        <mat-chip
+                          [color]="isActive() ? 'primary' : 'warn'"
+                          selected
+                        >
+                          {{ isActive() ? "نشط" : "معطل" }}
+                        </mat-chip>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="audit-row">
+                    <mat-icon>tag</mat-icon>
+                    <div class="audit-content">
+                      <span class="audit-label">معرف الجدول:</span>
+                      <span class="audit-value">#{{ schedule()!.id }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </mat-tab>
+          </mat-tab-group>
+        </mat-card>
+      </div>
+      }
+
+      <!-- Error State -->
+      @if (!loading() && !schedule()) {
+      <div class="error-container">
+        <mat-icon>error_outline</mat-icon>
+        <h2>لم يتم العثور على الجدول</h2>
+        <p>الجدول المطلوب غير موجود أو تم حذفه</p>
+        <button mat-raised-button color="primary" (click)="goBack()">
+          <mat-icon>arrow_back</mat-icon>
+          العودة إلى القائمة
+        </button>
+      </div>
+      }
+    </div>
+  </app-sidebar>
+</div>

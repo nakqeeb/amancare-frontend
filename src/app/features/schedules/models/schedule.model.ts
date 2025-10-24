@@ -3,6 +3,11 @@
 // Models matching Spring Boot DTOs for Schedule Management
 // ===================================================================
 
+export enum DurationConfigType {
+  DIRECT = 'DIRECT',
+  TOKEN_BASED = 'TOKEN_BASED'
+}
+
 export interface DoctorSchedule {
   id: number;
   doctorId: number;
@@ -19,6 +24,16 @@ export interface DoctorSchedule {
   notes?: string;
   isActive: boolean;
   clinicId: number;
+
+  // **NEW: Duration Configuration Fields**
+  durationMinutes?: number;
+  durationConfigType?: DurationConfigType;
+  targetTokensPerDay?: number;
+  calculatedDurationMinutes?: number;
+  effectiveDuration?: number;
+  availableWorkingMinutes?: number;
+  expectedTokens?: number;
+
   createdAt: string;
   updatedAt?: string;
 }
@@ -34,6 +49,11 @@ export interface CreateDoctorScheduleRequest {
   endDate?: string;
   scheduleType: ScheduleType;
   notes?: string;
+
+  // **NEW: Duration Configuration**
+  durationConfigType: DurationConfigType;
+  durationMinutes?: number;
+  targetTokensPerDay?: number;
 }
 
 export interface UpdateDoctorScheduleRequest {
@@ -47,6 +67,11 @@ export interface UpdateDoctorScheduleRequest {
   scheduleType?: ScheduleType;
   notes?: string;
   isActive?: boolean;
+
+  // **NEW: Duration Configuration**
+  durationConfigType?: DurationConfigType;
+  durationMinutes?: number;
+  targetTokensPerDay?: number;
 }
 
 export interface DoctorUnavailability {
@@ -78,6 +103,26 @@ export interface CreateUnavailabilityRequest {
   notes?: string;
 }
 
+// Update UpdateDoctorScheduleRequest
+export interface UpdateDoctorScheduleRequest {
+  workingDays?: DayOfWeek[];
+  startTime?: string;
+  endTime?: string;
+  breakStartTime?: string;
+  breakEndTime?: string;
+  effectiveDate?: string;
+  endDate?: string;
+  scheduleType?: ScheduleType;
+  notes?: string;
+  isActive?: boolean;
+
+  // **NEW: Duration Configuration**
+  durationConfigType?: DurationConfigType;
+  durationMinutes?: number;
+  targetTokensPerDay?: number;
+}
+
+
 export interface DoctorScheduleResponse {
   id: number;
   doctorId: number;
@@ -98,6 +143,16 @@ export interface DoctorScheduleResponse {
   workingHours: number;
   totalSlots: number;
   availableSlots?: number;
+
+  // **NEW: Duration Configuration**
+  durationMinutes?: number;
+  durationConfigType?: string;
+  targetTokensPerDay?: number;
+  calculatedDurationMinutes?: number;
+  effectiveDuration?: number;
+  availableWorkingMinutes?: number;
+  expectedTokens?: number;
+
   createdAt: string;
   updatedAt?: string;
 }
@@ -190,7 +245,7 @@ export enum ScheduleType {
   TEMPORARY = 'TEMPORARY',
   EMERGENCY = 'EMERGENCY',
   ON_CALL = 'ON_CALL',
-  VACATION_COVER = 'VACATION_COVER'
+  HOLIDAY_COVERAGE = 'HOLIDAY_COVERAGE'
 }
 
 export enum UnavailabilityType {
@@ -241,7 +296,7 @@ export const SCHEDULE_TYPE_ARABIC: Record<ScheduleType, string> = {
   [ScheduleType.TEMPORARY]: 'مؤقت',
   [ScheduleType.EMERGENCY]: 'طارئ',
   [ScheduleType.ON_CALL]: 'نوبة استدعاء',
-  [ScheduleType.VACATION_COVER]: 'تغطية إجازة'
+  [ScheduleType.HOLIDAY_COVERAGE]: 'تغطية إجازة'
 };
 
 export const UNAVAILABILITY_TYPE_ARABIC: Record<UnavailabilityType, string> = {
@@ -262,3 +317,17 @@ export const DEFAULT_WORKING_HOURS = {
 };
 
 export const TIME_SLOT_DURATION = 30; // minutes
+
+// Add constants for duration config type labels
+export const DURATION_CONFIG_TYPE_ARABIC: Record<DurationConfigType, string> = {
+  [DurationConfigType.DIRECT]: 'تحديد مباشر',
+  [DurationConfigType.TOKEN_BASED]: 'محسوب من المواعيد'
+};
+
+// Helper function to get duration config type label
+export function getDurationConfigTypeLabel(type: DurationConfigType | string): string {
+  if (typeof type === 'string') {
+    return DURATION_CONFIG_TYPE_ARABIC[type as DurationConfigType] || type;
+  }
+  return DURATION_CONFIG_TYPE_ARABIC[type] || type;
+}
