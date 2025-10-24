@@ -1,0 +1,57 @@
+ .duration-info {
+   background-color: #f5f7fa;
+   padding: 16px;
+   border-radius: 8px;
+   margin-bottom: 24px;
+
+   .info-item {
+     display: flex;
+     justify-content: space-between;
+     padding: 8px 0;
+     border-bottom: 1px solid #e0e0e0;
+
+     &:last-child {
+       border-bottom: none;
+     }
+
+     .label {
+       font-weight: 500;
+       color: var(--text-secondary);
+     }
+
+     .value {
+       font-weight: 600;
+       color: var(--text-primary);
+     }
+   }
+ }
+
+ .warning-card {
+   background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+   border-left: 4px solid #ff9800;
+   margin-top: 16px;
+
+   .warning-content {
+     display: flex;
+     align-items: flex-start;
+     gap: 12px;
+
+     mat-icon {
+       color: #ff9800;
+       font-size: 24px;
+       width: 24px;
+       height: 24px;
+     }
+
+     p {
+       margin: 0;
+       font-size: 14px;
+       color: var(--text-secondary);
+     }
+   }
+ }
+
+ .full-width {
+   width: 100%;
+   margin-bottom: 16px;
+ }

@@ -2,7 +2,7 @@ import { Routes } from "@angular/router";
 import { AuthGuard } from "../../core/guards/auth.guard";
 import { RoleGuard } from "../../core/guards/role.guard";
 import { AvailabilityCheckComponent } from "./components/availability-check/availability-check.component";
-import { DoctorScheduleDetailComponent } from "./components/doctor-schedule-detail/doctor-schedule-detail.component";
+import { ScheduleDetailComponent } from "./components/schedule-detail/schedule-detail.component";
 import { ScheduleCalendarComponent } from "./components/schedule-calendar/schedule-calendar.component";
 import { ScheduleFormComponent } from "./components/schedule-form/schedule-form.component";
 import { ScheduleListComponent } from "./components/schedule-list/schedule-list.component";
@@ -67,19 +67,20 @@ export const SCHEDULE_ROUTES: Routes = [
         }
       },
 
+      // Schedule Detail
+      {
+        path: 'detail/:id',
+        component: ScheduleDetailComponent,
+        data: {
+          title: 'تفاصيل جدولة الطبيب',
+          breadcrumb: 'تفاصيل الجدولة'
+        }
+      },
+
       // Doctor-specific routes
       {
         path: 'doctor/:doctorId',
         children: [
-          // Doctor Schedule Detail
-          {
-            path: '',
-            component: DoctorScheduleDetailComponent,
-            data: {
-              title: 'تفاصيل جدولة الطبيب',
-              breadcrumb: 'تفاصيل الجدولة'
-            }
-          },
 
           // Doctor Availability Check
           {

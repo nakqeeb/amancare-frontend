@@ -222,7 +222,7 @@ export class BookAppointmentComponent implements OnInit {
     const dateStr = this.formatDate(date);
     const clinicId = this.clinicForm.get('clinicId')?.value;
 
-    this.guestBookingService.getAvailableTimes(clinicId, doctorId, dateStr).subscribe({
+    /* this.guestBookingService.getAvailableTimes(clinicId, doctorId, dateStr).subscribe({
       next: (timeStrings: string[]) => {
         // Transform string[] to TimeSlot[] - all returned slots are available
         const slots: TimeSlot[] = timeStrings.map(time => ({
@@ -238,7 +238,20 @@ export class BookAppointmentComponent implements OnInit {
         this.loadingTimeSlots.set(false);
         this.showError('فشل تحميل الأوقات المتاحة');
       }
-    });
+    }); */
+    // Use the new method that includes tokens
+  this.guestBookingService.getAvailableTimesWithTokens(clinicId, doctorId, dateStr).subscribe({
+    next: (slots: TimeSlot[]) => {
+      this.timeSlots.set(slots);
+      this.loadingTimeSlots.set(false);
+    },
+    error: (error) => {
+      console.error('Error loading time slots:', error);
+      this.timeSlots.set([]);
+      this.loadingTimeSlots.set(false);
+      this.showError('فشل تحميل الأوقات المتاحة');
+    }
+  });
   }
 
   selectTimeSlot(time: string): void {

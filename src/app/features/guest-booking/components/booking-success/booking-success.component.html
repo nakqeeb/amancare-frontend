@@ -63,6 +63,14 @@
           </div>
 
           <div class="detail-item">
+            <app-token-badge
+              [tokenNumber]="bookingDetails()!.tokenNumber"
+              size="large"
+              [showIcon]="true"
+            ></app-token-badge>
+          </div>
+
+          <div class="detail-item">
             <mat-icon>schedule</mat-icon>
             <div class="detail-content">
               <span class="detail-label">الوقت</span>

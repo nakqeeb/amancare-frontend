@@ -7,6 +7,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
+import { TokenBadgeComponent } from "../../../../shared/components/token-badge/token-badge.component";
 
 interface BookingDetails {
   confirmationCode: string;
@@ -15,6 +16,7 @@ interface BookingDetails {
   appointmentDate: string;
   appointmentTime: string;
   patientName: string;
+  tokenNumber?: number;
   patientEmail: string;
   patientPhone: string;
   notes?: string;
@@ -29,8 +31,9 @@ interface BookingDetails {
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatDividerModule
-  ],
+    MatDividerModule,
+    TokenBadgeComponent
+],
   templateUrl: './booking-success.component.html',
   styleUrl: './booking-success.component.scss'
 })

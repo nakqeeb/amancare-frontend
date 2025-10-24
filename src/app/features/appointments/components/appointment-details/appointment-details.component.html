@@ -57,6 +57,13 @@
             </mat-card-header>
             <mat-card-content>
               <div class="info-section">
+                <!-- Token Number Display -->
+                <app-token-badge
+                  [tokenNumber]="appointment()!.tokenNumber"
+                  size="large"
+                  tooltipText="رقمك في قائمة انتظار الطبيب"
+                ></app-token-badge>
+
                 <div class="info-row">
                   <span class="info-label">الحالة:</span>
                   <mat-chip [color]="getStatusColor(appointment()!.status)">
@@ -76,15 +83,52 @@
 
                 <div class="info-row">
                   <span class="info-label">الوقت:</span>
-                  <span>{{ appointment()!.appointmentTime }}</span>
+                  <span>
+                    {{ appointment()!.appointmentTime }}
+                    @if (appointment()!.tokenNumber) {
+                    <span class="token-inline"
+                      >(رمز #{{ appointment()!.tokenNumber }})</span
+                    >
+                    }
+                  </span>
                 </div>
 
+                <!-- Duration Section with Override Badge -->
                 <div class="info-row">
-                  <span class="info-label">المدة:</span>
-                  <span>{{ appointment()!.durationMinutes }} دقيقة</span>
+                  <span class="info-label">
+                    <mat-icon>schedule</mat-icon>
+                    المدة
+                  </span>
+                  <span class="info-value">
+                    <span>{{ appointment()!.durationMinutes }} دقيقة</span>
+                    @if (appointment()!.isDurationOverridden) {
+                    <mat-chip class="override-badge" color="warn">
+                      <mat-icon>warning</mat-icon>
+                      مجاوزة
+                    </mat-chip>
+                    }
+                  </span>
                 </div>
 
-                @if (appointment()!.chiefComplaint) {
+                <!-- Override Information (if overridden) -->
+                @if (appointment()!.isDurationOverridden) {
+                <div class="info-row highlight-override">
+                  <span class="info-label">
+                    <mat-icon>info</mat-icon>
+                    معلومات التجاوز
+                  </span>
+                  <span class="info-value override-info">
+                    <p>
+                      <strong>المدة الأصلية:</strong>
+                      {{ appointment()!.originalDurationMinutes }} دقيقة
+                    </p>
+                    <p>
+                      <strong>سبب التجاوز:</strong>
+                      {{ appointment()!.overrideReason }}
+                    </p>
+                  </span>
+                </div>
+                } @if (appointment()!.chiefComplaint) {
                 <mat-divider></mat-divider>
                 <div class="info-row full-width">
                   <span class="info-label">الشكوى الرئيسية:</span>
@@ -138,6 +182,19 @@
               </button>
               } }
 
+              <!-- Override Duration Button -->
+              @if (appointment()!.status === 'SCHEDULED' ||
+              appointment()!.status === 'CONFIRMED') {
+              <button
+                mat-stroked-button
+                color="accent"
+                (click)="openOverrideDurationDialog()"
+              >
+                <mat-icon>schedule</mat-icon>
+                تجاوز المدة
+              </button>
+              }
+
               <button mat-button color="warn" (click)="cancelAppointment()">
                 <mat-icon>cancel</mat-icon>
                 إلغاء الموعد
@@ -146,6 +203,7 @@
             }
           </mat-card>
 
+          <!-- Rest of your existing cards (Patient, Doctor, Metadata) remain the same -->
           <!-- Patient Information Card -->
           <mat-card class="patient-card">
             <mat-card-header>
@@ -265,12 +323,6 @@
                   <span>{{ appointment()!.updatedAt }}</span>
                 </div>
                 }
-                <!-- @if (appointment()!.updatedByName) {
-                <div class="info-row">
-                  <span class="info-label">تم التحديث بواسطة:</span>
-                  <span>{{ appointment()!.updatedByName }}</span>
-                </div>
-                } -->
               </div>
             </mat-card-content>
           </mat-card>

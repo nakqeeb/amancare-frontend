@@ -122,7 +122,9 @@
           <mat-card class="stat-card">
             <mat-card-content>
               <div class="stat-content">
-                <div class="stat-value">{{ totalWorkingHours() }}</div>
+                <div class="stat-value" style="font-size: 16px">
+                  {{ totalWorkingHours() }}
+                </div>
                 <div class="stat-label">ساعات العمل</div>
               </div>
               <mat-icon class="stat-icon">access_time</mat-icon>
@@ -211,6 +213,47 @@
                   </td>
                 </ng-container>
 
+                <!-- NEW: Duration Configuration Column -->
+                <ng-container matColumnDef="duration">
+                  <th mat-header-cell *matHeaderCellDef>التكوين</th>
+                  <td mat-cell *matCellDef="let schedule">
+                    <div class="duration-info">
+                      <mat-chip
+                        [color]="
+                          schedule.durationConfigType === 'DIRECT'
+                            ? 'primary'
+                            : 'accent'
+                        "
+                        selected
+                      >
+                        {{
+                          getDurationConfigTypeLabel(
+                            schedule.durationConfigType
+                          )
+                        }}
+                      </mat-chip>
+                      <div class="duration-details">
+                        @if (schedule.durationConfigType === 'DIRECT') {
+                        <span class="duration-value"
+                          >{{ schedule.durationMinutes }} دقيقة</span
+                        >
+                        <span class="duration-hint"
+                          >{{ schedule.expectedTokens }} توقع</span
+                        >
+                        } @else if (schedule.durationConfigType ===
+                        'TOKEN_BASED') {
+                        <span class="duration-value"
+                          >{{ schedule.calculatedDurationMinutes }} دقيقة</span
+                        >
+                        <span class="duration-hint"
+                          >{{ schedule.targetTokensPerDay }} رمز/يوم</span
+                        >
+                        }
+                      </div>
+                    </div>
+                  </td>
+                </ng-container>
+
                 <!-- Type Column -->
                 <ng-container matColumnDef="type">
                   <th mat-header-cell *matHeaderCellDef>النوع</th>
@@ -229,9 +272,11 @@
                   <th mat-header-cell *matHeaderCellDef>ساعات العمل</th>
                   <td mat-cell *matCellDef="let schedule">
                     <div class="hours-info">
-                      <span class="hours-value"
-                        >{{ schedule.workingHours || 0 }} ساعة</span
-                      >
+                      <span class="hours-value">
+                        {{
+                          formatDuration(schedule.availableWorkingMinutes || 0)
+                        }}
+                      </span>
                       @if (schedule.totalSlots) {
                       <div class="slots-info">
                         {{ schedule.totalSlots }} فترة
@@ -262,7 +307,7 @@
                       <button
                         mat-icon-button
                         [matTooltip]="'عرض تفاصيل الجدولة'"
-                        [routerLink]="['/schedules/doctor', schedule.doctorId]"
+                        [routerLink]="['/schedules/detail', schedule.id]"
                       >
                         <mat-icon>visibility</mat-icon>
                       </button>

@@ -85,11 +85,74 @@
 
   .info-row {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 16px;
+    padding: 8px 0;
+
+    &.highlight {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 12px;
+      margin: 8px 0;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+
+      .info-label {
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        mat-icon {
+          color: white;
+        }
+      }
+    }
+
+    &.highlight-override {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+      border-left: 4px solid #ff9800;
+      border-radius: 8px;
+      margin: 8px 0;
+      padding: 16px !important;
+      align-items: flex-start;
+
+      .info-label {
+        color: var(--text-primary);
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+
+        mat-icon {
+          color: #ff9800;
+        }
+      }
+
+      .override-info {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        p {
+          margin: 0;
+          font-size: 14px;
+          color: var(--text-primary);
+
+          strong {
+            color: var(--text-secondary);
+            font-weight: 500;
+          }
+        }
+      }
+    }
+
+    &.token-row {
+      justify-content: space-between;
+    }
 
     &.full-width {
       flex-direction: column;
+      align-items: flex-start;
       gap: 8px;
     }
 
@@ -101,12 +164,71 @@
       font-weight: 600;
       min-width: 120px;
       color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .info-value {
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+
+      &.token-display {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+
+        .token-number {
+          font-size: 28px;
+          font-weight: 700;
+          color: white;
+        }
+
+        .token-info {
+          font-size: 12px;
+          font-weight: 400;
+          opacity: 0.9;
+        }
+      }
+
+      .token-inline {
+        font-size: 12px;
+        color: var(--primary-color);
+        margin-right: 8px;
+        font-weight: 600;
+        background: rgba(102, 126, 234, 0.1);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
     }
 
     p {
       margin: 0;
       line-height: 1.5;
     }
+  }
+}
+
+// Add styles for duration override
+.override-badge {
+  margin-right: 8px;
+  height: 24px;
+  font-size: 11px;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    margin-left: 4px;
   }
 }
 
@@ -135,4 +257,9 @@ mat-card-actions {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    justify-content: center;
+  }
 }

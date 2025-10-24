@@ -28,8 +28,11 @@ import {
   AppointmentType,              // Add this import
   APPOINTMENT_STATUS_LABELS,
   APPOINTMENT_TYPE_LABELS,
-  APPOINTMENT_STATUS_COLORS
+  APPOINTMENT_STATUS_COLORS,
+  OverrideDurationRequest
 } from '../../models/appointment.model';
+import { OverrideDurationDialogComponent, OverrideDurationDialogData } from '../override-duration-dialog/override-duration-dialog.component';
+import { TokenBadgeComponent } from "../../../../shared/components/token-badge/token-badge.component";
 
 @Component({
   selector: 'app-appointment-details',
@@ -47,8 +50,9 @@ import {
     MatListModule,
     MatDialogModule,
     HeaderComponent,
-    SidebarComponent
-  ],
+    SidebarComponent,
+    TokenBadgeComponent
+],
   templateUrl: './appointment-details.component.html',
   styleUrl: './appointment-details.component.scss'
 })
@@ -202,5 +206,43 @@ export class AppointmentDetailsComponent implements OnInit {
     if (this.appointment()) {
       this.router.navigate(['/users', this.appointment()!.doctor.id]);
     }
+  }
+
+  // Method to open override dialog
+  openOverrideDurationDialog(): void {
+    const appointment = this.appointment();
+    if (!appointment) return;
+
+    const dialogData: OverrideDurationDialogData = {
+      appointmentId: appointment.id,
+      currentDuration: appointment.durationMinutes,
+      originalDuration: appointment.originalDurationMinutes || appointment.durationMinutes,
+      appointmentTime: appointment.appointmentTime
+    };
+
+    const dialogRef = this.dialog.open(OverrideDurationDialogComponent, {
+      width: '500px',
+      data: dialogData
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.overrideDuration(appointment.id, result);
+      }
+    });
+  }
+
+  // Method to override duration
+  private overrideDuration(appointmentId: number, request: OverrideDurationRequest): void {
+    this.appointmentService.overrideAppointmentDuration(appointmentId, request).subscribe({
+      next: (updatedAppointment) => {
+        this.appointment.set(updatedAppointment);
+        this.notificationService.success('تم تجاوز مدة الموعد بنجاح');
+      },
+      error: (error) => {
+        console.error('Error overriding duration:', error);
+        this.notificationService.error('فشل في تجاوز مدة الموعد');
+      }
+    });
   }
 }

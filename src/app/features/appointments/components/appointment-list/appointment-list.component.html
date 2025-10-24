@@ -138,17 +138,55 @@
                 </td>
               </ng-container>
 
-              <!-- Date Time Column -->
-              <ng-container matColumnDef="dateTime">
-                <th mat-header-cell *matHeaderCellDef>التاريخ والوقت</th>
+              <!-- Date Column -->
+              <!-- <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef>التاريخ</th>
                 <td mat-cell *matCellDef="let appointment">
                   <div class="datetime-info">
                     <mat-icon>event</mat-icon>
-                    <div>
-                      <div>{{ appointment.appointmentDate }}</div>
-                      <div class="time">{{ appointment.appointmentTime }}</div>
-                    </div>
+                    <span>{{ appointment.appointmentDate }}</span>
                   </div>
+                </td>
+              </ng-container> -->
+
+              <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef>التاريخ</th>
+                <td mat-cell *matCellDef="let appointment">
+                  <div class="datetime-info">
+                    <mat-icon>event</mat-icon>
+                    <span [class.today]="isToday(appointment.appointmentDate)">
+                      {{ formatAppointmentDate(appointment.appointmentDate) }}
+                    </span>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Time Column - Show token next to time -->
+              <ng-container matColumnDef="time">
+                <th mat-header-cell *matHeaderCellDef>الوقت</th>
+                <td mat-cell *matCellDef="let appointment">
+                  <div class="time-cell">
+                    <span class="time">{{ appointment.appointmentTime }}</span>
+                    <!-- @if (appointment.tokenNumber) {
+                    <span class="token-mini">#{{ appointment.tokenNumber }}</span>
+                    } -->
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- **NEW: Token Number Column** -->
+              <ng-container matColumnDef="token">
+                <th mat-header-cell *matHeaderCellDef>الرمز</th>
+                <td mat-cell *matCellDef="let appointment">
+                  @if (appointment.tokenNumber) {
+                  <app-token-badge
+                    [tokenNumber]="appointment.tokenNumber"
+                    size="small"
+                  ></app-token-badge>
+
+                  } @else {
+                  <span class="no-token">-</span>
+                  }
                 </td>
               </ng-container>
 

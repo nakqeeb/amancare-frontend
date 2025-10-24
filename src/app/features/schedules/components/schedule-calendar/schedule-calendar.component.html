@@ -1,251 +1,532 @@
 <div class="schedule-calendar-container">
   <app-header></app-header>
-
   <app-sidebar>
-    <div class="main-content">
-      <main class="content-area">
-        <!-- Page Header -->
-        <div class="page-header">
-          <div class="header-content">
-            <h1 class="page-title">
+    <div class="content-area">
+      <!-- Header -->
+      <div class="page-header">
+        <div class="header-content">
+          <div class="header-text">
+            <h1>
               <mat-icon>calendar_month</mat-icon>
-              تقويم الجداول
+              تقويم جداول الأطباء
             </h1>
-            <p class="page-description">عرض جداول الأطباء في تقويم شهري</p>
+            <p class="subtitle">عرض وإدارة جداول العمل الأسبوعية</p>
           </div>
-
           <div class="header-actions">
             <button
               mat-raised-button
               color="primary"
-              [routerLink]="['/schedules/create']"
+              routerLink="/schedules/new"
             >
               <mat-icon>add</mat-icon>
-              إضافة جدولة
+              إضافة جدول جديد
             </button>
           </div>
         </div>
+      </div>
 
-        <!-- Filters -->
-        <mat-card class="filters-card">
+      <!-- Statistics Cards -->
+      <div class="stats-section">
+        <mat-card class="stat-card">
           <mat-card-content>
-            <form [formGroup]="filtersForm" class="filters-form">
-              <div class="filters-row">
-                <mat-form-field appearance="outline">
-                  <mat-label>الطبيب</mat-label>
-                  <mat-select
-                    formControlName="doctorId"
-                    (selectionChange)="onFiltersChange()"
-                  >
-                    <mat-option value="">جميع الأطباء</mat-option>
-                    @for (doctor of doctors(); track doctor.id) {
-                    <mat-option [value]="doctor.id">{{
-                      doctor.fullName
-                    }}</mat-option>
-                    }
-                  </mat-select>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>نوع الجدولة</mat-label>
-                  <mat-select
-                    formControlName="scheduleType"
-                    (selectionChange)="onFiltersChange()"
-                  >
-                    <mat-option value="">جميع الأنواع</mat-option>
-                    @for (type of scheduleTypes; track type.value) {
-                    <mat-option [value]="type.value">{{
-                      type.label
-                    }}</mat-option>
-                    }
-                  </mat-select>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>الشهر والسنة</mat-label>
-                  <input
-                    matInput
-                    [matDatepicker]="monthPicker"
-                    formControlName="monthYear"
-                    (dateChange)="onMonthChange()"
-                    readonly
-                  />
-                  <mat-datepicker-toggle
-                    matSuffix
-                    [for]="monthPicker"
-                  ></mat-datepicker-toggle>
-                  <mat-datepicker
-                    #monthPicker
-                    startView="multi-year"
-                  ></mat-datepicker>
-                </mat-form-field>
-
-                <div class="view-toggle">
-                  <button
-                    mat-button
-                    [class.active]="showUnavailabilities()"
-                    (click)="toggleUnavailabilities()"
-                  >
-                    <mat-icon>event_busy</mat-icon>
-                    عدم التوفر
-                  </button>
-                </div>
+            <div class="stat-content">
+              <mat-icon class="stat-icon">event_available</mat-icon>
+              <div class="stat-details">
+                <span class="stat-value">{{
+                  scheduleStats().totalSchedules
+                }}</span>
+                <span class="stat-label">إجمالي الجداول</span>
               </div>
-            </form>
+            </div>
           </mat-card-content>
         </mat-card>
 
-        <!-- Calendar Navigation -->
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <mat-icon class="stat-icon">medical_services</mat-icon>
+              <div class="stat-details">
+                <span class="stat-value">{{
+                  scheduleStats().activeDoctors
+                }}</span>
+                <span class="stat-label">الأطباء النشطون</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <mat-icon class="stat-icon">schedule</mat-icon>
+              <div class="stat-details">
+                <span class="stat-value">{{
+                  scheduleStats().totalWorkingHours
+                }}</span>
+                <span class="stat-label">ساعات العمل</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <mat-icon class="stat-icon">confirmation_number</mat-icon>
+              <div class="stat-details">
+                <span class="stat-value">{{ scheduleStats().totalSlots }}</span>
+                <span class="stat-label">إجمالي المواعيد</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <mat-icon class="stat-icon">timer</mat-icon>
+              <div class="stat-details">
+                <span class="stat-value">{{
+                  scheduleStats().averageDuration
+                }}</span>
+                <span class="stat-label">متوسط المدة (دقيقة)</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Controls Bar -->
+      <div class="controls-bar">
         <div class="calendar-navigation">
-          <div class="nav-buttons">
-            <button
-              mat-icon-button
-              (click)="previousMonth()"
-              [matTooltip]="'الشهر السابق'"
-            >
-              <mat-icon>chevron_right</mat-icon>
-            </button>
-
-            <button mat-button (click)="goToToday()" class="today-btn">
-              اليوم
-            </button>
-
-            <button
-              mat-icon-button
-              (click)="nextMonth()"
-              [matTooltip]="'الشهر التالي'"
-            >
-              <mat-icon>chevron_left</mat-icon>
-            </button>
-          </div>
-
-          <div class="month-title">
-            <h2>{{ currentMonthTitle() }}</h2>
-          </div>
-
-          <div class="calendar-legend">
-            <div class="legend-item">
-              <div class="legend-color has-schedules"></div>
-              <span>يوجد جداول</span>
-            </div>
-            @if (showUnavailabilities()) {
-            <div class="legend-item">
-              <div class="legend-color has-unavailability"></div>
-              <span>عدم توفر</span>
-            </div>
-            }
-            <div class="legend-item">
-              <div class="legend-color is-today"></div>
-              <span>اليوم</span>
-            </div>
-          </div>
+          <button mat-icon-button (click)="previousMonth()">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+          <button mat-button (click)="goToToday()">اليوم</button>
+          <button mat-icon-button (click)="nextMonth()">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <h2 class="current-month">{{ currentMonthYear() }}</h2>
         </div>
 
-        <!-- Calendar -->
-        <mat-card class="calendar-card">
-          <mat-card-content>
-            @if (scheduleService.loading()) {
-            <div class="loading-container">
-              <mat-progress-spinner diameter="50"></mat-progress-spinner>
-              <p>جاري تحميل التقويم...</p>
+        <div class="view-controls">
+          <!-- Doctor Filter -->
+          <mat-form-field appearance="outline" class="doctor-filter">
+            <mat-label>تصفية حسب الطبيب</mat-label>
+            <mat-select
+              [value]="selectedDoctorId()"
+              (selectionChange)="onDoctorFilterChange($event.value)"
+            >
+              <mat-option [value]="null">جميع الأطباء</mat-option>
+              @for (doctor of doctors(); track doctor.id) {
+              <mat-option [value]="doctor.id">
+                {{ doctor.fullName }}
+                @if (doctor.specialization) {
+                <span class="specialization">
+                  - {{ doctor.specialization }}</span
+                >
+                }
+              </mat-option>
+              }
+            </mat-select>
+            <mat-icon matPrefix>filter_list</mat-icon>
+          </mat-form-field>
+
+          <!-- View Mode Toggle -->
+          <div class="view-mode-toggle">
+            <button
+              mat-icon-button
+              [class.active]="viewMode() === 'month'"
+              (click)="changeViewMode('month')"
+              matTooltip="عرض شهري"
+            >
+              <mat-icon>calendar_view_month</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              [class.active]="viewMode() === 'week'"
+              (click)="changeViewMode('week')"
+              matTooltip="عرض أسبوعي"
+            >
+              <mat-icon>view_week</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              [class.active]="viewMode() === 'list'"
+              (click)="changeViewMode('list')"
+              matTooltip="عرض قائمة"
+            >
+              <mat-icon>view_list</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>جارٍ تحميل الجداول...</p>
+      </div>
+      }
+
+      <!-- Month View -->
+      @if (!loading() && viewMode() === 'month') {
+      <mat-card class="calendar-card">
+        <mat-card-content>
+          <!-- Week Days Header -->
+          <div class="calendar-header">
+            @for (day of weekDays; track day.value) {
+            <div class="calendar-header-cell">
+              {{ day.label }}
             </div>
-            } @else {
-            <div class="calendar">
-              <!-- Days Header -->
-              <div class="calendar-header">
-                @for (dayName of dayNames; track dayName) {
-                <div class="day-header">{{ dayName }}</div>
+            }
+          </div>
+
+          <!-- Calendar Grid -->
+          <div class="calendar-grid">
+            @for (day of calendarDays(); track day.date.getTime()) {
+            <div
+              class="calendar-day"
+              [class.other-month]="!day.isCurrentMonth"
+              [class.today]="day.isToday"
+              [class.has-schedules]="day.hasSchedules"
+              (click)="selectDay(day)"
+            >
+              <div class="day-number">{{ day.date.getDate() }}</div>
+
+              @if (day.hasSchedules) {
+              <div class="day-schedules">
+                @for (schedule of day.schedules; track schedule.id) {
+                <div
+                  class="schedule-badge"
+                  [class]="getScheduleColorClass(schedule)"
+                  [matTooltip]="
+                    schedule.doctorName +
+                    ' - ' +
+                    formatTime(schedule.startTime) +
+                    ' إلى ' +
+                    formatTime(schedule.endTime)
+                  "
+                >
+                  <div class="schedule-info">
+                    <span class="doctor-name">{{ schedule.doctorName }}</span>
+                    <span class="schedule-time">
+                      {{ formatTime(schedule.startTime) }} -
+                      {{ formatTime(schedule.endTime) }}
+                    </span>
+                    <div class="schedule-details">
+                      <mat-chip
+                        class="mini-chip"
+                        [color]="
+                          schedule.durationConfigType === 'TOKEN_BASED'
+                            ? 'accent'
+                            : 'primary'
+                        "
+                      >
+                        {{ schedule.effectiveDuration }}د
+                      </mat-chip>
+                      <mat-chip class="mini-chip">
+                        <mat-icon>confirmation_number</mat-icon>
+                        {{ schedule.expectedTokens }}
+                      </mat-chip>
+                    </div>
+                  </div>
+
+                  <button
+                    mat-icon-button
+                    class="schedule-menu-button"
+                    [matMenuTriggerFor]="scheduleMenu"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+
+                  <mat-menu #scheduleMenu="matMenu">
+                    <button
+                      mat-menu-item
+                      (click)="viewScheduleDetails(schedule, $event)"
+                    >
+                      <mat-icon>visibility</mat-icon>
+                      <span>عرض التفاصيل</span>
+                    </button>
+                    <button
+                      mat-menu-item
+                      (click)="editSchedule(schedule.id, $event)"
+                    >
+                      <mat-icon>edit</mat-icon>
+                      <span>تعديل</span>
+                    </button>
+                    <button
+                      mat-menu-item
+                      (click)="cloneSchedule(schedule, $event)"
+                    >
+                      <mat-icon>content_copy</mat-icon>
+                      <span>نسخ</span>
+                    </button>
+                    <mat-divider></mat-divider>
+                    <button
+                      mat-menu-item
+                      (click)="deactivateSchedule(schedule.id, $event)"
+                      class="danger"
+                    >
+                      <mat-icon>block</mat-icon>
+                      <span>تعطيل</span>
+                    </button>
+                  </mat-menu>
+                </div>
                 }
               </div>
+              }
+            </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+      }
 
-              <!-- Calendar Weeks -->
-              <div class="calendar-body">
-                @for (week of calendarWeeks(); track week) {
-                <div class="calendar-week">
-                  @for (day of week.days; track day.date) {
+      <!-- Week View -->
+      @if (!loading() && viewMode() === 'week') {
+      <mat-card class="week-view-card">
+        <mat-card-content>
+          <div class="week-view-container">
+            @for (summary of weekSchedules(); track summary.doctorId) {
+            <div class="doctor-week-row">
+              <div class="doctor-info-cell">
+                <div class="doctor-header">
+                  <mat-icon>medical_services</mat-icon>
+                  <div class="doctor-details">
+                    <span class="doctor-name">{{ summary.doctorName }}</span>
+                    @if (summary.doctorSpecialization) {
+                    <span class="doctor-spec">{{
+                      summary.doctorSpecialization
+                    }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="doctor-stats">
+                  <div class="stat-item">
+                    <mat-icon>schedule</mat-icon>
+                    <span>{{ summary.totalHours }}س</span>
+                  </div>
+                  <div class="stat-item">
+                    <mat-icon>confirmation_number</mat-icon>
+                    <span>{{ summary.totalSlots }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <mat-icon>timer</mat-icon>
+                    <span>{{ summary.averageDuration }}د</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="week-days-row">
+                @for (day of weekDays; track day.value) {
+                <div class="week-day-cell">
+                  @if (hasScheduleOnDay(summary, day.value)) { @let schedule =
+                  getScheduleForDay(summary, day.value); @if (schedule) {
                   <div
-                    class="calendar-day"
-                    [class.other-month]="!day.isCurrentMonth"
-                    [class.today]="day.isToday"
-                    [class.past]="day.isPast"
-                    [class.has-schedules]="day.schedules.length > 0"
-                    [class.has-unavailability]="
-                      showUnavailabilities() && day.unavailabilities.length > 0
-                    "
-                    [matTooltip]="getDayTooltip(day)"
-                    (click)="onDayClick(day)"
+                    class="schedule-cell"
+                    [class]="getScheduleColorClass(schedule)"
                   >
-                    <div class="day-number">
-                      {{ day.date.getDate() }}
+                    <div class="time-range">
+                      {{ formatTime(schedule.startTime) }} -
+                      {{ formatTime(schedule.endTime) }}
                     </div>
-
-                    <div class="day-content">
-                      <!-- Schedule indicators -->
-                      @if (day.schedules.length > 0) {
-                      <div class="schedules-indicators">
-                        @for (schedule of day.schedules.slice(0, 3); track
-                        schedule.id) {
-                        <div
-                          class="schedule-indicator"
-                          [style.background-color]="getScheduleColor(schedule)"
-                          [matTooltip]="getScheduleTooltip(schedule)"
-                        ></div>
-                        } @if (day.schedules.length > 3) {
-                        <div class="more-indicator">
-                          +{{ day.schedules.length - 3 }}
-                        </div>
-                        }
-                      </div>
-                      }
-
-                      <!-- Unavailability indicators -->
-                      @if (showUnavailabilities() && day.unavailabilities.length
-                      > 0) {
-                      <div class="unavailability-indicators">
-                        @for (unavailability of day.unavailabilities.slice(0,
-                        2); track unavailability.id) {
-                        <div
-                          class="unavailability-indicator"
-                          [style.background-color]="
-                            getUnavailabilityColor(unavailability)
-                          "
-                          [matTooltip]="
-                            getUnavailabilityTooltip(unavailability)
-                          "
-                        ></div>
-                        } @if (day.unavailabilities.length > 2) {
-                        <div class="more-unavailability">!</div>
-                        }
-                      </div>
-                      }
-
-                      <!-- Stats -->
-                      @if (day.isCurrentMonth && (day.availableDoctors > 0 ||
-                      day.totalSlots > 0)) {
-                      <div class="day-stats">
-                        @if (day.availableDoctors > 0) {
-                        <span class="stat doctors"
-                          >{{ day.availableDoctors }}د</span
-                        >
-                        } @if (day.totalSlots > 0) {
-                        <span class="stat slots">{{ day.totalSlots }}ف</span>
-                        }
-                      </div>
-                      }
+                    @if (schedule.breakStartTime) {
+                    <div class="break-time">
+                      <mat-icon>local_cafe</mat-icon>
+                      {{ formatTime(schedule.breakStartTime) }} -
+                      {{ formatTime(schedule.breakEndTime!) }}
                     </div>
+                    }
+                    <div class="duration-info">
+                      <mat-chip
+                        class="duration-chip"
+                        [color]="
+                          schedule.durationConfigType === 'TOKEN_BASED'
+                            ? 'accent'
+                            : 'primary'
+                        "
+                      >
+                        <mat-icon>timer</mat-icon>
+                        {{ schedule.effectiveDuration }}د
+                      </mat-chip>
+                      <span class="config-type">{{
+                        getDurationConfigLabel(schedule.durationConfigType!)
+                      }}</span>
+                    </div>
+                    <div class="tokens-info">
+                      <mat-icon>confirmation_number</mat-icon>
+                      <span>{{ schedule.expectedTokens }} موعد</span>
+                    </div>
+                  </div>
+                  } } @else {
+                  <div class="no-schedule">
+                    <mat-icon>event_busy</mat-icon>
+                    <span>لا يوجد جدول</span>
                   </div>
                   }
                 </div>
                 }
               </div>
             </div>
+            } @if (weekSchedules().length === 0) {
+            <div class="no-data-message">
+              <mat-icon>event_busy</mat-icon>
+              <p>لا توجد جداول لعرضها</p>
+            </div>
             }
-          </mat-card-content>
-        </mat-card>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      }
 
-        <!-- Day Details Modal would go here -->
-        <!-- This would be a separate component or dialog -->
-      </main>
+      <!-- List View -->
+      @if (!loading() && viewMode() === 'list') {
+      <mat-card class="list-view-card">
+        <mat-card-content>
+          <div class="schedules-list">
+            @for (schedule of filteredSchedules(); track schedule.id) {
+            <div
+              class="schedule-list-item"
+              [class]="getScheduleColorClass(schedule)"
+            >
+              <div class="schedule-header">
+                <div class="doctor-info">
+                  <mat-icon>medical_services</mat-icon>
+                  <div>
+                    <h3>{{ schedule.doctorName }}</h3>
+                    @if (schedule.doctorSpecialization) {
+                    <p class="specialization">
+                      {{ schedule.doctorSpecialization }}
+                    </p>
+                    }
+                  </div>
+                </div>
+                <div class="schedule-actions">
+                  <button mat-icon-button [matMenuTriggerFor]="listMenu">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #listMenu="matMenu">
+                    <button
+                      mat-menu-item
+                      (click)="viewScheduleDetails(schedule, $event)"
+                    >
+                      <mat-icon>visibility</mat-icon>
+                      <span>عرض التفاصيل</span>
+                    </button>
+                    <button
+                      mat-menu-item
+                      (click)="editSchedule(schedule.id, $event)"
+                    >
+                      <mat-icon>edit</mat-icon>
+                      <span>تعديل</span>
+                    </button>
+                    <button
+                      mat-menu-item
+                      (click)="cloneSchedule(schedule, $event)"
+                    >
+                      <mat-icon>content_copy</mat-icon>
+                      <span>نسخ</span>
+                    </button>
+                    <mat-divider></mat-divider>
+                    <button
+                      mat-menu-item
+                      (click)="deactivateSchedule(schedule.id, $event)"
+                      class="danger"
+                    >
+                      <mat-icon>block</mat-icon>
+                      <span>تعطيل</span>
+                    </button>
+                  </mat-menu>
+                </div>
+              </div>
+
+              <div class="schedule-body">
+                <div class="schedule-detail-row">
+                  <div class="detail-item">
+                    <mat-icon>event</mat-icon>
+                    <span>{{ getDayLabel(schedule.dayOfWeek) }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <mat-icon>schedule</mat-icon>
+                    <span
+                      >{{ formatTime(schedule.startTime) }} -
+                      {{ formatTime(schedule.endTime) }}</span
+                    >
+                  </div>
+                  @if (schedule.breakStartTime) {
+                  <div class="detail-item">
+                    <mat-icon>local_cafe</mat-icon>
+                    <span
+                      >استراحة: {{ formatTime(schedule.breakStartTime) }} -
+                      {{ formatTime(schedule.breakEndTime!) }}</span
+                    >
+                  </div>
+                  }
+                </div>
+
+                <div class="schedule-metrics">
+                  <mat-card class="metric-card">
+                    <mat-icon>timer</mat-icon>
+                    <div class="metric-content">
+                      <span class="metric-value"
+                        >{{ schedule.effectiveDuration }}د</span
+                      >
+                      <span class="metric-label">مدة الموعد</span>
+                    </div>
+                  </mat-card>
+
+                  <mat-card class="metric-card">
+                    <mat-icon>settings</mat-icon>
+                    <div class="metric-content">
+                      <span class="metric-value">{{
+                        getDurationConfigLabel(schedule.durationConfigType!)
+                      }}</span>
+                      <span class="metric-label">نوع التكوين</span>
+                    </div>
+                  </mat-card>
+
+                  <mat-card class="metric-card">
+                    <mat-icon>confirmation_number</mat-icon>
+                    <div class="metric-content">
+                      <span class="metric-value">{{
+                        schedule.expectedTokens
+                      }}</span>
+                      <span class="metric-label">عدد المواعيد</span>
+                    </div>
+                  </mat-card>
+
+                  <mat-card class="metric-card">
+                    <mat-icon>access_time</mat-icon>
+                    <div class="metric-content">
+                      <span class="metric-value"
+                        >{{ schedule.workingHours }}س</span
+                      >
+                      <span class="metric-label">ساعات العمل</span>
+                    </div>
+                  </mat-card>
+                </div>
+
+                @if (schedule.notes) {
+                <div class="schedule-notes">
+                  <mat-icon>notes</mat-icon>
+                  <span>{{ schedule.notes }}</span>
+                </div>
+                }
+              </div>
+            </div>
+            } @if (filteredSchedules().length === 0) {
+            <div class="no-data-message">
+              <mat-icon>event_busy</mat-icon>
+              <p>لا توجد جداول لعرضها</p>
+            </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+      }
     </div>
   </app-sidebar>
 </div>

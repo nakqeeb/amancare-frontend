@@ -35,7 +35,8 @@ import {
   ScheduleType,
   DAY_OF_WEEK_ARABIC,
   SCHEDULE_TYPE_ARABIC,
-  ScheduleSearchCriteria
+  ScheduleSearchCriteria,
+  getDurationConfigTypeLabel // ADD IMPORT
 } from '../../models/schedule.model';
 import { MatDividerModule } from '@angular/material/divider';
 
@@ -87,11 +88,12 @@ export class ScheduleListComponent implements OnInit {
     isActive: false
   });
 
-  // Table configuration
+  // Table configuration - UPDATED COLUMNS
   public displayedColumns: string[] = [
     'doctor',
     'day',
     'time',
+    'duration', // NEW COLUMN
     'type',
     'hours',
     'status',
@@ -157,9 +159,50 @@ export class ScheduleListComponent implements OnInit {
   });
 
   public totalWorkingHours = computed(() => {
-    return this.filteredSchedules()
-      .reduce((sum, schedule) => sum + (schedule.workingHours || 0), 0);
+    const totalMinutes = this.filteredSchedules()
+      .reduce((sum, s) => sum + (s.availableWorkingMinutes || 0), 0);
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.round(totalMinutes % 60);
+
+    return `${hours} ساعة${hours !== 1 ? '' : ''}${minutes ? ` و ${minutes} دقيقة` : ''}`;
   });
+
+  // ADD HELPER METHOD
+  getDurationConfigTypeLabel(type: string): string {
+    return getDurationConfigTypeLabel(type);
+  }
+
+  formatDuration(totalMinutes: number): string {
+    if (!totalMinutes || totalMinutes <= 0) return '0 دقيقة';
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    const hourLabel =
+      hours === 0
+        ? ''
+        : hours === 1
+          ? 'ساعة'
+          : hours === 2
+            ? 'ساعتان'
+            : 'ساعات';
+
+    const minuteLabel =
+      minutes === 0
+        ? ''
+        : minutes === 1
+          ? 'دقيقة'
+          : minutes === 2
+            ? 'دقيقتان'
+            : 'دقائق';
+
+    if (hours > 0 && minutes > 0)
+      return `${hours} ${hourLabel} و ${minutes} ${minuteLabel}`;
+    if (hours > 0)
+      return `${hours} ${hourLabel}`;
+    return `${minutes} ${minuteLabel}`;
+  }
 
   ngOnInit(): void {
     this.loadSchedules();
@@ -219,7 +262,7 @@ export class ScheduleListComponent implements OnInit {
       [ScheduleType.TEMPORARY]: 'accent',
       [ScheduleType.EMERGENCY]: 'warn',
       [ScheduleType.ON_CALL]: 'accent',
-      [ScheduleType.VACATION_COVER]: 'accent'
+      [ScheduleType.HOLIDAY_COVERAGE]: 'accent'
     };
     return colors[type] || 'primary';
   }

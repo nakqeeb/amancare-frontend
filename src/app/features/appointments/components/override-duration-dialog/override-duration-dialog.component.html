@@ -1,0 +1,88 @@
+<h2 mat-dialog-title>
+  <mat-icon>schedule</mat-icon>
+  تجاوز مدة الموعد
+</h2>
+
+<mat-dialog-content>
+  <div class="duration-info">
+    <div class="info-item">
+      <span class="label">المدة الأصلية من الجدول:</span>
+      <span class="value">{{ data.originalDuration }} دقيقة</span>
+    </div>
+    <div class="info-item">
+      <span class="label">المدة الحالية:</span>
+      <span class="value">{{ data.currentDuration }} دقيقة</span>
+    </div>
+    <div class="info-item">
+      <span class="label">وقت الموعد:</span>
+      <span class="value">{{ data.appointmentTime }}</span>
+    </div>
+  </div>
+
+  <form [formGroup]="overrideForm">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>المدة الجديدة (دقائق)</mat-label>
+      <input
+        matInput
+        type="number"
+        formControlName="newDurationMinutes"
+        min="5"
+        max="240"
+        step="5"
+        required
+      />
+      <mat-icon matPrefix>timer</mat-icon>
+      <mat-hint>أدخل المدة الجديدة بالدقائق (5-240)</mat-hint>
+      @if (overrideForm.get('newDurationMinutes')?.hasError('required')) {
+      <mat-error>المدة الجديدة مطلوبة</mat-error>
+      } @if (overrideForm.get('newDurationMinutes')?.hasError('min')) {
+      <mat-error>المدة يجب أن تكون 5 دقائق على الأقل</mat-error>
+      } @if (overrideForm.get('newDurationMinutes')?.hasError('max')) {
+      <mat-error>المدة يجب ألا تتجاوز 240 دقيقة</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>سبب التجاوز</mat-label>
+      <textarea
+        matInput
+        formControlName="reason"
+        rows="3"
+        required
+        placeholder="مثال: استشارة معقدة تتطلب وقت إضافي"
+      ></textarea>
+      <mat-icon matPrefix>notes</mat-icon>
+      @if (overrideForm.get('reason')?.hasError('required')) {
+      <mat-error>سبب التجاوز مطلوب</mat-error>
+      }
+    </mat-form-field>
+  </form>
+
+  <mat-card class="warning-card">
+    <mat-card-content>
+      <div class="warning-content">
+        <mat-icon>warning</mat-icon>
+        <p>
+          تحذير: تجاوز المدة قد يتسبب في تعارض مع المواعيد التالية. يرجى التأكد
+          من عدم وجود مواعيد متداخلة.
+        </p>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">
+    <mat-icon>close</mat-icon>
+    إلغاء
+  </button>
+  <button
+    mat-raised-button
+    color="primary"
+    [disabled]="overrideForm.invalid"
+    (click)="onSubmit()"
+  >
+    <mat-icon>check</mat-icon>
+    تأكيد التجاوز
+  </button>
+</mat-dialog-actions>

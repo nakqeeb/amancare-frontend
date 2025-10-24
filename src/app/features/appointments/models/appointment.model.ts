@@ -1,6 +1,7 @@
 // src/app/features/appointments/models/appointment.model.ts
 import { Patient } from '../../patients/models/patient.model';
 import { User } from '../../../core/models/user.model';
+import { Clinic } from '../../clinics/models/clinic.model';
 
 export enum AppointmentStatus {
   SCHEDULED = 'SCHEDULED',
@@ -20,11 +21,19 @@ export enum AppointmentType {
 
 export interface Appointment {
   id: number;
+  clinic: Clinic;
   patient: Patient;
   doctor: User;
   appointmentDate: string;
   appointmentTime: string;
   durationMinutes: number;
+  tokenNumber?: number; // **NEW FIELD**
+
+  // **NEW: Duration Override Fields**
+  isDurationOverridden?: boolean;
+  originalDurationMinutes?: number;
+  overrideReason?: string;
+
   appointmentType: AppointmentType;
   status: AppointmentStatus;
   chiefComplaint?: string;
@@ -33,7 +42,6 @@ export interface Appointment {
   createdAt?: string;
   updatedAt?: string;
   createdBy?: User;
-  updatedBy?: User;
 }
 
 export interface CreateAppointmentRequest {
@@ -42,7 +50,12 @@ export interface CreateAppointmentRequest {
   doctorId: number;
   appointmentDate: string;
   appointmentTime: string;
-  durationMinutes: number;
+  durationMinutes?: number; // Now optional
+
+  // **NEW: Override Fields**
+  overrideDurationMinutes?: number;
+  overrideReason?: string;
+
   appointmentType: AppointmentType;
   chiefComplaint?: string;
   notes?: string;
@@ -98,6 +111,13 @@ export interface AppointmentResponse {
   appointmentDate: string;       // YYYY-MM-DD
   appointmentTime: string;       // HH:mm:ss
   durationMinutes: number;
+  tokenNumber?: number; // **NEW FIELD**
+
+  // **NEW: Duration Override Fields**
+  isDurationOverridden?: boolean;
+  originalDurationMinutes?: number;
+  overrideReason?: string;
+
   appointmentType: AppointmentType;
   status: AppointmentStatus;
   chiefComplaint: string;  /** الشكوى الرئيسية */
@@ -114,6 +134,7 @@ export interface AppointmentSummaryResponse {
   doctorName: string;
   appointmentDate: string;
   appointmentTime: string;
+  tokenNumber?: number; // **NEW FIELD**
   status: AppointmentStatus;
   appointmentType: AppointmentType;
 }
@@ -194,3 +215,10 @@ export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatus, string> = {
   [AppointmentStatus.CANCELLED]: 'danger',
   [AppointmentStatus.NO_SHOW]: 'muted'
 };
+
+
+// **NEW: Override Duration Request**
+export interface OverrideDurationRequest {
+  newDurationMinutes: number;
+  reason: string;
+}
