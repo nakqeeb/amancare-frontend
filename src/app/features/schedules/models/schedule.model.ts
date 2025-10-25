@@ -244,7 +244,6 @@ export enum ScheduleType {
   REGULAR = 'REGULAR',
   TEMPORARY = 'TEMPORARY',
   EMERGENCY = 'EMERGENCY',
-  ON_CALL = 'ON_CALL',
   HOLIDAY_COVERAGE = 'HOLIDAY_COVERAGE'
 }
 
@@ -267,6 +266,7 @@ export interface ScheduleSearchCriteria {
   dayOfWeek?: DayOfWeek;
   scheduleType?: ScheduleType;
   isActive?: boolean;
+  searchTerm?: string;
   effectiveDateFrom?: string;
   effectiveDateTo?: string;
   startTime?: string;
@@ -295,7 +295,6 @@ export const SCHEDULE_TYPE_ARABIC: Record<ScheduleType, string> = {
   [ScheduleType.REGULAR]: 'منتظم',
   [ScheduleType.TEMPORARY]: 'مؤقت',
   [ScheduleType.EMERGENCY]: 'طارئ',
-  [ScheduleType.ON_CALL]: 'نوبة استدعاء',
   [ScheduleType.HOLIDAY_COVERAGE]: 'تغطية إجازة'
 };
 
