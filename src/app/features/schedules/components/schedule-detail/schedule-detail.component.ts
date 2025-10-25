@@ -159,7 +159,17 @@ export class ScheduleDetailComponent implements OnInit {
     const breakStart = schedule.breakStartTime ? this.parseTime(schedule.breakStartTime) : null;
     const breakEnd = schedule.breakEndTime ? this.parseTime(schedule.breakEndTime) : null;
 
+    // Calculate availability ratio if we have the data
+    const totalSlots = schedule.totalSlots || schedule.expectedTokens || 0;
+    const availableSlots = schedule.availableSlots ?? totalSlots;
+    const bookedSlots = totalSlots - availableSlots;
+
+    // Create a simple availability distribution
+    // If we have 10 total slots and 3 are booked, mark every 3rd or 4th slot as unavailable
+    const availabilityPattern = totalSlots > 0 ? Math.floor(totalSlots / Math.max(bookedSlots, 1)) : 0;
+
     let tokenNumber = 1;
+    let slotIndex = 0;
 
     while (this.compareTime(currentTime, endTime) < 0) {
       const timeStr = this.formatTimeObject(currentTime);
@@ -170,20 +180,49 @@ export class ScheduleDetailComponent implements OnInit {
         this.compareTime(currentTime, breakStart) >= 0 &&
         this.compareTime(currentTime, breakEnd) < 0;
 
-      if (!isBreakTime) {
-        slots.push({
-          time: timeStr,
-          tokenNumber: tokenNumber++,
-          isBreakTime: false,
-          isAvailable: true // We don't have real-time availability here
-        });
+      // Determine availability based on the pattern or if it's break time
+      let isAvailable = !isBreakTime; // Break time slots are not available
+
+      if (!isBreakTime && availabilityPattern > 0 && bookedSlots > 0) {
+        // Distribute unavailable slots evenly across the day
+        // This is a simple approximation since we don't have per-slot data
+        isAvailable = (slotIndex % availabilityPattern) !== 0;
       }
 
+      // Add all slots, including break time slots
+      slots.push({
+        time: timeStr,
+        tokenNumber: isBreakTime ? 0 : tokenNumber++, // Don't increment token for break slots
+        isBreakTime: isBreakTime!,
+        isAvailable: isAvailable
+      });
+
       currentTime = nextTime;
+      slotIndex++;
 
       // Break if we've reached or passed the end time
       if (this.compareTime(currentTime, endTime) >= 0) {
         break;
+      }
+    }
+
+    // If we have actual availability data and it's less than what we generated,
+    // mark some slots as unavailable more accurately
+    if (availableSlots < slots.filter(s => !s.isBreakTime).length) {
+      const nonBreakSlots = slots.filter(s => !s.isBreakTime);
+      const slotsToMarkUnavailable = nonBreakSlots.length - availableSlots;
+
+      if (slotsToMarkUnavailable > 0) {
+        // Mark slots as unavailable in a distributed pattern
+        const step = Math.floor(nonBreakSlots.length / slotsToMarkUnavailable);
+        let markedCount = 0;
+
+        for (let i = 0; i < slots.length && markedCount < slotsToMarkUnavailable; i++) {
+          if (!slots[i].isBreakTime && (i % step === 0 || (nonBreakSlots.length - markedCount) === (slots.length - i))) {
+            slots[i].isAvailable = false;
+            markedCount++;
+          }
+        }
       }
     }
 
@@ -256,7 +295,7 @@ export class ScheduleDetailComponent implements OnInit {
   public formatDate(dateStr: string): string {
     if (!dateStr) return 'غير محدد';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('ar-SA', {
+    return date.toLocaleDateString('ar-EG', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'

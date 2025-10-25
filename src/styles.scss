@@ -80,6 +80,174 @@
   --z-fixed: 1030;
   --z-modal: 1040;
   --z-tooltip: 1050;
+
+  // ===================================================================
+  // STATUS COLORS - For appointments, tasks, orders, etc.
+  // ===================================================================
+
+  // Scheduled/Pending Status (Light Blue)
+  --status-scheduled-bg: linear-gradient(135deg, #e3f2fd 0%, #f5f9ff 100%);
+  --status-scheduled-border: #2196f3;
+  --status-scheduled-hover: rgba(33, 150, 243, 0.1);
+  --status-scheduled-text: #1976d2;
+
+  // Confirmed/Approved Status (Teal/Green-Blue)
+  --status-confirmed-bg: linear-gradient(135deg, #e0f2f1 0%, #f1f8f7 100%);
+  --status-confirmed-border: #009688;
+  --status-confirmed-hover: rgba(0, 150, 136, 0.1);
+  --status-confirmed-text: #00796b;
+
+  // In Progress/Active Status (Orange/Amber)
+  --status-in-progress-bg: linear-gradient(135deg, #fff3e0 0%, #fffaf5 100%);
+  --status-in-progress-border: #ff9800;
+  --status-in-progress-hover: rgba(255, 152, 0, 0.1);
+  --status-in-progress-text: #f57c00;
+  --status-in-progress-glow: rgba(255, 152, 0, 0.4);
+
+  // Completed/Success Status (Green)
+  --status-completed-bg: linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%);
+  --status-completed-border: #4caf50;
+  --status-completed-hover: rgba(76, 175, 80, 0.1);
+  --status-completed-text: #388e3c;
+
+  // Cancelled/Rejected Status (Red)
+  --status-cancelled-bg: linear-gradient(135deg, #ffebee 0%, #fff5f5 100%);
+  --status-cancelled-border: #f44336;
+  --status-cancelled-hover: rgba(244, 67, 54, 0.1);
+  --status-cancelled-text: #d32f2f;
+  --status-cancelled-opacity: 0.85;
+
+  // No Show/Inactive Status (Gray)
+  --status-no-show-bg: linear-gradient(135deg, #f5f5f5 0%, #fafafa 100%);
+  --status-no-show-border: #9e9e9e;
+  --status-no-show-hover: rgba(158, 158, 158, 0.1);
+  --status-no-show-text: #757575;
+  --status-no-show-opacity: 0.9;
+
+  // ===================================================================
+  // INFO BANNER / SELECTOR LABEL COLORS
+  // ===================================================================
+  --info-banner-bg: linear-gradient(135deg, rgba(63, 81, 181, 0.08) 0%, rgba(63, 81, 181, 0.04) 100%);
+  --info-banner-border: #3f51b5;
+  --info-banner-icon: #3f51b5;
+  --info-banner-text: var(--text-primary);
+
+  // ===================================================================
+  // AVATAR / PROFILE COLORS
+  // ===================================================================
+  --avatar-bg-primary: linear-gradient(135deg, #3f51b5 0%, #5c6bc0 100%);
+  --avatar-bg-secondary: linear-gradient(135deg, #00897b 0%, #26a69a 100%);
+  --avatar-bg-accent: linear-gradient(135deg, #e91e63 0%, #f06292 100%);
+  --avatar-shadow-sm: rgba(63, 81, 181, 0.25);
+  --avatar-shadow-md: rgba(63, 81, 181, 0.35);
+  --avatar-shadow-lg: rgba(63, 81, 181, 0.45);
+  --avatar-border: #3f51b5;
+
+  // ===================================================================
+  // SELECTION CARD COLORS
+  // ===================================================================
+  --selection-card-border: #3f51b5;
+  --selection-card-border-active: #4caf50;
+  --selection-card-divider: rgba(63, 81, 181, 0.2);
+  --selection-card-bg: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-elevated) 100%);
+
+  // ===================================================================
+  // DETAIL/INFO CARD VARIANTS
+  // ===================================================================
+  // Default/Primary Card
+  --card-border-primary: #3f51b5;
+  --card-bg-primary: var(--bg-card);
+  --card-icon-primary: #3f51b5;
+
+  // Warning Card
+  --card-border-warning: #f57c00;
+  --card-bg-warning: rgba(245, 124, 0, 0.02);
+  --card-icon-warning: #f57c00;
+
+  // Info Card
+  --card-border-info: #1976d2;
+  --card-bg-info: rgba(25, 118, 210, 0.02);
+  --card-icon-info: #1976d2;
+
+  // Success Card
+  --card-border-success: #388e3c;
+  --card-bg-success: rgba(56, 142, 60, 0.02);
+  --card-icon-success: #388e3c;
+
+  // Notes/Secondary Card
+  --card-border-notes: #7b1fa2;
+  --card-bg-notes: rgba(123, 31, 162, 0.02);
+  --card-icon-notes: #7b1fa2;
+
+  // ===================================================================
+  // MEDICAL DATA TYPE COLORS
+  // ===================================================================
+  // Blood Type
+  --blood-type-positive: #c62828;
+  --blood-type-negative: #1565c0;
+
+  // Priority Levels
+  --priority-high: #d32f2f;
+  --priority-medium: #f57c00;
+  --priority-low: #388e3c;
+
+  // Severity Levels
+  --severity-critical: #b71c1c;
+  --severity-high: #d32f2f;
+  --severity-moderate: #f57c00;
+  --severity-low: #fbc02d;
+  --severity-minimal: #7cb342;
+
+  // ===================================================================
+  // UI ELEMENT COLORS
+  // ===================================================================
+  // Status Indicators
+  --indicator-active: #4caf50;
+  --indicator-inactive: #9e9e9e;
+  --indicator-warning: #ff9800;
+  --indicator-error: #f44336;
+
+  // Accent Colors
+  --accent-primary: #3f51b5;
+  --accent-secondary: #009688;
+  --accent-tertiary: #7b1fa2;
+
+  // Interactive Elements
+  --interactive-hover: rgba(63, 81, 181, 0.08);
+  --interactive-active: rgba(63, 81, 181, 0.12);
+  --interactive-selected: rgba(63, 81, 181, 0.15);
+
+  // ===================================================================
+  // PANEL/LIST ITEM COLORS
+  // ===================================================================
+  --panel-strip-width: 6px;
+  --panel-strip-width-hover: 8px;
+  --panel-item-hover: rgba(0, 0, 0, 0.04);
+  --panel-item-selected: rgba(63, 81, 181, 0.08);
+
+  // ===================================================================
+  // CHIP/TAG COLORS
+  // ===================================================================
+  --chip-bg-default: rgba(63, 81, 181, 0.1);
+  --chip-text-default: #3f51b5;
+  --chip-bg-success: rgba(76, 175, 80, 0.1);
+  --chip-text-success: #388e3c;
+  --chip-bg-warning: rgba(255, 152, 0, 0.1);
+  --chip-text-warning: #f57c00;
+  --chip-bg-error: rgba(244, 67, 54, 0.1);
+  --chip-text-error: #d32f2f;
+  --chip-bg-info: rgba(33, 150, 243, 0.1);
+  --chip-text-info: #1976d2;
+
+  // ===================================================================
+  // BADGE COLORS
+  // ===================================================================
+  --badge-bg-primary: #3f51b5;
+  --badge-bg-success: #4caf50;
+  --badge-bg-warning: #ff9800;
+  --badge-bg-error: #f44336;
+  --badge-bg-info: #2196f3;
+  --badge-text: #ffffff;
 }
 
 /* ===================================================================
@@ -144,6 +312,84 @@
   --chip-bg: rgba(255, 255, 255, 0.08);
   --tooltip-bg: #616161;
   --snackbar-bg: #323232;
+
+  // Status Colors - Dark Theme
+  --status-scheduled-bg: linear-gradient(135deg, #1a2332 0%, #1e2836 100%);
+  --status-scheduled-border: #42a5f5;
+  --status-scheduled-hover: rgba(66, 165, 245, 0.15);
+  --status-scheduled-text: #42a5f5;
+
+  --status-confirmed-bg: linear-gradient(135deg, #1a2e2c 0%, #1e3432 100%);
+  --status-confirmed-border: #26a69a;
+  --status-confirmed-hover: rgba(38, 166, 154, 0.15);
+  --status-confirmed-text: #26a69a;
+
+  --status-in-progress-bg: linear-gradient(135deg, #2e2416 0%, #332815 100%);
+  --status-in-progress-border: #ffb74d;
+  --status-in-progress-hover: rgba(255, 183, 77, 0.15);
+  --status-in-progress-text: #ffb74d;
+  --status-in-progress-glow: rgba(255, 183, 77, 0.3);
+
+  --status-completed-bg: linear-gradient(135deg, #1b2e1e 0%, #1f3222 100%);
+  --status-completed-border: #66bb6a;
+  --status-completed-hover: rgba(102, 187, 106, 0.15);
+  --status-completed-text: #66bb6a;
+
+  --status-cancelled-bg: linear-gradient(135deg, #2e1a1a 0%, #321e1e 100%);
+  --status-cancelled-border: #ef5350;
+  --status-cancelled-hover: rgba(239, 83, 80, 0.15);
+  --status-cancelled-text: #ef5350;
+
+  --status-no-show-bg: linear-gradient(135deg, #252525 0%, #2a2a2a 100%);
+  --status-no-show-border: #bdbdbd;
+  --status-no-show-hover: rgba(189, 189, 189, 0.15);
+  --status-no-show-text: #bdbdbd;
+
+  // Info Banner - Dark Theme
+  --info-banner-bg: linear-gradient(135deg, rgba(63, 81, 181, 0.15) 0%, rgba(63, 81, 181, 0.08) 100%);
+
+  // Avatar/Profile - Dark Theme
+  --avatar-border: #5c6bc0;
+
+  // Selection Card - Dark Theme
+  --selection-card-border: #5c6bc0;
+  --selection-card-divider: rgba(92, 107, 192, 0.3);
+
+  // Detail Cards - Dark Theme
+  --card-bg-warning: rgba(245, 124, 0, 0.05);
+  --card-bg-info: rgba(25, 118, 210, 0.05);
+  --card-bg-success: rgba(56, 142, 60, 0.05);
+  --card-bg-notes: rgba(123, 31, 162, 0.05);
+
+  // Medical Data - Dark Theme
+  --blood-type-positive: #ef5350;
+  --blood-type-negative: #42a5f5;
+
+  // Priority Levels - Dark Theme
+  --priority-high: #ef5350;
+  --priority-medium: #ffb74d;
+  --priority-low: #66bb6a;
+
+  // Interactive Elements - Dark Theme
+  --interactive-hover: rgba(92, 107, 192, 0.15);
+  --interactive-active: rgba(92, 107, 192, 0.2);
+  --interactive-selected: rgba(92, 107, 192, 0.25);
+
+  // Panel/List Items - Dark Theme
+  --panel-item-hover: rgba(255, 255, 255, 0.05);
+  --panel-item-selected: rgba(92, 107, 192, 0.15);
+
+  // Chips/Tags - Dark Theme
+  --chip-bg-default: rgba(63, 81, 181, 0.2);
+  --chip-text-default: #7986cb;
+  --chip-bg-success: rgba(102, 187, 106, 0.2);
+  --chip-text-success: #66bb6a;
+  --chip-bg-warning: rgba(255, 183, 77, 0.2);
+  --chip-text-warning: #ffb74d;
+  --chip-bg-error: rgba(239, 83, 80, 0.2);
+  --chip-text-error: #ef5350;
+  --chip-bg-info: rgba(66, 165, 245, 0.2);
+  --chip-text-info: #42a5f5;
 }
 
 /* ===================================================================

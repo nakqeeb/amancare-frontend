@@ -14,7 +14,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
-import { Subject, takeUntil } from 'rxjs';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { Subject, takeUntil, forkJoin } from 'rxjs';
 
 // Shared Components
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
@@ -24,6 +25,7 @@ import { TokenBadgeComponent } from '../../../../shared/components/token-badge/t
 // Services & Models
 import { AppointmentService } from '../../services/appointment.service';
 import { UserService } from '../../../users/services/user.service';
+import { PatientService } from '../../../patients/services/patient.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import {
   AppointmentResponse,
@@ -33,16 +35,25 @@ import {
   APPOINTMENT_TYPE_LABELS,
   APPOINTMENT_STATUS_COLORS
 } from '../../models/appointment.model';
+import { Patient, BloodType } from '../../../patients/models/patient.model';
 import { User } from '../../../users/models/user.model';
 
 interface AppointmentArrangementItem {
   id: number;
   tokenNumber: number;
+  patientId: number;
   patientName: string;
   appointmentType: AppointmentType;
   appointmentTime: string;
   status: AppointmentStatus;
   appointmentDate: string;
+  chiefComplaint?: string;
+  appointmentNotes?: string;
+
+  // Extended patient information
+  patientDetails?: Patient;
+  loadingPatientDetails: boolean;
+  showDetails: boolean;
 }
 
 @Component({
@@ -63,6 +74,7 @@ interface AppointmentArrangementItem {
     MatBadgeModule,
     MatDividerModule,
     MatListModule,
+    MatExpansionModule,
     HeaderComponent,
     SidebarComponent,
     TokenBadgeComponent
@@ -74,6 +86,7 @@ export class AppointmentArrangementComponent implements OnInit, OnDestroy {
   // Services
   private readonly appointmentService = inject(AppointmentService);
   private readonly userService = inject(UserService);
+  private readonly patientService = inject(PatientService);
   private readonly notificationService = inject(NotificationService);
   private destroy$ = new Subject<void>();
 
@@ -83,6 +96,9 @@ export class AppointmentArrangementComponent implements OnInit, OnDestroy {
   loading = signal<boolean>(false);
   loadingAppointments = signal<boolean>(false);
   selectedDoctorControl = new FormControl<number | null>(null);
+
+  // Patient details cache to avoid repeated API calls
+  private patientDetailsCache = new Map<number, Patient>();
 
   // Enums for template
   appointmentStatus = AppointmentStatus;
@@ -141,30 +157,29 @@ export class AppointmentArrangementComponent implements OnInit, OnDestroy {
 
   private loadDoctorAppointments(doctorId: number): void {
     this.loadingAppointments.set(true);
-    const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    const today = new Date().toISOString().split('T')[0];
 
     console.log('Loading appointments for doctor:', doctorId, 'Date:', today);
 
-    // Fetch appointments for the selected doctor for today
     this.appointmentService.getAllAppointments(
-      today,          // date
-      doctorId,       // doctorId
-      undefined,      // status - no filter
-      0,              // page
-      100,            // size - large enough to get all
-      'tokenNumber',  // sortBy
-      'asc'           // sortDirection
+      today,
+      doctorId,
+      undefined,
+      0,
+      100,
+      'tokenNumber',
+      'asc'
     ).subscribe({
       next: (response) => {
         console.log('Appointments response:', response);
 
-        // Filter out completed appointments and map to arrangement items
+        // CHANGED: Removed filter for completed appointments
+        // Now all appointments are displayed, including completed ones
         const items = response.appointments
-          .filter(apt => apt.status !== AppointmentStatus.COMPLETED)
           .map(apt => this.mapToArrangementItem(apt))
           .sort((a, b) => (a.tokenNumber || 0) - (b.tokenNumber || 0));
 
-        console.log('Filtered and mapped appointments:', items);
+        console.log('Mapped appointments:', items);
         this.appointments.set(items);
         this.loadingAppointments.set(false);
       },
@@ -178,6 +193,47 @@ export class AppointmentArrangementComponent implements OnInit, OnDestroy {
   }
 
   // ===================================================================
+  // PATIENT DETAILS
+  // ===================================================================
+  togglePatientDetails(appointment: AppointmentArrangementItem): void {
+    appointment.showDetails = !appointment.showDetails;
+
+    // Load patient details if not already loaded
+    if (appointment.showDetails && !appointment.patientDetails && !appointment.loadingPatientDetails) {
+      this.loadPatientDetails(appointment);
+    }
+  }
+
+  private loadPatientDetails(appointment: AppointmentArrangementItem): void {
+    // Check cache first
+    if (this.patientDetailsCache.has(appointment.patientId)) {
+      appointment.patientDetails = this.patientDetailsCache.get(appointment.patientId);
+      return;
+    }
+
+    appointment.loadingPatientDetails = true;
+
+    this.patientService.getPatientById(appointment.patientId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          appointment.patientDetails = response.data;
+          // Cache the patient details
+          this.patientDetailsCache.set(appointment.patientId, response.data);
+
+          // Update the appointments signal to trigger change detection
+          this.appointments.set([...this.appointments()]);
+        }
+        appointment.loadingPatientDetails = false;
+      },
+      error: (error) => {
+        console.error('Error loading patient details:', error);
+        this.notificationService.error('فشل في تحميل تفاصيل المريض');
+        appointment.loadingPatientDetails = false;
+      }
+    });
+  }
+
+  // ===================================================================
   // HELPER METHODS
   // ===================================================================
   private mapToArrangementItem(appointment: AppointmentResponse): AppointmentArrangementItem {
@@ -185,17 +241,20 @@ export class AppointmentArrangementComponent implements OnInit, OnDestroy {
     return {
       id: appointment.id,
       tokenNumber: appointment.tokenNumber || 0,
+      patientId: appointment.patient.id,
       patientName: appointment.patient.fullName,
       appointmentType: appointment.appointmentType,
       appointmentTime: this.formatTimeOnly(appointment.appointmentTime),
       status: appointment.status,
-      appointmentDate: appointment.appointmentDate
+      appointmentDate: appointment.appointmentDate,
+      chiefComplaint: appointment.chiefComplaint,
+      appointmentNotes: appointment.notes,
+      loadingPatientDetails: false,
+      showDetails: false
     };
   }
 
   private formatTimeOnly(time: string): string {
-    // Input format: "HH:mm:ss" or "HH:mm"
-    // Output format: "HH:mm" in 12-hour format with AM/PM in Arabic
     try {
       const timeParts = time.split(':');
       let hours = parseInt(timeParts[0]);
@@ -213,6 +272,46 @@ export class AppointmentArrangementComponent implements OnInit, OnDestroy {
   private getDoctorNameById(doctorId: number): string {
     const doctor = this.doctors().find(d => d.id === doctorId);
     return doctor ? doctor.fullName : '';
+  }
+
+  /**
+   * Convert blood type from backend format to display format
+   * B_POSITIVE -> B+, A_NEGATIVE -> A-, etc.
+   */
+  getBloodTypeDisplay(bloodType?: BloodType): string {
+    if (!bloodType) return '-';
+
+    const bloodTypeMap: Record<string, string> = {
+      'A_POSITIVE': 'A+',
+      'A_NEGATIVE': 'A-',
+      'B_POSITIVE': 'B+',
+      'B_NEGATIVE': 'B-',
+      'AB_POSITIVE': 'AB+',
+      'AB_NEGATIVE': 'AB-',
+      'O_POSITIVE': 'O+',
+      'O_NEGATIVE': 'O-',
+      // In case the backend already sends in symbol format
+      'A+': 'A+',
+      'A-': 'A-',
+      'B+': 'B+',
+      'B-': 'B-',
+      'AB+': 'AB+',
+      'AB-': 'AB-',
+      'O+': 'O+',
+      'O-': 'O-'
+    };
+
+    return bloodTypeMap[bloodType] || bloodType;
+  }
+
+  hasPatientInfo(appointment: AppointmentArrangementItem): boolean {
+    return !!(
+      appointment.chiefComplaint ||
+      appointment.patientDetails?.bloodType ||
+      appointment.appointmentNotes ||
+      appointment.patientDetails?.allergies ||
+      appointment.patientDetails?.chronicDiseases
+    );
   }
 
   // ===================================================================
@@ -235,24 +334,23 @@ export class AppointmentArrangementComponent implements OnInit, OnDestroy {
       next: (updatedAppointment) => {
         console.log('Appointment updated:', updatedAppointment);
 
-        // If status is COMPLETED, remove from list
+        // CHANGED: No longer remove completed appointments from the list
+        // Just update the status in place
+        const appointments = this.appointments();
+        const index = appointments.findIndex(a => a.id === appointment.id);
+
+        if (index !== -1) {
+          appointments[index] = {
+            ...appointments[index],
+            status: newStatus
+          };
+          this.appointments.set([...appointments]);
+        }
+
+        // Updated notification message
         if (newStatus === AppointmentStatus.COMPLETED) {
-          const updatedList = this.appointments().filter(a => a.id !== appointment.id);
-          this.appointments.set(updatedList);
-          this.notificationService.success('تم إكمال الموعد وإخفاؤه من القائمة');
+          this.notificationService.success('تم إكمال الموعد بنجاح');
         } else {
-          // Update the appointment in the list
-          const appointments = this.appointments();
-          const index = appointments.findIndex(a => a.id === appointment.id);
-
-          if (index !== -1) {
-            appointments[index] = {
-              ...appointments[index],
-              status: newStatus
-            };
-            this.appointments.set([...appointments]);
-          }
-
           this.notificationService.success(`تم تحديث حالة الموعد إلى ${this.statusLabels[newStatus]}`);
         }
 
@@ -290,7 +388,6 @@ export class AppointmentArrangementComponent implements OnInit, OnDestroy {
     return this.statusLabels[status] || status;
   }
 
-  // Get available status transitions for an appointment
   getAvailableStatusTransitions(currentStatus: AppointmentStatus): AppointmentStatus[] {
     const transitions: Record<AppointmentStatus, AppointmentStatus[]> = {
       [AppointmentStatus.SCHEDULED]: [
@@ -333,5 +430,63 @@ export class AppointmentArrangementComponent implements OnInit, OnDestroy {
 
   get appointmentCount(): number {
     return this.appointments().length;
+  }
+
+  /**
+   * Get blood type color for styling
+   */
+  getBloodTypeColor(bloodType?: BloodType): string {
+    if (!bloodType) return '#666';
+
+    const displayType = this.getBloodTypeDisplay(bloodType);
+
+    // Color coding based on Rh factor
+    if (displayType.includes('+')) {
+      return '#c62828'; // Red for positive
+    } else if (displayType.includes('-')) {
+      return '#1565c0'; // Blue for negative
+    }
+
+    return '#666';
+  }
+
+  /**
+   * Clear doctor selection
+   */
+  clearDoctorSelection(event: Event): void {
+    event.stopPropagation();
+    this.selectedDoctorControl.setValue(null);
+    this.appointments.set([]);
+    this.notificationService.info('تم إلغاء اختيار الطبيب');
+  }
+
+  /**
+   * Get selected doctor name
+   */
+  getSelectedDoctorName(): string {
+    const doctorId = this.selectedDoctorControl.value;
+    if (!doctorId) return '';
+    const doctor = this.doctors().find(d => d.id === doctorId);
+    return doctor ? doctor.fullName : '';
+  }
+
+  /**
+   * Get selected doctor specialization
+   */
+  getSelectedDoctorSpecialization(): string {
+    const doctorId = this.selectedDoctorControl.value;
+    if (!doctorId) return '';
+    const doctor = this.doctors().find(d => d.id === doctorId);
+    return doctor?.specialization || '';
+  }
+
+  /**
+   * Get selected doctor email
+   */
+  getSelectedDoctorEmail(): string {
+    const doctorId = this.selectedDoctorControl.value;
+    if (!doctorId) return '';
+    const doctor = this.doctors().find(d => d.id === doctorId);
+    return doctor?.email || '';
   }
 }
