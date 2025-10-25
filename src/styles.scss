@@ -6,7 +6,7 @@
 @use '@angular/material' as mat;
 @import 'ngx-toastr/toastr';
 // AOS Animation Library
-@import 'aos/dist/aos.css';
+// @import 'aos/dist/aos.css'; <-- Commented here and We will Load AOS Dynamically when needed. Ex: we need it in landing-page component, so we will load it there in ngOnInit method. This will reduce bundle size and enhance the performance
 
 /* ===================================================================
    المتغيرات الأساسية - SCSS Variables
