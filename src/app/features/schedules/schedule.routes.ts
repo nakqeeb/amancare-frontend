@@ -69,7 +69,7 @@ export const SCHEDULE_ROUTES: Routes = [
 
       // Schedule Detail
       {
-        path: 'detail/:id',
+        path: ':id',
         component: ScheduleDetailComponent,
         data: {
           title: 'تفاصيل جدولة الطبيب',
