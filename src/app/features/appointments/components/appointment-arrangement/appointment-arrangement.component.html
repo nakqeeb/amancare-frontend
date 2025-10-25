@@ -85,7 +85,7 @@
                           @if (doctor.specialization) {
                           <span class="doctor-specialization">
                             <!-- <mat-icon>local_hospital</mat-icon> -->
-                          {{" - "}}
+                            {{ " - " }}
                             {{ doctor.specialization }}
                           </span>
                           }
@@ -210,6 +210,17 @@
                         <app-token-badge
                           [tokenNumber]="appointment.tokenNumber"
                           [size]="'medium'"
+                          [tooltipText]="
+                            appointment.status === appointmentStatus.COMPLETED
+                              ? 'الموعد مكتمل'
+                              : appointment.status ===
+                                appointmentStatus.IN_PROGRESS
+                              ? 'الموعد جارٍ حالياً'
+                              : appointment.status ===
+                                appointmentStatus.CANCELLED
+                              ? 'تم إلغاء الموعد'
+                              : 'في قائمة الانتظار'
+                          "
                         ></app-token-badge>
                       </div>
 
