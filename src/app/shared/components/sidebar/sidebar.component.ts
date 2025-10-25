@@ -129,6 +129,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
             route: '/appointments',
             roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
           },
+           {
+            title: 'ترتيب مواعيد اليوم',
+            icon: 'format_list_numbered_rtl',
+            route: '/appointments/arrangement',
+            roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']
+          },
           {
             title: 'موعد جديد',
             icon: 'add_circle',

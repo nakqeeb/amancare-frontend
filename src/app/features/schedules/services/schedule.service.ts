@@ -389,26 +389,54 @@ export class ScheduleService {
   // UTILITY METHODS
   // ===================================================================
 
-  // Search schedules with criteria
+  // ===================================================================
+  // SEARCH/FILTER Schedules
+  // ===================================================================
   searchSchedules(criteria: ScheduleSearchCriteria): Observable<DoctorScheduleResponse[]> {
     this.loading.set(true);
+    this.error.set(null);
+
+    let clinicId = null;
+    if (this.authService.currentUser()?.role === 'SYSTEM_ADMIN') {
+      clinicId = this.systemAdminService.actingClinicContext()?.clinicId;
+    }
+
     let params = new HttpParams();
 
-    if (criteria.doctorId) params = params.set('doctorId', criteria.doctorId.toString());
-    if (criteria.dayOfWeek) params = params.set('dayOfWeek', criteria.dayOfWeek);
-    if (criteria.scheduleType) params = params.set('scheduleType', criteria.scheduleType);
-    if (criteria.isActive !== undefined) params = params.set('isActive', criteria.isActive.toString());
-    if (criteria.effectiveDateFrom) params = params.set('effectiveDateFrom', criteria.effectiveDateFrom);
-    if (criteria.effectiveDateTo) params = params.set('effectiveDateTo', criteria.effectiveDateTo);
+    if (clinicId) {
+      params = params.set('clinicId', clinicId);
+    }
+
+    if (criteria.doctorId) {
+      params = params.set('doctorId', criteria.doctorId.toString());
+    }
+
+    if (criteria.dayOfWeek) {
+      params = params.set('dayOfWeek', criteria.dayOfWeek);
+    }
+
+    if (criteria.scheduleType) {
+      params = params.set('scheduleType', criteria.scheduleType);
+    }
+
+    if (criteria.isActive !== undefined && criteria.isActive !== null) {
+      params = params.set('isActive', criteria.isActive.toString());
+    }
+
+    if (criteria.searchTerm) {
+      params = params.set('searchTerm', criteria.searchTerm);
+    }
 
     return this.http.get<ApiResponse<DoctorScheduleResponse[]>>(
-      `${this.apiUrl}/search`, { params }
+      `${this.apiUrl}/search`,
+      { params }
     ).pipe(
       tap(response => {
-        this.loading.set(false);
         if (response.success && response.data) {
           this.doctorSchedules.set(response.data);
+          this.schedulesSubject.next(response.data);
         }
+        this.loading.set(false);
       }),
       map(response => response.data!),
       catchError(error => {
@@ -612,7 +640,7 @@ export class ScheduleService {
     );
   }
 
-  // Add deactivate method
+  // Deactivate method
   deactivateSchedule(scheduleId: number): Observable<void> {
     this.loading.set(true);
     this.error.set(null);
@@ -634,6 +662,48 @@ export class ScheduleService {
       catchError(error => {
         this.loading.set(false);
         this.handleError('فشل في تعطيل الجدول', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+ * Activate a schedule by updating its isActive status to true
+ * Uses PUT /schedules/{scheduleId} endpoint with minimal update request
+ */
+  activateSchedule(scheduleId: number): Observable<DoctorScheduleResponse> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    // Create minimal update request to set isActive to true
+    const activationRequest: UpdateDoctorScheduleRequest = {
+      isActive: true
+    };
+
+    return this.http.put<ApiResponse<DoctorScheduleResponse>>(
+      `${this.apiUrl}/${scheduleId}`,
+      activationRequest
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.notificationService.success('تم تفعيل الجدول بنجاح');
+
+          // Update local state
+          const currentSchedules = this.doctorSchedules();
+          const updatedSchedules = currentSchedules.map(schedule =>
+            schedule.id === scheduleId
+              ? { ...schedule, isActive: true }
+              : schedule
+          );
+          this.doctorSchedules.set(updatedSchedules);
+          this.schedulesSubject.next(updatedSchedules);
+        }
+        this.loading.set(false);
+      }),
+      map(response => response.data!),
+      catchError(error => {
+        this.loading.set(false);
+        this.handleError('فشل في تفعيل الجدول', error);
         return throwError(() => error);
       })
     );

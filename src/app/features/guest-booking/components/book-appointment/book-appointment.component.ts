@@ -293,8 +293,6 @@ export class BookAppointmentComponent implements OnInit {
       doctorId: this.clinicForm.get('doctorId')?.value,
       appointmentDate: this.formatDate(this.dateTimeForm.get('appointmentDate')?.value),
       appointmentTime: this.dateTimeForm.get('appointmentTime')?.value,
-      durationMinutes: 30,
-
       // Patient Information
       firstName: this.patientForm.get('firstName')?.value,
       lastName: this.patientForm.get('lastName')?.value,

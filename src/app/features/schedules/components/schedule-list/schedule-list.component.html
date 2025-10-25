@@ -1,3 +1,8 @@
+<!-- ===================================================================
+     schedule-list.component.html
+     Complete template with filters, statistics, table, and pagination
+     =================================================================== -->
+
 <div class="schedule-list-container">
   <app-header></app-header>
 
@@ -34,6 +39,7 @@
           <mat-card-content>
             <form [formGroup]="filtersForm" class="filters-form">
               <div class="filters-row">
+                <!-- Search Filter -->
                 <mat-form-field appearance="outline">
                   <mat-label>البحث</mat-label>
                   <input
@@ -45,6 +51,7 @@
                   <mat-icon matSuffix>search</mat-icon>
                 </mat-form-field>
 
+                <!-- Day Filter -->
                 <mat-form-field appearance="outline">
                   <mat-label>اليوم</mat-label>
                   <mat-select formControlName="dayOfWeek">
@@ -55,6 +62,7 @@
                   </mat-select>
                 </mat-form-field>
 
+                <!-- Type Filter -->
                 <mat-form-field appearance="outline">
                   <mat-label>نوع الجدولة</mat-label>
                   <mat-select formControlName="scheduleType">
@@ -67,16 +75,18 @@
                   </mat-select>
                 </mat-form-field>
 
+                <!-- Active Status Filter -->
                 <mat-form-field appearance="outline">
                   <mat-label>الحالة</mat-label>
                   <mat-select formControlName="isActive">
-                    <mat-option value="">جميع الحالات</mat-option>
+                    <mat-option [value]="null">جميع الحالات</mat-option>
                     <mat-option [value]="true">نشط</mat-option>
                     <mat-option [value]="false">غير نشط</mat-option>
                   </mat-select>
                 </mat-form-field>
               </div>
 
+              <!-- Filter Actions -->
               <div class="filters-actions">
                 <button
                   mat-raised-button
@@ -102,32 +112,38 @@
           <mat-card class="stat-card">
             <mat-card-content>
               <div class="stat-content">
-                <div class="stat-value">{{ totalSchedules() }}</div>
-                <div class="stat-label">إجمالي الجداول</div>
-              </div>
-              <mat-icon class="stat-icon">schedule</mat-icon>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card class="stat-card">
-            <mat-card-content>
-              <div class="stat-content">
-                <div class="stat-value">{{ activeDoctors() }}</div>
-                <div class="stat-label">أطباء نشطين</div>
-              </div>
-              <mat-icon class="stat-icon">person</mat-icon>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card class="stat-card">
-            <mat-card-content>
-              <div class="stat-content">
-                <div class="stat-value" style="font-size: 16px">
-                  {{ totalWorkingHours() }}
+                <div>
+                  <div class="stat-value">{{ totalSchedules() }}</div>
+                  <div class="stat-label">إجمالي الجداول</div>
                 </div>
-                <div class="stat-label">ساعات العمل</div>
+                <mat-icon class="stat-icon">schedule</mat-icon>
               </div>
-              <mat-icon class="stat-icon">access_time</mat-icon>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card">
+            <mat-card-content>
+              <div class="stat-content">
+                <div>
+                  <div class="stat-value">{{ activeDoctors() }}</div>
+                  <div class="stat-label">أطباء نشطين</div>
+                </div>
+                <mat-icon class="stat-icon">person</mat-icon>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card">
+            <mat-card-content>
+              <div class="stat-content">
+                <div>
+                  <div class="stat-value" style="font-size: 18px">
+                    {{ totalWorkingHours() }}
+                  </div>
+                  <div class="stat-label">ساعات العمل</div>
+                </div>
+                <mat-icon class="stat-icon">access_time</mat-icon>
+              </div>
             </mat-card-content>
           </mat-card>
         </div>
@@ -139,16 +155,22 @@
           </mat-card-header>
 
           <mat-card-content>
+            <!-- Loading State -->
             @if (scheduleService.loading()) {
             <div class="loading-container">
-              <mat-progress-spinner diameter="50"></mat-progress-spinner>
+              <mat-progress-spinner
+                mode="indeterminate"
+                diameter="50"
+              ></mat-progress-spinner>
               <p>جاري تحميل الجداول...</p>
             </div>
-            } @else if (filteredSchedules().length === 0) {
+            }
+            <!-- Empty State -->
+            @else if (filteredSchedules().length === 0) {
             <div class="empty-state">
               <mat-icon class="empty-icon">schedule</mat-icon>
               <h3>لا توجد جداول</h3>
-              <p>لم يتم العثور على أي جداول طبية.</p>
+              <p>لم يتم العثور على أي جداول طبية تطابق معايير البحث.</p>
               @if (canCreateSchedule()) {
               <button
                 mat-raised-button
@@ -159,7 +181,9 @@
               </button>
               }
             </div>
-            } @else {
+            }
+            <!-- Table with Data -->
+            @else {
             <div class="table-container">
               <table
                 mat-table
@@ -185,10 +209,7 @@
                 <ng-container matColumnDef="day">
                   <th mat-header-cell *matHeaderCellDef>اليوم</th>
                   <td mat-cell *matCellDef="let schedule">
-                    <mat-chip
-                      [color]="getDayColor(schedule.dayOfWeek)"
-                      selected
-                    >
+                    <mat-chip [color]="getDayColor(schedule.dayOfWeek)">
                       {{ getDayLabel(schedule.dayOfWeek) }}
                     </mat-chip>
                   </td>
@@ -213,43 +234,27 @@
                   </td>
                 </ng-container>
 
-                <!-- NEW: Duration Configuration Column -->
+                <!-- Duration Column -->
                 <ng-container matColumnDef="duration">
-                  <th mat-header-cell *matHeaderCellDef>التكوين</th>
+                  <th mat-header-cell *matHeaderCellDef>مدة الموعد</th>
                   <td mat-cell *matCellDef="let schedule">
                     <div class="duration-info">
-                      <mat-chip
-                        [color]="
-                          schedule.durationConfigType === 'DIRECT'
-                            ? 'primary'
-                            : 'accent'
-                        "
-                        selected
-                      >
-                        {{
-                          getDurationConfigTypeLabel(
-                            schedule.durationConfigType
-                          )
-                        }}
-                      </mat-chip>
+                      @if (schedule.effectiveDuration) {
                       <div class="duration-details">
-                        @if (schedule.durationConfigType === 'DIRECT') {
-                        <span class="duration-value"
-                          >{{ schedule.durationMinutes }} دقيقة</span
-                        >
-                        <span class="duration-hint"
-                          >{{ schedule.expectedTokens }} توقع</span
-                        >
-                        } @else if (schedule.durationConfigType ===
-                        'TOKEN_BASED') {
-                        <span class="duration-value"
-                          >{{ schedule.calculatedDurationMinutes }} دقيقة</span
-                        >
-                        <span class="duration-hint"
-                          >{{ schedule.targetTokensPerDay }} رمز/يوم</span
-                        >
-                        }
+                        <span class="duration-value">
+                          {{ formatDuration(schedule.effectiveDuration) }}
+                        </span>
+                        <span class="duration-hint">
+                          {{
+                            getDurationConfigTypeLabel(
+                              schedule.durationConfigType || "DIRECT"
+                            )
+                          }}
+                        </span>
                       </div>
+                      } @else {
+                      <span class="text-muted">غير محدد</span>
+                      }
                     </div>
                   </td>
                 </ng-container>
@@ -258,10 +263,7 @@
                 <ng-container matColumnDef="type">
                   <th mat-header-cell *matHeaderCellDef>النوع</th>
                   <td mat-cell *matCellDef="let schedule">
-                    <mat-chip
-                      [color]="getTypeColor(schedule.scheduleType)"
-                      selected
-                    >
+                    <mat-chip [color]="getTypeColor(schedule.scheduleType)">
                       {{ getTypeLabel(schedule.scheduleType) }}
                     </mat-chip>
                   </td>
@@ -272,15 +274,16 @@
                   <th mat-header-cell *matHeaderCellDef>ساعات العمل</th>
                   <td mat-cell *matCellDef="let schedule">
                     <div class="hours-info">
+                      @if (schedule.availableWorkingMinutes) {
                       <span class="hours-value">
-                        {{
-                          formatDuration(schedule.availableWorkingMinutes || 0)
-                        }}
+                        {{ formatDuration(schedule.availableWorkingMinutes) }}
                       </span>
-                      @if (schedule.totalSlots) {
+                      @if (schedule.expectedTokens) {
                       <div class="slots-info">
-                        {{ schedule.totalSlots }} فترة
+                        {{ schedule.expectedTokens }} موعد متوقع
                       </div>
+                      } } @else {
+                      <span class="text-muted">غير محسوب</span>
                       }
                     </div>
                   </td>
@@ -290,12 +293,17 @@
                 <ng-container matColumnDef="status">
                   <th mat-header-cell *matHeaderCellDef>الحالة</th>
                   <td mat-cell *matCellDef="let schedule">
-                    <mat-chip
-                      [color]="schedule.isActive ? 'primary' : 'warn'"
-                      selected
-                    >
-                      {{ schedule.isActive ? "نشط" : "غير نشط" }}
+                    @if (schedule.isActive) {
+                    <mat-chip color="primary">
+                      <mat-icon>check_circle</mat-icon>
+                      نشط
                     </mat-chip>
+                    } @else {
+                    <mat-chip color="warn">
+                      <mat-icon>cancel</mat-icon>
+                      غير نشط
+                    </mat-chip>
+                    }
                   </td>
                 </ng-container>
 
@@ -306,22 +314,13 @@
                     <div class="actions-cell">
                       <button
                         mat-icon-button
-                        [matTooltip]="'عرض تفاصيل الجدولة'"
-                        [routerLink]="['/schedules/detail', schedule.id]"
+                        [matTooltip]="'عرض التفاصيل'"
+                        (click)="viewSchedule(schedule)"
                       >
                         <mat-icon>visibility</mat-icon>
                       </button>
 
                       @if (canEditSchedule(schedule)) {
-                      <button
-                        mat-icon-button
-                        [matTooltip]="'تعديل الجدولة'"
-                        [routerLink]="['/schedules/edit', schedule.id]"
-                      >
-                        <mat-icon>edit</mat-icon>
-                      </button>
-                      }
-
                       <button
                         mat-icon-button
                         [matMenuTriggerFor]="actionsMenu"
@@ -331,28 +330,30 @@
                       </button>
 
                       <mat-menu #actionsMenu="matMenu">
-                        <button
-                          mat-menu-item
-                          [routerLink]="[
-                            '/schedules/doctor',
-                            schedule.doctorId,
-                            'unavailability'
-                          ]"
-                        >
-                          <mat-icon>event_busy</mat-icon>
-                          إدارة عدم التوفر
+                        <button mat-menu-item (click)="editSchedule(schedule)">
+                          <mat-icon>edit</mat-icon>
+                          تعديل
+                        </button>
+
+                        <button mat-menu-item (click)="cloneSchedule(schedule)">
+                          <mat-icon>content_copy</mat-icon>
+                          نسخ
                         </button>
 
                         <button
                           mat-menu-item
-                          (click)="checkAvailability(schedule.doctorId)"
+                          (click)="toggleScheduleStatus(schedule)"
                         >
+                          @if (schedule.isActive) {
+                          <mat-icon>block</mat-icon>
+                          تعطيل } @else {
                           <mat-icon>check_circle</mat-icon>
-                          فحص التوفر
+                          تفعيل }
                         </button>
+
+                        <mat-divider></mat-divider>
 
                         @if (canDeleteSchedule(schedule)) {
-                        <mat-divider></mat-divider>
                         <button
                           mat-menu-item
                           (click)="deleteSchedule(schedule)"
@@ -363,14 +364,17 @@
                         </button>
                         }
                       </mat-menu>
+                      }
                     </div>
                   </td>
                 </ng-container>
 
+                <!-- Table Rows -->
                 <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
                 <tr
                   mat-row
                   *matRowDef="let row; columns: displayedColumns"
+                  class="schedule-row"
                 ></tr>
               </table>
 
@@ -381,6 +385,7 @@
                 [pageSizeOptions]="[5, 10, 25, 50]"
                 [showFirstLastButtons]="true"
                 (page)="onPageChange($event)"
+                class="table-paginator"
               >
               </mat-paginator>
             </div>

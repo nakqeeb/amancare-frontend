@@ -169,7 +169,7 @@ export interface AppointmentPageResponse {
   appointments: AppointmentResponse[];
   totalElements: number;
   totalPages: number;
-  pageNumber: number;
+  currentPage: number;
   pageSize: number;
   first: boolean;
   last: boolean;

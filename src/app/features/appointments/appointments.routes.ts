@@ -41,6 +41,18 @@ export const APPOINTMENT_ROUTES: Routes = [
         data: { roles: ['ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] }
       },
       {
+        path: 'arrangement',
+        loadComponent: () =>
+          import('./components/appointment-arrangement/appointment-arrangement.component')
+            .then(m => m.AppointmentArrangementComponent),
+        canActivate: [RoleGuard],
+        data: {
+          roles: ['SYSTEM_ADMIN', 'ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'],
+          title: 'ترتيب مواعيد اليوم',
+          description: 'إدارة وترتيب مواعيد اليوم حسب الطبيب'
+        }
+      },
+      {
         path: ':id',
         loadComponent: () =>
           import('./components/appointment-details/appointment-details.component')
