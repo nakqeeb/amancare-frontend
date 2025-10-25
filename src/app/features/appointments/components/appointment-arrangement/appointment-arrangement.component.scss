@@ -1,0 +1,388 @@
+// src/app/features/appointments/components/appointment-arrangement/appointment-arrangement.component.scss
+
+.layout-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.content-wrapper {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+// ===================================================================
+// PAGE HEADER
+// ===================================================================
+.page-header {
+  margin-bottom: 2rem;
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .header-text {
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: #1a237e;
+      margin: 0 0 0.5rem 0;
+
+      mat-icon {
+        font-size: 2rem;
+        width: 2rem;
+        height: 2rem;
+        color: #3f51b5;
+      }
+    }
+
+    .page-description {
+      color: #666;
+      margin: 0;
+      font-size: 0.95rem;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+}
+
+// ===================================================================
+// MAIN CARD
+// ===================================================================
+.arrangement-card {
+  mat-card-header {
+    margin-bottom: 1.5rem;
+
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.25rem;
+      color: #1a237e;
+
+      mat-icon {
+        color: #3f51b5;
+      }
+    }
+  }
+
+  mat-card-content {
+    padding: 1rem 0;
+  }
+}
+
+// ===================================================================
+// DOCTOR SELECTION
+// ===================================================================
+.doctor-selection {
+  margin-bottom: 2rem;
+
+  .full-width {
+    width: 100%;
+  }
+
+  .doctor-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .doctor-icon {
+      color: #3f51b5;
+      font-size: 1.5rem;
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .doctor-info {
+      display: flex;
+      flex-direction: column;
+
+      .doctor-name {
+        font-weight: 500;
+        color: #333;
+      }
+
+      .doctor-specialization {
+        font-size: 0.85rem;
+        color: #666;
+      }
+    }
+  }
+}
+
+// ===================================================================
+// APPOINTMENTS SECTION
+// ===================================================================
+.appointments-section {
+  margin-top: 2rem;
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1a237e;
+      margin: 0;
+
+      mat-icon {
+        color: #3f51b5;
+      }
+
+      .appointment-count {
+        margin-right: 0.5rem;
+      }
+    }
+  }
+}
+
+// ===================================================================
+// APPOINTMENTS LIST
+// ===================================================================
+.appointments-list {
+  padding: 0;
+
+  .appointment-item {
+    height: auto;
+    padding: 1.5rem 0;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #f8f9fa;
+    }
+
+    .appointment-content {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 1.5rem;
+      align-items: center;
+      width: 100%;
+      padding: 0 1rem;
+    }
+  }
+}
+
+// ===================================================================
+// APPOINTMENT SECTIONS
+// ===================================================================
+.token-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.patient-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+
+  .patient-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1a237e;
+
+    mat-icon {
+      color: #3f51b5;
+      font-size: 1.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  .appointment-details {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+
+    .detail-item {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.9rem;
+      color: #666;
+
+      mat-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+        color: #999;
+      }
+    }
+
+    .type-chip {
+      font-size: 0.85rem;
+      background-color: #e3f2fd;
+      color: #1976d2;
+    }
+  }
+}
+
+.status-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .status-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+
+    mat-icon {
+      font-size: 1rem;
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
+  // Status colors
+  .status-scheduled {
+    background-color: #e3f2fd;
+    color: #1976d2;
+  }
+
+  .status-confirmed {
+    background-color: #e8f5e9;
+    color: #388e3c;
+  }
+
+  .status-in_progress {
+    background-color: #fff3e0;
+    color: #f57c00;
+  }
+
+  .status-completed {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .status-cancelled {
+    background-color: #ffebee;
+    color: #c62828;
+  }
+
+  .status-no_show {
+    background-color: #f5f5f5;
+    color: #616161;
+  }
+}
+
+// ===================================================================
+// LOADING & EMPTY STATES
+// ===================================================================
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+
+  p {
+    color: #666;
+    margin: 0;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+
+  .empty-icon {
+    font-size: 5rem;
+    width: 5rem;
+    height: 5rem;
+    color: #bdbdbd;
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    color: #333;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+  }
+
+  p {
+    color: #666;
+    margin: 0;
+    font-size: 0.95rem;
+  }
+}
+
+// ===================================================================
+// RESPONSIVE DESIGN
+// ===================================================================
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 1rem;
+  }
+
+  .page-header {
+    .header-content {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  .appointments-list {
+    .appointment-item {
+      .appointment-content {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+    }
+  }
+
+  .token-section {
+    justify-content: flex-start;
+  }
+
+  .status-section {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    .page-title {
+      font-size: 1.5rem;
+    }
+  }
+
+  .patient-section {
+    .patient-name {
+      font-size: 1rem;
+    }
+  }
+}
