@@ -40,7 +40,7 @@
           </mat-card-header>
 
           <mat-card-content>
-            <!-- Doctor Selection -->
+            <!-- Enhanced Doctor Selection -->
             <div class="doctor-selection">
               @if (loading()) {
               <div class="loading-container">
@@ -48,31 +48,96 @@
                 <p>جاري تحميل الأطباء...</p>
               </div>
               } @else {
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>اختر الطبيب</mat-label>
-                <mat-select
-                  [formControl]="selectedDoctorControl"
-                  (selectionChange)="onDoctorChange()"
-                >
-                  <mat-option [value]="null">-- اختر طبيب --</mat-option>
-                  @for (doctor of doctors(); track doctor.id) {
-                  <mat-option [value]="doctor.id">
-                    <div class="doctor-option">
-                      <mat-icon class="doctor-icon">medical_services</mat-icon>
-                      <div class="doctor-info">
-                        <span class="doctor-name">{{ doctor.fullName }}</span>
-                        @if (doctor.specialization) {
-                        <span class="doctor-specialization">{{
-                          doctor.specialization
-                        }}</span>
-                        }
+              <div class="doctor-selector-wrapper">
+                <div class="selector-label">
+                  <mat-icon>medical_services</mat-icon>
+                  <span>اختر الطبيب لعرض مواعيده</span>
+                </div>
+
+                <mat-form-field appearance="outline" class="doctor-field">
+                  <mat-label>
+                    <mat-icon>person_search</mat-icon>
+                    <span>البحث عن طبيب</span>
+                  </mat-label>
+                  <mat-select
+                    [formControl]="selectedDoctorControl"
+                    (selectionChange)="onDoctorChange()"
+                    placeholder="اختر طبيب من القائمة"
+                    panelClass="doctor-select-panel"
+                  >
+                    <mat-option [value]="null" class="empty-option">
+                      <div class="empty-doctor-option">
+                        <mat-icon>remove_circle_outline</mat-icon>
+                        <span>-- إلغاء الاختيار --</span>
                       </div>
-                    </div>
-                  </mat-option>
+                    </mat-option>
+
+                    <mat-divider></mat-divider>
+
+                    @for (doctor of doctors(); track doctor.id) {
+                    <mat-option [value]="doctor.id" class="doctor-option-item">
+                      <div class="doctor-option">
+                        <!-- <div class="doctor-avatar">
+                          <mat-icon>person</mat-icon>
+                        </div> -->
+                        <div class="doctor-info">
+                          <span class="doctor-name">{{ doctor.fullName }}</span>
+                          @if (doctor.specialization) {
+                          <span class="doctor-specialization">
+                            <!-- <mat-icon>local_hospital</mat-icon> -->
+                            {{ doctor.specialization }}
+                          </span>
+                          }
+                        </div>
+                      </div>
+                    </mat-option>
+                    }
+                  </mat-select>
+                  <mat-icon matPrefix class="select-prefix-icon"
+                    >person</mat-icon
+                  >
+                  @if (selectedDoctorControl.value) {
+                  <button
+                    mat-icon-button
+                    matSuffix
+                    (click)="clearDoctorSelection($event)"
+                    class="clear-button"
+                    type="button"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
                   }
-                </mat-select>
-                <mat-icon matPrefix>person</mat-icon>
-              </mat-form-field>
+                </mat-form-field>
+
+                <!-- Selected Doctor Card -->
+                @if (selectedDoctorControl.value) {
+                <div class="selected-doctor-card">
+                  <div class="card-header">
+                    <mat-icon>check_circle</mat-icon>
+                    <span>الطبيب المختار</span>
+                  </div>
+                  <div class="card-content">
+                    <div class="doctor-avatar large">
+                      <mat-icon>person</mat-icon>
+                    </div>
+                    <div class="doctor-details">
+                      <h3>{{ getSelectedDoctorName() }}</h3>
+                      @if (getSelectedDoctorSpecialization()) {
+                      <p class="specialization">
+                        <mat-icon>local_hospital</mat-icon>
+                        {{ getSelectedDoctorSpecialization() }}
+                      </p>
+                      } @if (getSelectedDoctorEmail()) {
+                      <p class="email">
+                        <mat-icon>email</mat-icon>
+                        {{ getSelectedDoctorEmail() }}
+                      </p>
+                      }
+                    </div>
+                  </div>
+                </div>
+                }
+              </div>
               }
             </div>
 
@@ -105,58 +170,215 @@
                 <p>لا توجد مواعيد لهذا الطبيب في اليوم الحالي</p>
               </div>
               } @else {
-              <mat-list class="appointments-list">
-                @for (appointment of appointments(); track appointment.id; let i
-                = $index) {
-                <mat-list-item class="appointment-item">
-                  <div class="appointment-content">
-                    <!-- Token Badge -->
-                    <div class="token-section">
-                      <app-token-badge
-                        [tokenNumber]="appointment.tokenNumber"
-                        [size]="'large'"
-                      ></app-token-badge>
-                    </div>
 
-                    <!-- Patient Info -->
-                    <div class="patient-section">
-                      <div class="patient-name">
-                        <mat-icon>person</mat-icon>
-                        <span>{{ appointment.patientName }}</span>
+              <!-- Appointments Expansion Panels -->
+              <mat-accordion class="appointments-accordion">
+                @for (appointment of appointments(); track appointment.id) {
+                <mat-expansion-panel
+                  class="appointment-panel"
+                  [class.status-scheduled]="
+                    appointment.status === appointmentStatus.SCHEDULED
+                  "
+                  [class.status-confirmed]="
+                    appointment.status === appointmentStatus.CONFIRMED
+                  "
+                  [class.status-in-progress]="
+                    appointment.status === appointmentStatus.IN_PROGRESS
+                  "
+                  [class.status-completed]="
+                    appointment.status === appointmentStatus.COMPLETED
+                  "
+                  [class.status-cancelled]="
+                    appointment.status === appointmentStatus.CANCELLED
+                  "
+                  [class.status-no-show]="
+                    appointment.status === appointmentStatus.NO_SHOW
+                  "
+                  [expanded]="appointment.showDetails"
+                  (opened)="togglePatientDetails(appointment)"
+                  (closed)="appointment.showDetails = false"
+                >
+                  <!-- Panel Header -->
+                  <mat-expansion-panel-header>
+                    <mat-panel-title class="appointment-header">
+                      <!-- Status Indicator Strip -->
+                      <div class="status-strip"></div>
+
+                      <!-- Token Badge -->
+                      <div class="token-section">
+                        <app-token-badge
+                          [tokenNumber]="appointment.tokenNumber"
+                          [size]="'medium'"
+                        ></app-token-badge>
                       </div>
-                      <div class="appointment-details">
-                        <span class="detail-item">
-                          <mat-icon>access_time</mat-icon>
-                          {{ appointment.appointmentTime }}
-                        </span>
-                        <mat-chip class="type-chip">
-                          {{ getTypeLabel(appointment.appointmentType) }}
+
+                      <!-- Patient Info -->
+                      <div class="patient-section">
+                        <div class="patient-name">
+                          <mat-icon>person</mat-icon>
+                          <span>{{ appointment.patientName }}</span>
+                        </div>
+                        <div class="appointment-summary">
+                          <span class="detail-item">
+                            <mat-icon>access_time</mat-icon>
+                            {{ appointment.appointmentTime }}
+                          </span>
+                          <mat-chip class="type-chip">
+                            {{ getTypeLabel(appointment.appointmentType) }}
+                          </mat-chip>
+                        </div>
+                      </div>
+
+                      <!-- Status Badge -->
+                      <div class="status-section">
+                        <mat-chip class="status-chip">
+                          <mat-icon>{{
+                            getStatusIcon(appointment.status)
+                          }}</mat-icon>
+                          {{ getStatusLabel(appointment.status) }}
                         </mat-chip>
                       </div>
+                    </mat-panel-title>
+                  </mat-expansion-panel-header>
+
+                  <!-- Panel Content - Patient Details -->
+                  <div class="appointment-details">
+                    @if (appointment.loadingPatientDetails) {
+                    <div class="loading-details">
+                      <mat-spinner diameter="30"></mat-spinner>
+                      <p>جاري تحميل التفاصيل...</p>
+                    </div>
+                    } @else {
+
+                    <!-- Chief Complaint -->
+                    @if (appointment.chiefComplaint) {
+                    <div class="detail-card">
+                      <div class="detail-header">
+                        <mat-icon>medical_information</mat-icon>
+                        <h4>الشكوى الرئيسية</h4>
+                      </div>
+                      <p class="detail-content">
+                        {{ appointment.chiefComplaint }}
+                      </p>
+                    </div>
+                    }
+
+                    <div class="details-grid">
+                      <!-- Blood Type -->
+                      @if (appointment.patientDetails?.bloodType) {
+                      <div class="detail-item">
+                        <mat-icon class="detail-icon blood-icon"
+                          >bloodtype</mat-icon
+                        >
+                        <div class="detail-text">
+                          <span class="detail-label">فصيلة الدم</span>
+                          <span
+                            class="detail-value blood-type"
+                            [style.color]="
+                              getBloodTypeColor(
+                                appointment.patientDetails?.bloodType
+                              )
+                            "
+                          >
+                            {{
+                              getBloodTypeDisplay(
+                                appointment.patientDetails?.bloodType
+                              )
+                            }}
+                          </span>
+                        </div>
+                      </div>
+                      }
+
+                      <!-- Age -->
+                      @if (appointment.patientDetails?.age) {
+                      <div class="detail-item">
+                        <mat-icon class="detail-icon">cake</mat-icon>
+                        <div class="detail-text">
+                          <span class="detail-label">العمر</span>
+                          <span class="detail-value"
+                            >{{ appointment.patientDetails?.age }} سنة</span
+                          >
+                        </div>
+                      </div>
+                      }
+
+                      <!-- Phone -->
+                      @if (appointment.patientDetails?.phone) {
+                      <div class="detail-item">
+                        <mat-icon class="detail-icon">phone</mat-icon>
+                        <div class="detail-text">
+                          <span class="detail-label">رقم الهاتف</span>
+                          <span class="detail-value">{{
+                            appointment.patientDetails?.phone
+                          }}</span>
+                        </div>
+                      </div>
+                      }
                     </div>
 
-                    <!-- Status Section -->
-                    <div class="status-section">
-                      <mat-chip
-                        [class]="
-                          'status-chip status-' +
-                          appointment.status.toLowerCase()
-                        "
-                      >
-                        <mat-icon>{{
-                          getStatusIcon(appointment.status)
-                        }}</mat-icon>
-                        {{ getStatusLabel(appointment.status) }}
-                      </mat-chip>
+                    <!-- Allergies -->
+                    @if (appointment.patientDetails?.allergies) {
+                    <div class="detail-card warning-card">
+                      <div class="detail-header">
+                        <mat-icon>warning</mat-icon>
+                        <h4>الحساسية</h4>
+                      </div>
+                      <p class="detail-content">
+                        {{ appointment.patientDetails?.allergies }}
+                      </p>
+                    </div>
+                    }
 
-                      <!-- Status Actions -->
+                    <!-- Chronic Diseases -->
+                    @if (appointment.patientDetails?.chronicDiseases) {
+                    <div class="detail-card info-card">
+                      <div class="detail-header">
+                        <mat-icon>health_and_safety</mat-icon>
+                        <h4>الأمراض المزمنة</h4>
+                      </div>
+                      <p class="detail-content">
+                        {{ appointment.patientDetails?.chronicDiseases }}
+                      </p>
+                    </div>
+                    }
+
+                    <!-- Notes -->
+                    @if (appointment.appointmentNotes ||
+                    appointment.patientDetails?.notes) {
+                    <div class="detail-card notes-card">
+                      <div class="detail-header">
+                        <mat-icon>note</mat-icon>
+                        <h4>ملاحظات</h4>
+                      </div>
+                      @if (appointment.appointmentNotes) {
+                      <div class="note-section">
+                        <strong>ملاحظات الموعد:</strong>
+                        <p class="detail-content">
+                          {{ appointment.appointmentNotes }}
+                        </p>
+                      </div>
+                      } @if (appointment.patientDetails?.notes) {
+                      <div class="note-section">
+                        <strong>ملاحظات المريض:</strong>
+                        <p class="detail-content">
+                          {{ appointment.patientDetails?.notes }}
+                        </p>
+                      </div>
+                      }
+                    </div>
+                    }
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
                       @if (canUpdateStatus(appointment.status)) {
                       <button
-                        mat-icon-button
+                        mat-raised-button
                         [matMenuTriggerFor]="statusMenu"
-                        matTooltip="تحديث الحالة"
+                        color="primary"
                       >
-                        <mat-icon>more_vert</mat-icon>
+                        <mat-icon>update</mat-icon>
+                        تحديث الحالة
                       </button>
 
                       <mat-menu #statusMenu="matMenu">
@@ -172,16 +394,20 @@
                         </button>
                         }
                       </mat-menu>
+                      } @else if (appointment.status ===
+                      appointmentStatus.COMPLETED) {
+                      <div class="completed-message">
+                        <mat-icon>check_circle</mat-icon>
+                        <span>تم إكمال هذا الموعد</span>
+                      </div>
                       }
                     </div>
-                  </div>
 
-                  @if (i < appointments().length - 1) {
-                  <mat-divider></mat-divider>
-                  }
-                </mat-list-item>
+                    }
+                  </div>
+                </mat-expansion-panel>
                 }
-              </mat-list>
+              </mat-accordion>
               }
             </div>
             } @else {
