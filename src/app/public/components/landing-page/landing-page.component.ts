@@ -127,14 +127,6 @@ export class LandingPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async ngOnInit() {
     window.scrollTo(0, 0);
-
-    // Load AOS dynamically
-    // ===================
-    const AOS = (await import('aos')).default;
-    // @ts-ignore
-    await import('aos/dist/aos.css');
-    AOS.init({ duration: 800, once: true });
-    // ===================
   }
 
   ngAfterViewInit(): void {
