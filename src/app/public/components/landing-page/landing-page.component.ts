@@ -127,26 +127,14 @@ export class LandingPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async ngOnInit() {
     window.scrollTo(0, 0);
-    // Load CSS via link element (no TypeScript errors!)
-    this.loadAOSStylesheet();
 
-    // Load and initialize AOS
+    // Load AOS dynamically
+    // ===================
     const AOS = (await import('aos')).default;
-    AOS.init({
-      duration: 800,
-      once: true,
-      offset: 100,
-      easing: 'ease'
-    });
-  }
-
-  private loadAOSStylesheet(): void {
-    if (document.querySelector('link[href*="aos.css"]')) return;
-
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'node_modules/aos/dist/aos.css';
-    document.head.appendChild(link);
+    // @ts-ignore
+    await import('aos/dist/aos.css');
+    AOS.init({ duration: 800, once: true });
+    // ===================
   }
 
   ngAfterViewInit(): void {
