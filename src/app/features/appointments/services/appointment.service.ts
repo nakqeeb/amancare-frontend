@@ -131,7 +131,7 @@ export class AppointmentService {
         if (response.success && response.data) {
           this.appointments.set(response.data.appointments);
           this.appointmentsSubject.next(response.data.appointments);
-          this.currentPage.set(response.data.pageNumber);
+          this.currentPage.set(response.data.currentPage);
           this.totalElements.set(response.data.totalElements);
           this.totalPages.set(response.data.totalPages);
         }
