@@ -321,13 +321,19 @@
                   <mat-card class="time-slot-card">
                     <mat-card-content>
                       <div class="slot-header">
+                        @if (!slot.isBreakTime) {
                         <mat-chip color="primary" selected class="token-chip">
                           رمز #{{ slot.tokenNumber }}
                         </mat-chip>
-                        @if (slot.isAvailable) {
+                        } @if (slot.isAvailable) {
                         <mat-chip color="accent" selected class="status-chip">
                           <mat-icon>check_circle</mat-icon>
                           متاح
+                        </mat-chip>
+                        } @else {
+                        <mat-chip color="accent" selected class="status-chip">
+                          <mat-icon>cancel</mat-icon>
+                          @if (slot.isBreakTime) { استراحة } @else { غير متاح }
                         </mat-chip>
                         }
                       </div>
